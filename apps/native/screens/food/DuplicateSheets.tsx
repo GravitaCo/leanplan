@@ -3,13 +3,15 @@
  * by Benn): the same barcode asks to update the saved food; a likely match shows both side by side.
  * Words and figures from duplicateModel and src/copy/food; the open question from useDuplicateSave.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Text, View } from 'react-native'
 import { useStore } from '@/store/store'
-import { barcodeUpdate, likelySame } from '@/screens/food/duplicateModel'
+import type { Food } from '@/core/types'
+import { barcodeUpdate, likelySame, sameFood } from '@/screens/food/duplicateModel'
 import { DUP } from '@/copy/food'
-import { Btn, List } from '../../lib/ui/kit'
-import { BareSheet, Row } from '../../lib/ui/primitives'
+import { Btn, Card, List } from '../../lib/ui/kit'
+import { BackButton, BareSheet, Row, Sheet, Toggle } from '../../lib/ui/primitives'
+import { Check } from '../../lib/ui/choices'
 import { Icon, type IconName } from '../../lib/ui/icons'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
@@ -90,10 +92,9 @@ function LikelySameSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answer: 
     <BareSheet label={v.title} onClose={dismiss}>
       <DupHead icon="copy" title={v.title} lead={v.lead} />
       <List style={{ marginTop: 18 }}>
-        <Row title={ask.saved.n} sub={DUP.yours} />
-        <Row title={ask.next.n} sub={v.theirs} />
+        <Row k={DUP.yours} title={ask.saved.n} />
+        <Row k={v.theirs} title={ask.next.n} />
       </List>
-      {/* TODO(N1-followup): Row with the 13 pt key above the 17 pt name (`.dup-k`, `.dup-nm`); here the key is the sub */}
       <View accessibilityLabel={DUP.tableLabel(v.theirs, v.per)} style={{ marginTop: 8 }}>
         <List style={{ paddingHorizontal: 16 }}>
           {tableRow('h', th(v.per.replace(/^per/, 'Per')), th(DUP.yours), th(v.theirs), true)}
@@ -106,10 +107,53 @@ function LikelySameSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answer: 
       <View style={{ gap: 8, marginTop: 20 }}>
         <Btn title={DUP.keepYours} onPress={() => answer('keep')} />
         <Btn kind="gray" title={DUP.useTheirs(v.theirs)} onPress={() => answer('use-theirs')} />
-        {/* `.btn.dup-link`: a 50 pt button with tinted words and no fill; TODO(N1-followup): Btn kind link */}
-        <Btn kind="tinted" title={DUP.saveAsNew} onPress={() => answer('save-new')} style={{ backgroundColor: 'transparent', marginTop: -4 }} />
+        <Btn kind="link" title={DUP.saveAsNew} onPress={() => answer('save-new')} style={{ marginTop: -4 }} />
       </View>
       <Foot style={{ paddingTop: 2 }}>{DUP.keepsName(v.theirs)}</Foot>
     </BareSheet>
+  )
+}
+
+/** dup-4: pick the one to keep. A pushed view in the Add food sheet. */
+export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [Food, Food]; onBack: () => void; onClose: () => void; animate: boolean; cur: string }) {
+  const t = useTokens()
+  const data = useStore((s) => s.data)
+  const merge = useStore((s) => s.mergeCustomFoods)
+  const different = useStore((s) => s.markFoodsDifferent)
+  const sf = sameFood(data, cur, pair)
+  // the one with more logs is kept by default (the first on a tie)
+  const [keepIdx, setKeepIdx] = useState(sf.defaultKeep)
+  // off by default (Benn, 11 Oct 2026): both barcodes may be real, e.g. a multipack
+  const [takeBarcode, setTakeBarcode] = useState(false)
+  const { keep, drop, what, switchable, offBarcode } = sf.outcome(keepIdx)
+  const done = (fn: () => void) => { fn(); onBack() }
+  return (
+    <Sheet title={DUP.sameTitle} tall onClose={onClose} animate={animate} left={<BackButton onPress={onBack} />}>
+      <Text accessibilityRole="header" style={[tx(22, 600, 28, -0.02), { color: t.label, paddingTop: 12, paddingHorizontal: 4 }]}>{DUP.pick}</Text>
+      <Text style={[tx(17, 400, 1.45), { color: t.label2, marginTop: 6, paddingHorizontal: 4 }]}>{DUP.pickLead}</Text>
+      <View accessibilityRole="radiogroup" accessibilityLabel={DUP.foodToKeep} style={{ marginTop: 18 }}>
+        <List>
+          {sf.rows.map(({ food: f, figures, origin, logged }, i) => (
+            // TODO(N1-followup): `.dup-radio` (24 pt, 2 pt --fill3 ring; on: --tint with a 13/3.2 tick); Check is the 26 pt `.chk`
+            <Row key={f.id} title={f.n} wrap accessibilityLabel={f.n} onPress={() => setKeepIdx(i)} chevron={false} lead={<Check on={keepIdx === i} />}
+              sub={<>{figures}</>} sub2={<>{origin ? <>{origin}{'\n'}</> : null}{logged}</>} />
+          ))}
+        </List>
+      </View>
+      <Lbl>{DUP.whatHappens}</Lbl>
+      <Card plain style={{ marginBottom: 10 }}><Text style={[tx(17), { color: t.label }]}>{what}</Text></Card>
+      {switchable && (
+        <>
+          <List>
+            <Row title={DUP.otherBarcode} right={<Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label={DUP.otherBarcode} />} />
+          </List>
+          {offBarcode && <Foot>{DUP.offBarcode}</Foot>}
+        </>
+      )}
+      <View style={{ gap: 8, marginTop: 20 }}>
+        <Btn title={DUP.keepThis} onPress={() => done(() => merge(keep.id!, drop.id!, switchable && takeBarcode))} />
+        <Btn kind="gray" title={DUP.different} onPress={() => done(() => different(pair[0].id!, pair[1].id!))} />
+      </View>
+    </Sheet>
   )
 }

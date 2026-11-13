@@ -3,11 +3,12 @@ import { useMemo, useState } from 'react'
 import { Text, View } from 'react-native'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
-import type { RecipeItem } from '@/core/types'
+import type { MealSlot, RecipeItem } from '@/core/types'
 import { fmt, r0, r1 } from '@/core/domain/date'
 import { basisOf, headline, recipePerServing } from '@/core/domain/nutrition'
 import { checkRecipe, isCookedState } from '@/core/domain/checks'
 import { CAPTURE_ERR } from '@/core/domain/estimate'
+import { mealNow } from '@/core/domain/insights'
 import { allFoods, asIngredient, draftProblem, draftTotals, ingredientMatches, type RecipeDraft } from '@/screens/food/foodModel'
 import { RECIPES } from '@/copy/food'
 import { Btn, Card, List } from '../../lib/ui/kit'
@@ -16,6 +17,7 @@ import { FRow, Input, SearchBar } from '../../lib/ui/fields'
 import { Empty, Lbl, Sub } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
 import { Checks } from './common'
+import { RecipeLogView } from './RecipeLogView'
 
 /** `initialDraft` opens straight into the builder, e.g. "Save as recipe" from a logged meal. */
 export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; initialDraft?: { name: string; items: RecipeItem[] } }) {
@@ -29,8 +31,12 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
   const all = useMemo(() => allFoods(customFoods), [customFoods])
 
   const [draft, setDraft] = useState<RecipeDraft | null>(initialDraft ? { name: initialDraft.name, servings: '1', items: initialDraft.items } : null)
+  const [logging, setLogging] = useState<number | null>(null)
+  const [meal, setMeal] = useState<MealSlot>(mealNow())
   const [q, setQ] = useState('')
   const [moved, setMoved] = useState(false)
+
+  if (logging != null) return <RecipeLogView index={logging} meal={meal} setMeal={setMeal} onBack={() => setLogging(null)} onClose={onClose} animate={false} />
 
   if (draft) {
     const { servings: s, totals } = draftTotals(draft)
@@ -101,14 +107,13 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
       <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{RECIPES.intro}</Sub>
       {recipes.length ? (
         <List>
-          {recipes.map((r) => {
+          {recipes.map((r, ri) => {
             const per = recipePerServing(r)
             return (
               <Row key={r.id} title={r.name} sub={<Text style={num}>{+r.servings > 1 ? RECIPES.servingsLine(r.servings) : ''}{gentle ? '' : `${fmt(per.k)} kcal · `}{RECIPES.perServing(r0(per.p))}</Text>}
                 right={
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    {/* TODO(N5): Log opens the recipe log view once N1's 5-up scale lands */}
-                    <Btn small kind="tinted" title={RECIPES.log} onPress={() => setMoved(true)} />
+                    <Btn small kind="tinted" title={RECIPES.log} onPress={() => { setMoved(true); setLogging(ri) }} />
                     <NavBtn title={RECIPES.edit} onPress={() => { setMoved(true); setDraft({ id: r.id, name: r.name, servings: String(r.servings), items: r.items.map((i) => ({ ...i })) }) }} />
                   </View>
                 } />

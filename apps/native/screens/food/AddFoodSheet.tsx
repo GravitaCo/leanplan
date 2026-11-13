@@ -19,12 +19,15 @@ import { ADD_FOOD, DUP, FOOD } from '@/copy/food'
 import { SCAN_ENTRY } from '@/copy/scan'
 import { NEEDS_NET } from '@/copy/connection'
 import { List } from '../../lib/ui/kit'
-import { AddC, ConnectionPill, Row, Sheet, XBtn } from '../../lib/ui/primitives'
+import { AddC, ConnectionPill, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { SearchBar } from '../../lib/ui/fields'
 import { Empty, Foot, Lbl } from '../../lib/ui/text'
 import { useTokens } from '../../lib/theme'
 import { MealSeg } from './common'
 import { QuickEstimateView } from './QuickEstimateView'
+import { PortionView } from './PortionView'
+import { RecipeLogView } from './RecipeLogView'
+import { SameFoodView } from './DuplicateSheets'
 import { CreateFoodView } from './CreateFoodView'
 
 /** What a scan view gets inside the Add food sheet. */
@@ -55,6 +58,15 @@ export function AddFoodSheet({ initialMeal, initialView, onClose, scan }: { init
   const go = (v: Step) => { setMoved(true); setView(v) }
   const back = initialView ? undefined : () => go({ kind: 'search' })
   const common = { meal, setMeal, onBack: back, onClose, animate: !moved }
+  const customFoods = useStore((s) => s.data.customFoods)
+  const cur = useStore((s) => s.cur)
+
+  if (view.kind === 'same') {
+    const pair = view.ids.map((id) => (customFoods || []).find((f) => f.id === id))
+    if (pair[0] && pair[1]) return <SameFoodView pair={[pair[0], pair[1]]} cur={cur} onBack={() => go({ kind: 'search' })} onClose={onClose} animate={!moved} />
+  }
+  if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
+  if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
 
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
   if (view.kind === 'create') {
@@ -64,8 +76,6 @@ export function AddFoodSheet({ initialMeal, initialView, onClose, scan }: { init
   if ((view.kind === 'scan' || view.kind === 'label') && scan) {
     return <>{scan.render(view.kind, { ...common, toPortion: (food, custom) => go({ kind: 'portion', food, custom }), toCreate: (o) => go({ kind: 'create', ...o }) })}</>
   }
-  // TODO(N5): the portion, recipe and Same food? views, once N1's slider, stepper, 5-up scale,
-  // hint chip and radio rows land; until then those rows stay on the search view
   return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} canScan={!!scan} />
 }
 
@@ -128,11 +138,10 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
         {cf.length > 0 && (
           <>
             <Lbl>{ADD_FOOD.myFoods}</Lbl>
-            {/* dup-3: one quiet row while two saved foods look the same; TODO(N5): opens Same food? with N1's radio rows */}
+            {/* dup-3: one quiet row while two saved foods look the same */}
             {pair && <List><Row title={DUP.looksSame} sub={pair[0].n} square={{ icon: 'copy', fill: t.tintSoft, ink: t.tint }} onPress={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></List>}
             <List>
-              {/* TODO(N1-followup): the web's delete is a `.navbtn` ✕ in --label3, not the round `.x-btn` */}
-              {cf.map((f, ci) => foodRow(f, mineIndex(ci), <XBtn label={ADD_FOOD.deleteFood(f.n)} onPress={() => confirmDelete(f, ci)} />))}
+              {cf.map((f, ci) => foodRow(f, mineIndex(ci), <NavBtn icon="x" muted label={ADD_FOOD.deleteFood(f.n)} onPress={() => confirmDelete(f, ci)} />))}
             </List>
             {pair && <Foot>{ADD_FOOD.pairFoot}</Foot>}
           </>
@@ -153,8 +162,8 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
 
   return (
     <Sheet title={ADD_FOOD.title} tall onClose={onClose} animate={animate} right={online ? undefined : <ConnectionPill />}>
-      {/* TODO(N1-followup): the search bar's scan button, an icon-only `.navbtn` labelled SCAN_ENTRY.barcode */}
-      <SearchBar label={ADD_FOOD.searchLabel} value={q} onChangeText={setQ} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))} autoFocus autoCorrect={false} autoCapitalize="none" />
+      <SearchBar label={ADD_FOOD.searchLabel} value={q} onChangeText={setQ} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))} autoFocus autoCorrect={false} autoCapitalize="none"
+        right={<NavBtn icon="barcode" label={SCAN_ENTRY.barcode} onPress={toScan('scan')} style={{ paddingVertical: 4, paddingHorizontal: 2 }} />} />
       <View style={{ marginTop: 10, marginBottom: 2 }}><MealSeg value={meal} onChange={setMeal} /></View>
       {body}
       <List icons style={{ marginTop: 18 }}>

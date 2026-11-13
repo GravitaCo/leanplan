@@ -19,9 +19,8 @@ export function Checks({ checks, ok, onFix }: { checks: Check[]; ok?: string; on
   return (
     <>
       {checks.map((c, i) => (
-        // TODO(N1-followup): the web's fix button is `.btn.sm.tinted`; Note's action is an ink small Btn
         <Note key={i} kind={c.level === 'warn' ? 'warn' : 'info'} status
-          action={c.fix && onFix ? { title: c.fix.label, onPress: () => onFix(c.fix!.k) } : undefined}>{c.msg}</Note>
+          action={c.fix && onFix ? { title: c.fix.label, onPress: () => onFix(c.fix!.k), kind: 'tinted' } : undefined}>{c.msg}</Note>
       ))}
     </>
   )

@@ -3,10 +3,10 @@ import { Text, View } from 'react-native'
 import { useStore } from '@/store/store'
 import { CAPTURE_LABEL, biggestMarginSource, dayMargin } from '@/core/domain/estimate'
 import { MARGIN } from '@/copy/food'
-import { Card } from '../../lib/ui/kit'
+import { Big, Card } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Prose, Sub } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { tx, useTokens } from '../../lib/theme'
 
 export function MarginSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
@@ -16,8 +16,7 @@ export function MarginSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={MARGIN.title} left={null} onClose={onClose} right={<NavBtn bold title={MARGIN.done} onPress={onClose} />}>
       <Card plain style={{ alignItems: 'center', marginBottom: 10 }}>
-        {/* `.big` 30 pt with its `small` unit; TODO(N1-followup): `.big` preset */}
-        <Text style={[tx(30, 600, 1.1), num, { color: t.label }]}>± {margin}<Text style={[tx(17, 600), { color: t.label2 }]}> kcal</Text></Text>
+        <Big center value={`± ${margin}`} unit="kcal" />
         <Sub>{MARGIN.todaysMargin}</Sub>
       </Card>
       <View style={{ paddingHorizontal: 4 }}>

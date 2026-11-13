@@ -15,7 +15,7 @@ import { foodDay, mealKcal, mealNames, type LoggedRow } from '@/screens/food/foo
 import { FOOD } from '@/copy/food'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { KcalBar, MacroTrio } from '../../lib/ui/charts'
-import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
+import { Card, DashAdd, LinkBtn, List, RoundBtn } from '../../lib/ui/kit'
 import { AddC, PageHeader, Row, Sheet } from '../../lib/ui/primitives'
 import { DayNav } from '../../lib/ui/WeekStrip'
 import { Foot, GrpH, Lbl } from '../../lib/ui/text'
@@ -24,10 +24,12 @@ import { MarginSheet } from './MarginSheet'
 import { AddFoodSheet } from './AddFoodSheet'
 import { MealsSheet } from './MealsSheet'
 import { SuggestSheet } from './SuggestSheet'
+import { EditEntrySheet } from './EditEntrySheet'
+import { RecipeLogView } from './RecipeLogView'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
-  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | { k: 'suggest' }
+  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | { k: 'suggest' } | { k: 'logRecipe'; ri: number }
   | { k: 'pickYesterday' } | { k: 'pickRecipe' } | null
 
 export function FoodScreen() {
@@ -37,6 +39,7 @@ export function FoodScreen() {
   const repeatYesterday = useStore((s) => s.repeatYesterday)
   const logRecipe = useStore((s) => s.logRecipe)
   const [sheet, setSheet] = useState<SheetKind>(null)
+  const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
   const fd = foodDay(data, cur)
   const { gentle, fv, noKcal, totals: tot, target: tg, range: r, status: st, margin, words: mw, proteinRange: pRange, groups, sameAsYesterday, saveable } = fd
@@ -60,8 +63,7 @@ export function FoodScreen() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView testID="food-screen" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 12 }}>
         <PageHeader eyebrow={<DayNav />} title={FOOD.title}
-          // TODO(N1-followup): `.roundbtn` (44 pt ink circle, plus 22/2.4), label FOOD.addFood
-          right={<Btn small kind="ink" title="" icon="plus" label={FOOD.addFood} onPress={() => setSheet({ k: 'add' })} />} />
+          right={<RoundBtn label={FOOD.addFood} onPress={() => setSheet({ k: 'add' })} />} />
 
         <View accessibilityLabel={FOOD.daySoFar}>
           <Card>
@@ -112,8 +114,7 @@ export function FoodScreen() {
         {MEALS.map((m) => {
           const items = groups[m]
           if (!items.length) {
-            // TODO(N1-followup): `.dash-add` (56 pt, 1.5 px dashed --dash, radius 18, tinted 16 pt semibold, plus 18/2.6)
-            return <View key={m} style={{ marginTop: 12 }}><Btn kind="tinted" icon="plus" title={MEAL_LABEL[m]} onPress={() => setSheet({ k: 'add', meal: m })} /></View>
+            return <DashAdd key={m} title={MEAL_LABEL[m]} stroke={2.6} onPress={() => setSheet({ k: 'add', meal: m })} />
           }
           return (
             <View key={m} accessibilityLabel={MEAL_LABEL[m]}>
@@ -170,9 +171,9 @@ export function FoodScreen() {
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
       {sheet?.k === 'recipes' && <MealsSheet initialDraft={sheet.draft} onClose={() => setSheet(null)} />}
-      {/* TODO(N5): a suggestion opens the recipe log view once N1's 5-up scale lands */}
-      {sheet?.k === 'suggest' && <SuggestSheet onClose={() => setSheet(null)} onLog={() => {}} onRecipes={() => setSheet({ k: 'recipes' })} />}
-      {/* TODO(N5): Edit entry, once N1's slider lands */}
+      {sheet?.k === 'suggest' && <SuggestSheet onClose={() => setSheet(null)} onLog={(ri) => { setLogMeal(mealNow()); setSheet({ k: 'logRecipe', ri }) }} onRecipes={() => setSheet({ k: 'recipes' })} />}
+      {sheet?.k === 'logRecipe' && <RecipeLogView index={sheet.ri} meal={logMeal} setMeal={setLogMeal} onBack={() => setSheet({ k: 'suggest' })} onClose={() => setSheet(null)} animate={false} />}
+      {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}
     </View>
   )
 }
