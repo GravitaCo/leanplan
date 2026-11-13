@@ -3,7 +3,7 @@
  * strip and its key, the plan tiles, and a week as the Plan tab lists it.
  */
 import { Image, Pressable, Text, View, type DimensionValue } from 'react-native'
-import Svg, { Defs, Line, Pattern, Rect } from 'react-native-svg'
+import Svg, { Defs, Line, LinearGradient, Pattern, Rect, Stop } from 'react-native-svg'
 import type { PlanWeek, Routine } from '@/core/types'
 import { DAY_NAME } from '@/core/domain/date'
 import { WEEK_ORDER } from '@/core/domain/week'
@@ -81,20 +81,20 @@ export function TimelineKey() {
   return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>{k('full', 'Full weeks')}{k('easier', 'Easier weeks')}{k('after', 'Maintenance, after')}</View>
 }
 
-/** The photograph's bottom shade (`.ptile .shade`: clear to 45%, then to 72% black). */
+/** A vertical shade over a photograph (`.ptile .shade`, `.pp-hero .shade`): black at each stop's alpha. */
+let gid = 0
 export function Shade({ stops }: { stops: [number, number][] }) {
-  // a vertical gradient drawn as thin bands, so no gradient library is needed
-  const bands = 24
-  const at = (y: number) => {
-    for (let i = 1; i < stops.length; i++) {
-      const [y0, a0] = stops[i - 1], [y1, a1] = stops[i]
-      if (y <= y1) return a0 + ((a1 - a0) * (y - y0)) / Math.max(1e-6, y1 - y0)
-    }
-    return stops[stops.length - 1][1]
-  }
+  const id = `sh${++gid}`
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-      {Array.from({ length: bands }, (_, i) => <View key={i} style={{ flex: 1, backgroundColor: `rgba(0,0,0,${at((i + 0.5) / bands).toFixed(3)})` }} />)}
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            {stops.map(([at, a], i) => <Stop key={i} offset={at} stopColor="#000" stopOpacity={a} />)}
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
     </View>
   )
 }

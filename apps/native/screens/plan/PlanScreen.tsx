@@ -279,10 +279,12 @@ export function PlanScreen() {
           : 'Tap a day to change it. Changes repeat every week. Aim for three lifts a week with a rest day between where you can. Legs, then Push, then Pull means back-to-back sessions train different muscles. Daily steps burn more across a week than the gym sessions do.'}
       </Foot>
 
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+      {/* `.tiles.plantiles` asks for two columns, but a later `.tiles` rule (theme.css:1162) stacks
+          them on the web today; native matches what the web shows (flagged to the lead) */}
+      <View style={{ gap: 10, marginTop: 16 }}>
         {([['workouts', SESSIONS.length - 1 + mine.length, 'Workouts'], ['library', EXERCISES.length, 'Exercise library']] as const).map(([k, n, label]) => (
           <Pressable key={k} accessibilityRole="button" accessibilityLabel={`${n} ${label}`} onPress={() => setSheet(k)}
-            style={({ pressed }) => ({ flex: 1, backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 2, opacity: pressed ? 0.7 : 1 })}>
+            style={({ pressed }) => ({ backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 2, opacity: pressed ? 0.7 : 1 })}>
             <Text style={[font(400), num, { fontSize: 26, lineHeight: 29, color: t.label }]}>{n}</Text>
             <Text style={[font(500), { fontSize: 15, color: t.label }]}>{label}</Text>
           </Pressable>
