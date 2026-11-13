@@ -4,8 +4,8 @@
  * energy, soreness on lifting days, hunger and a note. The decisions (what a night saves, the wake
  * prefill) and the words are the web's own exports; only the controls are native.
  */
-import { useState } from 'react'
-import { Pressable, Text, TextInput, View } from 'react-native'
+import { useState, type ReactNode } from 'react'
+import { Pressable, Text, TextInput, View, type ViewStyle } from 'react-native'
 import { useStore } from '@/store/store'
 import { nowIso } from '@/data/supabase'
 import { sleepMoreOpen } from '@/data/deviceOnly'
@@ -17,9 +17,47 @@ import { isBuiltinLift, workoutsOf } from '@/core/domain/sessions'
 import { SLEEP_BANDS, isHHMM } from '@/core/domain/checkin'
 import { bandLabel } from '@/core/domain/sleep'
 import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/checkinNight'
-import { font, num, useTokens } from '../../lib/theme'
+import { BTN, num, tx, useTokens } from '../../lib/theme'
 import { normTime } from './wakeTime'
-import { Chevron, Foot, Lbl, List, NavBtn, Scale, Sheet } from './ui'
+import { List, slop } from '../../lib/ui/kit'
+import { NavBtn, Sheet } from '../../lib/ui/primitives'
+import { Chevron } from '../../lib/ui/icons'
+
+/* TODO(N1-followup): `.lbl`, `.foot` and `.scale` are shared classes N1's kit doesn't have yet; until
+   they land, they are drawn here from the web markup (theme.css) and swapped when they do. */
+
+/** `.lbl` */
+function Lbl({ children, top = 18 }: { children: ReactNode; top?: number }) {
+  const t = useTokens()
+  return <Text style={[tx(13, 500), { color: t.label2, paddingTop: top, paddingHorizontal: 4, paddingBottom: 8 }]}>{children}</Text>
+}
+
+/** `.foot` */
+function Foot({ children }: { children: ReactNode }) {
+  const t = useTokens()
+  return <Text style={[tx(13, 400, 1.38), { color: t.label2, paddingTop: 7, paddingHorizontal: 16 }]}>{children}</Text>
+}
+
+/** `.scale` in a sheet: five equal buttons on --elev, the chosen one in the tint (or `onStyle`). */
+function Scale({ labels, value, onChange, renderLabel, onStyle }: {
+  labels: readonly string[]; value: number; onChange: (v: number) => void
+  renderLabel?: (l: string, on: boolean) => ReactNode; onStyle?: ViewStyle
+}) {
+  const t = useTokens()
+  return (
+    <View style={{ flexDirection: 'row', gap: 6 }}>
+      {labels.map((l, i) => {
+        const on = value === i + 1
+        return (
+          <Pressable key={l} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(on ? 0 : i + 1)} hitSlop={slop(0, 32)}
+            style={[{ flex: 1, minWidth: 0, borderRadius: 10, paddingVertical: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: on && !onStyle ? t.tint : t.elev }, on && onStyle]}>
+            {renderLabel ? renderLabel(l, on) : <Text style={[tx(13, 400, 1.2, BTN), { textAlign: 'center', color: on ? t.onTint : t.label }]}>{l}</Text>}
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
 
 export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSupport: () => void }) {
   const t = useTokens()
@@ -71,30 +109,30 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
           {/* .ck-more: a quiet row with a chevron that turns when open */}
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: more }} onPress={toggleMore}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 4, marginTop: 4 }}>
-            <Text style={[font(400), { fontSize: 15, color: t.tint, flex: 1 }]}>{CHECKIN_SLEEP.more}</Text>
-            <Chevron rotate={more ? 90 : 0} />
+            <Text style={[tx(15, 400), { color: t.tint, flex: 1 }]}>{CHECKIN_SLEEP.more}</Text>
+            <Chevron color={t.label3} rotate={more ? 90 : 0} />
           </Pressable>
           {more && (
             <View>
-              <Lbl style={{ paddingTop: 0 }}>{CHECKIN_SLEEP.howLong}</Lbl>
+              <Lbl top={0}>{CHECKIN_SLEEP.howLong}</Lbl>
               {/* B10: a picked band is the neutral range grey with a 2 px ring */}
               <Scale labels={SLEEP_BANDS} value={band ? SLEEP_BANDS.indexOf(band) + 1 : 0}
                 onChange={(v) => { setBand(v ? SLEEP_BANDS[v - 1] : ''); setTouched(true) }}
                 onStyle={{ backgroundColor: t.band, borderWidth: 2, borderColor: t.label }}
                 renderLabel={(b, on) => (
-                  <Text style={[font(on ? 600 : 400), { fontSize: 13, lineHeight: 16, textAlign: 'center', color: t.label }]}>
-                    <Text style={[font(700), num, { fontSize: 14 }]}>{bandLabel(b as SleepBand)}</Text>{'\n'}{CHECKIN_SLEEP.hours}
+                  <Text style={[tx(13, on ? 600 : 400, 1.2, BTN), { textAlign: 'center', color: t.label }]}>
+                    <Text style={[tx(14, 700, 1.2, BTN), num]}>{bandLabel(b as SleepBand)}</Text>{'\n'}{CHECKIN_SLEEP.hours}
                   </Text>
                 )} />
-              <List bg={t.elev} style={{ marginTop: 10 }}>
+              <List style={{ marginTop: 10 }}>
                 {/* .frow: the label and a 24-hour time field (the web's <input type="time">) */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 16, gap: 12 }}>
-                  <Text style={[font(400), { fontSize: 17, color: t.label, flex: 1 }]} numberOfLines={1}>{CHECKIN_SLEEP.woke}</Text>
+                  <Text style={[tx(17, 400), { color: t.label, flex: 1 }]} numberOfLines={1}>{CHECKIN_SLEEP.woke}</Text>
                   <TextInput accessibilityLabel={CHECKIN_SLEEP.woke} value={wakeAt} placeholder="--:--" placeholderTextColor={t.label3}
                     keyboardType="numbers-and-punctuation" maxLength={5}
                     onChangeText={(v) => { setWakeAt(v); setTouched(true) }}
                     onBlur={() => { if (wakeAt && !isHHMM(wakeAt)) setWakeAt(normTime(wakeAt)) }}
-                    style={[font(400), num, { fontSize: 17, color: t.label, minWidth: 64, textAlign: 'right', paddingVertical: 10 }]} />
+                    style={[tx(17, 400), num, { color: t.label, minWidth: 64, textAlign: 'right', paddingVertical: 10 }]} />
                 </View>
               </List>
               <Foot>{CHECKIN_SLEEP.foot}</Foot>
@@ -111,7 +149,7 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
       <Scale labels={HUNGER} value={hunger} onChange={setHunger} />
       <Lbl>Note</Lbl>
       <TextInput multiline numberOfLines={3} value={note} placeholder="Anything worth remembering? Optional." placeholderTextColor={t.label3} onChangeText={setNote}
-        style={[font(400), { fontSize: 17, color: t.label, backgroundColor: t.elev, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, minHeight: 84, textAlignVertical: 'top' }]} />
+        style={[tx(17, 400), { color: t.label, backgroundColor: t.elev, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, minHeight: 84, textAlignVertical: 'top' }]} />
       {WELLBEING_ENABLED
         ? (
           <>

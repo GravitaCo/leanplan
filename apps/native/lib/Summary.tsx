@@ -10,7 +10,6 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectAskCtx, useStore } from '@/store/store'
 import { canSaveHealthAnswers, healthDeclined, healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
@@ -41,11 +40,12 @@ import { BANNER_ASK, checkedIn, pillarsOn, summaryDue } from '@/screens/today/su
 import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from '@/copy/summary'
 import { useLowMoodSignpost } from '@/screens/today/lowMoodSignpost'
 import { FOOD9 } from '@/copy/onboardingApp'
-import { Card, LinkBtn, PageHeader, Tile } from './ui/kit'
+import { Banner, Btn, Card, Chip, Chips, LinkBtn, List, Tile } from './ui/kit'
+import { CatHead, PageHeader } from './ui/primitives'
+import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
-import { font, num, useTokens } from './theme'
-import { Banner, BannerText, Button, Chevron, Chip, Li, List, T, TIcon, ToastHost } from '../screens/today/ui'
+import { BTN, font, num, tx, useTokens } from './theme'
 import { MindCard } from '../screens/today/MindCard'
 import { LowMoodBanner } from '../screens/today/LowMoodBanner'
 import { CheckinSheet } from '../screens/today/CheckinSheet'
@@ -82,10 +82,7 @@ export function Summary() {
   const closeReview = useStore((s) => s.closeReview)
   if (reviewOpen) {
     return (
-      <View style={{ flex: 1 }}>
-        <WeeklyReviewScreen onBack={closeReview} onPlanSheet={(_id, then) => { notYet('Your plan', 'Plan'); then?.() }} />
-        <ToastHost />
-      </View>
+      <WeeklyReviewScreen onBack={closeReview} onPlanSheet={(_id, then) => { notYet('Your plan', 'Plan'); then?.() }} />
     )
   }
   return <SummaryPage />
@@ -93,7 +90,6 @@ export function Summary() {
 
 function SummaryPage() {
   const t = useTokens()
-  const insets = useSafeAreaInsets()
   const data = useStore((s) => s.data)
   const cur = useStore((s) => s.cur)
   const toggleSupp = useStore((s) => s.toggleSupp)
@@ -240,42 +236,43 @@ function SummaryPage() {
     offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin))
 
   const openCheckin = () => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))
-  const pk = (color: string, label: string) => <T w={600} s={13} c={color}>{label}</T>
+  const pk = (color: string, label: string) => <Text style={[tx(13, 600), { color: color }]}>{label}</Text>
   const sub = { fontSize: 13, color: t.label2 }
   const psq = (bg: string, icon: ReactNode, size = 40) => <View style={{ width: size, height: size, borderRadius: size === 56 ? 14 : 12, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>{icon}</View>
 
   // ---------- Move, Weight ----------
   const showWeight = !quiet && on.food
   const showMove = on.move
-  const moveIcon = (size: number) => <TIcon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={size} color={t.label} />
+  const moveIcon = (size: number) => <Icon name={isRest ? 'leaf' : logged ? 'checkc' : 'dumbbell'} size={size} color={t.label} />
   const startBtn = (h: number) => !logged && !isRest
-    ? <Button title="Start" onPress={() => openTrain(first!)} h={h} size={h === 40 ? 15 : 14} align={h === 40 ? 'center' : 'flex-start'} style={{ paddingHorizontal: h === 40 ? 18 : 14 }} />
+    // `.mv .btn.sm` (40, centred in the row) and `.tile.mvt .btn.sm` (32, 14 pt)
+    ? <Btn small title="Start" onPress={() => openTrain(first!)} style={{ minHeight: h, height: h, borderRadius: h / 2, paddingHorizontal: h === 40 ? 18 : 14, alignSelf: h === 40 ? 'center' : 'flex-start' }} textStyle={h === 40 ? undefined : { fontSize: 14 }} />
     : null
   const weightTile = !fv.weightBack || p.reviewWeight !== true ? (
     <Tile onPress={() => setSheet({ k: 'weight' })} label="Weight" style={{ flex: 1 }}>
-      <T w={600} s={13} c={t.label2}>Weight</T>
-      <T w={600} s={19} style={{ marginTop: 2, lineHeight: 29 }}>{day.weight ? 'Logged' : 'Add'}</T>
-      <T s={12} c={t.label2}>{day.weight ? 'Today' : 'Whenever it suits you'}</T>
+      <Text style={[tx(13, 600), { color: t.label2 }]}>Weight</Text>
+      <Text style={[tx(19, 600), { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>{day.weight ? 'Logged' : 'Add'}</Text>
+      <Text style={[tx(12, 400), { color: t.label2 }]}>{day.weight ? 'Today' : 'Whenever it suits you'}</Text>
     </Tile>
   ) : (
     <Tile onPress={() => setSheet({ k: 'weight' })} label="Weight" style={{ flex: 1 }}>
-      <T w={600} s={13} c={t.label2}>Weight</T>
+      <Text style={[tx(13, 600), { color: t.label2 }]}>Weight</Text>
       {lastW
         ? <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
-            <Text style={[font(600), num, { fontSize: 26, lineHeight: 29, letterSpacing: -0.5, color: t.label }]}>{r1(data.days[lastW].weight!)}</Text>
-            <Text style={[font(600), { fontSize: 15, color: t.label2 }]}>kg</Text>
+            <Text style={[tx(26, 600), num, { lineHeight: 29, letterSpacing: -0.5, color: t.label }]}>{r1(data.days[lastW].weight!)}</Text>
+            <Text style={[tx(15, 600), { color: t.label2 }]}>kg</Text>
           </View>
-        : <T w={600} s={19} style={{ marginTop: 2, lineHeight: 29 }}>Add</T>}
-      <T s={12} c={t.label2}>{lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you'}</T>
+        : <Text style={[tx(19, 600), { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>Add</Text>}
+      <Text style={[tx(12, 400), { color: t.label2 }]}>{lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you'}</Text>
       {/* .wt-trend; a hard day (nutrition R5, R6): the last weigh-in and when it was, no trend */}
-      {wRow && !hard ? <T w={500} s={13} style={{ lineHeight: 17, marginTop: 6 }}>{weightTileWords(wRow)}</T> : null}
+      {wRow && !hard ? <Text style={[tx(13, 500), { color: t.label }, { lineHeight: 17, marginTop: 6 }]}>{weightTileWords(wRow)}</Text> : null}
     </Tile>
   )
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" name={p.name} onAvatar={() => setTab('profile')} />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" />
       <WeekStrip />
       {/* ob2-0b's setup card belongs to Onboarding (N11), behind ONBOARDING_ENABLED */}
 
@@ -289,15 +286,15 @@ function SummaryPage() {
             onMakePlan={() => notYet('Make it a plan', 'Plan')} plans={p.plans} day={cur} />
         ) : (
           <Tile onPress={openCheckin} label="Mind" style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            {psq(t.mindFill, <TIcon name="smile" size={20} color={t.label} />)}
+            {psq(t.mindFill, <Icon name="smile" size={20} color={t.label} />)}
             <View style={{ flex: 1, minWidth: 0 }}>
               {pk(t.mindInk, 'Mind')}
-              <T w={500} s={17}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</T>
-              <T s={13} c={t.label2} style={{ marginTop: 1 }}>{day.checkin
+              <Text style={[tx(17, 500), { color: t.label }]}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</Text>
+              <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{day.checkin
                 ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
-                : 'Mood, sleep, stress and energy · 20 seconds'}</T>
+                : 'Mood, sleep, stress and energy · 20 seconds'}</Text>
             </View>
-            <Chevron />
+            <Chevron color={t.label3} />
           </Tile>
         )}
 
@@ -307,64 +304,59 @@ function SummaryPage() {
           // .card.rv-due
           <View style={{ backgroundColor: t.card, borderRadius: t.radius, flexDirection: 'row', alignItems: 'center' }}>
             <Pressable accessibilityRole="button" onPress={openReview} style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingLeft: 16, paddingRight: 4, opacity: pressed ? 0.7 : 1 })}>
-              {psq(t.mindFill, <TIcon name="review" size={20} color={t.label} />)}
+              {psq(t.mindFill, <Icon name="review" size={20} color={t.label} />)}
               <View style={{ flex: 1 }}>
                 {pk(t.mindInk, 'Weekly review')}
-                <T w={500} s={17}>Your week</T>
-                <T s={13} c={t.label2} style={{ marginTop: 1 }}>A two-minute look back</T>
+                <Text style={[tx(17, 500), { color: t.label }]}>Your week</Text>
+                <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>A two-minute look back</Text>
               </View>
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Hide until next week" onPress={() => setPrefs({ reviewHidden: reviewDayOn(cur, p.reviewDay ?? 0) })}
               style={{ width: 44, height: 44, marginRight: 6, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
-              <TIcon name="x" size={20} stroke={2.2} color={t.label2} />
+              <Icon name="x" size={20} stroke={2.2} color={t.label2} />
             </Pressable>
           </View>
         )}
 
         {keepAsk && shown('review-keep') && (
-          <Banner icon={<TIcon name="bell" color={t.mindInk} />}>
-            <BannerText title="Keep the weekly reminder?" body="It’s paused for now. Some weeks you won’t need it, and that’s fine." />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-              <Chip onPress={() => keepReviewPush(true)}>Keep it</Chip>
-              <Chip onPress={() => keepReviewPush(false)}>Turn it off</Chip>
+          <Banner icon="bell" iconColor={t.mindInk} title="Keep the weekly reminder?" body="It’s paused for now. Some weeks you won’t need it, and that’s fine.">
+            <View style={{ marginTop: 8 }}>
+              <Chips>
+                <Chip title="Keep it" onPress={() => keepReviewPush(true)} />
+                <Chip title="Turn it off" onPress={() => keepReviewPush(false)} />
+              </Chips>
             </View>
           </Banner>
         )}
 
         {prompt === 'missed' && promptOk && (
-          <Banner icon={<TIcon name="leaf" color={t.mindInk} />} onDismiss={() => setDismissedMissed(true)}>
-            <BannerText title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." />
-          </Banner>
+          <Banner icon="leaf" iconColor={t.mindInk} onDismiss={() => setDismissedMissed(true)} title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." />
         )}
 
         {prompt === 'suggest' && promptOk && suggest && (
           // .card.dayopt
-          <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16 }}>
-            <T w={600} s={17} style={{ lineHeight: 22, marginBottom: 10 }}>{suggest.up ? '' : 'Weeks vary. '}Your logged sessions over the last 4 weeks fit <Text style={font(700)}>{ACTIVITY[suggest.level].label.replace(/ \(.*\)$/, '')}</Text> best.
-              {suggest.up ? ' Want to update your activity level to match?' : ' If you do more than you log, your current setting may still be right. Want to update it?'}</T>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              <Chip onPress={() => {
+          <Card plain>
+            <Text style={[tx(17, 600), { color: t.label }, { lineHeight: 22, marginBottom: 10 }]}>{suggest.up ? '' : 'Weeks vary. '}Your logged sessions over the last 4 weeks fit <Text style={font(700)}>{ACTIVITY[suggest.level].label.replace(/ \(.*\)$/, '')}</Text> best.
+              {suggest.up ? ' Want to update your activity level to match?' : ' If you do more than you log, your current setting may still be right. Want to update it?'}</Text>
+            <Chips>
+              <Chip title="Update" onPress={() => {
                 setPrefs({ activityLevel: suggest.level, activityAsked: cur, activityMult: undefined })
                 showToast('Activity level updated. Your targets only change if you choose to.')
                 openProfile('metrics')
-              }}>Update</Chip>
-              <Chip onPress={() => setPrefs({ activityAsked: cur })}>Keep as is</Chip>
-            </View>
-          </View>
+              }} />
+              <Chip title="Keep as is" onPress={() => setPrefs({ activityAsked: cur })} />
+            </Chips>
+          </Card>
         )}
 
         {prompt === 'burn' && promptOk && (
-          <Banner icon={<TIcon name="info" color={t.foodInk} />} onDismiss={() => setPrefs({ burnNoteSeen: true })}>
-            <BannerText title="Your range on workout days has changed." body={`${p.activityLevel === 'sedentary'
-              ? 'Workouts now add only the energy above what you use at rest, so they are no longer counted twice. '
-              : 'It now leaves workouts out, because your activity level already includes your training. '}Past days are unchanged.`} />
-          </Banner>
+          <Banner icon="info" iconColor={t.foodInk} onDismiss={() => setPrefs({ burnNoteSeen: true })} title="Your range on workout days has changed." body={`${p.activityLevel === 'sedentary'
+            ? 'Workouts now add only the energy above what you use at rest, so they are no longer counted twice. '
+            : 'It now leaves workouts out, because your activity level already includes your training. '}Past days are unchanged.`} />
         )}
 
         {due.length > 0 && !reviewDue && shown('plan-review') && (
-          <Banner icon={<TIcon name="bulb" color={t.mindInk} />} onPress={openPlanReview}>
-            <BannerText title="How are your plans going?" body={`A 10-second check-in on ${due.length === 1 ? 'your plan' : `${due.length} plans`}. Plans work best when you revisit them.`} />
-          </Banner>
+          <Banner icon="bulb" iconColor={t.mindInk} onPress={openPlanReview} title="How are your plans going?" body={`A 10-second check-in on ${due.length === 1 ? 'your plan' : `${due.length} plans`}. Plans work best when you revisit them.`} />
         )}
 
         {/* ---------- Food ---------- */}
@@ -372,95 +364,92 @@ function SummaryPage() {
           <Card>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               {pk(t.foodInk, 'Food')}
-              <LinkBtn title="Open" onPress={() => setTab('food')} style={{ paddingVertical: 6, paddingHorizontal: 4 }} />
+              <LinkBtn title="Open" onPress={() => setTab('food')} />
             </View>
             {yes ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
-                <T w={600} s={22} style={{ lineHeight: 26 }}>{FOOD9.meals(mw.slots.length)}</T>
-                <T s={15} c={t.label2} style={{ lineHeight: 22 }}>{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</T>
+                <Text style={[tx(22, 600), { color: t.label }, { lineHeight: 26 }]}>{FOOD9.meals(mw.slots.length)}</Text>
+                <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</Text>
               </Pressable>
             ) : some && gentle ? (
               <View style={{ gap: 8 }}>
                 <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
-                  <T w={600} s={22} style={{ lineHeight: 26 }}>{st.gentle}</T>
-                  <T s={15} c={t.label2} style={{ lineHeight: 22 }}>{FOOD9.slots(mw.slots, mw.withProtein)}</T>
+                  <Text style={[tx(22, 600), { color: t.label }, { lineHeight: 26 }]}>{st.gentle}</Text>
+                  <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{FOOD9.slots(mw.slots, mw.withProtein)}</Text>
                 </Pressable>
-                {!p.pregnancy?.flagged && <LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={{ fontSize: 14 }} />}
+                {!p.pregnancy?.flagged && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={{ fontSize: 14, paddingVertical: 0, paddingHorizontal: 0 }} /></View>}
               </View>
             ) : (
               <>
                 <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 14 }}>
                   {gentle
-                    ? <T w={600} s={24} style={{ lineHeight: 29 }}>{st.gentle}</T>
+                    ? <Text style={[tx(24, 600), { color: t.label }, { lineHeight: 29 }]}>{st.gentle}</Text>
                     : (
                       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                        <Text style={[font(600), num, { fontSize: 44, lineHeight: 46, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
-                        <Text style={[font(400), num, { fontSize: 15, color: t.label2 }]}>of {fmt(r.lo)}–{fmt(r.hi)} kcal</Text>
+                        <Text style={[tx(44, 600), num, { lineHeight: 46, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
+                        <Text style={[tx(15, 400), num, { color: t.label2 }]}>of {fmt(r.lo)}–{fmt(r.hi)} kcal</Text>
                       </View>
                     )}
                   <KcalBar k={tot.k} lo={r.lo} hi={r.hi} />
                 </Pressable>
                 {!gentle && (
-                  <Text style={[font(400), num, { fontSize: 13, lineHeight: 18, color: t.label2 }]}>
+                  <Text style={[tx(13, 400), num, { lineHeight: 18, color: t.label2 }]}>
                     {some ? st.gentle : st.word}
                     {tot.k > 0 && <>{' · '}<Text accessibilityRole="link" accessibilityLabel="About this estimate" onPress={openMargin} style={{ color: t.tint }}>give or take {margin}</Text></>}
                   </Text>
                 )}
                 {some
-                  ? pRange && <Text style={[font(400), num, { fontSize: 13, lineHeight: 18, color: t.label2 }]}>{FOOD9.proteinRange(Math.round(tot.p), pRange.low, pRange.high)}</Text>
+                  ? pRange && <Text style={[tx(13, 400), num, { lineHeight: 18, color: t.label2 }]}>{FOOD9.proteinRange(Math.round(tot.p), pRange.low, pRange.high)}</Text>
                   : <MacroTrio p={tot.p} c={tot.c} f={tot.f} tp={tg.p} tc={tg.c} tf={tg.f} />}
               </>
             )}
-            <Button kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={openAddFood} h={48} size={16} icon={<TIcon name="plus" size={20} stroke={2.6} color={t.label} />} />
+            <Btn kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={openAddFood} style={{ minHeight: 48, borderRadius: 24 }} textStyle={{ fontSize: 16 }}
+              icon={<Icon name="plus" size={20} stroke={2.6} color={t.label} />} />
           </Card>
         )}
 
         {flags.length > 0 && on.food && shown('quick-check') && (
           <List>
             <View style={{ paddingTop: 14, paddingHorizontal: 16, paddingBottom: 6 }}>
-              {/* CatHead: the target icon and the label in --mind-ink */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                <TIcon name="target" size={20} color={t.mindInk} />
-                <T w={600} s={15} c={t.mindInk}>Worth a quick check</T>
-              </View>
-              <T s={15} c={t.label2}>{flags.length === 1 ? 'This estimate moves' : 'These estimates move'} your total the most. A quick tweak keeps your numbers honest.</T>
+              <CatHead color="mind" icon="target" label="Worth a quick check" />
+              <Text style={[tx(15, 400), { color: t.label2 }]}>{flags.length === 1 ? 'This estimate moves' : 'These estimates move'} your total the most. A quick tweak keeps your numbers honest.</Text>
             </View>
             {flags.slice(0, 3).map(({ x, i }) => (
-              <Li key={i} onPress={openEditEntry}>
+              <Pressable key={i} accessibilityRole="button" onPress={openEditEntry} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <T s={17} lines={1}>{x.n}</T>
-                  <T s={13} c={t.label2} lines={1} style={{ marginTop: 2 }}>{x.how ? CAPTURE_LABEL[x.how] : 'Estimate'}{gentle ? '' : ` · ± ${fmt(x.k * entryErr(x))} kcal`}</T>
+                  <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{x.n}</Text>
+                  <Text numberOfLines={1} style={[tx(13, 400), { color: t.label2 }, { marginTop: 2 }]}>{x.how ? CAPTURE_LABEL[x.how] : 'Estimate'}{gentle ? '' : ` · ± ${fmt(x.k * entryErr(x))} kcal`}</Text>
                 </View>
-                <T s={17} c={t.tint}>Adjust</T>
-              </Li>
+                <Text style={[tx(17, 400, 1.3, BTN), { color: t.tint }]}>Adjust</Text>
+              </Pressable>
             ))}
           </List>
         )}
 
         {on.food && (us.length > 0 || same) && (
           <View>
-            <Text style={[font(500), { fontSize: 13, color: t.label2, paddingTop: 18, paddingHorizontal: 4, paddingBottom: 8 }]}>Your usual {MEAL_LABEL[meal].toLowerCase()}</Text>
+            <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingHorizontal: 4, paddingBottom: 8 }]}>Your usual {MEAL_LABEL[meal].toLowerCase()}</Text>
             <List style={{ marginBottom: 8 }}>
               {same && (
-                <Li first onPress={() => repeatYesterday(meal)}>
+                <Pressable accessibilityRole="button" onPress={() => repeatYesterday(meal)} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <T s={17} lines={1}>{SAME_AS_YESTERDAY}</T>
-                    <T s={13} c={t.label2} style={[num, { marginTop: 2, lineHeight: 18 }]}>{same.sub}</T>
+                    <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{SAME_AS_YESTERDAY}</Text>
+                    <Text style={[tx(13, 400), { color: t.label2 }, [num, { marginTop: 2, lineHeight: 18 }]]}>{same.sub}</Text>
                   </View>
                   <AddCircle />
-                </Li>
+                </Pressable>
               )}
-              {us.map((u, i) => (
-                <Li key={u.n} first={!same && i === 0} onPress={() => logEntries(usualEntries(data, u.n, meal))}>
+              {us.map((u) => (
+                <Pressable key={u.n} accessibilityRole="button" onPress={() => logEntries(usualEntries(data, u.n, meal))} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <T s={17} lines={1}>{u.n}</T>
-                    <T s={13} c={t.label2} lines={1} style={{ marginTop: 2 }}>{portionText(u.last)}{gentle ? '' : ` · ${fmt(u.last.k)} kcal`}</T>
+                    <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{u.n}</Text>
+                    <Text numberOfLines={1} style={[tx(13, 400), { color: t.label2 }, { marginTop: 2 }]}>{portionText(u.last)}{gentle ? '' : ` · ${fmt(u.last.k)} kcal`}</Text>
                   </View>
                   <AddCircle />
-                </Li>
+                </Pressable>
               ))}
             </List>
-            {us.length > 0 && <Text style={[font(400), { fontSize: 13, lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }]}>Logged {us[0].count} times recently. One tap adds your usual portion.</Text>}
+            {us.length > 0 && <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }]}>Logged {us[0].count} times recently. One tap adds your usual portion.</Text>}
           </View>
         )}
 
@@ -474,8 +463,8 @@ function SummaryPage() {
                 <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2, alignItems: 'center', justifyContent: 'center' }}>{moveIcon(20)}</View>
               </View>
               <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
-                <T w={600} s={19} style={{ lineHeight: 23, letterSpacing: -0.2 }}>{moveTitle}</T>
-                <T s={12} c={t.label2}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</T>
+                <Text style={[tx(19, 600), { color: t.label }, { lineHeight: 23, letterSpacing: -0.2 }]}>{moveTitle}</Text>
+                <Text style={[tx(12, 400), { color: t.label2 }]}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</Text>
               </Pressable>
               {!logged && !isRest && <View style={{ marginTop: 10 }}>{startBtn(32)}</View>}
             </Tile>
@@ -487,18 +476,18 @@ function SummaryPage() {
             <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {psq(t.moveFill, moveIcon(20), 56)}
               <View style={{ flex: 1 }}>
-                <T w={600} s={17}>{moveTitle}</T>
-                <T s={13} c={t.label2} style={{ marginTop: 1 }}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</T>
+                <Text style={[tx(17, 600), { color: t.label }]}>{moveTitle}</Text>
+                <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</Text>
               </View>
-              {startBtn(40) ?? <Chevron />}
+              {startBtn(40) ?? <Chevron color={t.label3} />}
             </Pressable>
           </Card>
         )}
         {supps.length > 0 && (
           <Tile>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-              <T w={600} s={13} c={t.label2}>Supplements</T>
-              <T w={500} s={13} c={t.label2} style={num}>{suppsTaken} of {supps.length}</T>
+              <Text style={[tx(13, 600), { color: t.label2 }]}>Supplements</Text>
+              <Text style={[tx(13, 500), { color: t.label2 }, num]}>{suppsTaken} of {supps.length}</Text>
             </View>
             <View style={{ marginTop: 4 }}>
               {supps.map((s) => {
@@ -507,10 +496,10 @@ function SummaryPage() {
                   <Pressable key={s.id} accessibilityRole="checkbox" accessibilityState={{ checked: taken }} onPress={() => toggleSupp(s.id)}
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5, minHeight: 32 }}>
                     <View style={[{ width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }, taken ? { backgroundColor: t.tint } : { borderWidth: 1.5, borderColor: t.dash }]}>
-                      {taken && <TIcon name="check" size={20} stroke={3.6} color={t.onTint} />}
+                      {taken && <Icon name="check" size={20} stroke={3.6} color={t.onTint} />}
                     </View>
-                    <T s={14} style={{ flex: 1, minWidth: 0, lineHeight: 17 }}>{s.name}</T>
-                    <T s={12} c={t.label2} style={num}>{s.time}</T>
+                    <Text style={[tx(14, 400), { color: t.label }, { flex: 1, minWidth: 0, lineHeight: 17 }]}>{s.name}</Text>
+                    <Text style={[tx(12, 400), { color: t.label2 }, num]}>{s.time}</Text>
                   </Pressable>
                 )
               })}
@@ -521,13 +510,13 @@ function SummaryPage() {
         {/* ---------- This week ---------- */}
         <Card>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <T w={600} s={17}>This week</T>
-            <T s={13} c={t.label2} style={num}>{weekSpan(rows[0].d, rows[6].d)}</T>
+            <Text style={[tx(17, 600), { color: t.label }]}>This week</Text>
+            <Text style={[tx(13, 400), { color: t.label2 }, num]}>{weekSpan(rows[0].d, rows[6].d)}</Text>
           </View>
           {on.food && (
             <View>
-              <Text style={[font(400), sub]}>Energy</Text>
-              <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: t.label, marginTop: 2 }]}>{energyLine}</Text>
+              <Text style={[tx(13), sub]}>Energy</Text>
+              <Text style={[tx(15, 400), { lineHeight: 21, color: t.label, marginTop: 2 }]}>{energyLine}</Text>
             </View>
           )}
           {on.food && (
@@ -536,31 +525,31 @@ function SummaryPage() {
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 4, marginTop: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <View style={{ width: 8, height: 12, borderRadius: 3, backgroundColor: t.energy }} />
-                  <Text style={[font(400), sub]}>{`Eaten${gentle ? '' : ', kcal'}`}</Text>
+                  <Text style={[tx(13), sub]}>{`Eaten${gentle ? '' : ', kcal'}`}</Text>
                 </View>
-                {!yes && <Text style={[font(400), num, sub]}>{`Your range${gentle ? '' : ` ${fmt(baseLo)}–${fmt(baseHi)}`}${rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}`}</Text>}
+                {!yes && <Text style={[tx(13), num, sub]}>{`Your range${gentle ? '' : ` ${fmt(baseLo)}–${fmt(baseHi)}`}${rows.some((x) => x.r.hi !== baseHi) ? ', higher on workout days' : ''}`}</Text>}
               </View>
             </View>
           )}
           <View style={{ flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 14 }}>
             {on.food && (
               <View style={{ flex: 1 }}>
-                <Text style={[font(400), sub]}>Protein</Text>
+                <Text style={[tx(13), sub]}>Protein</Text>
                 {ws.logged >= 2
-                  ? <><T w={600} s={20} style={[num, { marginTop: 2 }]}>{fmt(ws.avgP)} g</T><T s={12} c={t.label2} style={{ marginTop: 1 }}>{dl == null ? 'a day' : Math.abs(dl) >= 5 ? `a day, ${dl > 0 ? 'up' : 'down'} ${Math.abs(dl)} g` : 'a day, steady'}</T></>
-                  : <><T w={600} s={20} style={[num, { marginTop: 2 }]}>–</T><T s={12} c={t.label2} style={{ marginTop: 1 }}>after 2 days</T></>}
+                  ? <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{fmt(ws.avgP)} g</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>{dl == null ? 'a day' : Math.abs(dl) >= 5 ? `a day, ${dl > 0 ? 'up' : 'down'} ${Math.abs(dl)} g` : 'a day, steady'}</Text></>
+                  : <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>–</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>after 2 days</Text></>}
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={[font(400), sub]}>Workouts</Text>
+              <Text style={[tx(13), sub]}>Workouts</Text>
               {workoutsDone
-                ? <><T w={600} s={20} style={[num, { marginTop: 2 }]}>{workoutsDone}</T><T s={12} c={t.label2} style={{ marginTop: 1 }}>done this week</T></>
-                : <><T w={600} s={20} style={{ marginTop: 2 }}>None yet</T><T s={12} c={t.label2} style={{ marginTop: 1 }}>this week</T></>}
+                ? <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{workoutsDone}</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>done this week</Text></>
+                : <><Text style={[tx(20, 600), { color: t.label }, { marginTop: 2 }]}>None yet</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>this week</Text></>}
             </View>
             {on.food && (
               <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`} onPress={() => setTab('food')}>
-                <Text style={[font(400), sub]}>Logged</Text>
-                <T w={600} s={20} style={[num, { marginTop: 2 }]}>{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</T>
+                <Text style={[tx(13), sub]}>Logged</Text>
+                <Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</Text>
               </Pressable>
             )}
           </View>
@@ -573,13 +562,15 @@ function SummaryPage() {
       {reask && <PregnancyCheckSheet onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
       {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} onSupport={openSupport} />}
-      <ToastHost />
     </View>
   )
 }
 
+/** `.li`: a list row (TODO(N1-followup): N1's list row when it lands; drawn from theme.css meanwhile). */
+const LI = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 } as const
+
 /** `.addc` */
 function AddCircle() {
   const t = useTokens()
-  return <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}><TIcon name="plus" size={20} stroke={2.8} color={t.tint} /></View>
+  return <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={20} stroke={2.8} color={t.tint} /></View>
 }

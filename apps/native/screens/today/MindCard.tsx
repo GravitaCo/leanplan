@@ -13,8 +13,9 @@ import { useStore } from '@/store/store'
 import { SUMMARY_MIND } from '@/screens/today/summaryCopy'
 import { checkedIn, checkinTime, makePlanOffered } from '@/screens/today/summary'
 import { thingView } from '@/screens/today/summary'
-import { font, useTokens } from '../../lib/theme'
-import { Button, Chevron, Link, T, TIcon } from './ui'
+import { BTN, tx, useTokens } from '../../lib/theme'
+import { Btn, LinkBtn } from '../../lib/ui/kit'
+import { Chevron, Icon } from '../../lib/ui/icons'
 
 export interface MindCardProps {
   checkin: CheckIn | null | undefined
@@ -56,26 +57,26 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
     <View accessibilityLabel="Mind" style={{ backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 12 }}>
       <Pressable accessibilityRole="button" onPress={onOpen} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, opacity: pressed ? 0.7 : 1 })}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.mindFill, alignItems: 'center', justifyContent: 'center' }}>
-          <TIcon name="mind" size={20} color={t.mindInk} />
+          <Icon name="mind" size={20} color={t.mindInk} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <T w={600} s={13} c={t.mindInk}>Mind</T>
-          <T w={500} s={17}>{title}</T>
-          {sub && <T s={13} c={t.label2} style={{ marginTop: 1 }}>{sub}</T>}
+          <Text style={[tx(13, 600), { color: t.mindInk }]}>Mind</Text>
+          <Text style={[tx(17, 500), { color: t.label }]}>{title}</Text>
+          {sub && <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{sub}</Text>}
         </View>
-        {done ? <Chevron /> : <Button title={SUMMARY_MIND.checkIn} onPress={onCheckIn} h={44} size={15} align="center" />}
+        {done ? <Chevron color={t.label3} /> : <Btn title={SUMMARY_MIND.checkIn} small onPress={onCheckIn} style={{ alignSelf: 'center', height: 44, minHeight: 44, borderRadius: 22, paddingHorizontal: 18 }} />}
       </Pressable>
       {(lighter || chips || picked) && <View style={{ height: 1, backgroundColor: t.sep }} />}
-      {lighter && <T s={15}>{SUMMARY_MIND.lighter}</T>}
+      {lighter && <Text style={[tx(15, 400), { color: t.label }]}>{SUMMARY_MIND.lighter}</Text>}
       {chips && (
         <>
-          <T s={13} c={t.label2} style={{ marginBottom: -4 }}>{SUMMARY_MIND.thingLead}</T>
+          <Text style={[tx(13, 400), { color: t.label2 }, { marginBottom: -4 }]}>{SUMMARY_MIND.thingLead}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {options.map((x) => (
               <Pressable key={x.key} accessibilityRole="button" accessibilityState={{ selected: false }} onPress={() => { pickThing(x.key) }}
                 style={({ pressed }) => ({ minHeight: 44, borderRadius: 22, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: t.fill, opacity: pressed ? 0.7 : 1 })}>
                 {dot(x.pillar)}
-                <Text style={[font(400), { fontSize: 15, color: t.label }]}>{txt(x.label)}</Text>
+                <Text style={[tx(15, 400, 1.3, BTN), { color: t.label }]}>{txt(x.label)}</Text>
               </Pressable>
             ))}
           </View>
@@ -85,22 +86,22 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
         <>
           {opens
             ? <Pressable accessibilityRole="button" onPress={() => onOpenView(opens)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, marginVertical: -6 }}>
-                {dot(picked.pillar, 10)}<T s={17} style={{ flex: 1, minWidth: 0 }}>{SUMMARY_MIND.today(txt(picked.label))}</T><Chevron />
+                {dot(picked.pillar, 10)}<Text style={[tx(17, 400), { color: t.label }, { flex: 1, minWidth: 0 }]}>{SUMMARY_MIND.today(txt(picked.label))}</Text><Chevron color={t.label3} />
               </Pressable>
-            : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{dot(picked.pillar, 10)}<T s={17} style={{ flex: 1 }}>{SUMMARY_MIND.today(txt(picked.label))}</T></View>}
+            : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{dot(picked.pillar, 10)}<Text style={[tx(17, 400), { color: t.label }, { flex: 1 }]}>{SUMMARY_MIND.today(txt(picked.label))}</Text></View>}
           <View style={{ flexDirection: 'row', gap: 20, marginTop: -8 }}>
-            <Link title={SUMMARY_MIND.done} onPress={() => { doneThing() }} w={500} style={{ paddingVertical: 12 }} />
-            <Link title={SUMMARY_MIND.change} onPress={clearThing} w={500} style={{ paddingVertical: 12 }} />
+            <LinkBtn title={SUMMARY_MIND.done} onPress={() => { doneThing() }} style={{ paddingVertical: 12, paddingHorizontal: 0 }} />
+            <LinkBtn title={SUMMARY_MIND.change} onPress={clearThing} style={{ paddingVertical: 12, paddingHorizontal: 0 }} />
           </View>
         </>
       )}
       {picked && c?.thing?.done && (
         <>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <TIcon name="check" size={20} stroke={2.6} color={t.mindInk} />
-            <T s={15} c={t.label2} style={{ flex: 1 }}>{txt(picked.done)}</T>
+            <Icon name="check" size={20} stroke={2.6} color={t.mindInk} />
+            <Text style={[tx(15, 400), { color: t.label2 }, { flex: 1 }]}>{txt(picked.done)}</Text>
           </View>
-          {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><Link title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} w={500} style={{ paddingVertical: 12 }} /></View>}
+          {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><LinkBtn title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} style={{ paddingVertical: 12, paddingHorizontal: 0 }} /></View>}
         </>
       )}
     </View>

@@ -4,22 +4,33 @@
  * `checkin` mode, ob7-3) and the one-time medical question (MedicalSheet). All behind
  * ONBOARDING_ENABLED, as on web. Same store actions, same copy files; `.sheet.consent` layout.
  */
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { useStore } from '@/store/store'
 import { medicalOutcome } from '@/core/domain/onboarding'
-import { FOOD9 } from '@/screens/onboarding/copyApp'
-import { CHECKIN, COPY, MEDICAL_ITEMS } from '@/screens/onboarding/copy'
-import { font, useTokens } from '../../lib/theme'
-import { BareSheet, Button, Link, T, TIcon } from './ui'
+import { FOOD9 } from '@/copy/onboardingApp'
+import { CHECKIN, COPY, MEDICAL_ITEMS } from '@/copy/onboarding'
+import { BTN, tx, useTokens } from '../../lib/theme'
+import { Btn, LinkBtn } from '../../lib/ui/kit'
+import { BareSheet } from '../../lib/ui/primitives'
+import { Icon } from '../../lib/ui/icons'
+
+/** `.sheet.consent .sheet-bd`: a column 14 apart */
+function Consent({ children }: { children: ReactNode }) {
+  return <View style={{ gap: 14 }}>{children}</View>
+}
+/** `.btn.ob-btn` (54 high) and `.btn.f9-no` (gray, 48 high, 16 pt) */
+const OB_BTN = { height: 54, minHeight: 54, borderRadius: 27 }
+const F9_NO = { height: 48, minHeight: 48, borderRadius: 24 }
 
 /** `.cs-t` and `.cs-lead` */
 function Title({ children, style }: { children: string; style?: object }) {
-  return <T w={600} s={24} style={[{ lineHeight: 30, marginTop: 4 }, style]}>{children}</T>
+  const t = useTokens()
+  return <Text style={[tx(24, 600), { color: t.label }, [{ lineHeight: 30, marginTop: 4 }, style]]}>{children}</Text>
 }
 function Lead({ children }: { children: string }) {
   const t = useTokens()
-  return <T s={16} c={t.label2} style={{ lineHeight: 24 }}>{children}</T>
+  return <Text style={[tx(16, 400), { color: t.label2 }, { lineHeight: 24 }]}>{children}</Text>
 }
 
 export function FoodAskSheet({ ask, onClose }: { ask: 'today' | 'range'; onClose: () => void }) {
@@ -32,17 +43,18 @@ export function FoodAskSheet({ ask, onClose }: { ask: 'today' | 'range'; onClose
     onClose()
   }
   return (
-    <BareSheet label={c.t} onClose={() => pick(false)}>
-      <T w={600} s={13} c={t.tint}>{c.k}</T>
+    <BareSheet label={c.t} onClose={() => pick(false)}><Consent>
+      <Text style={[tx(13, 600), { color: t.tint }]}>{c.k}</Text>
       <Title style={{ marginTop: -6 }}>{c.t}</Title>
       <Lead>{c.s}</Lead>
-      <Button title={c.yes} onPress={() => pick(true)} h={54} />
-      <Button title={c.no} kind="gray" onPress={() => pick(false)} h={48} size={16} />
-    </BareSheet>
+      <Btn title={c.yes} onPress={() => pick(true)} style={OB_BTN} />
+      <Btn title={c.no} kind="gray" onPress={() => pick(false)} style={F9_NO} textStyle={tx(16, 600, 1.3, BTN)} />
+    </Consent></BareSheet>
   )
 }
 
-/** onboarding/Opts (`.wz-opts`, `.wz-opt`, `.wz-dot`), single or multi. */
+/** onboarding/Opts (`.wz-opts`, `.wz-opt`, `.wz-dot`), single or multi, from the web markup.
+ *  TODO(N1-followup): swap for N1's Opts when it lands. */
 function Opts<K extends string>({ opts, value, onPick, multi, label }: { opts: readonly (readonly [K, string])[]; value: K[]; onPick: (k: K) => void; multi?: boolean; label: string }) {
   const t = useTokens()
   return (
@@ -52,10 +64,10 @@ function Opts<K extends string>({ opts, value, onPick, multi, label }: { opts: r
         return (
           <Pressable key={k} accessibilityRole={multi ? 'checkbox' : 'radio'} accessibilityState={{ checked: on }} onPress={() => onPick(k)}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: i < opts.length - 1 ? 1 : 0, borderBottomColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
-            <Text style={[font(on ? 500 : 400), { flex: 1, fontSize: 17, color: t.label }]}>{txt}</Text>
+            <Text style={[tx(17, on ? 500 : 400, 1.3, BTN), { flex: 1, color: t.label }]}>{txt}</Text>
             <View style={[{ width: multi ? 22 : 24, height: multi ? 22 : 24, borderRadius: multi ? 6 : 12, alignItems: 'center', justifyContent: 'center' },
               on ? { backgroundColor: t.label } : { borderWidth: 1.5, borderColor: t.dash }]}>
-              {on && <TIcon name="check" size={14} stroke={2.6} color={t.card} />}
+              {on && <Icon name="check" size={14} stroke={2.6} color={t.card} />}
             </View>
           </Pressable>
         )
@@ -73,14 +85,15 @@ export function PregnancyCheckSheet({ onClose, onAnswers }: { onClose: () => voi
   const later = () => { snooze(); onClose() }
   if (thanks) {
     return (
-      <BareSheet label={CHECKIN.doneT} onClose={onClose}>
+      <BareSheet label={CHECKIN.doneT} onClose={onClose}><Consent>
         <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-          <TIcon name="check" size={26} stroke={2.6} color={t.tint} />
+          <Icon name="check" size={26} stroke={2.6} color={t.tint} />
         </View>
         <Title style={{ marginTop: 0 }}>{CHECKIN.doneT}</Title>
-        <Link title={CHECKIN.seeAnswers} onPress={onAnswers} size={16} w={500} />
-        <Button title={CHECKIN.done} onPress={onClose} h={54} />
-      </BareSheet>
+        {/* .linkbtn.ha-link: 16 pt, 500, no padding */}
+        <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={CHECKIN.seeAnswers} onPress={onAnswers} style={{ fontSize: 16, lineHeight: 21, padding: 0, paddingVertical: 0, paddingHorizontal: 0 }} /></View>
+        <Btn title={CHECKIN.done} onPress={onClose} style={OB_BTN} />
+      </Consent></BareSheet>
     )
   }
   const pick = (k: (typeof CHECKIN.options)[number][0]) => {
@@ -89,14 +102,14 @@ export function PregnancyCheckSheet({ onClose, onAnswers }: { onClose: () => voi
     onClose()
   }
   return (
-    <BareSheet label={CHECKIN.title} onClose={later}>
+    <BareSheet label={CHECKIN.title} onClose={later}><Consent>
       <Title>{CHECKIN.title}</Title>
       <Lead>{CHECKIN.lead}</Lead>
       <Opts label={CHECKIN.title} opts={CHECKIN.options} value={[]} onPick={pick} />
       <Pressable accessibilityRole="button" onPress={later} style={{ padding: 4, alignItems: 'center' }}>
-        <Text style={[font(500), { fontSize: 16, color: t.tint }]}>{CHECKIN.later}</Text>
+        <Text style={[tx(16, 500, 1.3, BTN), { color: t.tint }]}>{CHECKIN.later}</Text>
       </Pressable>
-    </BareSheet>
+    </Consent></BareSheet>
   )
 }
 
@@ -116,11 +129,11 @@ export function MedicalSheet({ onClose }: { onClose: () => void }) {
   const title = COPY.medical?.title ?? ''
   const opts = [...MEDICAL_ITEMS.map((x, i) => [String(i), x] as const), ['none', 'None of these'] as const]
   return (
-    <BareSheet label={title} onClose={onClose}>
+    <BareSheet label={title} onClose={onClose}><Consent>
       <Title>{title}</Title>
       <Lead>{COPY.medical?.lead ?? ''}</Lead>
       <Opts label="Conditions and medicines" multi opts={opts} value={[...ticked.map(String), ...(none ? ['none'] : [])]} onPick={pick} />
-      <Button title={CHECKIN.done} disabled={!outcome} onPress={() => { if (outcome) setAnswer({ kind: 'medical', value: outcome }); onClose() }} h={54} />
-    </BareSheet>
+      <Btn title={CHECKIN.done} disabled={!outcome} onPress={() => { if (outcome) setAnswer({ kind: 'medical', value: outcome }); onClose() }} style={OB_BTN} />
+    </Consent></BareSheet>
   )
 }

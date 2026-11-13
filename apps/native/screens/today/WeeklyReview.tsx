@@ -26,10 +26,11 @@ import { weekPicture, type MindContext, type WeekPicture } from '@/core/domain/w
 import type { IfThenPlan } from '@/core/types'
 import { LOOP, PLAN_CARD, REVIEW, spanText } from '@/copy/review'
 import { pushSupported } from '@/data/push'
-import { font, num, useTokens, type Tokens } from '../../lib/theme'
-import { BareSheet, T, TIcon, type TIconName } from './ui'
+import { font, num, tx, useTokens, type Tokens } from '../../lib/theme'
+import { BareSheet } from '../../lib/ui/primitives'
+import { Icon, type IconName } from '../../lib/ui/icons'
 
-const ICON: Record<'mind' | 'move' | 'food' | 'weight', TIconName> = { mind: 'heart', move: 'dumbbell', food: 'fork', weight: 'weight' }
+const ICON: Record<'mind' | 'move' | 'food' | 'weight', IconName> = { mind: 'heart', move: 'dumbbell', food: 'fork', weight: 'weight' }
 
 /** loop.css's board tokens: --raised is --bg in light and --elev in dark. Inside a loop sheet the
  *  sheet is --bg in light (so its cards read as cards) and its cards go up to --elev in dark. */
@@ -115,48 +116,48 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 44, marginTop: insets.top + 10 }}>
           <Pressable accessibilityRole="button" accessibilityLabel={REVIEW.back} onPress={onBack} hitSlop={4}
             style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center' }}>
-            <TIcon name="chevL" size={20} stroke={2.4} color={t.label} />
+            <Icon name="chevL" size={20} stroke={2.4} color={t.label} />
           </Pressable>
-          <T s={13} c={t.label2}>{rv.welcomeBack ? REVIEW.soFar : spanText(rv.week.from, rv.week.to)}</T>
+          <Text style={[tx(13, 400), { color: t.label2 }]}>{rv.welcomeBack ? REVIEW.soFar : spanText(rv.week.from, rv.week.to)}</Text>
         </View>
-        <Text accessibilityRole="header" style={[font(600), { fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 14, marginHorizontal: 4 }]}>{rv.welcomeBack ? REVIEW.titleBack : REVIEW.title}</Text>
+        <Text accessibilityRole="header" style={[tx(34, 600), { lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 14, marginHorizontal: 4 }]}>{rv.welcomeBack ? REVIEW.titleBack : REVIEW.title}</Text>
         {rv.welcomeBack
-          ? <T s={17} c={t.label2} style={{ lineHeight: 25, marginTop: 6, marginHorizontal: 4 }}>{REVIEW.leadBack}</T>
-          : <T s={15} c={t.label2} style={{ marginTop: 2, marginHorizontal: 4 }}>{REVIEW.lead}</T>}
+          ? <Text style={[tx(17, 400), { color: t.label2 }, { lineHeight: 25, marginTop: 6, marginHorizontal: 4 }]}>{REVIEW.leadBack}</Text>
+          : <Text style={[tx(15, 400), { color: t.label2 }, { marginTop: 2, marginHorizontal: 4 }]}>{REVIEW.lead}</Text>}
 
         <View style={{ paddingTop: 18, gap: 14 }}>
           {(rows.length > 0 || !rv.welcomeBack) && (
             <View accessibilityLabel={REVIEW.did} style={[card, { paddingBottom: 6 }]}>
-              <T w={600} s={17}>{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</T>
-              <T s={15} c={t.label2} style={{ lineHeight: 22, marginTop: 4, marginBottom: 6 }}>{ENCOURAGE[rv.encouragement]}</T>
+              <Text style={[tx(17, 600), { color: t.label }]}>{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</Text>
+              <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22, marginTop: 4, marginBottom: 6 }]}>{ENCOURAGE[rv.encouragement]}</Text>
               {rows.map((r) => (
                 <View key={r.pillar} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 12, borderTopWidth: 1, borderTopColor: t.sep }}>
-                  <Sq t={t} pillar={r.pillar}><TIcon name={ICON[r.pillar]} size={20} color={sqInk(t, r.pillar)} /></Sq>
+                  <Sq t={t} pillar={r.pillar}><Icon name={ICON[r.pillar]} size={20} color={sqInk(t, r.pillar)} /></Sq>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <T w={600} s={17} style={[num, { lineHeight: 22 }]}>{r.title}</T>
-                    {r.sub && <T s={14} c={t.label2} style={[num, { lineHeight: 20, marginTop: 2 }]}>{r.sub}</T>}
+                    <Text style={[tx(17, 600), { color: t.label }, [num, { lineHeight: 22 }]]}>{r.title}</Text>
+                    {r.sub && <Text style={[tx(14, 400), { color: t.label2 }, [num, { lineHeight: 20, marginTop: 2 }]]}>{r.sub}</Text>}
                   </View>
                 </View>
               ))}
-              {rv.gentle && <T s={12} c={t.label2} style={{ lineHeight: 18, borderTopWidth: 1, borderTopColor: t.sep, paddingVertical: 10 }}>{GENTLE_FOOT}</T>}
+              {rv.gentle && <Text style={[tx(12, 400), { color: t.label2 }, { lineHeight: 18, borderTopWidth: 1, borderTopColor: t.sep, paddingVertical: 10 }]}>{GENTLE_FOOT}</Text>}
             </View>
           )}
 
           {patternLine && (
             <View accessibilityLabel={REVIEW.pattern} style={[card, { flexDirection: 'row', gap: 14 }]}>
-              <Sq t={t} pillar="mind"><TIcon name="trend" size={20} color={t.mind} /></Sq>
+              <Sq t={t} pillar="mind"><Icon name="trend" size={20} color={t.mind} /></Sq>
               <View style={{ flex: 1 }}>
-                <T w={600} s={13} c={t.mindInk}>{REVIEW.pattern}</T>
-                <T s={15} style={{ lineHeight: 22, marginTop: 2 }}>{patternText(patternLine.code, rv.gentle)}</T>
-                <T s={13} c={t.label2} style={{ marginTop: 4 }}>{PATTERN_FOOT}</T>
+                <Text style={[tx(13, 600), { color: t.mindInk }]}>{REVIEW.pattern}</Text>
+                <Text style={[tx(15, 400), { color: t.label }, { lineHeight: 22, marginTop: 2 }]}>{patternText(patternLine.code, rv.gentle)}</Text>
+                <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 4 }]}>{PATTERN_FOOT}</Text>
               </View>
             </View>
           )}
 
           {rv.why.length > 0 && !rv.welcomeBack && !hard && (
             <View accessibilityLabel={REVIEW.why} style={[card, { gap: 8 }]}>
-              <T w={600} s={13} c={t.label2}>{REVIEW.why}</T>
-              {rv.why.map((w) => <T key={w} s={17} style={{ lineHeight: 24 }}>“{w}”</T>)}
+              <Text style={[tx(13, 600), { color: t.label2 }]}>{REVIEW.why}</Text>
+              {rv.why.map((w) => <Text style={[tx(17, 400), { color: t.label }, { lineHeight: 24 }]}>“{w}”</Text>)}
             </View>
           )}
 
@@ -164,7 +165,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
 
           {/* .rv-next */}
           <View style={{ gap: 10 }}>
-            <T w={600} s={22} style={{ marginTop: 6, marginHorizontal: 4 }}>{REVIEW.next}</T>
+            <Text style={[tx(22, 600), { color: t.label }, { marginTop: 6, marginHorizontal: 4 }]}>{REVIEW.next}</Text>
             <View accessibilityRole="radiogroup" accessibilityLabel={REVIEW.next} style={{ backgroundColor: t.card, borderRadius: 22, overflow: 'hidden' }}>
               {choices.map((c, i) => {
                 const on = pick === c.k
@@ -173,8 +174,8 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
                     style={{ gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderTopWidth: i ? 1 : 0, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <View style={{ flex: 1 }}>
-                        <T w={600} s={17}>{c.title}</T>
-                        <T s={13} c={t.label2} style={{ lineHeight: 18, marginTop: 2 }}>{c.sub}</T>
+                        <Text style={[tx(17, 600), { color: t.label }]}>{c.title}</Text>
+                        <Text style={[tx(13, 400), { color: t.label2 }, { lineHeight: 18, marginTop: 2 }]}>{c.sub}</Text>
                       </View>
                       <Dot on={on} />
                     </View>
@@ -183,12 +184,12 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
                           {rv.changeOne.options.map((o) => (
                             <Pressable key={o} accessibilityRole="button" accessibilityState={{ selected: option === o }} onPress={() => setOption(o)} hitSlop={{ top: 4, bottom: 4 }}
                               style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: t.card, borderWidth: option === o ? 1.5 : 0, borderColor: t.label }}>
-                              <Text style={[font(option === o ? 600 : 500), { fontSize: 14, color: t.label }]}>{optionText(o, null).title}</Text>
+                              <Text style={[tx(14, option === o ? 600 : 500), { color: t.label }]}>{optionText(o, null).title}</Text>
                             </Pressable>
                           ))}
                         </View>
                       : <Pressable accessibilityRole="button" onPress={() => setChangeOpen(true)} style={{ alignSelf: 'flex-start' }}>
-                          <Text style={[font(500), { fontSize: 15, color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</Text>
+                          <Text style={[tx(15, 500), { color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</Text>
                         </Pressable>)}
                   </Pressable>
                 )
@@ -225,7 +226,7 @@ function Dot({ on }: { on: boolean }) {
   const t = useTokens()
   return (
     <View style={[{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, on ? { backgroundColor: t.tint } : { borderWidth: 1.5, borderColor: t.dash }]}>
-      {on && <TIcon name="check" size={20} stroke={3.4} color={t.onTint} />}
+      {on && <Icon name="check" size={20} stroke={3.4} color={t.onTint} />}
     </View>
   )
 }
@@ -239,7 +240,7 @@ function PillBtn({ kind, title, onPress, sm, disabled }: { kind: 'done' | 'keep'
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [{ height: h, borderRadius: h / 2, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
         kind === 'done' ? { backgroundColor: t.btn, marginTop: 4 } : { backgroundColor: keepBg, borderWidth: 1, borderColor: t.sep }]}>
-      <Text style={[font(600), { fontSize: 17, color: kind === 'done' ? t.btnInk : t.label }]}>{title}</Text>
+      <Text style={[tx(17, 600), { color: kind === 'done' ? t.btnInk : t.label }]}>{title}</Text>
     </Pressable>
   )
 }
@@ -248,7 +249,7 @@ function PillBtn({ kind, title, onPress, sm, disabled }: { kind: 'done' | 'keep'
 function Pill({ title, on, onPress, bg }: { title: string; on?: boolean; onPress?: () => void; bg: string }) {
   const t = useTokens()
   const s = { height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center' as const, backgroundColor: bg, borderWidth: on ? 1.5 : 0, borderColor: t.label }
-  const label = <Text style={[font(600), { fontSize: 14, color: t.label }]}>{title}</Text>
+  const label = <Text style={[tx(14, 600), { color: t.label }]}>{title}</Text>
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress} hitSlop={{ top: 4, bottom: 4 }} style={s}>{label}</Pressable>
     : <View accessibilityLiveRegion="polite" style={s}>{label}</View>
@@ -261,9 +262,9 @@ function PlanCard({ plan, onAnswer, onChange }: { plan: IfThenPlan; onAnswer: (r
   const answer = (r: 'worked' | 'no') => { setSaid(r); onAnswer(r) }
   return (
     <View accessibilityLabel={PLAN_CARD.label} style={{ backgroundColor: t.card, borderRadius: 22, padding: 16, gap: 10 }}>
-      <T w={600} s={13} c={t.mindInk}>{PLAN_CARD.label}</T>
-      <T s={15} style={{ lineHeight: 22 }}>{PLAN_CARD.line(plan.when, plan.then)}</T>
-      <T s={13} c={t.label2}>{PLAN_CARD.ask}</T>
+      <Text style={[tx(13, 600), { color: t.mindInk }]}>{PLAN_CARD.label}</Text>
+      <Text style={[tx(15, 400), { color: t.label }, { lineHeight: 22 }]}>{PLAN_CARD.line(plan.when, plan.then)}</Text>
+      <Text style={[tx(13, 400), { color: t.label2 }]}>{PLAN_CARD.ask}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         <Pill title={PLAN_CARD.helped} on={said === 'worked'} onPress={() => answer('worked')} bg={raised} />
         <Pill title={PLAN_CARD.notReally} on={said === 'no'} onPress={() => answer('no')} bg={raised} />
@@ -276,23 +277,23 @@ function PlanCard({ plan, onAnswer, onChange }: { plan: IfThenPlan; onAnswer: (r
 /* ---------------- sheets ---------------- */
 
 function LoopSheet({ label, children, onClose }: { label: string; children: ReactNode; onClose: () => void }) {
-  const { sheetBg } = useLoop()
-  return <BareSheet label={label} onClose={onClose} bg={sheetBg}><View style={{ gap: 14, paddingBottom: 18 }}>{children}</View></BareSheet>
+  // `.sheet.lp-sheet` is --bg in light, which is --sheet's value too, so N1's sheet colour holds
+  return <BareSheet label={label} onClose={onClose}><View style={{ gap: 14, paddingBottom: 18 }}>{children}</View></BareSheet>
 }
 
 function SheetHead({ title, close, onClose }: { title: string; close?: string; onClose?: () => void }) {
   const t = useTokens()
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-      <Text accessibilityRole="header" style={[font(600), { fontSize: 22, color: t.label, flex: 1 }]}>{title}</Text>
-      {close && onClose && <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10}><Text style={[font(400), { fontSize: 16, color: t.tint }]}>{close}</Text></Pressable>}
+      <Text accessibilityRole="header" style={[tx(22, 600), { color: t.label, flex: 1 }]}>{title}</Text>
+      {close && onClose && <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10}><Text style={[tx(16, 400), { color: t.tint }]}>{close}</Text></Pressable>}
     </View>
   )
 }
 
 function Lead({ children }: { children: ReactNode }) {
   const t = useTokens()
-  return <T s={15} c={t.label2} style={{ lineHeight: 22 }}>{children}</T>
+  return <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{children}</Text>
 }
 
 /** `.rv-radios` inside a loop sheet (`.lp .rv-radio`: a row) */
@@ -309,9 +310,9 @@ function OptionRow({ o, range, on, onPick, long, drift, first }: { o: LoopOption
     <Pressable accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={onPick}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderTopWidth: first ? 0 : 1, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
       <View style={{ flex: 1 }}>
-        <T w={600} s={12} c={tone}>{x.tag}</T>
-        <T w={600} s={17}>{x.title}</T>
-        {x.sub && <T s={13} c={t.label2} style={[num, { lineHeight: 18, marginTop: 2 }]}>{x.sub}</T>}
+        <Text style={[tx(12, 600), { color: tone }]}>{x.tag}</Text>
+        <Text style={[tx(17, 600), { color: t.label }]}>{x.title}</Text>
+        {x.sub && <Text style={[tx(13, 400), { color: t.label2 }, [num, { lineHeight: 18, marginTop: 2 }]]}>{x.sub}</Text>}
       </View>
       <Dot on={on} />
     </Pressable>
@@ -320,7 +321,7 @@ function OptionRow({ o, range, on, onPick, long, drift, first }: { o: LoopOption
 
 function Note({ children }: { children: string }) {
   const t = useTokens()
-  return <T s={13} c={t.label2} style={{ textAlign: 'center' }}>{children}</T>
+  return <Text style={[tx(13, 400), { color: t.label2 }, { textAlign: 'center' }]}>{children}</Text>
 }
 
 /** ml-a5 */
@@ -362,13 +363,13 @@ function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: Week
   const tone = { mind: t.mindInk, move: t.moveInk, food: t.foodInk }
   const row = (l: string, k: 'mind' | 'move' | 'food', v: ReactNode) => (
     <View key={l} style={{ flexDirection: 'row', gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: t.sep }}>
-      <Text style={[font(600), { width: 64, fontSize: 13, lineHeight: 20, color: tone[k] }]}>{l}</Text>
-      <Text style={[font(400), num, { flex: 1, fontSize: 14, lineHeight: 20, color: t.label }]}>{v}</Text>
+      <Text style={[tx(13, 600, 20), { width: 64, color: tone[k] }]}>{l}</Text>
+      <Text style={[tx(14, 400, 20), num, { flex: 1, color: t.label }]}>{v}</Text>
     </View>
   )
   return (
     <View accessibilityLabel={LOOP.allTogether(cap)} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
-      <T s={13} c={t.label2} style={{ paddingTop: 6, paddingBottom: 8 }}>{cap}</T>
+      <Text style={[tx(13, 400), { color: t.label2 }, { paddingTop: 6, paddingBottom: 8 }]}>{cap}</Text>
       {rows.map(([l, k, v]) => row(l, k, v))}
       {weight && row(L.weight, 'food', weight)}
     </View>
@@ -395,12 +396,12 @@ function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'option
       <SheetHead title={CHECK_TITLE} close={LOOP.close} onClose={onClose} />
       {r.kind === 'on-pace' ? (
         <View style={{ backgroundColor: sheetCard, borderRadius: 22, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.foodFill, alignItems: 'center', justifyContent: 'center' }}><TIcon name="check" size={20} stroke={3} color={t.foodInk} /></View>
-          <T s={17} style={{ flex: 1, lineHeight: 25 }}>{LOOP.onPace}</T>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.foodFill, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={20} stroke={3} color={t.foodInk} /></View>
+          <Text style={[tx(17, 400), { color: t.label }, { flex: 1, lineHeight: 25 }]}>{LOOP.onPace}</Text>
         </View>
       ) : <Lead>{CHECK_LEAD}</Lead>}
       <SideBySide week={r.week} span={r.span} cap={CHECK_ROWS} weight={weight} />
-      {r.kind === 'options' && r.ctx === 'hard' && <T s={15} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingVertical: 14, paddingHorizontal: 16, lineHeight: 22, overflow: 'hidden' }}>{LOOP.hardFirst}</T>}
+      {r.kind === 'options' && r.ctx === 'hard' && <Text style={[tx(15, 400), { color: t.label }, { backgroundColor: sheetCard, borderRadius: 22, paddingVertical: 14, paddingHorizontal: 16, lineHeight: 22, overflow: 'hidden' }]}>{LOOP.hardFirst}</Text>}
       {r.kind === 'options' ? (
         <>
           <Radios label="Options">
@@ -434,8 +435,8 @@ function DriftSheet({ r, onClose }: { r: Extract<DriftSuggestion, { kind: 'drift
       <Lead>{LOOP.driftLead(r.side)}</Lead>
       <View accessibilityLabel={LOOP.driftWeight} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
         <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: t.sep }}>
-          <Text style={[font(600), { width: 64, fontSize: 13, lineHeight: 20, color: t.foodInk }]}>{LOOP.driftWeight}</Text>
-          <Text style={[font(400), { flex: 1, fontSize: 14, lineHeight: 20, color: t.label }]}>{LOOP.driftWeighed(r.weighIns)}</Text>
+          <Text style={[tx(13, 600, 20), { width: 64, color: t.foodInk }]}>{LOOP.driftWeight}</Text>
+          <Text style={[tx(14, 400, 20), { flex: 1, color: t.label }]}>{LOOP.driftWeighed(r.weighIns)}</Text>
         </View>
       </View>
       <SideBySide week={r.week} cap={LOOP.lastTwoWeeks} />
@@ -470,20 +471,20 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
     <LoopSheet label={LOOP.learnedTitle} onClose={onClose}>
       <SheetHead title={LOOP.learnedTitle} close={LOOP.close} onClose={onClose} />
       <View style={{ backgroundColor: sheetCard, borderRadius: 22, padding: 16 }}>
-        <T s={13} c={t.label2}>{LOOP.learnedKey}</T>
-        <Text style={[font(600), num, { fontSize: 34, letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<Text style={[font(500), { fontSize: 17, color: t.label2 }]}>{LOOP.kcalADay}</Text></Text>
+        <Text style={[tx(13, 400), { color: t.label2 }]}>{LOOP.learnedKey}</Text>
+        <Text style={[tx(34, 600), num, { letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<Text style={[tx(17, 500), { color: t.label2 }]}>{LOOP.kcalADay}</Text></Text>
         <View importantForAccessibility="no-hide-descendants" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: 34, marginTop: 14, marginBottom: 8 }}>
           {w > 0 && <>
             <View style={{ position: 'absolute', top: 6, height: 10, borderRadius: 5, left: x(r.start.lo), width: x(r.start.hi) - x(r.start.lo), backgroundColor: dark ? t.fill : t.fill2 }} />
             <View style={{ position: 'absolute', top: 6, height: 10, borderRadius: 5, left: x(r.lo), width: x(r.hi) - x(r.lo), backgroundColor: dark ? t.label2 : t.band }} />
             {ticks.map((v, i) => (
-              <Text key={v} onLayout={undefined} style={[font(400), num, { position: 'absolute', top: 20, fontSize: 11, color: t.label2, width: 60,
+              <Text key={v} onLayout={undefined} style={[tx(11), num, { position: 'absolute', top: 20, color: t.label2, width: 60,
                 left: i === 0 ? x(v) : i === ticks.length - 1 ? x(v) - 60 : x(v) - 30, textAlign: i === 0 ? 'left' : i === ticks.length - 1 ? 'right' : 'center' }]}>{fmt(v)}</Text>
             ))}
           </>}
         </View>
-        <T s={14} c={t.label2} style={[num, { lineHeight: 20 }]}>{LOOP.learnedNote(fmt(r.start.lo), fmt(r.start.hi))}</T>
-        {next?.floored && <T s={14} c={t.label2} style={{ lineHeight: 20 }}>{LOOP.floored}</T>}
+        <Text style={[tx(14, 400), { color: t.label2 }, [num, { lineHeight: 20 }]]}>{LOOP.learnedNote(fmt(r.start.lo), fmt(r.start.hi))}</Text>
+        {next?.floored && <Text style={[tx(14, 400), { color: t.label2 }, { lineHeight: 20 }]}>{LOOP.floored}</Text>}
       </View>
       <SideBySide week={week} span={span} cap={LOOP.basedOn(Math.round(r.days / 7))}
         food={<><Text style={font(600)}>{LOOP.completeDays(r.loggedDays)}</Text>{LOOP.averaging(fmt(r.avgKcal))}</>}
@@ -502,7 +503,7 @@ function ChipsRow() {
   const { t, sheetCard } = useLoop()
   return (
     <View importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-      {LOOP.chips.map((c) => <Text key={c} style={[font(600), { fontSize: 13, color: t.label, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 999, backgroundColor: sheetCard, overflow: 'hidden' }]}>{c}</Text>)}
+      {LOOP.chips.map((c) => <Text key={c} style={[tx(13, 600), { color: t.label, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 999, backgroundColor: sheetCard, overflow: 'hidden' }]}>{c}</Text>)}
     </View>
   )
 }
@@ -537,21 +538,21 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
     showToast(ok ? LOOP.toastOn : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? LOOP.toastDenied : LOOP.toastFailed)
   }
   const sec = { backgroundColor: sheetCard, borderRadius: 22, padding: 16, gap: 10 }
-  const d = (s: string) => <T s={13} c={t.label2} style={{ lineHeight: 19 }}>{s}</T>
+  const d = (s: string) => <Text style={[tx(13, 400), { color: t.label2 }, { lineHeight: 19 }]}>{s}</Text>
   return (
     <LoopSheet label={LOOP.dayTitle} onClose={onClose}>
       <SheetHead title={LOOP.dayTitle} close={LOOP.dayClose} onClose={onClose} />
       <Lead>{LOOP.dayLead}</Lead>
       <ChipsRow />
       <View style={sec}>
-        <T w={600} s={17}>{LOOP.whichDay}</T>
+        <Text style={[tx(17, 600), { color: t.label }]}>{LOOP.whichDay}</Text>
         <View accessibilityRole="radiogroup" accessibilityLabel={LOOP.whichDay} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
           {DAYS.map(([n, s, full]) => {
             const on = day === n
             return (
               <Pressable key={n} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={full} onPress={() => setPrefs({ reviewDay: n })}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : dark ? t.fill2 : t.card }}>
-                <Text style={[font(600), { fontSize: 15, color: on ? t.onTint : t.label }]}>{s}</Text>
+                <Text style={[tx(15, 600), { color: on ? t.onTint : t.label }]}>{s}</Text>
               </Pressable>
             )
           })}
@@ -560,7 +561,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
       </View>
       {/* the reminder needs N12's native push: until a phone has it, this part isn't offered */}
       {pushSupported() && <View style={sec}>
-        <T w={600} s={17}>{LOOP.wantReminder}</T>
+        <Text style={[tx(17, 600), { color: t.label }]}>{LOOP.wantReminder}</Text>
         {d(LOOP.oneNote(dayName(day)))}
         {push
           ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><Pill title={LOOP.reminderOn} on bg={dark ? t.elev : t.bg} /><Pill title={LOOP.turnOff} onPress={() => setReviewPush(false)} bg={dark ? t.elev : t.bg} /></View>

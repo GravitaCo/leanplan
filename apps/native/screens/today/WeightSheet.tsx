@@ -10,8 +10,12 @@ import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
 import { weightWeekDelta } from '@/core/domain/insights'
 import { foodView } from '@/core/domain/foodMode'
-import { font, num, useTokens } from '../../lib/theme'
-import { Foot, Li, List, NavBtn, Sheet, T } from './ui'
+import { num, tx, useTokens } from '../../lib/theme'
+import { Card, List } from '../../lib/ui/kit'
+import { NavBtn, Sheet } from '../../lib/ui/primitives'
+
+/** `.li` with a title and a right-hand value (TODO(N1-followup): N1's list row when it lands). */
+const LI = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 } as const
 
 interface Point { d: string; w: number }
 
@@ -50,23 +54,24 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title="Body weight" tall onClose={onClose} right={<NavBtn title="Save" bold onPress={save} />}>
-      <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 10 }}>
+      <Card plain style={{ marginBottom: 10 }}>
         {/* .gram */}
         <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginTop: 6, marginBottom: 4 }}>
           <TextInput autoFocus keyboardType="decimal-pad" placeholder="0.0" placeholderTextColor={t.label3} value={bw} onChangeText={setBw}
             accessibilityLabel={`Weight for ${fmtDate(cur).dow} in kg`} onSubmitEditing={save}
-            style={[font(600), num, { fontSize: 40, color: t.label, textAlign: 'right', width: 112, padding: 0 }]} />
-          <Text style={[font(600), { fontSize: 20, color: t.label2 }]}>kg</Text>
+            style={[tx(40, 600), num, { color: t.label, textAlign: 'right', width: 112, padding: 0 }]} />
+          <Text style={[tx(20, 600), { color: t.label2 }]}>kg</Text>
         </View>
-      </View>
+      </Card>
       {back && (
         <>
-          <Foot style={{ paddingBottom: 8 }}>Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.</Foot>
+          {/* .foot */}
+          <Text style={[tx(13, 400, 1.38), { color: t.label2, paddingTop: 7, paddingHorizontal: 16, paddingBottom: 8 }]}>Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.</Text>
           {points.length >= 2 && (
-            <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 10 }}>
+            <Card plain style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                <T w={600} s={15} c={t.bodyInk}>Last {points.length} entries</T>
-                {delta != null && <T s={15} c={t.label2} style={num}>{delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta)} kg vs last week</T>}
+                <Text style={[tx(15, 600), { color: t.bodyInk }]}>Last {points.length} entries</Text>
+                {delta != null && <Text style={[tx(15, 400), { color: t.label2 }, num]}>{delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta)} kg vs last week</Text>}
               </View>
               <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" accessibilityLabel="Weight trend">
                 <Defs>
@@ -79,15 +84,15 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
                 <Path d={line} fill="none" stroke={t.bodyInk} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
                 {dots.length > 0 && <Circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r={4.5} fill={t.bodyInk} />}
               </Svg>
-            </View>
+            </Card>
           )}
           {points.length > 0 && (
-            <List bg={t.elev}>
-              {points.slice().reverse().slice(0, 14).map((p, i) => (
-                <Li key={p.d} first={i === 0}>
-                  <T s={17} style={{ flex: 1 }} lines={1}>{fmtDate(p.d).full}</T>
-                  <T s={17} c={t.label2} style={num}>{r1(p.w)} kg</T>
-                </Li>
+            <List>
+              {points.slice().reverse().slice(0, 14).map((p) => (
+                <View key={p.d} style={LI}>
+                  <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }, { flex: 1 }]}>{fmtDate(p.d).full}</Text>
+                  <Text style={[tx(17, 400), { color: t.label2 }, num]}>{r1(p.w)} kg</Text>
+                </View>
               ))}
             </List>
           )}

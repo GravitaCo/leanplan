@@ -3,12 +3,12 @@ import { useStore } from '@/store/store'
 import { hasConsent, kcalHidden } from '@/data/consent'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
-import { amountText, headline, roundAmount, unitOf } from '@/core/domain/nutrition'
+import { amountText, headline } from '@/core/domain/nutrition'
 import { sourceOf } from '@/core/data/sources'
-import {
-  CAPTURE_LABEL, FAT_OPTIONS, HANDS, handsAllowed, accuracyOf, buildEntry, combinedMargin, frac, handFor, handGrams, isCookable, type Portion,
-} from '@/core/domain/estimate'
-import { MEAL_LABEL, entryAmount, lastFatFor, lastUse } from '@/core/domain/insights'
+import { CAPTURE_LABEL, FAT_OPTIONS, HANDS, frac, handGrams, type Portion } from '@/core/domain/estimate'
+import { MEAL_LABEL } from '@/core/domain/insights'
+import { SERV_STEPS, gramsMax, portionModes, portionPreview, portionStart } from './foodModel'
+import { PORTION } from '@/copy/food'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { MealSeg } from './common'
 import { shareRowState } from '@/core/domain/sharedProduct'
@@ -17,7 +17,6 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { ShareProductRow } from './SharedProduct'
 
 type Mode = Portion['mode']
-const SERV_STEPS = [0.5, 1, 1.5, 2, 3]
 
 /**
  * Pick how much. Defaults to what the user had last time (learned portion), asks the
@@ -37,34 +36,25 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const logEntries = useStore((s) => s.logEntries)
   const profile = data.profile
   const gentle = kcalHidden(data)
-  const u = unitOf(food)
-
-  const last = lastUse(data, food.n)
-  // what the last entry meant in today's data (a live-era 120 g roll is today's 119.5 g serving)
-  const learned = last ? entryAmount(last, food) : null
-  const each = u === 'item'
-  // per-item foods are counted, never weighed or hand-sized; a food last logged as servings
-  // opens in servings, at the same count
-  const lastServ = last?.serv != null && (last.how === 'serv' || last.how === 'usual') && learned === roundAmount(food.g * last.serv, u) && SERV_STEPS.includes(last.serv) ? last.serv : null
-  const [mode, setMode] = useState<Mode>(each || lastServ != null ? 'serv' : last ? (last.how === 'hand' && handsAllowed(food) ? 'hand' : 'g') : profile.accuracy === 'precise' ? 'g' : 'serv')
+  // where it opens: last time's amount, in the way it was given (foodModel, shared with native);
+  // per-item foods are counted, never weighed or hand-sized
+  const [start] = useState(() => portionStart(data, food))
+  const { unit: u, each, learned } = start
+  const [mode, setMode] = useState<Mode>(start.mode)
   const source = sourceOf(food)
   const head = headline(food)
-  const [serv, setServ] = useState(lastServ ?? 1)
-  const [grams, setGrams] = useState<number>(learned ?? food.g)
-  const [hand, setHand] = useState<{ type: HandPortion; count: number }>(last?.hand ? { ...last.hand } : { type: handFor(food), count: 1 })
-  // remembered per food: last time's answer for this food, never another food's
-  const [fat, setFat] = useState<FatChoice | null>(() => lastFatFor(data, food.n))
+  const [serv, setServ] = useState(start.serv)
+  const [grams, setGrams] = useState<number>(start.grams)
+  const [hand, setHand] = useState<{ type: HandPortion; count: number }>(start.hand)
+  const [fat, setFat] = useState<FatChoice | null>(start.fat)
 
   const portion: Portion =
     mode === 'serv' ? { mode, serv } : mode === 'hand' ? { mode, type: hand.type, count: hand.count } : { mode, grams, learned }
-  const sized = buildEntry(food, portion, meal, profile, { custom, fat: null, askFat: false }).entry.grams
-  const askFat = accuracyOf(profile).askFat && isCookable(food, sized)
-  const { entry, fat: fatEntry } = buildEntry(food, portion, meal, profile, { custom, fat, askFat })
-  const kcal = entry.k + (fatEntry?.k ?? 0)
+  const { entry, fatEntry, askFat, kcal, margin, toLog } = portionPreview(food, portion, meal, profile, custom, fat)
 
   const commit = () => {
-    if (!entry.grams) return
-    logEntries(fatEntry ? [entry, fatEntry] : [entry], `${food.n} added`)
+    if (!toLog) return
+    logEntries(toLog, PORTION.added(food.n))
     onClose()
   }
 
@@ -75,21 +65,20 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
   const shareOk = SHARED_PRODUCTS_ENABLED && LABEL_SCAN_ENABLED && hasConsent(data, 'health') && !underAge
   const shareRow = saved ? shareRowState(saved, { enabled: shareOk, online }) : 'hidden'
 
-  const maxG = Math.max(50, Math.round(food.g * 4))
+  const maxG = gramsMax(food)
   return (
     <Sheet title={food.n} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
-      right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>Add</button>}>
+      right={<button className="navbtn b" onClick={commit} disabled={!entry.grams}>{PORTION.add}</button>}>
       <div className="sub num" style={{ textAlign: 'center', margin: '-4px 0 12px' }}>
         {gentle ? `${r1(head.p)} g protein` : `${Math.round(head.k)} kcal · ${r1(head.p)} P · ${r1(head.c)} C · ${r1(head.f)} F`} {head.per}
         <div style={{ fontSize: 13, marginTop: 2 }}>
-          {source ? <>Source: {source.url ? <a className="srcln" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : 'Source not yet checked'}
+          {source ? <>{PORTION.source} {source.url ? <a className="srcln" href={source.url} target="_blank" rel="noreferrer">{source.text}</a> : source.text}</> : PORTION.sourceUnchecked}
         </div>
       </div>
       <MealSeg value={meal} onChange={setMeal} />
 
-      <div className="lbl">How much?</div>
-      {!each && <Seg<Mode> options={u === 'ml' ? [['serv', 'Servings'], ['g', 'Millilitres']] : handsAllowed(food) ? [['serv', 'Servings'], ['g', 'Grams'], ['hand', 'Hands']] : [['serv', 'Servings'], ['g', 'Grams']]}
-        value={mode} onChange={setMode} />}
+      <div className="lbl">{PORTION.howMuch}</div>
+      {!each && <Seg<Mode> options={portionModes(food)!} value={mode} onChange={setMode} />}
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
@@ -100,8 +89,8 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
                 </button>
               ))}
             </div>
-            {/, raw\b/i.test(food.n) && <div className="foot">Weigh it before cooking: raw weight, not cooked.</div>}
-            <div className="foot">{each ? `Values are for one item, as ${source?.text.split(',')[0] ?? 'the maker'} publishes them.` : `One serving is ${amountText(food.g, u)}.`}</div>
+            {/, raw\b/i.test(food.n) && <div className="foot">{PORTION.weighRaw}</div>}
+            <div className="foot">{each ? PORTION.perItem(source?.text.split(',')[0] ?? PORTION.theMaker) : PORTION.oneServing(amountText(food.g, u))}</div>
           </>
         )}
         {mode === 'hand' && (
@@ -114,29 +103,29 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
-              <span>How many?</span>
+              <span>{PORTION.howMany}</span>
               <span className="stepper">
-                <button aria-label="Fewer" onClick={() => setHand({ ...hand, count: Math.max(0.5, hand.count - 0.5) })}>−</button>
+                <button aria-label={PORTION.fewer} onClick={() => setHand({ ...hand, count: Math.max(0.5, hand.count - 0.5) })}>−</button>
                 <span className="num">{frac(hand.count)}</span>
-                <button aria-label="More" onClick={() => setHand({ ...hand, count: Math.min(6, hand.count + 0.5) })}>+</button>
+                <button aria-label={PORTION.more} onClick={() => setHand({ ...hand, count: Math.min(6, hand.count + 0.5) })}>+</button>
               </span>
             </div>
-            <div className="foot">For you, one {HANDS[hand.type].label.toLowerCase()} ≈ {handGrams(profile, hand.type)} {u}. Calibrate in Profile.</div>
+            <div className="foot">{PORTION.handIs(HANDS[hand.type].label, handGrams(profile, hand.type), u)}</div>
           </>
         )}
         {mode === 'g' && (
           <>
             <div className="gram">
-              <input className="num" type="number" inputMode="decimal" value={grams ? Math.round(grams * 100) / 100 : ''} aria-label={`Amount in ${u}`}
+              <input className="num" type="number" inputMode="decimal" value={grams ? Math.round(grams * 100) / 100 : ''} aria-label={PORTION.amountIn(u)}
                 onChange={(e) => setGrams(parseFloat(e.target.value) || 0)} />
               <span>{u}</span>
             </div>
-            <input type="range" min={0} max={maxG} step={maxG > 400 ? 5 : 1} value={Math.min(maxG, grams)} aria-label="Amount slider"
+            <input type="range" min={0} max={maxG} step={maxG > 400 ? 5 : 1} value={Math.min(maxG, grams)} aria-label={PORTION.amountSlider}
               onChange={(e) => setGrams(+e.target.value)} />
             {learned != null && (
               <div className="foot" style={{ textAlign: 'center' }}>
-                Your usual is {amountText(learned, u)}.{' '}
-                <button className="navbtn" style={{ fontSize: 13 }} onClick={() => setGrams(learned)}>Use it</button>
+                {PORTION.yourUsual(amountText(learned, u))}{' '}
+                <button className="navbtn" style={{ fontSize: 13 }} onClick={() => setGrams(learned)}>{PORTION.useIt}</button>
               </div>
             )}
           </>
@@ -145,21 +134,20 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
 
       {askFat && (
         <>
-          <div className="lbl">How was it cooked?</div>
+          <div className="lbl">{PORTION.howCooked}</div>
           <div className="chips">
             {FAT_OPTIONS.map((o) => (
               <button key={o.id} className={'chip' + (fat === o.id ? ' on' : '')} onClick={() => setFat(o.id)}>{o.label}</button>
             ))}
           </div>
           <div className="foot">
-            {fat ? "Cooking fat is the part food logs miss most, so it's added separately and you can change it."
-              : "Cooking fat is the part food logs miss most. Skip it and nothing is added, we just widen the margin."}
+            {fat ? PORTION.fatAdded : PORTION.fatSkipped}
           </div>
         </>
       )}
 
       <div className="card" style={{ marginTop: 14 }}>
-        {!gentle && <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {combinedMargin(entry, fatEntry)}</span></div>}
+        {!gentle && <div className="big num">{fmt(kcal)}<small>kcal</small><span className="pm">± {margin}</span></div>}
         <div className={gentle ? 'big num' : 'sub num'} style={gentle ? { fontSize: 22 } : { marginTop: 4 }}>
           {r1(entry.p + (fatEntry?.p ?? 0))} g protein · {r1(entry.c)} g carbs · {r1(entry.f + (fatEntry?.f ?? 0))} g fat
         </div>
@@ -167,7 +155,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
           {CAPTURE_LABEL[entry.how!]}{fatEntry ? ` + ${fatEntry.n.replace(' · cooking', '').toLowerCase()}${gentle ? '' : ` (${fatEntry.k} kcal)`}` : ''}
         </div>
       </div>
-      <button className="btn" onClick={commit} disabled={!entry.grams}>Add to {MEAL_LABEL[meal]}</button>
+      <button className="btn" onClick={commit} disabled={!entry.grams}>{PORTION.addTo(MEAL_LABEL[meal])}</button>
       {shareRow !== 'hidden' && onShare && <ShareProductRow state={shareRow} busy={shareBusy} onShare={onShare} />}
     </Sheet>
   )
