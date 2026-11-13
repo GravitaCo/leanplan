@@ -42,6 +42,7 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 | Sheet | Check |
 |---|---|
 | Check-in, More about sleep, wake prefill, save | Auto `wp10-checkin-sheet` |
+| Check-in scale buttons 44 pt tall at least, web and native (approved by Benn in this session, 13 Nov 2026; web commit 0835b5a) | Auto `wp10-scale-44` |
 | Wake time | **Open:** a 24-hour text field until N1's TimePicker (the web's time field is iOS's own wheel, so the native picker is parity). Typed times read as the web's field holds them ("730" 07:30, "123" 01:23): `npm run test:today` |
 | Weight sheet | Auto `weight-sheet` |
 | Food asks (ob9-3, ob9-4) | Auto `ob9-3-day14`, `ob9-4-week4` |
