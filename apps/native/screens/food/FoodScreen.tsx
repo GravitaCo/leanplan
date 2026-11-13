@@ -22,6 +22,8 @@ import { Foot, GrpH, Lbl } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
 import { MarginSheet } from './MarginSheet'
 import { AddFoodSheet } from './AddFoodSheet'
+import { MealsSheet } from './MealsSheet'
+import { SuggestSheet } from './SuggestSheet'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
@@ -167,7 +169,10 @@ export function FoodScreen() {
       )}
       {sheet?.k === 'margin' && <MarginSheet onClose={() => setSheet(null)} />}
       {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
-      {/* TODO(N5): Recipes, Edit entry and What can I make? sheets, as their N1 pieces land */}
+      {sheet?.k === 'recipes' && <MealsSheet initialDraft={sheet.draft} onClose={() => setSheet(null)} />}
+      {/* TODO(N5): a suggestion opens the recipe log view once N1's 5-up scale lands */}
+      {sheet?.k === 'suggest' && <SuggestSheet onClose={() => setSheet(null)} onLog={() => {}} onRecipes={() => setSheet({ k: 'recipes' })} />}
+      {/* TODO(N5): Edit entry, once N1's slider lands */}
     </View>
   )
 }
