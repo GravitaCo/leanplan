@@ -143,14 +143,14 @@ export function CatHead({ color, icon, label }: { color: Category; icon: IconNam
   )
 }
 
-/** `.navbtn` with a back chevron: tinted, 17 pt. */
-export function BackButton({ onPress, label = 'Back' }: { onPress: () => void; label?: string }) {
+/** `.navbtn` with a back chevron: tinted, 17 pt. `small` is `.del .navbtn` (16 pt medium, 6 pt further left). */
+export function BackButton({ onPress, label = 'Back', small }: { onPress: () => void; label?: string; small?: boolean }) {
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', marginLeft: small ? -6 : 0, opacity: pressed ? 0.7 : 1 })}>
       <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
-      <Text style={[tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
+      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -271,22 +271,27 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
  * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
  * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
  */
-export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label }: {
+export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap }: {
   title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
   /** default: shown when the row is tappable and has no right control */
   chevron?: boolean; act?: boolean; icon?: IconName
   /** an icon square: any fill and icon colour (`RowIcon`) */
   square?: { icon: IconName; fill: string; ink?: string; soft?: boolean }
-  lead?: ReactNode; nested?: boolean; pv?: boolean; wrapSub?: boolean; needsnet?: boolean; label?: string
+  lead?: ReactNode; nested?: boolean; pv?: boolean; wrapSub?: boolean; needsnet?: boolean
+  /** the web's aria-label for the row (`accessibilityLabel` is the same thing) */
+  label?: string; accessibilityLabel?: string
+  /** the title wraps instead of truncating (`.del .li .t`) */
+  wrap?: boolean
 }) {
   const t = useTokens()
   const li = useLi()
   const tr = onPress ? BTN : undefined
   const fg = act ? t.tint : needsnet ? t.label2 : t.label
-  const wrapTitle = nested || pv
+  const label = label0 ?? accessibilityLabel
+  const wrapTitle = nested || pv || wrap
   const icons = useContext(InIconList)
   // a pv sub wraps at the body's 1.3; wrapSub (.mind-skills, .wd-steps) wraps at 1.35
-  const subWraps = wrapSub || pv
+  const subWraps = wrapSub || pv || wrap
   const subLh = wrapSub ? 1.35 : 1.3
   const body = (
     <>
@@ -295,7 +300,7 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
       {icon && <Icon name={icon} color={fg} />}
       <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
         {/* .li.act: 16 pt medium */}
-        <Text numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
+        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
         {(sub != null || tag != null) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
             {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
@@ -346,8 +351,10 @@ export function XBtn({ onPress, label }: { onPress: () => void; label: string })
 }
 
 /** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */
-export function SettingRow({ icon, color, soft, label, sub, value, onPress, right }: {
+export function SettingRow({ icon, color, soft, label, sub, value, onPress, right, accessibilityLabel }: {
   icon: IconName; color: string; soft?: boolean; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode
+  /** the web's aria-label where it names the row differently from its words ("Take a photo of the barcode") */
+  accessibilityLabel?: string
 }) {
   const t = useTokens()
   const li = useLi()
@@ -359,8 +366,8 @@ export function SettingRow({ icon, color, soft, label, sub, value, onPress, righ
     </>
   )
   return onPress
-    ? <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View style={li}>{body}</View>
+    ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View accessible={accessibilityLabel != null} accessibilityLabel={accessibilityLabel} style={li}>{body}</View>
 }
 
 /** A grouped-list row that expands in place; the chevron turns 90° over 0.2 s. */
@@ -449,7 +456,7 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
           <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
         </Animated.View>
         <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
-          <Animated.View entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
+          <Animated.View testID="sheet" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
             style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb ? 0 : insets.bottom }}>
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}

@@ -25,7 +25,7 @@ import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
 import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
-import { Check, Opts, Signposts, Ticks } from './ui/choices'
+import { Check, ConsentRow, Opts, Signposts, Ticks } from './ui/choices'
 import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
@@ -58,6 +58,8 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
   const [enjoy, setEnjoy] = useState<string[]>(['walk'])
   const [often, setOften] = useState<string | undefined>('2')
   const [oneOpt, setOneOpt] = useState<string | undefined>('some')
+  const [consentA, setConsentA] = useState(true)
+  const [consentB, setConsentB] = useState(false)
   const [kitOpts, setKitOpts] = useState<string[]>(['db'])
   const [sheet, setSheet] = useState<'sheet' | 'bare' | null>(null)
   // a stand-in for the guided player: a full-screen Modal with an overlay sheet over it
@@ -331,6 +333,25 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
 
       <Sec id="signposts" title="Signposts">
         <Signposts list={supportList('england')} />
+      </Sec>
+
+      <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
+        <List>
+          <ConsentRow on={consentA} onChange={setConsentA} label="I agree to Tilo storing and using my health information, as the privacy policy explains.">
+            I agree to Tilo storing and using my health information, as the <TextLink onPress={() => {}}>privacy policy</TextLink> explains.
+          </ConsentRow>
+          <ConsentRow on={consentB} onChange={setConsentB} label="I’m 18 or over.">I’m 18 or over.</ConsentRow>
+        </List>
+        <List style={{ marginTop: 10 }}>
+          <Row wrap title="Delete your account and everything in it, on every device" sub="This can’t be undone. Download a copy first if you want one." />
+          <SettingRow icon="camera" color={t.tint} label="Take a photo" accessibilityLabel="Take a photo of the barcode" onPress={() => {}} />
+        </List>
+        <View style={{ marginTop: 10, gap: 10 }}>
+          <BackButton small onPress={() => {}} label="Profile" />
+          <Banner title="Your data is safe on this phone." body="Sign in again to back it up." />
+          <Btn title="Continue" iconAfter="chevR" onPress={() => {}} />
+          <View style={{ backgroundColor: t.tint, borderRadius: t.radius, padding: 16, alignItems: 'center' }}><TaliMark width={90} color="#ffffff" /></View>
+        </View>
       </Sec>
 
       <Sec id="banner" title="Banner">

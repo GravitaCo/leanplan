@@ -24,6 +24,8 @@ import { Signposts } from '@/screens/onboarding/Signposts'
 import { supportList } from '@/screens/profile/supportRows'
 import { G } from '../../lib/galleryData'
 
+const MARK_PATH = 'M123.57.33c-17.27,0-31.27,14-31.27,31.27s14,31.27,31.27,31.27,31.27-14,31.27-31.27S140.85.33,123.57.33ZM123.57,45.88c-7.87,0-14.27-6.4-14.27-14.27s6.4-14.27,14.27-14.27,14.27,6.4,14.27,14.27-6.4,14.27-14.27,14.27ZM65.63,28.52V.33h-17v28.19c0,18.59,15.13,33.72,33.72,33.72h9.95v-17h-9.95c-9.22,0-16.72-7.5-16.72-16.72ZM9.95,0H0v17h9.95c9.22,0,16.72,7.5,16.72,16.72v28.19h17v-28.19C43.67,15.13,28.54,0,9.95,0Z'
+
 const CONN_ICON: Record<string, IconName> = { 'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert', 'phone-only': 'cloudOff' }
 
 const CSS = `
@@ -354,6 +356,25 @@ export function Gallery() {
 
       <Sec id="signposts" title="Signposts">
         <Signposts list={supportList('england')} />
+      </Sec>
+
+      <Sec id="extras" title="ConsentRow · Row wrap · BackButton small · Banner, no icon · Btn iconAfter · TaliMark colour">
+        <div className="list">
+          <div className="li consent-row"><input id="g-c1" type="checkbox" defaultChecked /><label htmlFor="g-c1">I agree to Tilo storing and using my health information, as the <a href="#p">privacy policy</a> explains.</label></div>
+          <div className="li consent-row"><input id="g-c2" type="checkbox" /><label htmlFor="g-c2">I’m 18 or over.</label></div>
+        </div>
+        <div className="del" style={{ paddingTop: 0, gap: 0 }}>
+          <div className="list" style={{ marginTop: 10 }}>
+            <div className="li"><div className="m"><div className="t">Delete your account and everything in it, on every device</div><div className="s">This can’t be undone. Download a copy first if you want one.</div></div></div>
+            <button className="li" aria-label="Take a photo of the barcode"><span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span><div className="m"><div className="t">Take a photo</div></div><Chevron /></button>
+          </div>
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="navbtn" style={{ alignSelf: 'flex-start' }}><Icon name="chevL" size={20} stroke={2.6} />Profile</button>
+            <div className="banner"><div><b>Your data is safe on this phone.</b><br /><span className="muted">Sign in again to back it up.</span></div></div>
+            <button className="btn">Continue<Icon name="chevR" /></button>
+            <div style={{ background: 'var(--tint)', borderRadius: 22, padding: 16, display: 'flex', justifyContent: 'center', color: '#fff' }}><svg width={90} height={(90 * 62.88) / 154.85} viewBox="0 0 154.85 62.88" role="img" aria-label="Tilo"><path fill="#ffffff" d={MARK_PATH} /></svg></div>
+          </div>
+        </div>
       </Sec>
 
       <Sec id="banner" title="Banner">

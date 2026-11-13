@@ -7,10 +7,11 @@
  * - Signposts (onboarding/Signposts.tsx and mind's SupportRows, `.wz-group` / `.wz-sp`): support
  *   services, each a call (tel:), a text (sms:) or a web link, with the web's aria labels.
  */
+import type { ReactNode } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import type { SupportRow } from '@/screens/profile/supportRows'
 import { Icon } from './icons'
-import { useSurface } from './kit'
+import { slop, useSurface } from './kit'
 import { num, tx, BTN, useTokens } from '../theme'
 
 /** One option: [key, title, optional sub], as the web's Opts takes it. */
@@ -145,6 +146,28 @@ export function Signposts({ list, support }: {
           ? <Pressable key={s.name} accessibilityRole="link" accessibilityLabel={`${s.name}: call ${s.num}`} onPress={() => open(tel(s.tel!))} style={[row, rule]}>{text}{s.num && n(s.num)}</Pressable>
           : <View key={s.name} style={[row, rule]}>{text}{s.num && n(s.num)}</View>
       })}
+    </View>
+  )
+}
+
+/**
+ * `.li.consent-row` (ConsentScreen, PrivacySheets): a 22 pt checkbox and its words (15 pt at 1.4),
+ * which may hold inline links (TextLink). The box is the checkbox for VoiceOver, named by `label`
+ * (the words as plain text); the words stay readable with their links; tapping them toggles it too, as the web's <label for> does, while a
+ * link inside them opens the link. The box draws the web's checkbox: tint-filled with a white tick
+ * when on, an outlined rounded square when off.
+ */
+export function ConsentRow({ on, onChange, label, children }: { on: boolean; onChange: (on: boolean) => void; label: string; children: ReactNode }) {
+  const t = useTokens()
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
+      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={() => onChange(!on)} hitSlop={slop(22, 22)}
+        style={{ width: 22, height: 22, marginTop: 1, borderRadius: 4, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: on ? t.tint : t.card, borderWidth: on ? 0 : 1, borderColor: t.label2 }}>
+        {on && <Icon name="check" size={16} stroke={3} color={t.onTint} />}
+      </Pressable>
+      {/* readable on its own, so VoiceOver reaches the links inside it */}
+      <Text onPress={() => onChange(!on)} style={[tx(15, 400, 1.4), { color: t.label, flex: 1 }]}>{children}</Text>
     </View>
   )
 }
