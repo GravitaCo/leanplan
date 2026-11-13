@@ -43,7 +43,11 @@ export const light = {
   "bodyInk": "#437722",
   "onCat": "#ffffff",
   "radius": 22,
-  "radiusSm": 18
+  "radiusSm": 18,
+  "hero": "#1d1d1f",
+  "heroInk": "#ffffff",
+  "heroInk2": "rgba(255, 255, 255, 0.72)",
+  "raised": "#f4f2ef"
 }
 
 export type Tokens = typeof light
@@ -92,5 +96,9 @@ export const dark: Tokens = {
   "bodyInk": "#9fec85",
   "onCat": "#000000",
   "radius": 22,
-  "radiusSm": 18
+  "radiusSm": 18,
+  "hero": "#2c2c2e",
+  "heroInk": "#ffffff",
+  "heroInk2": "rgba(255, 255, 255, 0.72)",
+  "raised": "#2c2c2e"
 }

@@ -462,3 +462,17 @@ needs the D-U-N-S number).
 - Permission wording (Health, camera, notifications, photos) past `compliance` and Benn or Sara. Camera wording approved by compliance (N6): "Tilo uses the camera to scan a pack's barcode, and to photograph its nutrition label when you choose to, so the numbers can be read. Tilo doesn't keep your photos." No microphone or photo-library strings (PHPicker needs none).
 - Scanning (N6): the App Store label declares Photos or Videos collected (Anthropic may keep a label photo up to 30 days), App Functionality, not linked (security-data to confirm ai-read-label logs no user id beside the image); register item 24's retention cell gains the native line (temporary file, deleted once read, swept at launch, re-encoded without EXIF).
 - Store listing, screenshots (`design`), age rating 18+, privacy labels and, for Android, Play's Data safety form and closed test.
+
+### 9.1 APNs key steps for Benn (from N12, 13 Nov; when the push function ships)
+
+1. developer.apple.com › Account › Certificates, Identifiers & Profiles › Identifiers › fit.tilo.app: tick
+   Push Notifications, Save (Expo also turns this on at the next build).
+2. Keys › + › name "Tilo APNs" › tick Apple Push Notifications service (APNs) › Configure: environment
+   "Sandbox & Production", key restriction "Team Scoped (All Topics)" › Continue › Register.
+3. Download the .p8 file (one download only; keep it in Gravita's records like the App Store Connect key)
+   and note the 10-character Key ID.
+4. Supabase dashboard › Edge Functions › Secrets: add `APNS_KEY_P8` (the whole file, including the BEGIN
+   and END lines), `APNS_KEY_ID`, `APNS_TEAM_ID` = M8R77TCYF8. Leave `APNS_SUPP_NAMES` unset (supplement
+   names stay off on iPhone until the DPIA 8.8 APNs addendum is signed).
+5. Then, through ship-critic on main and in this order: apply `docs/migrations/2026-11-13-native-push.sql`,
+   deploy `send-supplement-reminders`.
