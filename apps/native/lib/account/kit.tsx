@@ -72,9 +72,9 @@ export function T({ children, size = 17, w = 400, color, lh, center, style, role
 }
 
 /** An inline link inside a sentence (`a`, `.linkbtn.inl`): the tint colour, its own tap. */
-export function InlineLink({ children, onPress }: { children: ReactNode; onPress: () => void }) {
+export function InlineLink({ children, onPress, underline }: { children: ReactNode; onPress: () => void; underline?: boolean }) {
   const t = useTokens()
-  return <Text role="link" onPress={onPress} suppressHighlighting style={{ color: t.tint }}>{children}</Text>
+  return <Text role="link" onPress={onPress} suppressHighlighting style={[{ color: t.tint }, underline && { textDecorationLine: 'underline' }]}>{children}</Text>
 }
 
 /* ---------------- buttons ---------------- */

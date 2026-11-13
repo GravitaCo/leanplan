@@ -34,11 +34,12 @@ const COPY = {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const HERO = require('../../assets/auth-hero.jpg')
+const HERO_W = 928, HERO_H = 1152
 
 export function AuthScreen() {
   const t = useTokens()
   const ins = useSafeAreaInsets()
-  const { height: vh } = useWindowDimensions()
+  const { height: vh, width: vw } = useWindowDimensions()
   const [mode, setModeRaw] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
@@ -116,7 +117,12 @@ export function AuthScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} bounces={false}>
         <View style={{ height: photoH, backgroundColor: t.fill, overflow: 'hidden' }}>
-          <Image source={HERO} accessibilityIgnoresInvertColors resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }} />
+          {/* object-fit: cover at object-position 50% 30%, as the web: the photo fills the width (or the
+              height, if taller), and 30% of what overflows is cropped from the top */}
+          {(() => {
+            const scale = Math.max(vw / HERO_W, photoH / HERO_H), w = HERO_W * scale, h = HERO_H * scale
+            return <Image source={HERO} accessibilityIgnoresInvertColors style={{ position: 'absolute', width: w, height: h, left: (vw - w) / 2, top: -(h - photoH) * 0.3 }} />
+          })()}
           <Svg width="100%" height={140} style={{ position: 'absolute', top: 0, left: 0, right: 0 }} aria-hidden>
             <Defs><LinearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#000" stopOpacity={0.34} /><Stop offset="1" stopColor="#000" stopOpacity={0} /></LinearGradient></Defs>
             <Rect x="0" y="0" width="100%" height="140" fill="url(#shade)" />
@@ -200,8 +206,8 @@ export function AuthScreen() {
 
               {mode === 'signup' && (
                 <T size={13} lh={1.45} color={t.label2} center>
-                  Tilo is for people aged {MIN_AGE} and over. Read the <InlineLink onPress={() => openLegal('terms')}>Terms</InlineLink> and{' '}
-                  <InlineLink onPress={() => openLegal('privacy')}>Privacy notice</InlineLink>. You’ll be asked to agree after you sign up.
+                  Tilo is for people aged {MIN_AGE} and over. Read the <InlineLink underline onPress={() => openLegal('terms')}>Terms</InlineLink> and{' '}
+                  <InlineLink underline onPress={() => openLegal('privacy')}>Privacy notice</InlineLink>. You’ll be asked to agree after you sign up.
                 </T>
               )}
 
