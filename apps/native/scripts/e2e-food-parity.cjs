@@ -378,7 +378,7 @@ async function run() {
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')
     for (const a of [w, n]) await a.ctx.setOffline(true)
     await same('offline: search, log, and the Add food sheet', w, n, async (a) => {
-      await btn(a, 'Add food').click(); await sheetOpen(a)
+      await btn(a, 'Add food').click(); await sheetOpen(a); await a.page.waitForTimeout(600)
       const sheetText = await text(a, a.app.sheet)
       await a.page.getByLabel(a.app.search).fill('banana')
       await sheetRow(a, 'Banana (1 ~118g)').click()
