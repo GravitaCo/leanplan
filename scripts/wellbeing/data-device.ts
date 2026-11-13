@@ -74,6 +74,13 @@ export function boundaryIssues(rel: string, code: string): string[] {
     if (isDeviceOnly(m[1])) out.push(rel + ' (dynamic import or require of deviceOnly)')
     if (isUnloadNotes(m[1]) && !screen) out.push(rel + ' (dynamic import or require of unloadNotes)')
   }
+  // an Unload screen passing an accessor on under any name (export { notesFor as list }, export const list = notesFor)
+  if (screen) {
+    const acc = (UNLOAD_SCREEN_ACCESSORS as readonly string[]).join('|')
+    // an export list naming one; or an exported value or default holding one (a reference, not a call: calling it inside the screen is its job)
+    const local = new RegExp(`export\\s*\\{[^}]*\\b(?:${acc})\\b[^}]*\\}|export\\s+(?:const|let|var)\\s+[^=;\\n]+=[^;\\n]*\\b(?:${acc})\\b(?!\\s*\\()|export\\s+default\\s+[^;\\n]*\\b(?:${acc})\\b(?!\\s*\\()`)
+    if (local.test(code)) out.push(rel + ' (passes an unloadNotes accessor on)')
+  }
   if (/deviceOnly\??\.unload\b/.test(code)) out.push(rel + ' (deviceOnly.unload)')
   if (/deviceOnly\s*(\?\.)?\s*\[\s*['"`]unload['"`]\s*\]/.test(code)) out.push(rel + " (deviceOnly['unload'])")
   if (/\{[^{}=]*\bunload\b[^{}=]*\}\s*=\s*[^;\n]*\bdeviceOnly\b/.test(code)) out.push(rel + ' ({ unload } = deviceOnly)')
@@ -135,7 +142,9 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
   {
     const root = process.cwd()
     // the whole native app too (it reaches notes only through unloadNotes.ts, from its Unload screen)
-    const src = [...files(join(root, 'src')), ...files(join(root, 'apps/native'), true)]
+    // the e2e scripts (Playwright, never bundled into the app) read the browser's saved state to prove
+    // notes stay on the device, as the web's scripts/e2e-*.cjs do, so they are left out like those
+    const src = [...files(join(root, 'src')), ...files(join(root, 'apps/native'), true).filter((f) => !/[\\/]apps[\\/]native[\\/]scripts[\\/]e2e-[^\\/]+\.cjs$/.test(f))]
     const ALLOWED = NOTES_ALLOWED
     const offenders = src.flatMap((f) => boundaryIssues(relative(root, f).split('\\').join('/'), readFileSync(f, 'utf8')))
     checks.push(['import graph: only persistence, backup, deviceOnly and mind/unloadNotes use the notes accessors, only the Unload screens its read, add and delete (src and apps/native), only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
@@ -153,7 +162,7 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
     ].every((c) => caught(c))])
     checks.push(['boundary check: the load and restore helpers are persistence.ts only', caught("import { mergeUnloadForImport } from './deviceOnly'", 'src/data/backup.ts') && caught("import { cleanDeviceOnly } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx') && !caught("import { cleanDeviceOnly, mergeUnloadForImport } from './deviceOnly'", 'src/data/persistence.ts')])
     checks.push(['boundary check catches a native screen and the web sheet reaching the accessors directly', caught("import { unloadNotes } from '@/data/deviceOnly'", 'apps/native/screens/mind/UnloadSheet.tsx') && caught("import { addUnloadNote } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
-    checks.push(['boundary check: unloadNotes\' read, add and delete are for the Unload screens only', [
+    checks.push(['boundary check: unloadNotes\' read, add and delete are for the Unload screens only, which can\'t pass them on', [
       ["import { notesFor } from '@/screens/mind/unloadNotes'", 'src/data/sync.ts'],
       ["export { notesFor } from '@/screens/mind/unloadNotes'", 'apps/native/screens/Anything.tsx'],
       ["import { saveUnload, deleteUnload } from '@/screens/mind/UnloadSheet'", 'src/data/labelReader.ts'],
@@ -161,7 +170,14 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
       ["const u = require('@/screens/mind/unloadNotes')", 'apps/native/lib/x.js'],
       ["const d = require('@/data/deviceOnly')", 'apps/native/lib/x.js'],
     ].every(([c, r]) => caught(c, r))
-      && !caught("import { notesFor, saveUnload, deleteUnload } from '@/screens/mind/unloadNotes'", 'apps/native/screens/mind/UnloadSheet.tsx')
+      && [
+        "import { notesFor } from './unloadNotes'\nexport { notesFor as list }",
+        "import { notesFor } from './unloadNotes'\nexport {\n  saveUnload,\n}",
+        "import { notesFor } from './unloadNotes'\nexport const list = notesFor",
+        "import { saveUnload } from './unloadNotes'\nexport default saveUnload",
+        "import { notesFor } from './unloadNotes'\nexport const api = { list: notesFor }",
+      ].every((c) => caught(c, 'src/screens/mind/UnloadSheet.tsx'))
+      && !caught("import { notesFor, saveUnload, deleteUnload } from '@/screens/mind/unloadNotes'\nexport function UnloadSheet() { const n = notesFor(d, c); saveUnload(x) }\nexport { noteDay, noteLines, unloadBlocked }", 'apps/native/screens/mind/UnloadSheet.tsx')
       && !caught("import { noteDay, noteLines, unloadBlocked } from '@/screens/mind/unloadNotes'", 'apps/native/screens/mind/model.ts')])
     checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/unloadNotes.ts')])
     const quiet = ALLOWED.filter((f) => existsSync(join(root, f))).filter((f) => /console\.\w+\([^)]*(note|pairs|unload|mind|next)/i.test(readFileSync(join(root, f), 'utf8')))
