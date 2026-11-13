@@ -25,6 +25,7 @@
   "include": [
     "app",
     "lib",
+    "screens",
     "modules",
     "index.ts",
     "env.d.ts"
