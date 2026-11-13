@@ -23,7 +23,9 @@ export function ScanPreview() {
   if (s === 'scan') screen = <ScanView {...common} onResult={noop} />
   else if (s === 'label') screen = <LabelCaptureView onBack={noop} onClose={noop} barcode={CODE} onDone={noop} />
   else if (s === 'label-share') screen = <LabelCaptureView onBack={noop} onClose={noop} barcode={CODE} onDone={noop} forShare onFail={noop} />
-  else if (s.startsWith('confirm-') && drafts[s.slice(8)]) screen = <ScanConfirmView {...common} draft={drafts[s.slice(8)]} onSaved={noop} onLabelPhoto={noop} />
+  else if (s.startsWith('confirm-') && drafts[s.slice(8)]) screen = <ScanConfirmView {...common} draft={drafts[s.slice(8)]} onSaved={noop}
+      // as the web's host: reading the user's own pack is offered on figures that didn't come from it
+      onLabelPhoto={drafts[s.slice(8)].source !== 'label' ? noop : undefined} />
   else if (s.startsWith('share-') && drafts[s.slice(6)]) {
     const saved = { id: 'p1', n: 'Oat & raisin flapjack', k: 442, p: 5.5, c: 58, f: 20, barcode: CODE } as Food
     screen = <ScanConfirmView {...common} draft={drafts[s.slice(6)]} onSaved={noop} shareFor={saved} />
