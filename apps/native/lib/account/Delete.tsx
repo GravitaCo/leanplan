@@ -10,7 +10,7 @@
  * simply stays open.
  */
 import { useEffect, useState } from 'react'
-import { Platform, ScrollView, Text, TextInput, View } from 'react-native'
+import { Platform, ScrollView, Text, TextInput, View, type TextStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { useAccountDeletion } from '@/store/hooks'
@@ -66,19 +66,21 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   // account with Apple re-confirms with Apple every time, so the server can revoke Tilo's Sign in
   // with Apple (rules.ts appleAlways)
   const [providers, setProviders] = useState<string[]>(provider ? [provider] : [])
+  // the delete waits for them, so a Google account that linked Apple can't skip the Apple step
+  const [providersRead, setProvidersRead] = useState(false)
   useEffect(() => {
     let on = true
     void supabase.auth.getSession().then(({ data }) => {
       const p = data.session?.user.app_metadata?.providers
       if (on && Array.isArray(p)) setProviders(p.filter((x): x is string => typeof x === 'string'))
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => { if (on) setProvidersRead(true) })
     return () => { on = false }
   }, [])
   const [appleDone, setAppleDone] = useState(false)
   const apple = appleAlways(providers, appleAvailable()) && !appleDone
   const google = !apple && stale && provider === 'google'
   const needPw = !apple && stale && provider !== 'google'
-  const ready = typedOk(typed) && online && !deleting && !busy && (!needPw || password.length > 0)
+  const ready = providersRead && typedOk(typed) && online && !deleting && !busy && (!needPw || password.length > 0)
 
   const go = async () => {
     if (!ready) return
@@ -171,7 +173,7 @@ function Typed({ label, value, onChange, secure }: { label: string; value: strin
   return (
     <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 13, paddingHorizontal: 16, gap: 4 }}>
       <Text style={[tx(13), { color: t.label2 }]}>{label}</Text>
-      <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} style={[tx(17, 400, 24), { color: t.label, padding: 0, minHeight: 24 }, Platform.OS === 'web' && { outlineWidth: 0 }]}
+      <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} style={[tx(17, 400, 24), { color: t.label, padding: 0, minHeight: 24 }, Platform.OS === 'web' && ({ outlineStyle: 'none' } as unknown as TextStyle)]}
         {...(secure
           ? { secureTextEntry: true, autoComplete: 'current-password' as const, textContentType: 'password' as const }
           : { autoCapitalize: 'characters' as const, autoComplete: 'off' as const, autoCorrect: false, spellCheck: false })} />

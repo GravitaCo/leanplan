@@ -27,7 +27,9 @@ const email = () => fact('contactEmail', 'privacy email')
 export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false, native = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean; native?: boolean } = {}): LegalDoc {
   // The iPhone app's reminders through Apple's push service (native-build-plan N12, compliance
   // 13 Nov 2026): `native` stays off until the iPhone app reaches anyone outside Gravita's core team
-  // (an external TestFlight group, or the App Store). With it off the text is unchanged.
+  // (an external TestFlight group, or the App Store). With it off the text is unchanged. It also
+  // carries Sign in with Apple (N2). Turning `native` on changes the text: bump `updated` below in the
+  // same change (compliance, 13 Nov 2026).
   // B11b's "Show supplement names in reminders" is built but hidden until DPIA 8.8 is signed
   // (SUPP_NAMES_ENABLED, register item 45): its sentences need Mind on as well.
   const names = mind && suppNames
