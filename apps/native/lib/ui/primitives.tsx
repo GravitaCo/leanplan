@@ -210,11 +210,19 @@ export function Toggle({ on, onChange, disabled, label }: { on: boolean; onChang
 /* ---------------------------------------------------------------- grouped rows */
 
 /** `.ico`: a settings-row icon, a 30 pt rounded square; `soft` is the pastel Profile square. */
-function RowIcon({ icon, color, soft }: { icon: IconName; color: string; soft?: boolean }) {
+export function RowIcon({ icon, color, soft, ink }: {
+  icon: IconName
+  /** the square's fill: a token value, e.g. t.mindFill, or a solid category colour */
+  color: string
+  /** `soft`: the icon in --label (Profile's pastel squares); otherwise --on-cat */
+  soft?: boolean
+  /** any icon colour, e.g. t.mindInk on t.mindFill, or t.onFood on t.energy */
+  ink?: string
+}) {
   const t = useTokens()
   return (
     <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name={icon} size={18} color={soft ? t.label : t.onCat} />
+      <Icon name={icon} size={18} color={ink ?? (soft ? t.label : t.onCat)} />
     </View>
   )
 }
@@ -249,34 +257,81 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
 }
 
 /**
- * `.li`: a plain grouped-list row: a title, an optional sub, then a value, a right control or (when
- * tappable) a chevron. `act` is `.li.act` (a tinted action row with a leading icon, "New plan");
- * `nested` is `.li.nf-sub` (a sub-row under a settings row in a `List icons`: 58 in, title wraps).
+ * `.li`: a plain grouped-list row. A leading slot (an icon square, `act`'s icon, or any node such as
+ * a thumbnail), a title, an optional sub (with an optional `.tag` at its end, "Mine"), then a value, a right control or
+ * (when tappable) a chevron.
+ * - `act`: `.li.act`, a tinted action row ("New plan"), 16 pt medium, with a leading `icon`.
+ * - `nested`: `.li.nf-sub`, a sub-row under a settings row in a `List icons` (58 in, title wraps).
+ * - `pv`: `.pv-row`, a 72 pt row for a thumbnail (`lead`), title and sub wrapping, an optional `sub2`.
+ * - `wrapSub`: the sub wraps at 1.35 (`.mind-skills`, `.wd-steps`).
+ * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
+ * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
  */
-export function Row({ title, sub, value, right, onPress, chevron, act, icon, nested, label }: {
-  title: string; sub?: ReactNode; value?: ReactNode; right?: ReactNode; onPress?: () => void
+export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label }: {
+  title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
   /** default: shown when the row is tappable and has no right control */
-  chevron?: boolean; act?: boolean; icon?: IconName; nested?: boolean; label?: string
+  chevron?: boolean; act?: boolean; icon?: IconName
+  /** an icon square: any fill and icon colour (`RowIcon`) */
+  square?: { icon: IconName; fill: string; ink?: string; soft?: boolean }
+  lead?: ReactNode; nested?: boolean; pv?: boolean; wrapSub?: boolean; needsnet?: boolean; label?: string
 }) {
   const t = useTokens()
   const tr = onPress ? BTN : undefined
-  const fg = act ? t.tint : t.label
+  const fg = act ? t.tint : needsnet ? t.label2 : t.label
+  const wrapTitle = nested || pv
+  const subWraps = wrapSub || pv
   const body = (
     <>
+      {lead}
+      {square && <RowIcon icon={square.icon} color={square.fill} ink={square.ink} soft={square.soft} />}
       {icon && <Icon name={icon} color={fg} />}
       <View style={{ flex: 1, minWidth: 0 }}>
         {/* .li.act: 16 pt medium */}
-        <Text numberOfLines={nested ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
-        {sub != null && <Text numberOfLines={1} style={[tx(13, 400, 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
+        <Text numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
+        {(sub != null || tag != null) && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subWraps ? 1.35 : 1.3, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
+            {tag != null && <Tag>{tag}</Tag>}
+          </View>
+        )}
+        {sub2 != null && <Text style={[tx(13, 400, 1.35, tr), { color: t.label2, marginTop: 3 }]}>{sub2}</Text>}
       </View>
-      {value != null && <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), num, { color: t.label2 }]}>{value}</Text>}
+      {value != null && <Text numberOfLines={1} style={[strong ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), num, { color: strong ? t.label : t.label2 }]}>{value}</Text>}
       {right ?? ((chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />)}
     </>
   )
-  const s: ViewStyle = { ...LI, ...(nested ? { paddingLeft: 58 } : null) }
+  const s: ViewStyle = { ...LI, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View style={s}>{body}</View>
+    : <View accessibilityLabel={label} style={s}>{body}</View>
+}
+
+/** `.tag`: a small uppercase label beside a title ("Mine"), 11 pt bold on --fill. */
+export function Tag({ children }: { children: ReactNode }) {
+  const t = useTokens()
+  return (
+    <View style={{ marginLeft: 6, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
+      <Text style={[tx(11, 700, 1.3, 0.3 / 11), { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
+    </View>
+  )
+}
+
+/** `.addc`: the round add button at a row's end (28 pt, --fill, a tinted plus) in a 44 pt touch area. */
+export function AddC({ onPress, label }: { onPress?: () => void; label?: string }) {
+  const t = useTokens()
+  const dot = <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={20} stroke={2.8} color={t.tint} /></View>
+  return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(28, 28)}>{dot}</Pressable> : dot
+}
+
+/** `.x-btn`: a round close button (30 pt, --fill, --label2), in a 44 pt touch area. */
+export function XBtn({ onPress, label }: { onPress: () => void; label: string }) {
+  const t = useTokens()
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(30, 30)}
+      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
+      <Icon name="x" size={20} stroke={2.6} color={t.label2} />
+    </Pressable>
+  )
 }
 
 /** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */
