@@ -52,7 +52,8 @@
         {
           "enableBackgroundRemoteNotifications": false
         }
-      ]
+      ],
+      "./plugins/withNotifyExtension"
     ],
     "experiments": {
       "typedRoutes": false

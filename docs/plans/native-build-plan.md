@@ -344,7 +344,7 @@ Carries over: e2e-wellbeing wp17-*; e2e-under-age reminder cases.
 Improvements (board): reminders through the system's own notifications.
 Reviewers: `security-data`, `compliance`, `mental-performance`. Depends on: N3, N10.
 Note: the edge function change also affects the web; it ships through `ship-critic` on `main`.
-**Status (13 Nov, `native/n12-notifications`):** iPhone reminders through Apple's push service (APNs) built.
+**Status (13 Nov, `native/n12-notifications-2`):** iPhone reminders through Apple's push service (APNs) built.
 The phone registers its device token in `push_subscriptions` (new `platform` column,
 `docs/migrations/2026-11-13-native-push.sql`, **not applied**) through `src/data/push.native.ts`, so the
 store's own paths (health yes, 18+ stop, deletion, sign-out) run unchanged; the reminder function sends
@@ -357,8 +357,12 @@ back-off can start later than on the web, never sooner. A token belongs to one a
 migration) and a row the phone can't delete is released at the next sign-in of its account. iPhone
 privacy and cookie text is gated on `native` (off); DPIA 8.8 APNs addendum (R19) proposed, not signed;
 supplement names never go to APNs until it is. Android (FCM) not built: `pushSupported()` is false there.
-**Blocks the App Store (not internal or TestFlight builds):** a Notification Service Extension recording
-"shown" on every delivery, so the back-off matches the web (mental-performance); the DPIA 8.8 APNs
+A Notification Service Extension (`targets/notify-extension`, added by `plugins/withNotifyExtension.js`,
+read through `modules/tilo-notify`) records "shown" for every Mind reminder as it arrives, so the
+back-off counts as on the web (mental-performance); built, prebuild checked, to verify on a device
+(it needs the App Group `group.fit.tilo.app` registered once in the Apple Developer portal for
+`fit.tilo.app` and `fit.tilo.app.NotifyExtension`). **Blocks the App Store (not internal or TestFlight
+builds):** the extension verified on a device; the DPIA 8.8 APNs
 addendum signed; Apple's APNs terms and transfer recorded; `native` on in the policies and republished.
 Done on `claude/native-build`: `clearNotifyStore` clears the phone's `tali-notify` log (N3), which also
 removes N12's seen list. Also open: an on-device test with a development build (delivery, taps, token

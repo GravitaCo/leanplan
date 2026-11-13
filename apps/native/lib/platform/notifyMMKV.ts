@@ -4,6 +4,7 @@
  * records into.
  */
 import { createMMKV, type MMKV } from 'react-native-mmkv'
+import { clearExtensionDeliveries } from '../../modules/tilo-notify'
 import { clearEvents, NOTIFY_STORE_ID, recordNotifyEvent as record, takeEvents, type KV } from './notifyStore'
 
 let kv: MMKV | null = null
@@ -15,7 +16,9 @@ const store = (): MMKV | null => {
 export const takeNativeNotifyEvents = (): Promise<unknown[]> => Promise.resolve(takeEvents(store()))
 
 /** Delete the log (deviceOnly.clearNotifyStore on native). */
-export const clearNativeNotifyLog = (): void => clearEvents(store())
+/** Delete the log (deviceOnly.clearNotifyStore on native), with the deliveries the Notification
+ *  Service Extension recorded and not yet handed over (N12). */
+export const clearNativeNotifyLog = (): void => { clearEvents(store()); clearExtensionDeliveries() }
 
 /** The same store for N12's list of reminders seen in Notification Centre (./notifications.ts), so
  *  clearNativeNotifyLog removes it too. */

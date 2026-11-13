@@ -14,7 +14,8 @@
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
     "doctor": "expo-doctor",
     "test": "node scripts/run-tests.mjs",
-    "test:reminders": "npx --yes esbuild@0.21.5 scripts/test-reminders.ts --bundle --platform=node --log-level=error --alias:@=../../src --alias:react-native=./scripts/fakes/react-native.ts --alias:expo-notifications=./scripts/fakes/expo-notifications.ts --alias:expo-application=./scripts/fakes/expo-application.ts --alias:react-native-mmkv=./scripts/fakes/react-native-mmkv.ts --resolve-extensions=.native.ts,.ts,.tsx,.js,.mjs,.json --define:import.meta.env={} --outfile=node_modules/.cache/test-reminders.cjs && node node_modules/.cache/test-reminders.cjs"
+    "test:reminders": "npx --yes esbuild@0.21.5 scripts/test-reminders.ts --bundle --platform=node --log-level=error --alias:@=../../src --alias:react-native=./scripts/fakes/react-native.ts --alias:expo=./scripts/fakes/expo.ts --alias:expo-notifications=./scripts/fakes/expo-notifications.ts --alias:expo-application=./scripts/fakes/expo-application.ts --alias:react-native-mmkv=./scripts/fakes/react-native-mmkv.ts --resolve-extensions=.native.ts,.ts,.tsx,.js,.mjs,.json --define:import.meta.env={} --outfile=node_modules/.cache/test-reminders.cjs && node node_modules/.cache/test-reminders.cjs",
+    "test:extension": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-extension.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",

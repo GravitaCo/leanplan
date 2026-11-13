@@ -223,6 +223,20 @@ const ignored = (log, kind) => {
   check('seen: newest 60 kept', Object.keys(big).length === SEEN_MAX && !!big[p(SEEN_MAX + 9).key] && !big[p(0).key])
   check('seen: round-trips, malformed dropped', JSON.stringify(parseSeen(JSON.stringify({ a: { kind: 'plan' }, b: { kind: 'plan', opened: true }, c: { kind: 'x' }, d: 3 }))) === JSON.stringify({ a: { kind: 'plan' }, b: { kind: 'plan', opened: true } }))
   check('seen: damaged reads as empty', Object.keys(parseSeen('{oops')).length === 0 && Object.keys(parseSeen(undefined)).length === 0)
+  // with the extension, every delivery is seen as it arrives: a replaced one is never also closed
+  {
+    const elog = []
+    const etake = (r) => { for (const e of r.events) elog.push({ kind: e.kind, ev: e.ev, at: e.at.toISOString() }); return r.seen }
+    const q = (i) => ({ key: 'id:' + String(i).padStart(8, '0'), kind: 'checkin', at: t0 + i * day })
+    let es = {}
+    es = etake(noteShown(es, q(0)))           // day 0 arrives (extension)
+    es = etake(noteShown(es, q(1)))           // day 1 replaces it (extension)
+    es = etake(reconcile(es, [q(1)], new Date(t0 + day + 3600e3)))
+    check('extension: a replaced delivery records no close (the newer one already counts it), as the web', elog.map((e) => e.ev).join() === 'shown,shown' && ignored(elog, 'checkin') === 1)
+    es = etake(reconcile(es, [], new Date(t0 + 2 * day)))
+    check('extension: the newest swiped away unopened counts, as the web', elog.map((e) => e.ev).join() === 'shown,shown,closed' && ignored(elog, 'checkin') === 2)
+    check('extension: the seen list keeps arrival times', JSON.stringify(parseSeen(JSON.stringify({ a: { kind: 'plan', at: 5 } }))) === JSON.stringify({ a: { kind: 'plan', at: 5 } }))
+  }
   check('key: tells deliveries apart', deliveryKey('x', 1) !== deliveryKey('x', 2) && deliveryKey('x', NaN) === 'x|0')
 }
 

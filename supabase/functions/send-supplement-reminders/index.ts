@@ -197,7 +197,7 @@ Deno.serve(async (req: Request) => {
       const res = await fetch(`${APNS_HOSTS[sub.platform]}/3/device/${sub.endpoint}`, {
         method: "POST",
         headers: apnsHeaders(shown, jwt, Date.now()),
-        body: apnsBody(shown),
+        body: apnsBody(shown, crypto.randomUUID()),
       });
       if (res.ok) {
         sent++;

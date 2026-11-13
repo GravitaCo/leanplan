@@ -85,16 +85,22 @@ export const APNS_THREAD = 'tali'
  *  reminder from arriving deep into quiet hours. */
 export const APNS_EXPIRY_S = 60 * 60
 
+const MIND_KINDS_SHOWN: readonly Shown['kind'][] = ['checkin', 'wind-down', 'plan']
+
 /**
  * The APNs request body: the alert, one lock-screen group, and under `body` (which the app's
- * notifications library hands over as the notification's data) the type and tag, so the app can
- * record a Mind reminder in the delivery log and send a tap on the review reminder to the review.
- * No badge (the web shows none).
+ * notifications library hands over as the notification's data) the type, tag and this send's own
+ * `id`, so the app can record a Mind reminder in the delivery log and send a tap on the review
+ * reminder to the review. No badge (the web shows none).
+ * A Mind reminder also carries `mutable-content`, so the app's Notification Service Extension runs
+ * as it arrives and records it as shown, as the web's service worker does (the back-off then sees
+ * every delivery, mental-performance 13 Nov 2026). The extension changes nothing it shows.
  */
-export function apnsBody(s: Shown): string {
+export function apnsBody(s: Shown, id: string): string {
+  const mind = MIND_KINDS_SHOWN.includes(s.kind)
   return JSON.stringify({
-    aps: { alert: { title: s.title, body: s.body }, sound: 'default', 'thread-id': APNS_THREAD },
-    body: { kind: s.kind, tag: s.tag },
+    aps: { alert: { title: s.title, body: s.body }, sound: 'default', 'thread-id': APNS_THREAD, ...(mind ? { 'mutable-content': 1 } : {}) },
+    body: { kind: s.kind, tag: s.tag, id },
   })
 }
 

@@ -24,7 +24,8 @@ import { checkPushToken, pushSupported, pushTokenChanged } from './push'
 import { takeNotifyEvents } from '@/data/notifyLog'
 import { recordNotifyEvent } from './notifyStore'
 import { notifyKV } from './notifyMMKV'
-import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
+import { takeExtensionDeliveries } from '../../modules/tilo-notify'
+import { fromExtension, keyOf, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
 // ---- the log: N3's tali-notify store (./notifyMMKV), so its clear removes the seen list too ----
 const store = notifyKV
@@ -49,7 +50,7 @@ const dataOf = (n: Notifications.Notification): unknown => {
 
 const presentedOf = (n: Notifications.Notification): Presented | null => {
   const kind = mindKindOf(dataOf(n))
-  return kind ? { key: deliveryKey(n.request.identifier, n.date), kind, at: Number.isFinite(n.date) ? n.date : Date.now() } : null
+  return kind ? { key: keyOf(dataOf(n), n.request.identifier, n.date), kind, at: Number.isFinite(n.date) ? n.date : Date.now() } : null
 }
 
 // ---- arriving while the app is open ----
@@ -68,7 +69,7 @@ let lastHandled = ''
 function handleTap(r: Notifications.NotificationResponse | null): void {
   if (!r || r.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return
   const n = r.notification
-  const key = deliveryKey(n.request.identifier, n.date)
+  const key = keyOf(dataOf(n), n.request.identifier, n.date)
   if (key === lastHandled) return
   lastHandled = key
   const p = presentedOf(n)
@@ -85,6 +86,9 @@ async function settleLog(): Promise<void> {
   // a tap that brought the app forward is recorded first, so the reminder it opened is never taken
   // for one swiped away (ship-critic, 13 Nov 2026); handleTap records each delivery's tap once
   try { handleTap(Notifications.getLastNotificationResponse()) } catch { /* none */ }
+  // every Mind reminder delivered meanwhile, recorded as it arrived by the Notification Service
+  // Extension (targets/notify-extension), so one replaced or swiped away unseen still counts
+  for (const p of fromExtension(takeExtensionDeliveries())) apply(noteShown(readSeen(), p))
   try {
     const presented = (await Notifications.getPresentedNotificationsAsync()).map(presentedOf).filter((p): p is Presented => !!p)
     apply(reconcile(readSeen(), presented, new Date()))

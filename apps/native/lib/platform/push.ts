@@ -168,7 +168,7 @@ export async function checkPushToken(): Promise<void> {
   if (!saved || saved.uid !== getUid() || (await livePermission()) !== 'granted') return
   try {
     const t = await withTimeout(Notifications.getDevicePushTokenAsync(), 10000)
-    const token = t ? apnsToken(t.data) : null
+    const token = t?.type === 'ios' ? apnsToken(t.data) : null
     if (token) await saveRow(token, saved.platform)
   } catch { /* offline: next launch */ }
 }

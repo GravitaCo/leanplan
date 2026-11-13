@@ -67,12 +67,16 @@ export async function apnsSuite(): Promise<number> {
 
   /* ---------- the request ---------- */
   const s = shownCopy(payloadFor('checkin'))
-  const body = JSON.parse(apnsBody(s))
+  const ID = '0b7f3c2e-4d1a-4f6e-9a2b-3c4d5e6f7a8b'
+  const body = JSON.parse(apnsBody(s, ID))
   ok('body: alert with the fixed copy, a sound, one lock-screen group for every reminder (as web push), no badge',
     body.aps.alert.title === 'Tilo' && body.aps.alert.body === REMINDER_COPY.checkin.body && body.aps.sound === 'default'
-    && body.aps['thread-id'] === APNS_THREAD && JSON.parse(apnsBody(shownCopy(review))).aps['thread-id'] === APNS_THREAD && !('badge' in body.aps) && !('content-available' in body.aps) && !('mutable-content' in body.aps))
-  ok('body: the app gets the type and tag (for the delivery log and the tap), nothing else',
-    JSON.stringify(body.body) === JSON.stringify({ kind: 'checkin', tag: 'tali-checkin' }) && Object.keys(body).join() === 'aps,body')
+    && body.aps['thread-id'] === APNS_THREAD && JSON.parse(apnsBody(shownCopy(review), ID)).aps['thread-id'] === APNS_THREAD && !('badge' in body.aps) && !('content-available' in body.aps))
+  ok('mutable-content only on the Mind reminders (the extension records them as shown), never on supplement or review reminders',
+    MIND_KINDS.every((k) => JSON.parse(apnsBody(shownCopy(payloadFor(k)), ID)).aps['mutable-content'] === 1)
+    && !('mutable-content' in JSON.parse(apnsBody(shownCopy(review), ID)).aps) && !('mutable-content' in JSON.parse(apnsBody(forApns(named), ID)).aps))
+  ok('body: the app gets the type, tag and this send\'s id (for the delivery log and the tap), nothing else',
+    JSON.stringify(body.body) === JSON.stringify({ kind: 'checkin', tag: 'tali-checkin', id: ID }) && Object.keys(body).join() === 'aps,body')
   const h = apnsHeaders(s, 'JWT', Date.parse('2026-11-13T08:30:00Z'))
   ok('headers: an alert for fit.tilo.app, sent now, kept by Apple for an hour at most, replacing an unread one with the same tag',
     h['apns-expiration'] === String(Date.parse('2026-11-13T08:30:00Z') / 1000 + 3600) && APNS_EXPIRY_S === 3600 && h.authorization === 'bearer JWT' && h['apns-push-type'] === 'alert' && h['apns-priority'] === '10' && h['apns-topic'] === APNS_TOPIC
@@ -88,7 +92,7 @@ export async function apnsSuite(): Promise<number> {
     && forApns(named, true).body === 'Vitamin D, Magnesium' && forApns(payloadFor('checkin')).body === REMINDER_COPY.checkin.body && forApns(review).body === review.body)
   ok('a refused provider token is dropped (expired or invalid), nothing else drops it',
     apnsTokenRefused(403, 'ExpiredProviderToken') && apnsTokenRefused(403, 'InvalidProviderToken') && !apnsTokenRefused(403, 'Forbidden') && !apnsTokenRefused(410, 'Unregistered'))
-  ok('the largest payload fits APNs\'s 4 KB', apnsBody(shownCopy({ tag: 'tali-supp-named', body: 'x'.repeat(5000) })).length < 4096)
+  ok('the largest payload fits APNs\'s 4 KB', apnsBody(shownCopy({ tag: 'tali-supp-named', body: 'x'.repeat(5000) }), ID).length < 4096)
 
   /* ---------- the provider token ---------- */
   const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
@@ -113,7 +117,7 @@ export async function apnsSuite(): Promise<number> {
     && fn.indexOf('return sendApns(sub, payload)') < fn.indexOf('.sendNotification('))
   ok('function: the phone gets the service worker\'s words (shownCopy), sent to its own token and gateway',
     /const shown = forApns\(payload, APNS_SUPP_NAMES\);/.test(fn) && /const APNS_SUPP_NAMES = Deno\.env\.get\("APNS_SUPP_NAMES"\) === "on";/.test(fn) && /fetch\(`\$\{APNS_HOSTS\[sub\.platform\]\}\/3\/device\/\$\{sub\.endpoint\}`/.test(fn)
-    && /headers: apnsHeaders\(shown, jwt, Date\.now\(\)\)/.test(fn) && /if \(apnsTokenRefused\(res\.status, reason\)\) apnsToken = null;/.test(fn) && /body: apnsBody\(shown\)/.test(fn) && /!isApnsToken\(sub\.endpoint\)/.test(fn))
+    && /headers: apnsHeaders\(shown, jwt, Date\.now\(\)\)/.test(fn) && /if \(apnsTokenRefused\(res\.status, reason\)\) apnsToken = null;/.test(fn) && /body: apnsBody\(shown, crypto\.randomUUID\(\)\)/.test(fn) && /!isApnsToken\(sub\.endpoint\)/.test(fn))
   ok('function: a dead token\'s row is deleted by id, as Web Push 404/410', /if \(apnsGone\(res\.status, reason\)\) \{\s*await supabase\.from\("push_subscriptions"\)\.delete\(\)\.eq\("id", sub\.id\);/.test(fn))
   ok('function: the key and token are kept for the window, secrets from the environment only',
     /Deno\.env\.get\("APNS_KEY_P8"\)/.test(fn) && /apnsToken\.iat === iat/.test(fn) && !/BEGIN PRIVATE KEY/.test(fn))
