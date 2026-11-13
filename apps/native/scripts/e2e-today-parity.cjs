@@ -202,7 +202,7 @@ async function open(browser, url, seed, scheme, tall) {
 }
 
 /** Lines of text, whitespace normalised (the two renderers break lines in different places). */
-const norm = (s) => s.replace(/[\u00a0\u2009\u202f]/g, ' ').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ')
+const norm = (s) => s.replace(/[\u00a0\u2009\u202f]/g, ' ').split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').replace(/(\d) kg\b/g, '$1kg')
 
 /** Summary's pillars: from the first pillar to the end of This week (the header, week strip and tab bar differ by design). */
 async function pillarsText(page, web) {
@@ -364,6 +364,27 @@ async function run() {
     rule(l, 'left out: no weight row', !/Weighed/.test(rv), rv)
     return { summary: s, ask, review: rv }
   })
+
+  // the reminder paused itself after 3 unopened reviews: Summary asks once (ml-d2)
+  await scenario(browser, 'loop-keep-reminder', (() => { const o = steadyState(); Object.assign(o.state.profile, { reviewPush: true, reviewPushFrom: lago(30), lastReviewAt: lago(22) }); return o })(), async (page, web, l) => {
+    const s = await pillarsText(page, web)
+    rule(l, 'Keep the weekly reminder? with its two chips', s.includes('Keep the weekly reminder? It’s paused for now. Some weeks you won’t need it, and that’s fine. Keep it Turn it off'), s)
+    return { summary: s }
+  })
+  // a care week (mood low on 4 or more days): the review card waits (the asks budget holds it on a
+  // low-mood week) and the reminder ask never shows; the review's own variant is core's (tested there)
+  await scenario(browser, 'loop-care-week', (() => { const o = steadyState(); Object.assign(o.state.profile, { reviewPush: true, reviewPushFrom: lago(30), lastReviewAt: lago(22) }); for (let i = 7; i >= 1; i--) { const c = o.state.days[lago(i)]?.checkin; if (c) c.mood = 2 } return o })(), async (page, web, l) => {
+    const s = await pillarsText(page, web)
+    rule(l, 'care week: no reminder ask', !s.includes('Keep the weekly reminder?'), s)
+    return { summary: s }
+  }, { schemes: ['light'] })
+  // a lighter week (1 to 3 active days): no praise for a habit, no range change
+  await scenario(browser, 'loop-review-lighter', (() => { const o = steadyState(); for (let i = 4; i <= 7; i++) { delete o.state.days[lago(i)]; delete o.state._meta.days[lago(i)] } return o })(), async (page, web, l) => {
+    await click(page, 'A two-minute look back')
+    const rv = await reviewText(page)
+    rule(l, 'lighter: not the steady encouragement', !rv.includes('A steady week. This is what a habit looks like.'), rv)
+    return { review: rv }
+  }, { schemes: ['light'] })
 
   /* ---------- e2e-wellbeing wp7: Summary on a hard day and the one prompt slot ---------- */
   await scenario(browser, 'wp7-hard-day', wp7Hard(), async (page, web, l) => {

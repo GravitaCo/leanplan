@@ -51,7 +51,10 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
   }
   const save = () => {
     const at = nowIso()
-    const night = WELLBEING_ENABLED ? nightPatch(existing, { band, wakeAt, touched }, at) : {}
+    // a typed time is read as the web's time field would hold it ("730" is 07:30) even if the field
+    // never lost focus, so a saved wake time is never dropped by mistake (mental-performance)
+    const wake = isHHMM(wakeAt) ? wakeAt : normTime(wakeAt)
+    const night = WELLBEING_ENABLED ? nightPatch(existing, { band, wakeAt: wake, touched }, at) : {}
     setCheckin({ mood, hunger, sleep, stress, energy, sore: liftDay ? sore : existing?.sore ?? 0, note: note.trim(), t: at, ...night })
     onClose()
   }

@@ -14,7 +14,7 @@ export function LowMoodBanner({ onSupport, onDismiss }: { onSupport: () => void;
   return (
     <View accessibilityRole="summary" style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }}>
       <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: t.mindFill, alignItems: 'center', justifyContent: 'center' }}>
-        <TIcon name="info" size={18} color={t.mindInk} />
+        <TIcon name="info" size={20} color={t.mindInk} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <T s={15} style={{ lineHeight: 21 }}>{LOW_MOOD_LINE_ANY_NATION}</T>
@@ -23,7 +23,7 @@ export function LowMoodBanner({ onSupport, onDismiss }: { onSupport: () => void;
       <Pressable accessibilityRole="button" accessibilityLabel={LOW_MOOD.dismiss} onPress={onDismiss}
         style={{ width: 44, height: 44, marginTop: -8, marginRight: -8, alignItems: 'center', justifyContent: 'center' }}>
         <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
-          <TIcon name="x" size={12} stroke={3} color={t.label2} />
+          <TIcon name="x" size={20} stroke={3} color={t.label2} />
         </View>
       </Pressable>
     </View>

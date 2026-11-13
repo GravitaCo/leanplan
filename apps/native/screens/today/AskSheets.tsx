@@ -34,7 +34,7 @@ export function FoodAskSheet({ ask, onClose }: { ask: 'today' | 'range'; onClose
   return (
     <BareSheet label={c.t} onClose={() => pick(false)}>
       <T w={600} s={13} c={t.tint}>{c.k}</T>
-      <Title style={{ marginTop: -2 }}>{c.t}</Title>
+      <Title style={{ marginTop: -6 }}>{c.t}</Title>
       <Lead>{c.s}</Lead>
       <Button title={c.yes} onPress={() => pick(true)} h={54} />
       <Button title={c.no} kind="gray" onPress={() => pick(false)} h={48} size={16} />

@@ -115,7 +115,7 @@ export function BareSheet({ label, onClose, bg, children }: { label: string; onC
 /** `.btn` (ink), `.btn.gray`, `.btn.sm`; heights per the web's per-use overrides. */
 export function Button({ title, onPress, kind = 'ink', h = 50, size = 17, disabled, icon, align = 'stretch', label, style }: {
   title: string; onPress: () => void; kind?: 'ink' | 'gray' | 'raised'; h?: number; size?: number; disabled?: boolean; icon?: ReactNode
-  align?: 'stretch' | 'flex-start'; label?: string; style?: StyleProp<ViewStyle>
+  align?: 'stretch' | 'flex-start' | 'center'; label?: string; style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const bg = kind === 'ink' ? t.btn : kind === 'gray' ? t.fill : undefined
@@ -162,7 +162,7 @@ export function Scale({ labels, value, onChange, renderLabel, onStyle }: {
         const on = value === i + 1
         return (
           <Pressable key={l} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(on ? 0 : i + 1)}
-            style={[{ flex: 1, minWidth: 0, minHeight: 44, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: on && !onStyle ? t.tint : t.elev }, on && onStyle]}>
+            style={[{ flex: 1, minWidth: 0, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: on && !onStyle ? t.tint : t.elev }, on && onStyle]}>
             {renderLabel ? renderLabel(l, on) : <Text style={[font(400), { fontSize: 13, lineHeight: 16, textAlign: 'center', color: on ? t.onTint : t.label }]}>{l}</Text>}
           </Pressable>
         )
@@ -218,7 +218,7 @@ export function Banner({ icon, children, onDismiss, onPress, dismissLabel = 'Dis
       {onDismiss && (
         <Pressable accessibilityRole="button" accessibilityLabel={dismissLabel} onPress={onDismiss} hitSlop={10}
           style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}>
-          <TIcon name="x" size={12} stroke={3} color={t.label2} />
+          <TIcon name="x" size={20} stroke={3} color={t.label2} />
         </Pressable>
       )}
     </>

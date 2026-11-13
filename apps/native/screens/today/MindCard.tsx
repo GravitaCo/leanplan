@@ -63,7 +63,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
           <T w={500} s={17}>{title}</T>
           {sub && <T s={13} c={t.label2} style={{ marginTop: 1 }}>{sub}</T>}
         </View>
-        {done ? <Chevron /> : <Button title={SUMMARY_MIND.checkIn} onPress={onCheckIn} h={44} size={15} align="flex-start" />}
+        {done ? <Chevron /> : <Button title={SUMMARY_MIND.checkIn} onPress={onCheckIn} h={44} size={15} align="center" />}
       </Pressable>
       {(lighter || chips || picked) && <View style={{ height: 1, backgroundColor: t.sep }} />}
       {lighter && <T s={15}>{SUMMARY_MIND.lighter}</T>}
@@ -97,7 +97,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
       {picked && c?.thing?.done && (
         <>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <TIcon name="check" size={16} stroke={2.6} color={t.mindInk} />
+            <TIcon name="check" size={20} stroke={2.6} color={t.mindInk} />
             <T s={15} c={t.label2} style={{ flex: 1 }}>{txt(picked.done)}</T>
           </View>
           {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><Link title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} w={500} style={{ paddingVertical: 12 }} /></View>}

@@ -50,12 +50,12 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <Sheet title="Body weight" tall onClose={onClose} right={<NavBtn title="Save" bold onPress={save} />}>
-      <View style={{ backgroundColor: t.elev, borderRadius: t.radius, padding: 16 }}>
+      <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 10 }}>
         {/* .gram */}
         <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginTop: 6, marginBottom: 4 }}>
           <TextInput autoFocus keyboardType="decimal-pad" placeholder="0.0" placeholderTextColor={t.label3} value={bw} onChangeText={setBw}
             accessibilityLabel={`Weight for ${fmtDate(cur).dow} in kg`} onSubmitEditing={save}
-            style={[font(600), num, { fontSize: 40, color: t.label, textAlign: 'right', minWidth: 112, padding: 0 }]} />
+            style={[font(600), num, { fontSize: 40, color: t.label, textAlign: 'right', width: 112, padding: 0 }]} />
           <Text style={[font(600), { fontSize: 20, color: t.label2 }]}>kg</Text>
         </View>
       </View>
@@ -63,7 +63,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
         <>
           <Foot style={{ paddingBottom: 8 }}>Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.</Foot>
           {points.length >= 2 && (
-            <View style={{ backgroundColor: t.elev, borderRadius: t.radius, padding: 16, marginBottom: 8 }}>
+            <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
                 <T w={600} s={15} c={t.bodyInk}>Last {points.length} entries</T>
                 {delta != null && <T s={15} c={t.label2} style={num}>{delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta)} kg vs last week</T>}

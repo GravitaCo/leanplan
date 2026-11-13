@@ -24,16 +24,10 @@ import {
 import { latestWeight } from '@/core/domain/insights'
 import { weekPicture, type MindContext, type WeekPicture } from '@/core/domain/weekPicture'
 import type { IfThenPlan } from '@/core/types'
+import { LOOP, PLAN_CARD, REVIEW, spanText } from '@/copy/review'
+import { pushSupported } from '@/data/push'
 import { font, num, useTokens, type Tokens } from '../../lib/theme'
 import { BareSheet, T, TIcon, type TIconName } from './ui'
-
-/** "28 Sept to 4 Oct", or "5 to 11 Oct" within a month (the web's spanText). */
-export function spanText(a: string, b: string): string {
-  const d = (x: string, o: Intl.DateTimeFormatOptions) => new Date(x + 'T12:00').toLocaleDateString('en-GB', o)
-  return d(a, { month: 'short' }) === d(b, { month: 'short' })
-    ? `${d(a, { day: 'numeric' })} to ${d(b, { day: 'numeric', month: 'short' })}`
-    : `${d(a, { day: 'numeric', month: 'short' })} to ${d(b, { day: 'numeric', month: 'short' })}`
-}
 
 const ICON: Record<'mind' | 'move' | 'food' | 'weight', TIconName> = { mind: 'heart', move: 'dumbbell', food: 'fork', weight: 'weight' }
 
@@ -85,7 +79,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
     choose(pick, chosen)
     if ((chosen === 'range-less' || chosen === 'range-more') && rv.changeOne.range) applyRange(rv.changeOne.range)
     if (chosen === 'hungry-days-plan' || chosen === 'hungry-evenings-plan') { onPlanSheet('', onBack); return }
-    if (chosen) showToast('Noted for next week.')
+    if (chosen) showToast(REVIEW.noted)
     const held = (m: MindContext) => careWeek(m) || m.wellbeing === 'flagged' || m.wellbeing === 'sometimes'
     if (!rv.welcomeBack && !held(rv.mind) && lastAt !== today) {
       const o = { healthConsent: consent }
@@ -117,25 +111,25 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}>
         {/* .rv-top */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 44, marginTop: insets.top + 10 }}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} hitSlop={4}
+          <Pressable accessibilityRole="button" accessibilityLabel={REVIEW.back} onPress={onBack} hitSlop={4}
             style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center' }}>
-            <TIcon name="chevL" size={18} stroke={2.4} color={t.label} />
+            <TIcon name="chevL" size={20} stroke={2.4} color={t.label} />
           </Pressable>
-          <T s={13} c={t.label2}>{rv.welcomeBack ? 'This week so far' : spanText(rv.week.from, rv.week.to)}</T>
+          <T s={13} c={t.label2}>{rv.welcomeBack ? REVIEW.soFar : spanText(rv.week.from, rv.week.to)}</T>
         </View>
-        <Text accessibilityRole="header" style={[font(600), { fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 14, marginHorizontal: 4 }]}>{rv.welcomeBack ? 'Welcome back' : 'Your week'}</Text>
+        <Text accessibilityRole="header" style={[font(600), { fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 14, marginHorizontal: 4 }]}>{rv.welcomeBack ? REVIEW.titleBack : REVIEW.title}</Text>
         {rv.welcomeBack
-          ? <T s={17} c={t.label2} style={{ lineHeight: 25, marginTop: 6, marginHorizontal: 4 }}>Nothing to catch up on. Here’s where things are now.</T>
-          : <T s={15} c={t.label2} style={{ marginTop: 2, marginHorizontal: 4 }}>A two-minute look back</T>}
+          ? <T s={17} c={t.label2} style={{ lineHeight: 25, marginTop: 6, marginHorizontal: 4 }}>{REVIEW.leadBack}</T>
+          : <T s={15} c={t.label2} style={{ marginTop: 2, marginHorizontal: 4 }}>{REVIEW.lead}</T>}
 
         <View style={{ paddingTop: 18, gap: 14 }}>
           {(rows.length > 0 || !rv.welcomeBack) && (
-            <View accessibilityLabel="What you did" style={[card, { paddingBottom: 6 }]}>
-              <T w={600} s={17}>{rv.welcomeBack && rv.since ? `What you did since ${new Date(rv.since + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })}` : 'What you did'}</T>
+            <View accessibilityLabel={REVIEW.did} style={[card, { paddingBottom: 6 }]}>
+              <T w={600} s={17}>{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</T>
               <T s={15} c={t.label2} style={{ lineHeight: 22, marginTop: 4, marginBottom: 6 }}>{ENCOURAGE[rv.encouragement]}</T>
               {rows.map((r) => (
                 <View key={r.pillar} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 12, borderTopWidth: 1, borderTopColor: t.sep }}>
-                  <Sq t={t} pillar={r.pillar}><TIcon name={ICON[r.pillar]} size={18} color={sqInk(t, r.pillar)} /></Sq>
+                  <Sq t={t} pillar={r.pillar}><TIcon name={ICON[r.pillar]} size={20} color={sqInk(t, r.pillar)} /></Sq>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <T w={600} s={17} style={[num, { lineHeight: 22 }]}>{r.title}</T>
                     {r.sub && <T s={14} c={t.label2} style={[num, { lineHeight: 20, marginTop: 2 }]}>{r.sub}</T>}
@@ -147,10 +141,10 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
           )}
 
           {patternLine && (
-            <View accessibilityLabel="Something in your data" style={[card, { flexDirection: 'row', gap: 14 }]}>
-              <Sq t={t} pillar="mind"><TIcon name="trend" size={18} color={t.mind} /></Sq>
+            <View accessibilityLabel={REVIEW.pattern} style={[card, { flexDirection: 'row', gap: 14 }]}>
+              <Sq t={t} pillar="mind"><TIcon name="trend" size={20} color={t.mind} /></Sq>
               <View style={{ flex: 1 }}>
-                <T w={600} s={13} c={t.mindInk}>Something in your data</T>
+                <T w={600} s={13} c={t.mindInk}>{REVIEW.pattern}</T>
                 <T s={15} style={{ lineHeight: 22, marginTop: 2 }}>{patternText(patternLine.code, rv.gentle)}</T>
                 <T s={13} c={t.label2} style={{ marginTop: 4 }}>{PATTERN_FOOT}</T>
               </View>
@@ -158,8 +152,8 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
           )}
 
           {rv.why.length > 0 && !rv.welcomeBack && !hard && (
-            <View accessibilityLabel="Why this matters to you" style={[card, { gap: 8 }]}>
-              <T w={600} s={13} c={t.label2}>Why this matters to you</T>
+            <View accessibilityLabel={REVIEW.why} style={[card, { gap: 8 }]}>
+              <T w={600} s={13} c={t.label2}>{REVIEW.why}</T>
               {rv.why.map((w) => <T key={w} s={17} style={{ lineHeight: 24 }}>“{w}”</T>)}
             </View>
           )}
@@ -168,8 +162,8 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
 
           {/* .rv-next */}
           <View style={{ gap: 10 }}>
-            <T w={600} s={22} style={{ marginTop: 6, marginHorizontal: 4 }}>For next week</T>
-            <View accessibilityRole="radiogroup" accessibilityLabel="For next week" style={{ backgroundColor: t.card, borderRadius: 22, overflow: 'hidden' }}>
+            <T w={600} s={22} style={{ marginTop: 6, marginHorizontal: 4 }}>{REVIEW.next}</T>
+            <View accessibilityRole="radiogroup" accessibilityLabel={REVIEW.next} style={{ backgroundColor: t.card, borderRadius: 22, overflow: 'hidden' }}>
               {choices.map((c, i) => {
                 const on = pick === c.k
                 return (
@@ -192,13 +186,13 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
                           ))}
                         </View>
                       : <Pressable accessibilityRole="button" onPress={() => setChangeOpen(true)} style={{ alignSelf: 'flex-start' }}>
-                          <Text style={[font(500), { fontSize: 15, color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : 'See the options'}</Text>
+                          <Text style={[font(500), { fontSize: 15, color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</Text>
                         </Pressable>)}
                   </Pressable>
                 )
               })}
             </View>
-            <PillBtn kind="done" title="Done" onPress={done} />
+            <PillBtn kind="done" title={REVIEW.done} onPress={done} />
           </View>
         </View>
       </ScrollView>
@@ -229,7 +223,7 @@ function Dot({ on }: { on: boolean }) {
   const t = useTokens()
   return (
     <View style={[{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, on ? { backgroundColor: t.tint } : { borderWidth: 1.5, borderColor: t.dash }]}>
-      {on && <TIcon name="check" size={12} stroke={3.4} color={t.onTint} />}
+      {on && <TIcon name="check" size={20} stroke={3.4} color={t.onTint} />}
     </View>
   )
 }
@@ -264,14 +258,14 @@ function PlanCard({ plan, onAnswer, onChange }: { plan: IfThenPlan; onAnswer: (r
   const [said, setSaid] = useState<'worked' | 'no' | null>(null)
   const answer = (r: 'worked' | 'no') => { setSaid(r); onAnswer(r) }
   return (
-    <View accessibilityLabel="Your plan" style={{ backgroundColor: t.card, borderRadius: 22, padding: 16, gap: 10 }}>
-      <T w={600} s={13} c={t.mindInk}>Your plan</T>
-      <T s={15} style={{ lineHeight: 22 }}>If {plan.when.replace(/^when\s+/i, '')}, then I’ll {plan.then.replace(/\.$/, '')}.</T>
-      <T s={13} c={t.label2}>How did it go this week?</T>
+    <View accessibilityLabel={PLAN_CARD.label} style={{ backgroundColor: t.card, borderRadius: 22, padding: 16, gap: 10 }}>
+      <T w={600} s={13} c={t.mindInk}>{PLAN_CARD.label}</T>
+      <T s={15} style={{ lineHeight: 22 }}>{PLAN_CARD.line(plan.when, plan.then)}</T>
+      <T s={13} c={t.label2}>{PLAN_CARD.ask}</T>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        <Pill title="It helped" on={said === 'worked'} onPress={() => answer('worked')} bg={raised} />
-        <Pill title="Not really" on={said === 'no'} onPress={() => answer('no')} bg={raised} />
-        <Pill title="Change it" onPress={onChange} bg={raised} />
+        <Pill title={PLAN_CARD.helped} on={said === 'worked'} onPress={() => answer('worked')} bg={raised} />
+        <Pill title={PLAN_CARD.notReally} on={said === 'no'} onPress={() => answer('no')} bg={raised} />
+        <Pill title={PLAN_CARD.change} onPress={onChange} bg={raised} />
       </View>
     </View>
   )
@@ -311,7 +305,7 @@ function OptionRow({ o, range, on, onPick, long, drift, first }: { o: LoopOption
   const tone = x.tag === 'Move' ? t.moveInk : x.tag === 'Food' ? t.foodInk : x.tag === 'Your range' ? t.label2 : t.mindInk
   return (
     <Pressable accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={onPick}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderTopWidth: first ? 0 : 1, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
+      style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderTopWidth: first ? 0 : 1, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
       <View style={{ flex: 1 }}>
         <T w={600} s={12} c={tone}>{x.tag}</T>
         <T w={600} s={17}>{x.title}</T>
@@ -334,13 +328,13 @@ function ChangeOneSheet({ mind, ctx, options, range, value, onClose, onPick }: {
 }) {
   const [o, setO] = useState<LoopOption | null>(value ?? options[0] ?? null)
   return (
-    <LoopSheet label="Change one thing" onClose={onClose}>
-      <SheetHead title="Change one thing" close="Cancel" onClose={onClose} />
+    <LoopSheet label={LOOP.changeOne} onClose={onClose}>
+      <SheetHead title={LOOP.changeOne} close={LOOP.cancel} onClose={onClose} />
       <Lead>{changeOneLead(ctx, mind)}</Lead>
-      <Radios label="Change one thing">
+      <Radios label={LOOP.changeOne}>
         {options.map((x, i) => <OptionRow key={x} first={i === 0} o={x} range={range} on={o === x} onPick={() => setO(x)} long />)}
       </Radios>
-      <PillBtn kind="done" title="Try this next week" onPress={() => { if (o) onPick(o) }} disabled={!o} />
+      <PillBtn kind="done" title={LOOP.tryIt} onPress={() => { if (o) onPick(o) }} disabled={!o} />
     </LoopSheet>
   )
 }
@@ -352,16 +346,17 @@ function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: Week
   const quietOk = useStore((s) => !loopSafety(s.data, null, healthLoggingAllowed(s.data)).quiet)
   const rows: [string, 'mind' | 'move' | 'food', ReactNode][] = []
   const add = (l: string, k: 'mind' | 'move' | 'food', v: ReactNode | null) => { if (v) rows.push([l, k, v]) }
-  const lw = (x: string | null) => (x && span && /\d+ days$/.test(x) ? x + ' last week' : x)
+  const lw = (x: string | null) => (x && span && /\d+ days$/.test(x) ? x + LOOP.lastWeek : x)
   const b = (s: ReactNode) => <Text style={font(600)}>{s}</Text>
-  add('Sleep', 'mind', lw(sleepWords(m)))
-  add('Stress', 'mind', lw(stressWords(m)))
-  add('Mood', 'mind', moodWords(m))
-  add('Hunger', 'mind', hungerWords(m, !!sleepHunger))
+  const L = LOOP.rows
+  add(L.sleep, 'mind', lw(sleepWords(m)))
+  add(L.stress, 'mind', lw(stressWords(m)))
+  add(L.mood, 'mind', moodWords(m))
+  add(L.hunger, 'mind', hungerWords(m, !!sleepHunger))
   const mv = (span ?? week).move, fd = (span ?? week).food
   const sess = mv.sessions - mv.walks
-  add('Move', 'move', sess ? <>{b(`${sess} ${sess === 1 ? 'session' : 'sessions'}`)} done{mv.walks ? ', plus walks' : ''}</> : mv.walks ? b(`${mv.walks} ${mv.walks === 1 ? 'walk' : 'walks'}`) : null)
-  add('Food', 'food', food ?? (fd.loggedDays && quietOk ? <>Averaged {b(`${fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10)} kcal`)}{fd.inRangeDays ? `, with ${fd.inRangeDays} ${fd.inRangeDays === 1 ? 'day' : 'days'} in your range` : null}</> : null))
+  add(L.move, 'move', sess ? <>{b(LOOP.sessions(sess))}{LOOP.sessionsDone}{mv.walks ? LOOP.plusWalks : ''}</> : mv.walks ? b(LOOP.walks(mv.walks)) : null)
+  add(L.food, 'food', food ?? (fd.loggedDays && quietOk ? <>{LOOP.averaged}{b(LOOP.kcal(fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10)))}{fd.inRangeDays ? LOOP.inRange(fd.inRangeDays) : null}</> : null))
   const tone = { mind: t.mindInk, move: t.moveInk, food: t.foodInk }
   const row = (l: string, k: 'mind' | 'move' | 'food', v: ReactNode) => (
     <View key={l} style={{ flexDirection: 'row', gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: t.sep }}>
@@ -370,10 +365,10 @@ function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: Week
     </View>
   )
   return (
-    <View accessibilityLabel={`${cap}, all together`} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
+    <View accessibilityLabel={LOOP.allTogether(cap)} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
       <T s={13} c={t.label2} style={{ paddingTop: 6, paddingBottom: 8 }}>{cap}</T>
       {rows.map(([l, k, v]) => row(l, k, v))}
-      {weight && row('Weight', 'food', weight)}
+      {weight && row(L.weight, 'food', weight)}
     </View>
   )
 }
@@ -386,7 +381,7 @@ function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'option
   const choose = useStore((s) => s.chooseNextWeek)
   const n = r.trend.n
   const pace = r.kind === 'on-pace' ? 'in-line' : r.pace
-  const weight = <>Weighed in {n} times. {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}</>
+  const weight = <>{LOOP.weighedIn(n)} {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}</>
   const pickIt = (x: LoopOption) => {
     setO(x)
     if (r.kind === 'options' && (x === 'range-less' || x === 'range-more') && r.range) applyRange(r.range)
@@ -395,24 +390,24 @@ function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'option
   }
   return (
     <LoopSheet label={CHECK_TITLE} onClose={onClose}>
-      <SheetHead title={CHECK_TITLE} close="Close" onClose={onClose} />
+      <SheetHead title={CHECK_TITLE} close={LOOP.close} onClose={onClose} />
       {r.kind === 'on-pace' ? (
         <View style={{ backgroundColor: sheetCard, borderRadius: 22, padding: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start' }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.foodFill, alignItems: 'center', justifyContent: 'center' }}><TIcon name="check" size={16} stroke={3} color={t.foodInk} /></View>
-          <T s={17} style={{ flex: 1, lineHeight: 25 }}>No change needed. Four weeks in line with your pace, so we’ll keep things as they are.</T>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.foodFill, alignItems: 'center', justifyContent: 'center' }}><TIcon name="check" size={20} stroke={3} color={t.foodInk} /></View>
+          <T s={17} style={{ flex: 1, lineHeight: 25 }}>{LOOP.onPace}</T>
         </View>
       ) : <Lead>{CHECK_LEAD}</Lead>}
       <SideBySide week={r.week} span={r.span} cap={CHECK_ROWS} weight={weight} />
-      {r.kind === 'options' && r.ctx === 'hard' && <T s={15} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingVertical: 14, paddingHorizontal: 16, lineHeight: 22, overflow: 'hidden' }}>After a week like this one, the sleep and stress options come first.</T>}
+      {r.kind === 'options' && r.ctx === 'hard' && <T s={15} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingVertical: 14, paddingHorizontal: 16, lineHeight: 22, overflow: 'hidden' }}>{LOOP.hardFirst}</T>}
       {r.kind === 'options' ? (
         <>
           <Radios label="Options">
             {r.options.map((x, i) => <OptionRow key={x} first={i === 0} o={x} range={r.range} on={o === x} onPick={() => pickIt(x)} />)}
           </Radios>
-          <PillBtn kind="keep" title="Keep things as they are" onPress={() => { choose('keep'); onClose() }} />
-          <Note>Nothing changes unless you choose it.</Note>
+          <PillBtn kind="keep" title={LOOP.keep} onPress={() => { choose('keep'); onClose() }} />
+          <Note>{LOOP.nothingChanges}</Note>
         </>
-      ) : <PillBtn kind="done" title="Good, carry on" onPress={onClose} />}
+      ) : <PillBtn kind="done" title={LOOP.carryOn} onPress={onClose} />}
     </LoopSheet>
   )
 }
@@ -432,21 +427,21 @@ function DriftSheet({ r, onClose }: { r: Extract<DriftSuggestion, { kind: 'drift
     onClose()
   }
   return (
-    <LoopSheet label="Keeping it steady" onClose={onClose}>
-      <SheetHead title="Keeping it steady" close="Close" onClose={onClose} />
-      <Lead>Your weigh-ins have sat a little {r.side} your steady range for 2 weeks. That’s common, and there are a few ways to steer it.</Lead>
-      <View accessibilityLabel="Weight" style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
+    <LoopSheet label={LOOP.driftTitle} onClose={onClose}>
+      <SheetHead title={LOOP.driftTitle} close={LOOP.close} onClose={onClose} />
+      <Lead>{LOOP.driftLead(r.side)}</Lead>
+      <View accessibilityLabel={LOOP.driftWeight} style={{ backgroundColor: sheetCard, borderRadius: 22, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 8 }}>
         <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 9, borderTopWidth: 1, borderTopColor: t.sep }}>
-          <Text style={[font(600), { width: 64, fontSize: 13, lineHeight: 20, color: t.foodInk }]}>Weight</Text>
-          <Text style={[font(400), { flex: 1, fontSize: 14, lineHeight: 20, color: t.label }]}>Weighed in {r.weighIns} times over 2 weeks.</Text>
+          <Text style={[font(600), { width: 64, fontSize: 13, lineHeight: 20, color: t.foodInk }]}>{LOOP.driftWeight}</Text>
+          <Text style={[font(400), { flex: 1, fontSize: 14, lineHeight: 20, color: t.label }]}>{LOOP.driftWeighed(r.weighIns)}</Text>
         </View>
       </View>
-      <SideBySide week={r.week} cap="The last 2 weeks" />
+      <SideBySide week={r.week} cap={LOOP.lastTwoWeeks} />
       <Radios label="Options">
         {r.options.map((x, i) => <OptionRow key={x} first={i === 0} o={x} range={r.range} on={o === x} onPick={() => pickIt(x)} drift />)}
       </Radios>
-      <PillBtn kind="keep" title="Keep things as they are" onPress={() => { choose('keep'); onClose() }} />
-      <Note>Nothing changes unless you choose it.</Note>
+      <PillBtn kind="keep" title={LOOP.keep} onPress={() => { choose('keep'); onClose() }} />
+      <Note>{LOOP.nothingChanges}</Note>
     </LoopSheet>
   )
 }
@@ -470,11 +465,11 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
   }
   const ticks = [...new Set([r.start.lo, r.lo, r.hi, r.start.hi])].sort((a, b) => a - b)
   return (
-    <LoopSheet label="Your range, from your logs" onClose={onClose}>
-      <SheetHead title="Your range, from your logs" close="Close" onClose={onClose} />
+    <LoopSheet label={LOOP.learnedTitle} onClose={onClose}>
+      <SheetHead title={LOOP.learnedTitle} close={LOOP.close} onClose={onClose} />
       <View style={{ backgroundColor: sheetCard, borderRadius: 22, padding: 16 }}>
-        <T s={13} c={t.label2}>What your logs say keeps you steady</T>
-        <Text style={[font(600), num, { fontSize: 34, letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{fmt(r.lo)} to {fmt(r.hi)} <Text style={[font(500), { fontSize: 17, color: t.label2 }]}>kcal a day</Text></Text>
+        <T s={13} c={t.label2}>{LOOP.learnedKey}</T>
+        <Text style={[font(600), num, { fontSize: 34, letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<Text style={[font(500), { fontSize: 17, color: t.label2 }]}>{LOOP.kcalADay}</Text></Text>
         <View importantForAccessibility="no-hide-descendants" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: 34, marginTop: 14, marginBottom: 8 }}>
           {w > 0 && <>
             <View style={{ position: 'absolute', top: 6, height: 10, borderRadius: 5, left: x(r.start.lo), width: x(r.start.hi) - x(r.start.lo), backgroundColor: dark ? t.fill : t.fill2 }} />
@@ -485,28 +480,27 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
             ))}
           </>}
         </View>
-        <T s={14} c={t.label2} style={[num, { lineHeight: 20 }]}>Narrower than the starting estimate of {fmt(r.start.lo)} to {fmt(r.start.hi)}, which came from your answers. It’s what keeps you steady going by what you log, so it works as a target even if some things go unlogged.</T>
-        {next?.floored && <T s={14} c={t.label2} style={{ lineHeight: 20 }}>Tilo keeps your target at a safe minimum, so it starts a little higher than this.</T>}
+        <T s={14} c={t.label2} style={[num, { lineHeight: 20 }]}>{LOOP.learnedNote(fmt(r.start.lo), fmt(r.start.hi))}</T>
+        {next?.floored && <T s={14} c={t.label2} style={{ lineHeight: 20 }}>{LOOP.floored}</T>}
       </View>
-      <SideBySide week={week} span={span} cap={`Based on the last ${Math.round(r.days / 7)} weeks`}
-        food={<><Text style={font(600)}>{r.loggedDays} complete days</Text> logged, averaging {fmt(r.avgKcal)} kcal</>}
-        weight={<Text style={font(600)}>{r.weighIns} weigh-ins</Text>} />
+      <SideBySide week={week} span={span} cap={LOOP.basedOn(Math.round(r.days / 7))}
+        food={<><Text style={font(600)}>{LOOP.completeDays(r.loggedDays)}</Text>{LOOP.averaging(fmt(r.avgKcal))}</>}
+        weight={<Text style={font(600)}>{LOOP.weighIns(r.weighIns)}</Text>} />
       {next ? (
         <>
-          <PillBtn kind="done" title="Use this range" onPress={use} />
-          <PillBtn kind="keep" title="Keep my current range" onPress={onClose} />
+          <PillBtn kind="done" title={LOOP.useRange} onPress={use} />
+          <PillBtn kind="keep" title={LOOP.keepRange} onPress={onClose} />
         </>
-      ) : <PillBtn kind="done" title="Good to know" onPress={onClose} />}
+      ) : <PillBtn kind="done" title={LOOP.goodToKnow} onPress={onClose} />}
     </LoopSheet>
   )
 }
 
-const CHIPS = ['Sleep', 'Stress', 'Mood', 'Hunger', 'Movement', 'Food', 'Weight']
 function ChipsRow() {
   const { t, sheetCard } = useLoop()
   return (
     <View importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-      {CHIPS.map((c) => <Text key={c} style={[font(600), { fontSize: 13, color: t.label, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 999, backgroundColor: sheetCard, overflow: 'hidden' }]}>{c}</Text>)}
+      {LOOP.chips.map((c) => <Text key={c} style={[font(600), { fontSize: 13, color: t.label, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 999, backgroundColor: sheetCard, overflow: 'hidden' }]}>{c}</Text>)}
     </View>
   )
 }
@@ -514,12 +508,12 @@ function ChipsRow() {
 /** ml-c4: the one-time ask. Two equal choices; closing it leaves weight out. */
 function WeightAskSheet({ onAnswer }: { onAnswer: (on: boolean) => void }) {
   return (
-    <LoopSheet label="Include your weight in reviews?" onClose={() => onAnswer(false)}>
-      <SheetHead title="Include your weight in reviews?" />
-      <Lead>It’s up to you. If you turn it on, your review shows how often you weighed in and, after 4 weeks, how things are going in words. Never a chart or a week-to-week number. You can change this any time.</Lead>
+    <LoopSheet label={LOOP.weightAskTitle} onClose={() => onAnswer(false)}>
+      <SheetHead title={LOOP.weightAskTitle} />
+      <Lead>{LOOP.weightAskLead}</Lead>
       <ChipsRow />
-      <PillBtn kind="done" title="Include it" onPress={() => onAnswer(true)} />
-      <PillBtn kind="keep" title="Leave it out" onPress={() => onAnswer(false)} />
+      <PillBtn kind="done" title={LOOP.includeIt} onPress={() => onAnswer(true)} />
+      <PillBtn kind="keep" title={LOOP.leaveOut} onPress={() => onAnswer(false)} />
     </LoopSheet>
   )
 }
@@ -538,18 +532,18 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
   const showToast = useStore((s) => s.showToast)
   const remind = async () => {
     const ok = await setReviewPush(true)
-    showToast(ok ? 'Weekly reminder on' : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'Notifications are off for Tilo in your settings' : 'Couldn’t turn the reminder on. Try again when you’re online')
+    showToast(ok ? LOOP.toastOn : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? LOOP.toastDenied : LOOP.toastFailed)
   }
   const sec = { backgroundColor: sheetCard, borderRadius: 22, padding: 16, gap: 10 }
   const d = (s: string) => <T s={13} c={t.label2} style={{ lineHeight: 19 }}>{s}</T>
   return (
-    <LoopSheet label="Your weekly review" onClose={onClose}>
-      <SheetHead title="Your weekly review" close="Done" onClose={onClose} />
-      <Lead>A two-minute look back at your week, with everything side by side.</Lead>
+    <LoopSheet label={LOOP.dayTitle} onClose={onClose}>
+      <SheetHead title={LOOP.dayTitle} close={LOOP.dayClose} onClose={onClose} />
+      <Lead>{LOOP.dayLead}</Lead>
       <ChipsRow />
       <View style={sec}>
-        <T w={600} s={17}>Which day suits you?</T>
-        <View accessibilityRole="radiogroup" accessibilityLabel="Which day suits you?" style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
+        <T w={600} s={17}>{LOOP.whichDay}</T>
+        <View accessibilityRole="radiogroup" accessibilityLabel={LOOP.whichDay} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
           {DAYS.map(([n, s, full]) => {
             const on = day === n
             return (
@@ -560,18 +554,20 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
             )
           })}
         </View>
-        {d(`It’ll be waiting on Summary from ${dayName(day)} morning. No pressure to open it that day.`)}
+        {d(LOOP.waiting(dayName(day)))}
       </View>
       <View style={sec}>
-        <T w={600} s={17}>Want a reminder for your weekly review?</T>
-        {d(`One note on ${dayName(day)}, nothing else.`)}
+        <T w={600} s={17}>{LOOP.wantReminder}</T>
+        {d(LOOP.oneNote(dayName(day)))}
         {push
-          ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><Pill title="Reminder on" on bg={dark ? t.elev : t.bg} /><Pill title="Turn it off" onPress={() => setReviewPush(false)} bg={dark ? t.elev : t.bg} /></View>
+          ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><Pill title={LOOP.reminderOn} on bg={dark ? t.elev : t.bg} /><Pill title={LOOP.turnOff} onPress={() => setReviewPush(false)} bg={dark ? t.elev : t.bg} /></View>
           : <>
-              <PillBtn kind="done" sm title="Remind me" onPress={remind} />
-              <PillBtn kind="keep" sm title="No thanks" onPress={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }} />
+              {/* reminders need N12's native push: until then only "No thanks" is offered, never an
+                  offer the app can't keep (mental-performance) */}
+              {pushSupported() && <PillBtn kind="done" sm title={LOOP.remindMe} onPress={remind} />}
+              <PillBtn kind="keep" sm title={LOOP.noThanks} onPress={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }} />
             </>}
-        {d(`Once a week on ${dayName(day)} at ${time} UK time. It only says “Your week is ready”, nothing from your log. Turn it off any time in Profile.`)}
+        {d(LOOP.reminderNote(dayName(day), time))}
       </View>
     </LoopSheet>
   )
