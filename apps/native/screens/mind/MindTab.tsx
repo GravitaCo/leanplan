@@ -30,14 +30,21 @@ const checkinNotYet = () => Alert.alert('Check-in', 'Not in the native app yet: 
 
 export function MindTab({ renderCheckin }: { renderCheckin?: RenderCheckin }) {
   const navigation = useNavigation()
-  const st = useStore()
+  // store.tab drives the tabs (lib/navBridge.ts, the tab bar's setTab), as App.tsx does on the web
+  const onMind = useStore((s) => s.tab === 'mind')
+  const setTab = useStore((s) => s.setTab)
   const mindOpen = useStore((s) => s.mindOpen)
   const clearOpen = useStore((s) => s.clearOpen)
   const [sheet, setSheet] = useState<'checkin' | 'support' | null>(null)
   const [stack, setStack] = useState<MindStack>([])
   const push = (v: MindView) => setStack((s) => pushView(s, v))
   const pop = () => setStack(popView)
-  const view = stackView(stack)
+  // The web unmounts the Mind tab whenever another tab shows (App.tsx), so its pushed screens and
+  // sheets end there: a Reset left mid-run is never logged and stops talking, and nothing is waiting
+  // on return. Expo Router keeps this tab mounted, so off the Mind tab nothing is pushed (the pacer
+  // unmounts at once) and the stack and sheets are cleared.
+  const view = stackView(onMind ? stack : [])
+  useEffect(() => { if (!onMind) { setStack([]); setSheet(null) } }, [onMind])
 
   // a one-thing chip with a skill opens its view on arrival (openMind), only once the skills are reviewed
   useEffect(() => {
@@ -50,22 +57,23 @@ export function MindTab({ renderCheckin }: { renderCheckin?: RenderCheckin }) {
   useLayoutEffect(() => { navigation.setOptions({ tabBarStyle: view.hideTabBar ? { display: 'none' } : undefined } as object) }, [navigation, view.hideTabBar])
   // Android's back closes the newest view first
   useEffect(() => {
-    if (!stack.length) return
+    if (!onMind || !stack.length) return
     const sub = BackHandler.addEventListener('hardwareBackPress', () => { pop(); return true })
     return () => sub.remove()
-  }, [stack.length])
+  }, [onMind, stack.length])
 
   const openCheckin = () => {
-    if (openMindCheckin(st) === 'sheet') { if (renderCheckin) setSheet('checkin'); else checkinNotYet() }
+    if (openMindCheckin(useStore.getState()) === 'sheet') { if (renderCheckin) setSheet('checkin'); else checkinNotYet() }
   }
   const unload = view.unload ? <UnloadSheet onClose={pop} /> : null
+  const sheetOpen = onMind ? sheet : null
   if (view.screen === 'reset') return <ResetScreen onBack={pop} backLabel={view.resetBack} />
   if (view.screen === 'wind-down') return <WindDownScreen onBack={pop} onSkill={push}>{unload}</WindDownScreen>
   if (view.screen === 'outside') return <OutsideScreen onBack={pop} />
   return (
-    <MindPage onCheckin={openCheckin} onSupport={() => setSheet('support')} onSkill={push} onPlans={() => st.setTab('plan')}>
-      {sheet === 'checkin' && renderCheckin?.(() => setSheet(null))}
-      {sheet === 'support' && <SupportSheet onClose={() => setSheet(null)} />}
+    <MindPage onCheckin={openCheckin} onSupport={() => setSheet('support')} onSkill={push} onPlans={() => setTab('plan')}>
+      {sheetOpen === 'checkin' && renderCheckin?.(() => setSheet(null))}
+      {sheetOpen === 'support' && <SupportSheet onClose={() => setSheet(null)} />}
       {unload}
     </MindPage>
   )

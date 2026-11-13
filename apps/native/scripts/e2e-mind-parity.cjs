@@ -7,7 +7,7 @@
  * Screenshots of both, light and dark, go to E2E_OUT for `design`.
  *
  *   (repo root) npm run build && npx vite preview --port 4177 &
- *   (apps/native) npx expo export --platform web --output-dir dist-web && npx serve -s dist-web -l 4188 &
+ *   (apps/native) EXPO_PUBLIC_E2E=1 npx expo export --platform web --output-dir dist-web && npx serve -s dist-web -l 4188 &
  *   WEB_URL=http://localhost:4177/ NATIVE_URL=http://localhost:4188/ node scripts/e2e-mind-parity.cjs [--only=reset]
  *
  * `--self` runs the web app on both sides (checks the script and the web half before the native
@@ -106,6 +106,7 @@ const SESSION = () => ({ access_token: fakeJwt(), token_type: 'bearer', expires_
 const ADAPTERS = {
   web: {
     openMind: async (p) => { await p.locator('nav.tabbar').getByRole('button', { name: 'Mind', exact: true }).click(); await p.locator('.screen.mind').waitFor() },
+    tab: (p, name) => p.locator('nav.tabbar').getByRole('button', { name, exact: true }).click(),
     screen: (p, k) => p.locator({ mind: '.screen.mind', reset: '.screen.reset', 'wind-down': '.screen.wind-down', outside: '.screen.outside' }[k]),
     pairs: (p) => p.locator('.mind-g2 > div'),
     skills: (p) => p.locator('.mind-skills .li .t'),
@@ -128,6 +129,7 @@ const ADAPTERS = {
   },
   native: {
     openMind: async (p) => { await p.getByRole('tab', { name: 'Mind', exact: true }).click(); await p.getByTestId('screen-mind').waitFor() },
+    tab: (p, name) => p.getByRole('tab', { name, exact: true }).click(),
     screen: (p, k) => p.getByTestId('screen-' + k),
     pairs: (p) => p.getByTestId('mind-pair'),
     skills: (p) => p.getByTestId('mind-skill'),
@@ -339,6 +341,42 @@ const SCENARIOS = [
     f.tabBarBack = await a.tabBar(page).isVisible()
     return f
   }],
+  // leaving the Mind tab ends what it pushed, as the web unmounts it (ship-critic, 13 Nov 2026)
+  ['leave-outside', hardDay, {}, async (app) => {
+    const { page, a } = app
+    await a.openMind(page)
+    await page.getByRole('button', { name: /^Get outside/ }).first().click()
+    await a.screen(page, 'outside').waitFor()
+    await btn(page, 'Start').click()
+    await page.getByText('Log a session').first().waitFor()
+    await page.getByRole('button', { name: 'Cancel', exact: true }).last().click()
+    await page.waitForTimeout(600)
+    await a.tab(page, 'Mind')
+    await page.waitForTimeout(600)
+    return { page: await a.screen(page, 'mind').isVisible(), outside: (await a.screen(page, 'outside').count()) > 0 && await a.screen(page, 'outside').first().isVisible(), tabBar: await a.tabBar(page).isVisible() }
+  }],
+  // native only: on the web no tab change can reach Reset (its tab bar is hidden and App.tsx unmounts
+  // the Mind tab on any change), so a run left this way can't be logged there. Native keeps the tab
+  // mounted; a store move (a notification tap, here through the E2E build's __tiloStore) must end it.
+  ['leave-reset', hardDay, { nativeOnly: { logged: 0, page: true } }, async (app) => {
+    const { page, a } = app
+    await a.openMind(page)
+    await page.getByRole('button', { name: /^Reset/ }).first().click()
+    await a.screen(page, 'reset').waitFor()
+    await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000)
+    await page.getByRole('radio', { name: '1 min' }).click()
+    await btn(page, 'Start').click()
+    await page.clock.runFor(3000)
+    // a notification tap or a store move to another tab, mid-run
+    const hook = await page.evaluate(() => { const s = window.__tiloStore; if (s) s.getState().setTab('today'); return !!s })
+    if (!hook) throw new Error('needs the native web build with EXPO_PUBLIC_E2E=1 (window.__tiloStore)')
+    await page.clock.runFor(80000)
+    await page.waitForTimeout(500)
+    const logged = ((await stored(page)).days[HARD_DAY].checkin.skills || []).filter((x) => x.id === 'reset').length
+    await a.tab(page, 'Mind').catch(() => {})
+    await page.waitForTimeout(600)
+    return { logged, page: await a.screen(page, 'mind').isVisible() }
+  }],
   ['reset-reduced', hardDay, { reduced: true }, async (app) => {
     const { page, a } = app
     await a.openMind(page)
@@ -413,6 +451,16 @@ async function run() {
   for (const [name, seedFn, opts, fn] of SCENARIOS) {
     if (ONLY && !name.startsWith(ONLY)) continue
     const out = {}
+    if (opts.nativeOnly) {
+      // checked against the web's known behaviour instead of a web run (see the scenario's note)
+      const app = await open(browser, 'native', seedFn(), opts)
+      let got
+      try { got = await fn(app) } catch (e) { got = { error: String(e.message || e).split('\n')[0] } }
+      check(`${name}: no page errors on native`, !app.errors.length, app.errors)
+      await app.ctx.close()
+      for (const k of Object.keys(opts.nativeOnly)) check(`${name}: ${k} as on the web`, JSON.stringify(got[k]) === JSON.stringify(opts.nativeOnly[k]), { web: opts.nativeOnly[k], native: got[k] })
+      continue
+    }
     for (const side of ['web', 'native']) {
       const app = await open(browser, side, seedFn(), opts)
       try { out[side] = await fn(app) } catch (e) {
