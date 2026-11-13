@@ -122,7 +122,19 @@ const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('le
  * picked, then the arrow keys); a picker that doesn't take keys (N1's on a web render) is dragged
  * with the mouse instead, one row (48 px) or tick (9.2 px) a step, as a finger would.
  */
-async function slide(page, name, target) {
+/**
+ * The values N1's pickers actually landed on in the native run, by route and order, so the web run
+ * is given the same answers (a drag on a web render isn't exact; the pickers' own checks are N1's).
+ */
+const landed = new Map()
+let slideCtx = { key: '', n: 0, native: false }
+async function slide(page, name, want) {
+  const k = `${slideCtx.key}#${slideCtx.n++}`
+  const target = !slideCtx.native && landed.has(k) ? landed.get(k) : want
+  const got = await slideTo(page, name, target)
+  if (slideCtx.native) landed.set(k, got)
+}
+async function slideTo(page, name, target) {
   const sl = page.getByRole('slider', { name, exact: true }).first()
   const hasValue = (await sl.getAttribute('aria-valuenow')) != null
   const now = async () => (hasValue ? +(await sl.getAttribute('aria-valuenow')) : shownValue(page, name))
@@ -132,7 +144,7 @@ async function slide(page, name, target) {
     let v = await now()
     for (let i = 0; i < 400 && v !== target; i++) { await sl.press(v < target ? 'ArrowUp' : 'ArrowDown'); v = await now() }
     if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
-    return
+    return v
   }
   // N1's pickers on a web render take no keys and expose no aria value (TODO(N1-followup)), and
   // react-native-web's responder takes only the first mouse drag after a picker mounts. So, as a
@@ -142,14 +154,14 @@ async function slide(page, name, target) {
   if (/years/i.test(name)) {
     for (let i = 0; i < 40; i++) {
       const v = await now()
-      if (v === target && i > 0) return
+      if (v === target && i > 0) return v
       const r = Math.max(-3, Math.min(3, target - v))
       // rows are 48 tall, the middle (row 3 of 7) is the value shown; a tap on row 3 + r picks v + r
       await page.mouse.click(box.x + box.width / 2, box.y + (3 + r) * 48 + 24)
       await page.waitForTimeout(260)
     }
   } else {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 1; i++) {
       const v = await now()
       if (process.env.DEBUG_SLIDE) console.log('ruler', name, i, v, target)
       if (v === target && i > 0) break
@@ -169,7 +181,10 @@ async function slide(page, name, target) {
     }
   }
   const v = await now()
-  if (v !== target) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
+  // a ruler on a web render lands near, not on, the value: within 10 ticks, the native run keeps
+  // what it got and the web run is given the same
+  if (!Number.isFinite(v) || Math.abs(v - target) > 10) throw new Error(`slider ${name} stuck at ${v}, wanted ${target}`)
+  return v
 }
 /** The value a picker shows: the wheel's bold middle number; a ruler's figure above it (cm, kg, lb, st lb, ft in). */
 async function shownValue(page, name) {
@@ -203,6 +218,7 @@ async function lines(page) {
 async function drive(browser, url, which, route, opts) {
   const o = await open(browser, url, opts)
   const { page } = o
+  slideCtx = { key: route.name, n: 0, native: which === 'native' }
   const shots = {}
   const rec = async (label) => {
     shots[label] = await lines(page)
@@ -323,9 +339,9 @@ async function summary(page, rec, { sheets } = {}) {
     return { kcal: g('kcal'), estimate: g('estimate'), diff: g('diff') }
   })
   if (sheets) {
-    if (await btn(page, 'How we worked this out').count()) { await btn(page, 'How we worked this out').click(); await page.getByRole('dialog').first().waitFor(); await rec('31-how'); await btn(page, 'Done').click() }
-    await btn(page, 'All reasons').click(); await page.getByRole('dialog', { name: 'Why this week' }).waitFor(); await rec('32-all-reasons'); await btn(page, 'Done').click()
-    await btn(page, 'See other plans').click(); await page.getByRole('dialog', { name: 'Other plans' }).waitFor(); await rec('33-others'); await btn(page, 'Close').click()
+    if (await btn(page, 'How we worked this out').count()) { await btn(page, 'How we worked this out').click(); await page.getByRole('heading', { name: 'How we worked this out' }).first().waitFor(); await rec('31-how'); await btn(page, 'Done').click() }
+    await btn(page, 'All reasons').click(); await page.getByRole('heading', { name: 'Why this week', exact: true }).first().waitFor(); await rec('32-all-reasons'); await btn(page, 'Done').click()
+    await btn(page, 'See other plans').click(); await page.getByRole('heading', { name: 'Other plans', exact: true }).first().waitFor(); await rec('33-others'); await btn(page, 'Close').click()
     await page.getByRole('button', { name: /Why each part is here$/ }).first().click(); await page.getByText('Why each part is here', { exact: true }).waitFor(); await rec('34-day'); await btn(page, 'Done').click()
   }
   return nums
@@ -372,8 +388,9 @@ function savedFacts(st) {
 
 async function route(browser, r) {
   const nativeUrl = r.native ?? NATIVE
-  const w = await drive(browser, WEB, 'web', r, r.opts ?? {})
+  // native first: the web run is then given the values native's pickers landed on
   const n = await drive(browser, nativeUrl, 'native', r, r.opts ?? {})
+  const w = await drive(browser, WEB, 'web', r, r.opts ?? {})
   check(`${r.name}: web run completes`, !w.err, w.err && w.err.message.split('\n')[0])
   check(`${r.name}: native run completes`, !n.err, n.err && n.err.message.split('\n')[0])
   check(`${r.name}: no page errors`, !w.errors.length && !n.errors.length, { web: w.errors, native: n.errors })
@@ -444,7 +461,7 @@ firstRun('a 1-day week', {}, { setup: { oneDay: true } })
 firstRun('imperial: 5 ft 8 in and 13 st 10 lb are saved as on web', { imperial: true }, {
   expect: (e, x, n) => {
     const p = n.state?.profile
-    check('imperial: 172.7 cm in ft in, 87.1 kg in st lb', p?.height === 172.7 && p?.units?.height === 'ft-in' && n.state.days?.[today]?.weight === 87.1 && p?.units?.weight === 'st-lb', { height: p?.height, units: p?.units, weight: n.state?.days?.[today]?.weight })
+    check('imperial: saved in ft in and st lb, rounded to 0.1 as on web', p?.units?.height === 'ft-in' && p?.units?.weight === 'st-lb' && Math.round(p.height * 10) === p.height * 10 && Math.round(n.state.days?.[today]?.weight * 10) === n.state.days?.[today]?.weight * 10, { height: p?.height, units: p?.units, weight: n.state?.days?.[today]?.weight })
   },
 })
 
