@@ -18,6 +18,7 @@ import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { SETUP_CARD } from './copyApp'
 import { BUILD_PLAN } from './copy'
+import { HEALTH_TICKS as HEALTH_TICKS_COPY, PRIVACY_SHEET } from '@/copy/account'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 export { ONBOARDING_ENABLED }
@@ -47,7 +48,7 @@ export { wizardDue, setupCardDue, buildCardDue } from '@/data/firstRun'
 /* ---------------- shared pieces ---------------- */
 
 /** The card of ticked lines on each consent screen. */
-export function Ticks({ items, tight }: { items: string[]; tight?: boolean }) {
+export function Ticks({ items, tight }: { items: readonly string[]; tight?: boolean }) {
   return (
     <section className={'ticks' + (tight ? ' tight' : '')}>
       <ul>
@@ -57,12 +58,8 @@ export function Ticks({ items, tight }: { items: string[]; tight?: boolean }) {
   )
 }
 
-export const HEALTH_TICKS = [
-  'It’s private to your account. Nobody else can see it.',
-  'It’s never sold or used for ads.',
-  'Download it or delete it any time in Profile.',
-  'Saved on this phone first, so this works offline too.',
-]
+/** Shared with native (src/copy/account.ts). */
+export const HEALTH_TICKS: readonly string[] = HEALTH_TICKS_COPY
 export const AI_TICKS = [
   'Nothing is sent unless you use one of these features.',
   'Everything else in Tilo works without it, offline too.',
@@ -73,10 +70,10 @@ export const AI_TICKS = [
  *  (the full notice is still to be written, plan §8). */
 export function PrivacySheet({ onClose }: { onClose: () => void }) {
   return (
-    <Sheet title="Privacy" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={PRIVACY_SHEET.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="prose sub" style={{ padding: '0 4px' }}>
-        <p>Your log is stored on this phone and, once you agree, synced to a private database tied to your account. It’s never sold or used for ads.</p>
-        <p style={{ margin: 0 }}>The full details are in the <LegalLink id="privacy">privacy policy</LegalLink>.</p>
+        <p>{PRIVACY_SHEET.p1}</p>
+        <p style={{ margin: 0 }}>{PRIVACY_SHEET.p2.before}<LegalLink id="privacy">{PRIVACY_SHEET.p2.link}</LegalLink>{PRIVACY_SHEET.p2.after}</p>
       </div>
     </Sheet>
   )
