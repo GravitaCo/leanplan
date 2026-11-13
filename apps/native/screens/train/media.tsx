@@ -6,13 +6,14 @@
  * range request. Nothing waits on the network: a clip that can't load falls back to its still, then
  * to the caller's placeholder.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { AccessibilityInfo, Image, Platform, Text, View, useColorScheme, type ImageStyle, type StyleProp } from 'react-native'
 import { useVideoPlayer, VideoView, type VideoPlayer, type VideoSource } from 'expo-video'
 import { useEvent } from 'expo'
 import type { ExerciseMedia, LogShape } from '@/core/types'
 import { mediaUrl, previewUrls } from '@/core/data/media'
 import { Icon } from '../../lib/ui/icons'
+import { InSheet } from '../../lib/ui/kit'
 import { tx, useTokens } from '../../lib/theme'
 
 /** The Referer the web app sends (app.tilo.fit is its origin). security-data owns this choice. */
@@ -58,10 +59,12 @@ export function useClipPreview(m: ExerciseMedia | undefined, motion: boolean): {
  * is one, else a typographic tile ("Cue", "Hold", "Time") or the dumbbell. The animated preview is
  * 320×180 with the vertical clip pillarboxed in the middle, so it's cropped as the web's `img.lb`.
  */
-/** `.thumb.ph`: the placeholder tile is the page colour in light, `--elev` in dark */
+/** `.thumb.ph`: the placeholder tile is the page colour in light, `--elev` in dark; `--fill` in a sheet (`.sheet .thumb.ph`) */
 export function usePhBg(): string {
   const t = useTokens()
-  return useColorScheme() === 'dark' ? t.elev : t.bg
+  const dark = useColorScheme() === 'dark'
+  if (useContext(InSheet)) return t.fill
+  return dark ? t.elev : t.bg
 }
 
 export function Thumb({ video, shape, play, big, size }: {
@@ -121,16 +124,12 @@ export function useClip(path: string | undefined, autoPlay: boolean): { player: 
  * it stopped. The player's own time events come about every 100 ms and unevenly on iOS, which made
  * the count lag and jump (Benn, 13 Nov).
  */
-export function useClipTime(player: VideoPlayer, playing: boolean): number {
+export const useClipTime: (player: VideoPlayer, playing: boolean) => number = Platform.OS === 'android' ? useClipTimeEvents : useClipTimeFrames
+
+/** iOS and the web build: read on every frame while playing, once more on pause */
+function useClipTimeFrames(player: VideoPlayer, playing: boolean): number {
   const [t, setT] = useState(() => player.currentTime)
-  // Android: reading currentTime blocks the main thread there, so it keeps the player's time events
-  const { currentTime: evT } = useEvent(player, 'timeUpdate', { currentTime: player.currentTime, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
   useEffect(() => {
-    if (Platform.OS !== 'android') return
-    setT(evT)
-  }, [evT])
-  useEffect(() => {
-    if (Platform.OS === 'android') { player.timeUpdateEventInterval = playing ? 0.1 : 0; return }
     setT(player.currentTime)
     if (!playing) return
     let raf = 0
@@ -139,6 +138,13 @@ export function useClipTime(player: VideoPlayer, playing: boolean): number {
     return () => cancelAnimationFrame(raf)
   }, [player, playing])
   return t
+}
+
+/** Android: reading currentTime blocks the main thread there, so the player's 100 ms time events, only while playing */
+function useClipTimeEvents(player: VideoPlayer, playing: boolean): number {
+  useEffect(() => { player.timeUpdateEventInterval = playing ? 0.1 : 0 }, [player, playing])
+  const { currentTime } = useEvent(player, 'timeUpdate', { currentTime: 0, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
+  return currentTime
 }
 
 const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const
