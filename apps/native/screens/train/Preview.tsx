@@ -30,8 +30,9 @@ import { Btn, Card, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, TitleRow } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Sub } from '../../lib/ui/text'
-import { FInput, FRow, FSelect, LIST_GAP, Li, Stack, TextLink } from './pendingN1'
+import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
+import { FRow } from '../../lib/ui/fields'
+import { FSelect, LIST_GAP, Li, Stack, TextLink } from './pendingN1'
 import { TrainNav } from './nav'
 
 /** `.card.ex`: name, the prescription tag, the cue */
@@ -146,7 +147,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           {swap.ex.map((e) => <ExCard key={e.n} n={e.n} tg={e.t} cue={e.cue} />)}
           {swapKey === 'walk' && (
             <List style={LIST_GAP}>
-              <FRow label="Minutes"><FInput numeric value={walkMins} placeholder={swap.mins} onChangeText={setWalkMins} accessibilityLabel="Minutes" /></FRow>
+              <FRow label="Minutes" keyboardType="number-pad" value={walkMins} placeholder={swap.mins} onChangeText={setWalkMins} />
             </List>
           )}
           <Foot style={{ paddingTop: 4, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
@@ -157,8 +158,8 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
           {warm && <WarmupCard block={warm} />}
           <ExCard n={WORKOUTS.Cardio.ex[0].n} tg={shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t} cue={WORKOUTS.Cardio.ex[0].cue} />
           <List style={LIST_GAP}>
-            <FRow label="Type"><FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} /></FRow>
-            <FRow label="Minutes"><FInput numeric value={mins} placeholder="25" onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
+            <FRow label="Type" right={<FSelect title="Type" value={cardioType} onChange={setCardioType} options={CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]} />} />
+            <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder="25" onChangeText={setMins} />
           </List>
           <Stack><Btn title="Save cardio" onPress={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }} /></Stack>
           <Foot style={{ paddingTop: 12, paddingHorizontal: 4 }}>{RED_FLAG}</Foot>
@@ -189,7 +190,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                     <Text style={[tx(13, 400), num, { color: t.label2, marginTop: 2 }]}>{s.rx}{detail ? ' · ' + detail : ''}</Text>
                     {s.swapped && (
                       <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 3 }]}>
-                        In place of {bareName(s.planned.n)}, today only. <TextLink inl size={13} title="Undo" onPress={() => onSwap(s.i, s.planned.id!)} />
+                        In place of {bareName(s.planned.n)}, today only. <InlineLink onPress={() => onSwap(s.i, s.planned.id!)}>Undo</InlineLink>
                         {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
                       </Text>
                     )}

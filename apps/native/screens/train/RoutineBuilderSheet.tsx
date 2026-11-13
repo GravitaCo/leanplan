@@ -12,10 +12,11 @@ import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKe
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { LibrarySheet } from './LibrarySheet'
 import { Btn, List } from '../../lib/ui/kit'
-import { NavBtn, SettingRow, Sheet } from '../../lib/ui/primitives'
+import { NavBtn, SettingRow, Sheet, XBtn as RemoveBtn } from '../../lib/ui/primitives'
 import { font, useTokens } from '../../lib/theme'
 import { Foot, GrpH } from '../../lib/ui/text'
-import { FInput, FRow, LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
+import { FRow } from '../../lib/ui/fields'
+import { LIST_GAP, Li, LiText, Stack, XBtn } from './pendingN1'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -54,7 +55,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
   return (
     <Sheet title={r ? 'Edit workout' : 'New workout'} onClose={onClose} tall right={<NavBtn bold title="Save" onPress={save} disabled={!slots.length} />}>
       <List style={LIST_GAP}>
-        <FRow label="Name"><FInput value={name} placeholder="My workout" maxLength={120} onChangeText={setName} accessibilityLabel="Name" /></FRow>
+        <FRow label="Name" value={name} placeholder="My workout" maxLength={120} onChangeText={setName} />
       </List>
 
       <GrpH>{`Exercises${slots.length ? ` · about ${aboutMins(estMins(normalised, { warmup: ONBOARDING_ENABLED, mins: r ? warmupMinsForKey(r.id, routines, training) : undefined }))} min` : ''}`}</GrpH>
@@ -73,7 +74,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
                 <View style={{ flexDirection: 'row', gap: 6, marginLeft: 8 }}>
                   <XBtn icon="chevL" rotate={90} label={`Move ${nm} up`} disabled={i === 0} onPress={() => move(i, -1)} />
                   <XBtn icon="chevR" rotate={90} label={`Move ${nm} down`} disabled={i === slots.length - 1} onPress={() => move(i, 1)} />
-                  <XBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
+                  <RemoveBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
                 </View>
               </Li>
             )

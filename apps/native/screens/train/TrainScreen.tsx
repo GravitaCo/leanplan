@@ -25,12 +25,12 @@ import { LibrarySheet } from './LibrarySheet'
 import { AddSomethingSheet, LogSessionSheet, SupportSheet } from './sheets'
 import { Thumb, usePhBg } from './media'
 import { DayNav, MoveStrip } from '../../lib/ui/WeekStrip'
-import { PageHeader } from '../../lib/ui/primitives'
+import { PageHeader, XBtn } from '../../lib/ui/primitives'
 import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot } from '../../lib/ui/text'
-import { Li, TextLink, XBtn } from './pendingN1'
+import { Foot, TextLink as InlineLink } from '../../lib/ui/text'
+import { Li, TextLink } from './pendingN1'
 import { TrainNav } from './nav'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -255,8 +255,8 @@ function Train() {
                 <View style={{ borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 14 }}>
                   <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2 }]}>
                     {planPos?.maintenanceWeek != null
-                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <TextLink inl size={13} style={font(500)} title="Full workout" onPress={() => openWorkout(r.k, 'planned')} />}</>
-                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <TextLink inl size={13} style={font(500)} title="The full workout" onPress={() => openWorkout(r.k, 'planned')} /> is here if you'd like it.</>}</>}
+                      ? <>{planPos.maintenanceWeek === 1 ? 'Maintenance: fewer sets, the same weights as before. ' : ''}{!offer && !gentle && <InlineLink style={font(500)} onPress={() => openWorkout(r.k, 'planned')}>Full workout</InlineLink>}</>
+                      : <>{planShortKind === 'ease' ? 'Easing in: shorter sessions while you find your weights.' : 'A lighter week, to recover before the next stretch.'}{!offer && !gentle && <> <InlineLink style={font(500)} onPress={() => openWorkout(r.k, 'planned')}>The full workout</InlineLink> is here if you'd like it.</>}</>}
                   </Text>
                 </View>
               )}

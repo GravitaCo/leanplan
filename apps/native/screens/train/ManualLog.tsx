@@ -26,7 +26,7 @@ import { Btn } from '../../lib/ui/kit'
 import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
-import { Foot, Sub } from '../../lib/ui/text'
+import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
 import { Stack, TextLink } from './pendingN1'
 import { TrainNav, toPoint } from './nav'
 
@@ -132,7 +132,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
           <ExCard key={exi} n={shown.n} tg={rx}>
             {swapped && (
               <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 4, marginBottom: 10 }]}>
-                In place of {e.n}, {isToday ? 'today' : 'this day'} only. <TextLink inl size={13} title="Undo" label={`Undo, back to ${e.n}`} onPress={() => swapSlot(exi, e.id!)} />
+                In place of {e.n}, {isToday ? 'today' : 'this day'} only. <InlineLink label={`Undo, back to ${e.n}`} onPress={() => swapSlot(exi, e.id!)}>Undo</InlineLink>
                 {x!.care?.length ? <> Asks quite a lot of {careList(x!.care)}. {CARE_DISCLAIMER}</> : null}
               </Text>
             )}
