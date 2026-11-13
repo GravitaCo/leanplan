@@ -46,7 +46,7 @@ export function cookiePolicy({ onboarding = false, mind = false, products = fals
             : []),
           ...(native
             ? [
-                `tali-push (iPhone app only): your phone's reminder address from Apple (its device token), the account it was saved for and which Apple service it uses, so Tilo can update or remove it. Only kept while reminders are on, or until Tilo has removed the address from your account. Never contains anything you logged.`,
+                `tali-push (iPhone app only): your phone's reminder address from Apple (its device token), the account it was saved for and which Apple service it uses, so Tilo can update or remove it. If an earlier sign-in on this phone left an address in that account, it also keeps that account's id and address until Tilo has removed it. Only kept while reminders are on, or until Tilo has removed the address. Never contains anything you logged.`,
                 ...(mind
                   ? [`tali-notify (iPhone app only): which Tilo check-in, wind-down and plan check-in reminders the app has seen in Notification Centre and whether you opened them, so Tilo can send one less often if you don't. No message text and nothing you logged. Never synced. Deleted when you remove this device's log, delete your account or delete the app.`]
                   : []),

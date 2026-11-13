@@ -4,10 +4,11 @@
  *
  * - Shown while the app is open, as a browser shows a push with the tab open (no badge).
  * - A tap opens the app at Today, and the weekly review reminder opens the review: the web's
- *   ./?n=<kind>, ./ and ./?review=1.
+ *   ./?n=<kind>, ./ and ./?review=1. Through the store (setTab, openReview), never the router.
  * - The reminder delivery log (security-data H3) records Mind reminders only, into the same
  *   device-only store the service worker's twin uses (./notifyStore, `tali-notify`), with the
- *   rules in ./notifyReconcile. It's read, emptied and handed to the store (ingestNotifyLog) at
+ *   rules in ./notifyReconcile. It's read and emptied by the shared takeNotifyEvents (MMKV on a
+ *   phone, src/data/platform.native.ts) and handed to the store (ingestNotifyLog) at
  *   launch and each time the app comes back to the front, except while the owner question shows,
  *   exactly as App.tsx does; two ignored in a row start that type's back-off.
  * - A registered phone checks its token at launch and when Apple replaces it.
@@ -18,11 +19,10 @@
 import { useEffect } from 'react'
 import { AppState } from 'react-native'
 import * as Notifications from 'expo-notifications'
-import { router } from 'expo-router'
 import { createMMKV, type MMKV } from 'react-native-mmkv'
 import { useStore } from '@/store/store'
 import { checkPushToken, pushSupported, pushTokenChanged } from './push'
-import { takeNativeNotifyEvents } from './notifyMMKV'
+import { takeNotifyEvents } from '@/data/notifyLog'
 import { NOTIFY_STORE_ID, recordNotifyEvent } from './notifyStore'
 import { deliveryKey, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
@@ -77,10 +77,9 @@ function handleTap(r: Notifications.NotificationResponse | null): void {
   const p = presentedOf(n)
   if (p) apply(noteOpened(readSeen(), p, new Date()))
   try { Notifications.clearLastNotificationResponse() } catch { /* nothing to clear */ }
-  try {
-    router.navigate('/')
-    if (routeFor(dataOf(n)) === 'review') useStore.getState().openReview()
-  } catch { /* the navigator isn't ready: the app opens where it was */ }
+  // through the store, as on the web (lib/navBridge.ts moves the router to store.tab)
+  if (routeFor(dataOf(n)) === 'review') useStore.getState().openReview()
+  else useStore.getState().setTab('today')
 }
 
 // ---- back to the front: Notification Centre, then the log into the store ----
@@ -91,7 +90,7 @@ async function settleLog(): Promise<void> {
     apply(reconcile(readSeen(), presented, new Date()))
   } catch { /* unavailable: nothing new recorded */ }
   if (useStore.getState().ownerAsk) return
-  const ev = await takeNativeNotifyEvents()
+  const ev = await takeNotifyEvents()
   if (ev.length && !useStore.getState().ownerAsk) useStore.getState().ingestNotifyLog(ev)
 }
 

@@ -827,7 +827,7 @@ end to end, so the push service can't read it" holds for the web only. Proposed 
   never sent to APNs (`forApns`) unless the function's `APNS_SUPP_NAMES` secret is set to "on",
   which waits for this addendum to be signed and for the toggle's footer to say that in the iPhone
   app Apple's push service can read the names (copy for Benn or Sara, through `design`);
-  `apns-expiration` one hour, so Apple holds a reminder's text for an hour at most; the function
+  `apns-expiration` one hour, so Apple stops trying to deliver an undelivered reminder after an hour (what Apple logs is governed by its own terms: open item); the function
   logs status codes only; the privacy policy says Apple can read iPhone reminders (gated on
   `native`). Open: Apple's role and data terms for APNs under the Apple Developer Program License
   Agreement, and the transfer mechanism (Apple Inc., US). An alternative that removes R19 is a

@@ -18,13 +18,11 @@
  * Pure, so scripts/test-platform.mjs runs it in Node.
  */
 
-/** The Mind reminder types and their tags (supabase/functions/_shared/reminders.ts REMINDER_COPY). */
-export const MIND_TAGS: Readonly<Record<string, string>> = {
-  'tali-checkin': 'checkin',
-  'tali-wind-down': 'wind-down',
-  'tali-plan': 'plan',
-}
-const MIND_KINDS = Object.values(MIND_TAGS)
+import { MIND_KINDS, REMINDER_COPY } from '../../../../supabase/functions/_shared/reminders.ts'
+
+/** The Mind reminder types by tag, from the shared rules (supabase/functions/_shared/reminders.ts). */
+export const MIND_TAGS: Readonly<Record<string, string>> = Object.fromEntries(MIND_KINDS.map((k) => [REMINDER_COPY[k].tag, k]))
+const isMindKind = (k: string): boolean => (MIND_KINDS as readonly string[]).includes(k)
 
 /** How many reminders the "seen" list keeps (as the log's NOTIFY_MAX). */
 export const SEEN_MAX = 60
@@ -34,7 +32,7 @@ const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object'
 /** The Mind type a reminder's data names (its `kind`, else its `tag`), or null for any other. */
 export function mindKindOf(data: unknown): string | null {
   const d = obj(data)
-  if (typeof d.kind === 'string' && MIND_KINDS.includes(d.kind)) return d.kind
+  if (typeof d.kind === 'string' && isMindKind(d.kind)) return d.kind
   if (typeof d.tag === 'string' && Object.prototype.hasOwnProperty.call(MIND_TAGS, d.tag)) return MIND_TAGS[d.tag]
   return null
 }
@@ -108,7 +106,7 @@ export function parseSeen(raw: string | undefined): Seen {
     const out: Seen = {}
     for (const [k, x] of Object.entries(v)) {
       const e = obj(x)
-      if (typeof e.kind === 'string' && MIND_KINDS.includes(e.kind)) out[k] = e.opened === true ? { kind: e.kind, opened: true } : { kind: e.kind }
+      if (typeof e.kind === 'string' && isMindKind(e.kind)) out[k] = e.opened === true ? { kind: e.kind, opened: true } : { kind: e.kind }
     }
     return out
   } catch { return {} }
