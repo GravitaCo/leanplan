@@ -10,7 +10,7 @@ built only after Benn's or Sara's approval. This file records each one, what it 
   the app goes to the background.
 - **Why:** rest and hold timers are read at arm's length; the web can't stop the screen sleeping, so a
   phone often locks mid-rest.
-- **How:** `expo-keep-awake` (Expo first-party, allowed by the dependency policy), `useKeepAwake` in
+- **How:** `expo-keep-awake` (Expo first-party, allowed by the dependency policy), `activateKeepAwakeAsync`/`deactivateKeepAwake` in
   `GuidedPlayer.tsx`. Nothing visible changes; no new permission.
 - **Approval:** Benn, 13 Nov 2026, relayed by the lead engineer (session message, 11:14 UTC). Not seen
   first-hand by this stream.
