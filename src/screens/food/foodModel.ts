@@ -255,8 +255,9 @@ export function numIn(v: string): number {
   // a thousands separator never follows a leading 0 ("0,125" is a decimal). In a comma region "1,250"
   // typed for 1.25 reads as 1250: three decimals are rare on UK labels and amounts, so the paste wins
   const n = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '')
-    // a pasted European "1.234,5": dots group the thousands, the comma is the decimal
-    : /^[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s) ? s.replace(/\./g, '').replace(',', '.')
+    // a pasted European "1.234,5": dots group the thousands, the comma is the decimal. The comma is
+    // required: without it "1.250" is the ordinary decimal 1.25 a web number box or a UK keypad types
+    : /^[1-9]\d{0,2}(\.\d{3})+,\d+$/.test(s) ? s.replace(/\./g, '').replace(',', '.')
     : s.replace(',', '.')
   return parseFloat(n) || 0
 }

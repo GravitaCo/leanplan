@@ -82,7 +82,7 @@ export function foodModelSuite(): number {
   check('edit: grams keep the slider multiplier', editAmount(e('Rice', 200, 'lunch', { grams: 150 }), 1.1).mult === 1.1)
 
   // recipes
-  check('draft: unreadable servings count as 1; a comma decimal reads', draftTotals({ name: 'x', servings: '', items: [] }).servings === 1 && draftTotals({ name: 'x', servings: '1,5', items: [] }).servings === 1.5)
+  check('draft: unreadable servings count as 1; a comma decimal reads', draftTotals({ name: 'x', servings: '', items: [] }).servings === 1 && draftTotals({ name: 'x', servings: '1,5', items: [] }).servings === 1.5 && draftTotals({ name: 'x', servings: '1.500', items: [] }).servings === 1.5)
   const rs = [{ id: 'a', name: 'Curry', servings: 2, items: [] }]
   check('draft problems: name, items, a taken name', draftProblem({ name: ' ', servings: '1', items: [] }, rs) === 'name'
     && draftProblem({ name: 'Soup', servings: '1', items: [] }, rs) === 'items'
@@ -102,7 +102,7 @@ export function foodModelSuite(): number {
   const q = quickEntry({ n: ' ', k: '650', p: '30', c: 'x', fat: '' }, 'lunch', 0.3)
   check('quick estimate: named "Quick estimate", unreadable fields 0', q?.n === 'Quick estimate' && q.k === 650 && q.p === 30 && q.c === 0 && q.how === 'quick' && q.err === 0.3)
 
-  check('typed numbers: comma decimals, thousands, junk', numIn('12,5') === 12.5 && numIn('1,200') === 1200 && numIn('1,200.5') === 1200.5 && numIn('0,125') === 0.125 && numIn('1.234,5') === 1234.5 && numIn('1.5') === 1.5 && numIn(' 7 ') === 7 && numIn('') === 0 && numIn('x') === 0 && numIn('150') === 150)
+  check('typed numbers: comma decimals, thousands, junk', numIn('12,5') === 12.5 && numIn('1,200') === 1200 && numIn('1,200.5') === 1200.5 && numIn('0,125') === 0.125 && numIn('1.234,5') === 1234.5 && numIn('1.5') === 1.5 && numIn('1.250') === 1.25 && numIn('12.500') === 12.5 && numIn('2.125') === 2.125 && numIn(' 7 ') === 7 && numIn('') === 0 && numIn('x') === 0 && numIn('150') === 150)
 
   // duplicates
   const saved: Food = { id: '22222222-2222-4222-8222-222222222222', n: 'Tesco Greek Style Yogurt', k: 93, p: 5.6, c: 4.9, f: 5.7, g: 150, barcode: '5000000000017' }
