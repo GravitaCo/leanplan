@@ -11,7 +11,9 @@
  * The phone's row in push_subscriptions (docs/migrations/2026-11-13-native-push.sql): `endpoint` is
  * the device token, `platform` 'apns' (TestFlight and store builds) or 'apns-sandbox' (development
  * builds). Unlike Web Push, the alert isn't end-to-end encrypted: Apple carries it over TLS and can
- * read it (the privacy policy says so for the iPhone app).
+ * read it. So a supplement reminder never names the supplement through APNs (`forApns`) until DPIA
+ * 8.8's APNs addendum is signed and the function's APNS_SUPP_NAMES secret is set to "on"
+ * (compliance, 13 Nov 2026); the privacy policy's iPhone text is gated on its `native` option.
  *
  * Pure TS with no imports beyond reminders.ts, using WebCrypto only, so Deno and Node both load it.
  */
@@ -64,22 +66,43 @@ export function shownCopy(payload: unknown): Shown {
 }
 
 /**
- * The APNs request body: the alert, one thread per tag, and under `body` (which the app's
+ * What goes to a phone: shownCopy, except that a named supplement reminder becomes the generic one
+ * unless names over APNs are allowed (`names`, from the APNS_SUPP_NAMES secret). `lockNames` is set
+ * per account, so one tap on the web would otherwise send names readable by Apple to every iPhone.
+ */
+export function forApns(payload: unknown, names = false): Shown {
+  const s = shownCopy(payload)
+  if (s.kind === 'supp' && !names) return { title: REMINDER_COPY.supp.title, body: REMINDER_COPY.supp.body, tag: 'tali-supp', kind: 'supp' }
+  return s
+}
+
+/** One lock-screen group for every Tilo reminder, as web push shows them under the app
+ *  (mental-performance, 13 Nov 2026: separate groups would be a visible difference). */
+export const APNS_THREAD = 'tali'
+
+/** How long Apple keeps a reminder for a phone that's offline: a late reminder is no use, and Apple
+ *  holds the readable text meanwhile (compliance, 13 Nov 2026). An hour also keeps a wind-down
+ *  reminder from arriving deep into quiet hours. */
+export const APNS_EXPIRY_S = 60 * 60
+
+/**
+ * The APNs request body: the alert, one lock-screen group, and under `body` (which the app's
  * notifications library hands over as the notification's data) the type and tag, so the app can
  * record a Mind reminder in the delivery log and send a tap on the review reminder to the review.
  * No badge (the web shows none).
  */
 export function apnsBody(s: Shown): string {
   return JSON.stringify({
-    aps: { alert: { title: s.title, body: s.body }, sound: 'default', 'thread-id': s.tag || 'tali' },
+    aps: { alert: { title: s.title, body: s.body }, sound: 'default', 'thread-id': APNS_THREAD },
     body: { kind: s.kind, tag: s.tag },
   })
 }
 
 /** The request headers. A later reminder with the same tag replaces an unread one, as `tag` does on
  *  the web (apns-collapse-id). */
-export function apnsHeaders(s: Shown, jwt: string, topic = APNS_TOPIC): Record<string, string> {
+export function apnsHeaders(s: Shown, jwt: string, nowMs: number, topic = APNS_TOPIC): Record<string, string> {
   const h: Record<string, string> = {
+    'apns-expiration': String(Math.floor(nowMs / 1000) + APNS_EXPIRY_S),
     authorization: 'bearer ' + jwt,
     'apns-push-type': 'alert',
     'apns-priority': '10',
@@ -90,11 +113,18 @@ export function apnsHeaders(s: Shown, jwt: string, topic = APNS_TOPIC): Record<s
   return h
 }
 
-/** Whether Apple's answer means the token is dead, so its row goes (as Web Push 404 and 410):
- *  410 Unregistered, or 400 for a token Apple doesn't accept for this app or gateway. */
-export function apnsGone(status: number, reason: unknown): boolean {
-  return status === 410 || (status === 400 && (reason === 'BadDeviceToken' || reason === 'DeviceTokenNotForTopic'))
+/** Whether Apple's answer means the token is dead, so its row goes (as Web Push 404 and 410): only
+ *  410 Unregistered. A 400 BadDeviceToken or DeviceTokenNotForTopic can also come from our own
+ *  setup (a wrong topic or gateway) and would then delete every phone's row, so those rows stay
+ *  (counted as failed); the phone saves its row again at each launch (security-data, 13 Nov 2026). */
+export function apnsGone(status: number, _reason?: unknown): boolean {
+  return status === 410
 }
+
+/** Apple refused the provider token itself: drop the cached one so the next send signs afresh (the
+ *  30-minute window keeps that within Apple's 20-minute rule). */
+export const apnsTokenRefused = (status: number, reason: unknown): boolean =>
+  status === 403 && (reason === 'ExpiredProviderToken' || reason === 'InvalidProviderToken')
 
 // ---- the provider token (JWT, ES256) ----
 

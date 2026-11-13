@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 import { MIND_KINDS, payloadFor, REMINDER_COPY, suppPayload } from '../../supabase/functions/_shared/reminders'
 import {
-  APNS_HOSTS, APNS_JWT_WINDOW_S, APNS_TOPIC, apnsBody, apnsGone, apnsHeaders, apnsIat, apnsJwt, apnsKey, isApns, isApnsToken, shownCopy,
+  APNS_EXPIRY_S, APNS_HOSTS, APNS_JWT_WINDOW_S, APNS_THREAD, APNS_TOPIC, apnsBody, apnsGone, apnsHeaders, apnsIat, apnsJwt, apnsKey, apnsTokenRefused, forApns, isApns, isApnsToken, shownCopy,
 } from '../../supabase/functions/_shared/apns'
 import { USER_TABLES } from '../../supabase/functions/_shared/account'
 
@@ -68,21 +68,26 @@ export async function apnsSuite(): Promise<number> {
   /* ---------- the request ---------- */
   const s = shownCopy(payloadFor('checkin'))
   const body = JSON.parse(apnsBody(s))
-  ok('body: alert with the fixed copy, a sound, one thread per tag, no badge',
+  ok('body: alert with the fixed copy, a sound, one lock-screen group for every reminder (as web push), no badge',
     body.aps.alert.title === 'Tilo' && body.aps.alert.body === REMINDER_COPY.checkin.body && body.aps.sound === 'default'
-    && body.aps['thread-id'] === 'tali-checkin' && !('badge' in body.aps) && !('content-available' in body.aps) && !('mutable-content' in body.aps))
+    && body.aps['thread-id'] === APNS_THREAD && JSON.parse(apnsBody(shownCopy(review))).aps['thread-id'] === APNS_THREAD && !('badge' in body.aps) && !('content-available' in body.aps) && !('mutable-content' in body.aps))
   ok('body: the app gets the type and tag (for the delivery log and the tap), nothing else',
     JSON.stringify(body.body) === JSON.stringify({ kind: 'checkin', tag: 'tali-checkin' }) && Object.keys(body).join() === 'aps,body')
-  const h = apnsHeaders(s, 'JWT')
-  ok('headers: an alert for fit.tilo.app, sent now, replacing an unread one with the same tag',
-    h.authorization === 'bearer JWT' && h['apns-push-type'] === 'alert' && h['apns-priority'] === '10' && h['apns-topic'] === APNS_TOPIC
+  const h = apnsHeaders(s, 'JWT', Date.parse('2026-11-13T08:30:00Z'))
+  ok('headers: an alert for fit.tilo.app, sent now, kept by Apple for an hour at most, replacing an unread one with the same tag',
+    h['apns-expiration'] === String(Date.parse('2026-11-13T08:30:00Z') / 1000 + 3600) && APNS_EXPIRY_S === 3600 && h.authorization === 'bearer JWT' && h['apns-push-type'] === 'alert' && h['apns-priority'] === '10' && h['apns-topic'] === APNS_TOPIC
     && APNS_TOPIC === JSON.parse(readFileSync('apps/native/app.json', 'utf8')).expo.ios.bundleIdentifier && h['apns-collapse-id'] === 'tali-checkin')
   ok('hosts: production and sandbox gateways', APNS_HOSTS.apns === 'https://api.push.apple.com' && APNS_HOSTS['apns-sandbox'] === 'https://api.sandbox.push.apple.com'
     && isApns('apns') && isApns('apns-sandbox') && !isApns('web') && !isApns(undefined) && !isApns('__proto__'))
   ok('tokens: lower-case hex only', isApnsToken('ab'.repeat(32)) && !isApnsToken('AB'.repeat(32)) && !isApnsToken('ab'.repeat(31)) && !isApnsToken('https://x/y') && !isApnsToken('../'.repeat(30)))
-  ok('a dead token\'s row goes (410, or Apple refusing the token), nothing else does',
-    apnsGone(410, 'Unregistered') && apnsGone(400, 'BadDeviceToken') && apnsGone(400, 'DeviceTokenNotForTopic')
+  ok('a dead token\'s row goes (410 only: a 400 can be our own setup, which would delete every phone\'s row)',
+    apnsGone(410, 'Unregistered') && !apnsGone(400, 'BadDeviceToken') && !apnsGone(400, 'DeviceTokenNotForTopic')
     && !apnsGone(400, 'PayloadTooLarge') && !apnsGone(403, 'ExpiredProviderToken') && !apnsGone(429, 'TooManyRequests') && !apnsGone(500, null))
+  ok('supplement names never go to a phone unless names over APNs are switched on (DPIA 8.8 addendum)',
+    forApns(named).body === REMINDER_COPY.supp.body && forApns(named).title === REMINDER_COPY.supp.title && forApns(named).tag === 'tali-supp'
+    && forApns(named, true).body === 'Vitamin D, Magnesium' && forApns(payloadFor('checkin')).body === REMINDER_COPY.checkin.body && forApns(review).body === review.body)
+  ok('a refused provider token is dropped (expired or invalid), nothing else drops it',
+    apnsTokenRefused(403, 'ExpiredProviderToken') && apnsTokenRefused(403, 'InvalidProviderToken') && !apnsTokenRefused(403, 'Forbidden') && !apnsTokenRefused(410, 'Unregistered'))
   ok('the largest payload fits APNs\'s 4 KB', apnsBody(shownCopy({ tag: 'tali-supp-named', body: 'x'.repeat(5000) })).length < 4096)
 
   /* ---------- the provider token ---------- */
@@ -107,8 +112,8 @@ export async function apnsSuite(): Promise<number> {
     /if \(isApns\(sub\.platform\)\) return sendApns\(sub, payload\);/.test(fn) && /webpush as any\)\.sendNotification\(/.test(fn)
     && fn.indexOf('return sendApns(sub, payload)') < fn.indexOf('.sendNotification('))
   ok('function: the phone gets the service worker\'s words (shownCopy), sent to its own token and gateway',
-    /const shown = shownCopy\(payload\);/.test(fn) && /fetch\(`\$\{APNS_HOSTS\[sub\.platform\]\}\/3\/device\/\$\{sub\.endpoint\}`/.test(fn)
-    && /headers: apnsHeaders\(shown, jwt\)/.test(fn) && /body: apnsBody\(shown\)/.test(fn) && /!isApnsToken\(sub\.endpoint\)/.test(fn))
+    /const shown = forApns\(payload, APNS_SUPP_NAMES\);/.test(fn) && /const APNS_SUPP_NAMES = Deno\.env\.get\("APNS_SUPP_NAMES"\) === "on";/.test(fn) && /fetch\(`\$\{APNS_HOSTS\[sub\.platform\]\}\/3\/device\/\$\{sub\.endpoint\}`/.test(fn)
+    && /headers: apnsHeaders\(shown, jwt, Date\.now\(\)\)/.test(fn) && /if \(apnsTokenRefused\(res\.status, reason\)\) apnsToken = null;/.test(fn) && /body: apnsBody\(shown\)/.test(fn) && /!isApnsToken\(sub\.endpoint\)/.test(fn))
   ok('function: a dead token\'s row is deleted by id, as Web Push 404/410', /if \(apnsGone\(res\.status, reason\)\) \{\s*await supabase\.from\("push_subscriptions"\)\.delete\(\)\.eq\("id", sub\.id\);/.test(fn))
   ok('function: the key and token are kept for the window, secrets from the environment only',
     /Deno\.env\.get\("APNS_KEY_P8"\)/.test(fn) && /apnsToken\.iat === iat/.test(fn) && !/BEGIN PRIVATE KEY/.test(fn))
@@ -127,7 +132,13 @@ export async function apnsSuite(): Promise<number> {
     && /platform in \('apns', 'apns-sandbox'\) and p256dh is null and auth_key is null and endpoint ~ '\^\[0-9a-f\]\{64,200\}\$'/.test(code))
   ok('migration: grants written out, nothing for anon, no loosening of RLS',
     /revoke all on public\.push_subscriptions from anon;/.test(code) && /grant select, insert, update, delete on public\.push_subscriptions to authenticated, service_role;/.test(code)
-    && !/policy/i.test(code) && !/disable row level security/i.test(code) && !/grant[^;]*to anon/i.test(code))
+    && !/create policy|alter policy|drop policy/i.test(code) && !/disable row level security/i.test(code) && !/grant[^;]*to anon/i.test(code))
+  ok('migration: one token, one account (a phone row replaces another account\'s row for the same token), definer with an empty search path, no one can call it',
+    /create or replace function public\.push_token_one_account\(\)\s*returns trigger\s*language plpgsql\s*security definer\s*set search_path = ''/.test(code)
+    && /delete from public\.push_subscriptions p\s*where p\.endpoint = new\.endpoint\s*and p\.platform in \('apns', 'apns-sandbox'\)\s*and p\.user_id <> new\.user_id;/.test(code)
+    && /if new\.platform in \('apns', 'apns-sandbox'\) then/.test(code)
+    && /revoke all on function public\.push_token_one_account\(\) from public, anon, authenticated;/.test(code)
+    && /create trigger push_token_one_account before insert or update of endpoint, platform, user_id on public\.push_subscriptions/.test(code))
   ok('the same table: consent trigger, withdrawal clear, purge and account deletion already cover phone rows',
     (USER_TABLES as readonly string[]).includes('push_subscriptions') && !/create table/i.test(code))
   return bad
