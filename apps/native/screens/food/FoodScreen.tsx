@@ -111,7 +111,7 @@ export function FoodScreen({ onProfile, scan }: { onProfile?: () => void; scan?:
 
   return (
     <View style={{ flex: 1, backgroundColor: tk.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
+      <ScrollView testID="food-screen" contentContainerStyle={{ paddingHorizontal: 16, paddingTop: insets.top, paddingBottom: 24 }}>
         <Header onAdd={() => setSheet({ k: 'add' })} onProfile={onProfile} name={data.profile.name} />
 
         <View accessibilityLabel="Day so far" style={{ backgroundColor: tk.card, borderRadius: tk.radius, padding: 16, gap: 14, marginBottom: 10 }}>

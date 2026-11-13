@@ -22,7 +22,7 @@ import { font, num, useTokens, type Tokens } from '../../lib/theme'
 /** body text: 17 px, -0.01em, `--label` (the web's `body`) */
 export function Txt({ size = 17, w = 400, color, n, lines, style, children, ...rest }: {
   size?: number; w?: 400 | 500 | 600 | 700; color?: string; n?: boolean; lines?: number; style?: StyleProp<TextStyle>; children?: ReactNode
-  accessibilityRole?: 'header' | 'text' | 'button' | 'link'; accessibilityLabel?: string; onPress?: () => void
+  accessibilityRole?: 'header' | 'text' | 'button' | 'link'; accessibilityLabel?: string; onPress?: () => void; testID?: string
 }) {
   const t = useTokens()
   return (
@@ -136,7 +136,7 @@ export function RowText({ title, sub, sub2, titleColor, tag, n }: { title: React
   const t = useTokens()
   return (
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Txt lines={1} color={titleColor}>{title}</Txt>
+      <Txt lines={1} color={titleColor} testID="row-title">{title}</Txt>
       {sub != null && sub !== '' && (
         <Txt size={13} color={t.label2} lines={1} n={n} style={{ marginTop: 2 }}>
           {sub}{tag ? <Text> </Text> : null}{tag ? <Tag text={tag} /> : null}
@@ -585,7 +585,7 @@ function Frame({ header, children, tall, animate = true, label, scroll = true, p
   const h = height - insets.top - 12
   const body = { paddingTop: padTop, paddingHorizontal: 16, paddingBottom: 24 + insets.bottom }
   return (
-    <Animated.View entering={animate && !reduce ? SlideInDown.duration(340) : undefined} accessibilityViewIsModal aria-label={label}
+    <Animated.View entering={animate && !reduce ? SlideInDown.duration(340) : undefined} accessibilityViewIsModal aria-label={label} testID="sheet"
       style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: h, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, overflow: 'hidden' },
         tall && { height: h }, { maxWidth: 520, alignSelf: 'center', width: '100%' }]}>
       <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
