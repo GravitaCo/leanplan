@@ -6,7 +6,8 @@
  * Native.
  */
 import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
-import { clearEvents, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
+import { readFileSync } from 'node:fs'
+import { clearEvents, NOTIFY_KINDS, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
 
 let failed = 0
 let passed = 0
@@ -43,7 +44,14 @@ await (async () => {
   const later = []
   ev.addEventListener('offline', (e) => later.push(e.type))
   await tick()
-  check('missed offline: only once', later.length === 0)
+  check('missed offline: also handed to a second late listener (each knows the state)', later.join() === 'offline' && got.join() === 'offline')
+  ev.setOnline(true)
+  ev.setOnline(false)
+  check('after a real change, each listener hears it once', got.join() === 'offline,offline' && later.join() === 'offline,offline')
+  const afterChange = []
+  ev.addEventListener('offline', (e) => afterChange.push(e.type))
+  await tick()
+  check('missed offline: nothing replayed once a real change was heard', afterChange.length === 0)
 })()
 
 await (async () => {
@@ -123,16 +131,23 @@ const memKV = () => {
   const kv = memKV()
   const at = new Date('2026-11-13T08:00:00.000Z')
   recordNotifyEvent(kv, 'checkin', 'shown', at)
+  recordNotifyEvent(kv, 'supp', 'shown', at)
+  recordNotifyEvent(kv, 'review', 'shown', at)
   recordNotifyEvent(kv, 'checkin', 'opened', at)
   recordNotifyEvent(kv, 'plan', 'nonsense', at)
   recordNotifyEvent(kv, '', 'shown', at)
   const ev = takeEvents(kv)
-  check('log: records {kind, at, ev} like the service worker, malformed dropped',
+  check('log: records {kind, at, ev} like the service worker; supplement, review and malformed dropped',
     JSON.stringify(ev) === JSON.stringify([{ kind: 'checkin', at: at.toISOString(), ev: 'shown' }, { kind: 'checkin', at: at.toISOString(), ev: 'opened' }]))
   check('log: take empties it', takeEvents(kv).length === 0)
-  for (let i = 0; i < NOTIFY_MAX + 5; i++) recordNotifyEvent(kv, 'k' + i, 'shown', at)
+  for (let i = 0; i < NOTIFY_MAX + 5; i++) recordNotifyEvent(kv, NOTIFY_KINDS[i % 3], 'shown', new Date(at.getTime() + i * 1000))
   const kept = takeEvents(kv)
-  check('log: newest 60 kept', NOTIFY_MAX === 60 && kept.length === 60 && kept[0].kind === 'k5' && kept[59].kind === 'k64')
+  check('log: newest 60 kept', NOTIFY_MAX === 60 && kept.length === 60 && kept[0].at === new Date(at.getTime() + 5000).toISOString() && kept[59].at === new Date(at.getTime() + 64000).toISOString())
+  // the web's list: MIND_COPY's keys in the service worker
+  const sw = readFileSync(new URL('../../../public/sw.js', import.meta.url), 'utf8')
+  const block = sw.slice(sw.indexOf('const MIND_COPY = {'), sw.indexOf('\n}', sw.indexOf('const MIND_COPY = {')))
+  const swKinds = [...block.matchAll(/^\s+'?([a-z-]+)'?: \{/gm)].map((m) => m[1])
+  check('log: the same reminder types as the service worker (' + swKinds.join() + ')', swKinds.length === 3 && swKinds.join() === NOTIFY_KINDS.join())
   recordNotifyEvent(kv, 'checkin', 'closed', at)
   clearEvents(kv)
   check('log: clear deletes it', kv.m.size === 0 && takeEvents(kv).length === 0)

@@ -18,6 +18,10 @@ const KEY = 'events'
 /** As the service worker's NOTIFY_MAX. */
 export const NOTIFY_MAX = 60
 const EVS = ['shown', 'opened', 'closed']
+/** Only the Mind reminder types are recorded, never supplement or review reminders (a supplement
+ *  reminder can say what someone takes): MIND_COPY's keys in public/sw.js, which
+ *  scripts/test-platform.mjs checks this list against. */
+export const NOTIFY_KINDS = ['checkin', 'wind-down', 'plan']
 
 /** The part of MMKV this needs. */
 export interface KV {
@@ -33,7 +37,7 @@ const read = (kv: KV): unknown[] => {
 
 /** Record one delivery event (the native notification handler, N12). Never throws. */
 export function recordNotifyEvent(kv: KV, kind: string, ev: 'shown' | 'opened' | 'closed', now = new Date()): void {
-  if (!kind || !EVS.includes(ev)) return
+  if (!NOTIFY_KINDS.includes(kind) || !EVS.includes(ev)) return
   try {
     const all = [...read(kv), { kind, at: now.toISOString(), ev }]
     kv.set(KEY, JSON.stringify(all.slice(-NOTIFY_MAX)))

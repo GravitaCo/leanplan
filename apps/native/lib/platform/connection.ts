@@ -6,8 +6,9 @@
  * One difference from a plain event target, on purpose: the first NetInfo report arrives a moment
  * after launch, before the store has added its listeners (initAuth adds them only after restoring the
  * session, up to 4 s). In a browser that can't happen, since navigator.onLine is known from the start.
- * So an 'online' or 'offline' event that reached no listener is kept, and handed once to the first
- * listener added for it later, if the connection is still in that state. Without this, a launch with
+ * So an 'online' or 'offline' event that reached no listener is kept until the connection next
+ * changes, and handed once to each listener added for it in that time, if the connection is still in
+ * that state: as if each had known the state from the start, as it would in a browser. Without this, a launch with
  * no connection left the store's `online` true and the connection pill never said "Offline".
  */
 
@@ -46,10 +47,9 @@ export function connectionEvents(start = true, defer: (fn: () => void) => void =
     set.add(wrapped)
     listeners.set(type, set)
     // a connection change this listener came too late for, still true: hand it over (async, as an
-    // event would arrive), only once
-    if (missed.has(type)) {
-      missed.delete(type)
-      if ((type === 'online') === online) defer(() => { if (set.has(wrapped) && (type === 'online') === online) wrapped({ type }) })
+    // event would arrive), once to this listener
+    if (missed.has(type) && (type === 'online') === online) {
+      defer(() => { if (set.has(wrapped) && missed.has(type) && (type === 'online') === online) wrapped({ type }) })
     }
   }
 
@@ -62,6 +62,7 @@ export function connectionEvents(start = true, defer: (fn: () => void) => void =
   const setOnline = (next: boolean): void => {
     if (next === online) return
     online = next
+    missed.clear() // a real change: listeners hear it now, older missed ones are stale
     dispatchEvent({ type: next ? 'online' : 'offline' })
   }
 
