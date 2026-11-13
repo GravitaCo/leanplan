@@ -6,7 +6,7 @@
  *
  * - localStorage → MMKV (./storage), sessionStorage → memory
  * - crypto.getRandomValues → expo-crypto (uuid() in src/data/supabase.ts)
- * - navigator.onLine and window 'online'/'offline' events → NetInfo
+ * - navigator.onLine and window 'online'/'offline' events → NetInfo (./connection)
  * - URL, structuredClone and AbortSignal.timeout where the engine lacks them
  *
  * A web render of this app (only for side-by-side checks against the web app) keeps the
@@ -17,8 +17,8 @@ import { Platform } from 'react-native'
 import { getRandomValues, digest, CryptoDigestAlgorithm } from 'expo-crypto'
 import NetInfo from '@react-native-community/netinfo'
 import { memoryStorage, nativeLocalStorage } from './storage'
+import { connectionEvents, onlineFrom } from './connection'
 
-type Listener = (e: { type: string }) => void
 const g = globalThis as unknown as Record<string, any>
 const native = Platform.OS !== 'web'
 
@@ -67,37 +67,21 @@ if (native) {
   g.sessionStorage = memoryStorage()
 
   // ---- window events (the store listens for 'online' and 'offline') ----
-  const listeners = new Map<string, Set<Listener>>()
   const win = g.window ?? (g.window = g)
-  win.addEventListener = (type: string, fn: Listener, opts?: { once?: boolean } | boolean) => {
-    const once = typeof opts === 'object' && !!opts?.once
-    const set = listeners.get(type) ?? new Set<Listener>()
-    const wrapped: Listener = once ? (e) => { set.delete(wrapped); fn(e) } : fn
-    ;(wrapped as any).__orig = fn
-    set.add(wrapped)
-    listeners.set(type, set)
-  }
-  win.removeEventListener = (type: string, fn: Listener) => {
-    const set = listeners.get(type)
-    if (set) for (const l of set) if (l === fn || (l as any).__orig === fn) set.delete(l)
-  }
-  win.dispatchEvent = (e: { type: string }) => {
-    for (const l of [...(listeners.get(e.type) ?? [])]) l(e)
-    return true
-  }
+  const ev = connectionEvents()
+  win.addEventListener = ev.addEventListener
+  win.removeEventListener = ev.removeEventListener
+  win.dispatchEvent = ev.dispatchEvent
 
   // ---- navigator.onLine from NetInfo ----
-  let online = true
   try {
-    Object.defineProperty(g.navigator, 'onLine', { configurable: true, get: () => online })
+    Object.defineProperty(g.navigator, 'onLine', { configurable: true, get: () => ev.online() })
   } catch {
-    g.navigator = { ...(g.navigator || {}), get onLine() { return online } }
+    g.navigator = { ...(g.navigator || {}), get onLine() { return ev.online() } }
   }
-  NetInfo.addEventListener((s) => {
-    // isInternetReachable is null while unknown: count it as online, as a browser would
-    const next = !!s.isConnected && s.isInternetReachable !== false
-    if (next === online) return
-    online = next
-    win.dispatchEvent({ type: next ? 'online' : 'offline' })
-  })
+  // A browser's navigator.onLine means "on a network", with no test request. NetInfo would otherwise
+  // test reachability on iOS by fetching a Google URL on every change and every minute: a request to
+  // a third party the privacy policy doesn't name. Off, so the phone only asks the OS.
+  NetInfo.configure({ reachabilityShouldRun: () => false })
+  NetInfo.addEventListener((s) => ev.setOnline(onlineFrom(s)))
 }

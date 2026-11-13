@@ -13,3 +13,12 @@ export const AUTH_OPTIONS: undefined | { auth: { storage: Storage; persistSessio
 export function onForeground(fn: () => void): void {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) fn() })
 }
+
+/** The reminder delivery log's store where there is no IndexedDB (the phone: MMKV). The web's
+ *  log is the service worker's IndexedDB (notifyLog.ts, deviceOnly.ts), so these do nothing here. */
+export function takeNativeNotifyEvents(): Promise<unknown[]> { return Promise.resolve([]) }
+export function clearNativeNotifyLog(): void { /* web: the IndexedDB is cleared by clearNotifyStore */ }
+
+/** Keep the (synced) reminder setting when this device can't take pushes at all, rather than turn
+ *  it off for every device (core/domain/age.ts restoreTurnsOff). Web: no, as before. */
+export const KEEP_REMINDERS_WITHOUT_PUSH = false
