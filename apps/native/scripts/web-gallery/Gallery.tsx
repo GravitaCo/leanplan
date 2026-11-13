@@ -268,8 +268,8 @@ export function Gallery() {
 
       <Sec id="rows3" title="Row: squares, tag, wrapping sub, trailing slots, needsnet, pv">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div className="list icons mind-skills">
-            <button className="li"><span className="ico" style={{ background: 'var(--mind-fill)', color: 'var(--mind-ink)' }}><Icon name="wind" size={18} /></span><div className="m"><div className="t">Reset</div><div className="s">Two minutes of slower breathing, whenever you need it</div></div><Chevron /></button>
+          <div className="list icons">
+            <button className="li"><span className="ico" style={{ background: 'var(--mind-fill)', color: 'var(--mind-ink)' }}><Icon name="wind" size={18} /></span><div className="m"><div className="t">Reset</div><div className="s" style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>Two minutes of slower breathing, whenever you need it</div></div><Chevron /></button>
             <div className="li"><span className="ico" style={{ background: 'var(--energy)', color: 'var(--on-food)' }}><Icon name="fork" size={18} /></span><div className="m"><div className="t">Oat porridge</div><div className="s">158 kcal · 5.4 g protein per 100 g<span className="tag">Mine</span></div></div><button className="addc" aria-label="Add Oat porridge"><Icon name="plus" size={16} stroke={2.8} /></button></div>
             <div className="li"><div className="m"><div className="t">Today</div></div><span className="tr kc num">1,500 kcal</span></div>
             <button className="li needsnet"><div className="m"><div className="t">Shared products</div><div className="s">Needs a connection. Search works offline.</div></div><Chevron /></button>

@@ -76,7 +76,9 @@ async function run() {
       const mw = await measure(w.page, webSec(id)), mn = await measure(n.page, natSec(id))
       // the same words; a chart's figures drawn as text over its SVG may read in another order
       const bag = (x) => x.split(' ').sort().join(' ')
-      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words), { web: mw.words, native: mn.words })
+      // an inline tag joins its sentence with no space on the web ("100 gMINE"), so spacing alone may differ
+      const squash = (x) => x.replace(/\s+/g, '')
+      check(`${id}: words match`, mw.words === mn.words || bag(mw.words) === bag(mn.words) || squash(mw.words) === squash(mn.words), { web: mw.words, native: mn.words })
       check(`${id}: accessibility labels match`, JSON.stringify(mw.labels) === JSON.stringify(mn.labels), { web: mw.labels, native: mn.labels })
       check(`${id}: icon sizes match`, JSON.stringify(mw.icons) === JSON.stringify(mn.icons), { web: mw.icons, native: mn.icons })
       check(`${id}: height within 2 px (web ${mw.h}, native ${mn.h})`, Math.abs(mw.h - mn.h) <= 2, { web: mw.h, native: mn.h })

@@ -228,6 +228,10 @@ export function RowIcon({ icon, color, soft, ink }: {
 }
 
 const LI: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }
+/** `.li`, 48 pt high in a `.list.icons` */
+function useLi(): ViewStyle {
+  return useContext(InIconList) ? { ...LI, minHeight: 48 } : LI
+}
 
 /**
  * A row's label and value. In a `.list.icons` the label keeps its width (at most 72%) and a value
@@ -276,16 +280,18 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
   lead?: ReactNode; nested?: boolean; pv?: boolean; wrapSub?: boolean; needsnet?: boolean; label?: string
 }) {
   const t = useTokens()
+  const li = useLi()
   const tr = onPress ? BTN : undefined
   const fg = act ? t.tint : needsnet ? t.label2 : t.label
   const wrapTitle = nested || pv
+  const icons = useContext(InIconList)
   const subWraps = wrapSub || pv
   const body = (
     <>
       {lead}
       {square && <RowIcon icon={square.icon} color={square.fill} ink={square.ink} soft={square.soft} />}
       {icon && <Icon name={icon} color={fg} />}
-      <View style={{ flex: 1, minWidth: 0 }}>
+      <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
         {/* .li.act: 16 pt medium */}
         <Text numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
         {(sub != null || tag != null) && (
@@ -296,11 +302,12 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
         )}
         {sub2 != null && <Text style={[tx(13, 400, 1.35, tr), { color: t.label2, marginTop: 3 }]}>{sub2}</Text>}
       </View>
-      {value != null && <Text numberOfLines={1} style={[strong ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), num, { color: strong ? t.label : t.label2 }]}>{value}</Text>}
+      {/* .tr (.tr.kc: --label, 16 pt medium); in a .list.icons 15 pt, filling the rest, right-aligned */}
+      {value != null && <Text numberOfLines={1} style={[tx(icons ? 15 : strong ? 16 : 17, strong ? 500 : 400, 1.3, tr), num, { color: strong ? t.label : t.label2 }, icons && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>}
       {right ?? ((chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />)}
     </>
   )
-  const s: ViewStyle = { ...LI, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
+  const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
     : <View accessibilityLabel={label} style={s}>{body}</View>
@@ -339,6 +346,7 @@ export function SettingRow({ icon, color, soft, label, sub, value, onPress, righ
   icon: IconName; color: string; soft?: boolean; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode
 }) {
   const t = useTokens()
+  const li = useLi()
   const body = (
     <>
       <RowIcon icon={icon} color={color} soft={soft} />
@@ -347,8 +355,8 @@ export function SettingRow({ icon, color, soft, label, sub, value, onPress, righ
     </>
   )
   return onPress
-    ? <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View style={LI}>{body}</View>
+    ? <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View style={li}>{body}</View>
 }
 
 /** A grouped-list row that expands in place; the chevron turns 90° over 0.2 s. */
@@ -356,6 +364,7 @@ export function Disclosure({ icon, color, soft, label, value, open, onToggle, ch
   icon: IconName; color: string; soft?: boolean; label: string; value?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode
 }) {
   const t = useTokens()
+  const li = useLi()
   const reduce = useReducedMotion()
   const r = useSharedValue(open ? 90 : 0)
   useEffect(() => { r.value = reduce ? (open ? 90 : 0) : withTiming(open ? 90 : 0, { duration: 200 }) }, [open, reduce]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -363,7 +372,7 @@ export function Disclosure({ icon, color, soft, label, value, open, onToggle, ch
   return (
     <View>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle}
-        style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
+        style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>
         <RowIcon icon={icon} color={color} soft={soft} />
         <LabelValue label={label} value={open ? undefined : value} btn />
         <Animated.View style={turn}><Chevron color={t.label3} /></Animated.View>
