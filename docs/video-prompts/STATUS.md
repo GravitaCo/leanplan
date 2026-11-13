@@ -25,16 +25,13 @@ No retake runs without Benn's or Sara's OK.
 | Exercise | Where it is | Next step |
 |---|---|---|
 | Leg curl (`leg-curl`) | First clip came out as a leg extension. Benn sent a lying leg curl reference (face down on the bench, heels curl up towards the bottom). | Upload the reference, make a still, Benn approves, then the video. |
-| Chest press (`chest-press`) | Still approved; the video's range was too short and jerky (`Kt2V32eNOqpzIeQCaxfH`). | Retake with a longer, smoother press: waiting on Benn's OK (1,300 credits). |
-| Leg extension (`leg-extension`) | Already has a clip. The new one (Bunny `8dced0cb`, "Leg-Extension-Woman-v2") is in the new studio look and loops cleanly. | Benn to say whether it replaces the current clip. |
-| Dumbbell bent-over row (`db-bent-over-row`) | On Bunny (`f234576f`), not in the app yet. Form is right; she looks muscular and barefoot. | Benn to say keep or retake. |
-| Calf raise (`calf-raise`) | On Bunny (`cf4a1757`), not in the app yet. | Benn's yes on the cue wording "lower slowly until your heels are level (or a little below, if you're on a step)". |
+| Chest press (`chest-press`) | Still approved; first video too short a range and jerky. Benn OK'd a retake (13 Nov). The approved still was deleted from OpenArt, so it has to be re-uploaded (`docs`: Claude sent it as chest-press-approved-still.png). | Re-upload the still, confirm with Benn, then the retake (1,300 credits). |
 | Inverted row, high bar, feet raised, cable crunch, cable fly, overhead triceps extension, Pallof press, straight-arm pulldown | Benn sent references in chat; not yet uploaded to OpenArt. | Upload the references; decisions on feet-raised row (bar not straps), cable fly (seated), triceps extension (dumbbell not band). |
 
 ## Dropped or unused on Bunny
 
-- `8dced0cb` was uploaded as "Leg-Curl-Seated-Woman" but shows a leg extension; renamed (see above).
-- `fa7d30b9` is titled "Leg-Curl-Woman" but is the app's current leg extension clip.
+- `fa7d30b9` ("Leg-Curl-Woman", really a leg extension) was the app's leg extension clip until 13 Nov; replaced by `8dced0cb`.
+
 
 <!-- generated below: npm run video:status -->
 
