@@ -33,8 +33,9 @@ final class PhotoPicker: NSObject, PHPickerViewControllerDelegate {
       guard let self else { return }
       guard let url else { self.finish(.failure(error ?? Exception(name: "UnreadableImage", description: "The photo couldn't be opened"))); return }
       do {
-        let copy = try TemporaryPhotos.newFile(ext: url.pathExtension.isEmpty ? "img" : url.pathExtension.lowercased())
-        try FileManager.default.copyItem(at: url, to: copy)
+        // read and written (not copied), so the copy gets complete file protection like every other
+        // temporary photo; it still holds the original's metadata until preparePhoto re-encodes and deletes it
+        let copy = try TemporaryPhotos.write(Data(contentsOf: url), ext: url.pathExtension.isEmpty ? "img" : url.pathExtension.lowercased())
         guard let src = CGImageSourceCreateWithURL(copy as CFURL, nil), let (w, h) = TemporaryPhotos.uprightSize(src) else {
           TemporaryPhotos.delete(copy.absoluteString)
           throw Exception(name: "UnreadableImage", description: "The photo couldn't be opened")

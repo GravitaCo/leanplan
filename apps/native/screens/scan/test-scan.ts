@@ -293,6 +293,7 @@ function exifStrip() {
   check('the image encoded is decoded pixels (a thumbnail), never the source with its properties', /let image = CGImageSourceCreateThumbnailAtIndex\(src/.test(tmp) && !/CGImageDestinationAddImageFromSource|CGImageDestinationCopyImageSource|CGImageDestinationAddImageAndMetadata|CGImageDestinationSetProperties/.test(swift))
   check('no EXIF, GPS or TIFF dictionary is written anywhere', !/kCGImageProperty(Exif|GPS|TIFF|IPTC)Dictionary/.test(swift) && !/kCGImageDestinationMetadata|kCGImageMetadataShouldExclude/.test(swift))
   check('what JS gets as base64 is that re-encode', /"base64": out\.data\.base64EncodedString\(\)/.test(mod) && (swift.match(/base64EncodedString\(/g) || []).length === 1)
+  check('every temporary file is written through TemporaryPhotos.write (complete file protection), never copied or moved', !/\b(copyItem|moveItem|linkItem)\b|createFile\(/.test(swift) && (swift.match(/\.write\(to:/g) || []).length === 1 && /data\.write\(to: url, options: \[\.atomic, \.completeFileProtection\]\)/.test(tmp))
   const photo = readFileSync('screens/scan/labelPhoto.ts', 'utf8')
   check('every photo the app sends goes through preparePhoto (camera and library alike)',
     /return \{ uri: p\.uri, base64: p\.base64,/.test(photo) && (photo.match(/base64:/g) || []).length === 2
