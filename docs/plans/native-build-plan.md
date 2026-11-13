@@ -2,7 +2,7 @@
 
 Written 9 Nov 2026 by the lead engineer, from `native-build-brief.md` (streams, owners,
 approvals), `native-app-plan.md` (framework, architecture, phases) and `recipe-sharing.md` §11.
-Status: **the spike is under way on `claude/native-build` (Benn's go-ahead, 9 Nov 2026); progress in §3.1.**
+Status: **spike done (13 Nov 2026): it runs on Benn's iPhone; results and the estimate in §3.1. Foundation streams next.**
 
 Labels: **[E]** checked in the code or a source on 9 Nov; **[I]** inference to confirm; **[G]**
 judgement call.
@@ -118,15 +118,23 @@ icons (N1); sync reads "synced". Storage on his real data (19.5 KB, 22 days): lo
 1.4 ms, save 0.8 ms, 20 raw reads 4.2 ms. HealthKit: steps read (4,542 today); no sleep yet because
 sleep tracking was off (switched on 12 Nov, to re-test the next morning). On-device AI: Apple
 Intelligence available; "two eggs and a slice of toast with butter" parsed correctly into eggs 2
-item, toast 1 slice, butter 1 tsp in 2.4 s, on the phone. Haptic felt. Still to do: the sleep read,
-staying signed in after a restart, and Sara's phone (her UDID).
+item, toast 1 slice, butter 1 tsp in 2.4 s, on the phone. Haptic felt. 13 Nov: the sleep read works too (sleep tracking switched on). Sara's phone follows when Benn sets
+her up; it doesn't hold the build.
 
-**Estimate:** to follow once the build runs on Benn's iPhone (the exit criterion). What the spike has
-measured so far: all of `src/core`, `src/data` and `src/store` (about 57,000 lines with the food
-data) is reused without a fork; what is rebuilt is the screens and UI kit, about 13,500 lines of
-TSX and 1,900 of CSS on the web. The Summary's main cards took about 530 native lines (screen,
-kit, charts, week strip) for roughly 400 web lines plus their CSS, so rebuilding runs close to one
-native line per web line plus styles.
+**Estimate (13 Nov, after the spike; [G] extrapolated from one screen, to be re-measured after N1):**
+- *What it took:* the spike (app, shared store running unchanged, storage, sign-in, Summary cards, HealthKit,
+  on-device AI, parity script) was written in one working session on 9 Nov; getting it onto the phone
+  took longer than writing it, because of Apple enrolment and set-up.
+- *What is left to rebuild:* the screens and UI kit, about 13,500 lines of TSX and 1,900 of CSS on the web.
+  The Summary cards ran at about one native line per web line, so roughly 35 Summary-sized pieces remain.
+- *Where the time goes:* not the coding. Each stream needs its specialist reviews, `design` against the web,
+  side-by-side checks, `ship-critic`, and Benn's or Sara's look on the phone; any visible difference from
+  the web is a board first. Those reviews and approvals set the pace.
+- *Calendar:* foundation (N0 to N3) about 1 to 2 weeks; feature streams in parallel about 3 to 4 weeks
+  after that; parity build in TestFlight about **5 to 6 weeks from now** if approvals keep pace. Store
+  launch then needs Sign in with Apple, the store listings, privacy labels and Apple's review (days to
+  weeks); Android adds Play's closed test (about 14 days with about 12 testers [I]).
+- *Running costs* (EAS build minutes, developer accounts): `cfo` to cost; builds so far fit Expo's plan.
 
 ## 4. Streams
 
