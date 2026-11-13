@@ -35,6 +35,8 @@
   --label: #1d1d1f;
   --label2: #6e6e73;
   --label3: #aaa49c;
+  /* field placeholders: the lightest grey with 4.5:1 on every field fill (Benn, 13 Nov) */
+  --placeholder: #646469;
   --sep: #e5e1db;
   --dash: #cfc9c1;      /* dashed "add" outlines */
 
@@ -80,7 +82,7 @@
     --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
     --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
     --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
-    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --sep: #38383a; --dash: #48484a;
+    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a;
     --tint: #cd7fae; --tint-soft: #3a2733; --on-tint: #000000;
     --btn: #ffffff; --btn-ink: #000000;
     --red: #ff8a80;
@@ -366,6 +368,7 @@ input[type='range'] { padding: 0; height: 28px; background: none; accent-color: 
 .frow.flag { flex-wrap: wrap; row-gap: 0; box-shadow: inset 3px 0 0 var(--tint); }
 .frow.flag > input { flex: 1 1 0; width: 0; min-width: 0; }
 .frow .flagnote { order: 9; flex-basis: 100%; font-size: 13px; color: var(--tint); margin: -6px 0 9px; }
+input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 1; }
 .frow.need input::placeholder { color: var(--tint); }
 /* scanned label: per 100 (editable) and per serving (live) side by side, in UK label order */
 .ntab .nrow { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; align-items: center; column-gap: 10px; min-height: 44px; padding: 0 16px; position: relative; }

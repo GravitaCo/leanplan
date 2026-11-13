@@ -14,12 +14,11 @@ import { tx, useTokens } from '../theme'
 type InputProps = Omit<TextInputProps, 'style' | 'placeholderTextColor'>
 
 /**
- * PROVISIONAL, a release blocker: the placeholder colour. The web sets none (each browser picks its
- * own grey), and --label3 is about 2:1 on the field fill, too faint. Benn or Sara choose one token for
- * both apps on the Design canvas (design proposes --label2); the web's theme.css gains a ::placeholder
- * rule in the same change. Every field here reads it from this one function.
+ * The placeholder colour, --placeholder in both apps (Benn, 13 Nov: the colour that passes
+ * accessibility): the lightest grey with at least 4.5:1 against every field fill, light and dark
+ * (#646469 / #aaaaaf). The web's theme.css sets the same token for every input::placeholder.
  */
-const placeholder = (t: ReturnType<typeof useTokens>) => t.label3
+const placeholder = (t: ReturnType<typeof useTokens>) => t.placeholder
 
 /** Focus handlers that keep the caller's own; `focused` is returned beside them, never spread. */
 function useFocus(props: InputProps): [boolean, Pick<TextInputProps, 'onFocus' | 'onBlur'>] {
