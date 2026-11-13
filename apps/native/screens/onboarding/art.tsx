@@ -37,7 +37,10 @@ export function CoverImage({ source, height, posY = 0.5, posX = 0.5, style }: { 
   // resolveAssetSource) learns it when the image loads, and shows it centred until then
   const [nat, setNat] = useState<{ width: number; height: number } | null>(() => {
     const a = typeof Image.resolveAssetSource === 'function' ? Image.resolveAssetSource(source) : null
-    return a?.width && a.height ? { width: a.width, height: a.height } : null
+    if (a?.width && a.height) return { width: a.width, height: a.height }
+    // react-native-web hands the bundled photo over as { uri, width, height }
+    const s = source as { width?: number; height?: number } | null
+    return typeof source === 'object' && s?.width && s.height ? { width: s.width, height: s.height } : null
   })
   let img: { width: number; height: number; left: number; top: number } | null = null
   if (box && nat) {
