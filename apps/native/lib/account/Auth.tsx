@@ -271,7 +271,7 @@ export function OwnerChoiceScreen() {
             {p(`Keeping it adds it to ${who}, replacing that account’s targets, profile, and any days, foods or recipes that are in both.`)}
           </View>
           {sure && <View role="alert" style={card}>{p('Some of the log on this device isn’t in any account, so starting fresh deletes it for good. Export a copy first if you might want it.')}</View>}
-          <View style={{ gap: 8, marginTop: 6 }}>
+          <View style={{ gap: 8, marginTop: 16 }}>
             {sure && <Button kind="gray" title="Export a copy" disabled={busy} onPress={() => void exportBackup(data)} />}
             <Button title={sure ? 'Start fresh and delete it' : `Start fresh with ${who}`} disabled={busy} onPress={() => void pick('fresh')} />
             <Button kind="gray" title={`Keep this log in ${who}`} disabled={busy} onPress={() => void pick('keep')} />

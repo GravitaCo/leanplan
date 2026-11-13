@@ -22,7 +22,6 @@ export function useGate(fontsLoaded = true) {
   const owner = useStore((s) => s.data._meta?.owner)
   const ownerAsk = useStore((s) => s.ownerAsk)
   const underAge = useStore((s) => s.underAge)
-  const redoOpen = useStore((s) => s.redoOpen)
   const consentOpen = useStore((s) => s.consentOpen)
   const consentDue = useStore((s) => !healthConsentAnswered(s.data) && liveConsentDue(s.data))
   if (!fontsLoaded || !authReady) return <Notice title="Loading…" />
@@ -33,8 +32,10 @@ export function useGate(fontsLoaded = true) {
   const pend = ONBOARDING_ENABLED ? pendingDeletion() : null
   if (pend && pend.uid === (authed ? getUid() : owner)) return <Under18 deleting onClose={() => {}} />
   // 18+: an under-18 age from Profile, a backup, sync or this phone's saved data. Only the stop
-  // shows, before consent or anything else; sync stays off (the store's rule)
-  if (underAge && !(underAge.inWizard && ONBOARDING_ENABLED && redoOpen)) return <UnderAgeStop source={underAge.source} />
+  // shows, before consent or anything else; sync stays off (the store's rule). The web shows the redo
+  // wizard's own stop in its place while that wizard is open; native has no wizard until N11, so the
+  // app's stop shows in every case: never open past an under-18 age (compliance, 13 Nov)
+  if (underAge) return <UnderAgeStop source={underAge.source} />
   // the one consent screen until the health answer is in (after a "Not now", once more 2 weeks on);
   // Profile opens it too, for someone who never agreed on it
   if (consentOpen) return <ConsentScreen fromProfile />

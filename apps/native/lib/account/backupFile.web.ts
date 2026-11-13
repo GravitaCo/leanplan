@@ -6,6 +6,9 @@ import type { PersistedState } from '@/data/persistence'
 import { exportBackup as download } from '@/data/backup'
 import { parseBackup } from './backupParse'
 
+/** Nothing is kept on the web: the browser downloads the file. */
+export function clearBackupCopies(): void {}
+
 export async function exportBackup(state: PersistedState): Promise<boolean> {
   download(state)
   return true

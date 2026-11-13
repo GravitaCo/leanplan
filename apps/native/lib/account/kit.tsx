@@ -10,6 +10,7 @@ import { Modal, Pressable, ScrollView, Text, View, type StyleProp, type TextStyl
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path, Rect } from 'react-native-svg'
 import { font, useTokens } from '../theme'
+import { dark } from '../tokens.generated'
 
 /* ---------------- icons (src/ui/icons.tsx geometry) ---------------- */
 
@@ -87,7 +88,8 @@ export function Button({ title, onPress, kind = 'ink', disabled, height = 50, ra
 }) {
   const t = useTokens()
   const bg = { ink: t.btn, gray: t.fill, tinted: t.tintSoft, danger: 'transparent', red: t.red, card: t.card, google: t.card, cardRed: t.card }[kind]
-  const fg = { ink: t.btnInk, gray: t.label, tinted: t.tint, danger: t.red, red: '#ffffff', card: t.label, google: t.label, cardRed: t.red }[kind]
+  // .btn.delall: white on red in light, black on the lighter dark-mode red (contrast, theme.css)
+  const fg = { ink: t.btnInk, gray: t.label, tinted: t.tint, danger: t.red, red: t === dark ? '#000000' : '#ffffff', card: t.label, google: t.label, cardRed: t.red }[kind]
   return (
     <Pressable role="button" aria-label={title} aria-disabled={disabled || undefined} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [{
@@ -159,7 +161,7 @@ export function CheckRow({ on, onChange, id, children, first }: { on: boolean; o
     <Pressable role="checkbox" aria-checked={on} testID={id} onPress={() => onChange(!on)}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       {!first && <View style={{ position: 'absolute', top: 0, left: 16, right: 0, height: 1, backgroundColor: t.sep }} />}
-      <View style={{ width: 22, height: 22, marginTop: 1, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label3 }}>
+      <View style={{ width: 22, height: 22, marginTop: 1, marginLeft: 4, marginRight: 3, borderRadius: 5, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : 'transparent', borderWidth: on ? 0 : 1.5, borderColor: t.label3 }}>
         {on && <Ico name="check" size={16} stroke={2.8} color={t.onTint} />}
       </View>
       <Text style={[font(400), { flex: 1, fontSize: 15, lineHeight: 21, color: t.label }]}>{children}</Text>

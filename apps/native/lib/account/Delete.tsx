@@ -91,13 +91,15 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     setBusy(false)
     if (r.status === 'cancelled') return
     if (r.status === 'error') { setMsg(DELETE_MESSAGES.error); return }
-    // another Google account was picked: that's a different sign-in, which the owner check handles
+    // another Google account was picked: its session has replaced this one on the phone, and the
+    // store's owner check now holds it back and asks whose data this is (the owner choice replaces
+    // this sheet); neither account can be deleted until that's settled (tokenMatchesOwner)
     if (r.uid !== before) { setMsg(DELETE_MESSAGES['wrong-account']); return }
     setMsg(null)
     setStale(needsReauth())
   }
 
-  const box = { backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 13, paddingHorizontal: 16, gap: 4 } as const
+  const box = { backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 13, paddingHorizontal: 16, gap: 4 } as const
   const input = [font(400), { fontSize: 17, color: t.label, padding: 0, minHeight: 24 }]
   return (
     <Sheet title="Delete everything?" header={false} onClose={onClose} gap={14}>

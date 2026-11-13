@@ -61,7 +61,6 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   const { prepare, withdraw } = useHealthWithdrawal()
   const showToast = useStore((s) => s.showToast)
   const [step, setStep] = useState<null | ReturnType<typeof prepare>>(() => (start === 'withdraw' ? prepare() : null))
-  const [saved, setSaved] = useState(false)
   const [privacy, setPrivacy] = useState(false)
   const [support, setSupport] = useState(false)
   const canRemove = useStore((s) => { const h = healthDataSummary(s.data); return h.weighIns + h.checkins + h.profileFields + h.trainingPrefs > 0 || !!s.data._meta?.lastPull })
@@ -80,8 +79,10 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
           {parts.length > 0 && <P color={t.label2}>On this phone: {parts.join(', ')}.</P>}
         </View>
         <View style={{ gap: 8, marginTop: 16 }}>
-          {/* the same file the web downloads (the whole log), through the share sheet */}
-          <Button kind="gray" title={saved ? 'Downloaded' : 'Download a copy'} onPress={() => void exportBackup(data).then((ok) => { if (ok) setSaved(true) })} />
+          {/* the same file the web downloads (the whole log), through the share sheet. Unlike the web it
+              never turns to "Downloaded": the share sheet can't say whether the copy was saved or the
+              person closed it (compliance, 13 Nov) */}
+          <Button kind="gray" title="Download a copy" onPress={() => void exportBackup(data)} />
           <Button kind="danger" title="Remove my health data" onPress={() => { withdraw(); showToast('Health data removed'); onClose() }} />
         </View>
       </Sheet>
@@ -96,7 +97,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
           : status === 'off' ? 'You’ve said no, so your log is on your phones only: nothing syncs to your account. To build your plan, Tilo uses things like your weight, sleep, stress and health, and needs your OK to keep them.'
           : 'To build your plan, Tilo asks about things like your weight, sleep, stress and health. That’s health data, so we need your OK to keep it.'}
       </T>
-      <Ticks items={HEALTH_TICKS} bg={t.elev} />
+      <Ticks items={HEALTH_TICKS} />
       <LinkButton title="Read the privacy notice" onPress={() => setPrivacy(true)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
       {(answersRow || redoRow) && (
         <List bg={t.elev} style={{ marginTop: 12 }}>

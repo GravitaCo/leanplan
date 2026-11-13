@@ -28,6 +28,12 @@ export function codeFrom(url: string): { code: string | null; why: string | null
   return { code: back.searchParams.get('code'), why }
 }
 
+/** True while a Google sign-in sheet is open: its return is this function's to exchange. On Android the
+ *  same return also arrives as a tilo:// link, so app/auth-callback.tsx leaves it alone meanwhile
+ *  (security-data, 13 Nov). */
+let googleOpen = false
+export const googleInProgress = () => googleOpen
+
 export type GoogleResult = { status: 'ok'; uid: string } | { status: 'cancelled' } | { status: 'error'; message: string }
 
 /**
@@ -36,6 +42,7 @@ export type GoogleResult = { status: 'ok'; uid: string } | { status: 'cancelled'
  * store through onAuthStateChange like any sign-in.
  */
 export async function googleSignIn(queryParams?: Record<string, string>): Promise<GoogleResult> {
+  googleOpen = true
   try {
     if (web) {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: emailRedirect(), queryParams } })
@@ -52,5 +59,7 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
     return { status: 'ok', uid: ex.session.user.id }
   } catch (e) {
     return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+  } finally {
+    googleOpen = false
   }
 }
