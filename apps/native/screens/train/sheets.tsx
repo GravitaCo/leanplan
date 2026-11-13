@@ -14,7 +14,7 @@ import { CARDIO_OPTIONS } from '@/core/data/constants'
 import { DEFAULT_MINS, EFFORTS, MODALITIES, MODALITY_LABEL } from '@/core/data/modalities'
 import { quietNumbers } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
-import { RED_FLAG, SUPPORT_LINES } from '@/screens/train/trainCopy'
+import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
 import { Chip, Chips, FInput, FRow, FSelect, Foot, Ico, Lbl, Li, LiText, List, NavBtn, Sheet, Toggle, font, num, useTokens } from './ui'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */

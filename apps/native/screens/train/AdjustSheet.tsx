@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { Pressable, Text, TextInput, View } from 'react-native'
 import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
-import { FEELS, PAIN_HELP, RED_FLAG } from '@/screens/train/trainCopy'
+import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
 import { toPoint, BareSheet, Button, Foot, LinkBtn, Li, LiText, List, Seg, Stack, Toggle, font, num, useTokens } from './ui'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }

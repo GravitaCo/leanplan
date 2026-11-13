@@ -7,7 +7,6 @@
  */
 import { Animated, Easing, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import NetInfo from '@react-native-community/netinfo'
 import { useEffect, useRef, useState } from 'react'
 import type { ExerciseTemplate } from '@/core/types'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
@@ -61,8 +60,8 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
   const { player, playing, failed, toggle } = useClip(m.src, true)
   const t = useClipTime(player)
   // offline vs a device that can't decode the clip: the copy differs
-  const [online, setOnline] = useState(true)
-  useEffect(() => { if (failed) NetInfo.fetch().then((s) => setOnline(s.isConnected !== false)).catch(() => {}) }, [failed])
+  // navigator.onLine is the app's own network module (lib/platform), as the web reads it
+  const online = typeof navigator !== 'undefined' && navigator.onLine !== false
 
   const s = tempoAt(m, t)
   // "Romanian deadlift (dumbbell or barbell)" → title + a quieter equipment line

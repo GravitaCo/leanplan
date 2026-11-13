@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react'
 import { AccessibilityInfo, Text, View } from 'react-native'
 import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
-import { RED_FLAG } from '@/screens/train/trainCopy'
+import { RED_FLAG } from '@/copy/train'
 import { Button, Foot, Sheet, Stack, font, num, useTokens } from './ui'
 
 export function HoldTimer({ name, rx, perSide, onDone, onClose }: {

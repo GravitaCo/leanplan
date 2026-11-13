@@ -8,7 +8,7 @@ import { Text } from 'react-native'
 import type { Exercise } from '@/core/types'
 import { alternativesFor, exById } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
-import { CARE_DISCLAIMER } from '@/screens/train/trainCopy'
+import { CARE_DISCLAIMER } from '@/copy/train'
 import { Button, Foot, GrpH, Li, LiText, List, Sheet, Stack, Sub, font } from './ui'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
