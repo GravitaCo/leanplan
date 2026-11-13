@@ -31,4 +31,5 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run check:tokens
+      - run: npm test
       - run: npx expo export --platform ios --output-dir /tmp/native-bundle

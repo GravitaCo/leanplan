@@ -11,7 +11,8 @@
     "tokens": "node scripts/tokens.mjs",
     "check:tokens": "node scripts/tokens.mjs --check",
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "test": "node scripts/run-tests.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
