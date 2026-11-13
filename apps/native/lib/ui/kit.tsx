@@ -100,10 +100,13 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disa
  * `on` given makes it a toggle for VoiceOver (selected state); without it the chip is a plain button.
  * Put chips in `Chips` (as the web always puts `.chip` in `.chips`): a row stretches them to one height.
  */
-export function Chip({ title, sub, on, onPress, size, tone, role = 'button', label }: {
+export function Chip({ title, sub, on, onPress, size, radius, tone, role = 'button', label }: {
   title: string; sub?: string; on?: boolean; onPress: () => void
-  /** `.chip.sm`: 12 pt medium, padding 5 10, radius 12 (filters, week pickers) */
-  size?: 'sm'
+  /** `.chip.sm`: 12 pt medium, padding 5 10, radius 12 (filters, week pickers); `md`: 14 pt,
+   *  padding 8 14 (Plan's `.pl-goals .chip` and `.pl-starts .chip`) */
+  size?: 'sm' | 'md'
+  /** a context's own corner (`.pl-starts .chip` 16) */
+  radius?: number
   /** `.chip.ink` (ink fill, 600) or `.chip.plain` (--card fill) */
   tone?: 'ink' | 'plain'
   /** a chip in a set reads as a radio button or a tab; on its own, a (toggle) button */
@@ -111,14 +114,14 @@ export function Chip({ title, sub, on, onPress, size, tone, role = 'button', lab
   label?: string
 }) {
   const t = useTokens()
-  const sm = size === 'sm'
+  const sm = size === 'sm', md = size === 'md'
   const bg = tone === 'ink' ? t.btn : tone === 'plain' ? t.card : on ? t.tint : t.fill
   const fg = tone === 'ink' ? t.btnInk : on ? t.onTint : t.label
   const state = on === undefined ? undefined : role === 'radio' ? { checked: on } : { selected: on }
   return (
-    <Pressable accessibilityRole={role} accessibilityLabel={label} accessibilityState={state} onPress={onPress} hitSlop={slop(0, sm ? 24 : 32)}
-      style={({ pressed }) => ({ backgroundColor: bg, borderRadius: sm ? 12 : 18, justifyContent: 'center', paddingVertical: sm ? 5 : 7, paddingHorizontal: sm ? 10 : 13, opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(sm ? 12 : 15, tone === 'ink' ? 600 : sm ? 500 : 400, 1.2, BTN), { color: fg }]}>{title}</Text>
+    <Pressable accessibilityRole={role} accessibilityLabel={label} accessibilityState={state} onPress={onPress} hitSlop={slop(0, sm ? 24 : md ? 32.8 : 32)}
+      style={({ pressed }) => ({ backgroundColor: bg, borderRadius: radius ?? (sm ? 12 : 18), justifyContent: 'center', paddingVertical: sm ? 5 : md ? 8 : 7, paddingHorizontal: sm ? 10 : md ? 14 : 13, opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(sm ? 12 : md ? 14 : 15, tone === 'ink' ? 600 : sm ? 500 : 400, 1.2, BTN), { color: fg }]}>{title}</Text>
       {sub != null && <Text style={[tx(12, 400, 1.2, BTN), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
     </Pressable>
   )

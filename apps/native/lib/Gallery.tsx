@@ -307,6 +307,12 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
             <Chip role="radio" on title="Small" onPress={() => {}} />
             <Chip role="radio" on={false} title="Large" onPress={() => {}} />
           </Chips>
+          <Chips>
+            <Chip size="md" on title="Get stronger" onPress={() => {}} />
+            <Chip size="md" on={false} title="Feel better" onPress={() => {}} />
+            <Chip size="md" radius={16} tone="ink" role="radio" on title="Today" onPress={() => {}} />
+            <Chip size="md" radius={16} tone="plain" role="radio" on={false} title="Mon 16 Nov" onPress={() => {}} />
+          </Chips>
         </View>
       </Sec>
 
