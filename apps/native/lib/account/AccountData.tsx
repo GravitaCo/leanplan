@@ -28,7 +28,8 @@ import { BTN, num, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List, slop } from '../ui/kit'
 import { BackButton, Disclosure, NavBtn, Row, SettingRow, Sheet } from '../ui/primitives'
 import { Icon } from '../ui/icons'
-import { ConsentScreen, P, PrivacySheet, RegrantHealthSheet } from './Consent'
+import { ConsentScreen, PrivacySheet, RegrantHealthSheet } from './Consent'
+import { Sub } from '../ui/text'
 import { DeleteAccountView } from './Delete'
 import { Opts, Signposts } from './AgeStop'
 import { LEGAL_LABEL, openLegal } from './legal'
@@ -68,7 +69,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
     return (
       <Sheet title={HEALTH_DATA.title} onClose={onClose} left={<BackButton onPress={() => setStep(null)} />}>
         <View style={{ paddingHorizontal: 4, gap: 10 }}>
-          <P color={t.label2}>{step.prompt}</P>
+          <Sub style={tx(15, 400, 1.45)}>{step.prompt}</Sub>
           {onPhone && <Text style={[tx(15, 400, 1.45), num, { color: t.label2 }]}>{onPhone}</Text>}
         </View>
         <View style={{ gap: 8, marginTop: 16 }}>
@@ -164,14 +165,13 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
 
 /** Confirm step before a backup replaces data: what's in it and what changes (on all devices). */
 export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedState; onClose: () => void; onImport: () => void }) {
-  const t = useTokens()
   const b = backupSummary(backup)
   const span = b.first && b.last ? (b.first === b.last ? ' (' + fmtDate(b.first).full + ')' : ' (' + fmtDate(b.first).full + ' to ' + fmtDate(b.last).full + ')') : ''
   return (
     <Sheet title={BACKUP.importTitle} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 12, gap: 10 }}>
-        <P color={t.label2}>{BACKUP.has(b, span)}</P>
-        <P color={t.label2}>{BACKUP.replaces(b)}</P>
+        <Sub style={tx(15, 400, 1.45)}>{BACKUP.has(b, span)}</Sub>
+        <Sub style={tx(15, 400, 1.45)}>{BACKUP.replaces(b)}</Sub>
       </View>
       <View style={{ marginTop: 16 }}><Btn kind="tinted" title={BACKUP.importBtn} onPress={onImport} /></View>
     </Sheet>
@@ -180,7 +180,6 @@ export function ImportSheet({ backup, onClose, onImport }: { backup: PersistedSt
 
 /** Sign out, optionally removing this phone's log (shared phones). It stays in the account. */
 export function SignOutSheet({ onClose }: { onClose: () => void }) {
-  const t = useTokens()
   const signOut = useStore((s) => s.signOut)
   const data = useStore((s) => s.data)
   const [busy, setBusy] = useState<'keep' | 'remove' | null>(null)
@@ -197,8 +196,8 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title={SIGN_OUT.title} onClose={onClose}>
       <View style={{ paddingHorizontal: 4, paddingBottom: 12, gap: 10 }}>
-        <P color={t.label2}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.stays}</P>
-        {!phoneOnly && unsynced > 0 && <P color={t.label2}>{SIGN_OUT.unsynced(unsynced)}</P>}
+        <Sub style={tx(15, 400, 1.45)}>{phoneOnly ? SIGN_OUT.phoneOnly : SIGN_OUT.stays}</Sub>
+        {!phoneOnly && unsynced > 0 && <Sub style={tx(15, 400, 1.45)}>{SIGN_OUT.unsynced(unsynced)}</Sub>}
       </View>
       <View style={{ gap: 8, marginTop: 16 }}>
         <Btn kind="tinted" title={busy === 'keep' ? SIGN_OUT.signingOut : SIGN_OUT.title} disabled={!!busy} onPress={() => void go(false)} />

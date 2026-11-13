@@ -21,6 +21,7 @@ import { BTN, tx, useTokens } from '../theme'
 import { Btn, LinkBtn, List } from '../ui/kit'
 import { BackButton, BareSheet, Row } from '../ui/primitives'
 import { typedOk } from './rules'
+import { Sub } from '../ui/text'
 import { dark } from '../tokens.generated'
 
 export function DeleteAccountView({ onBack, confirmOpen, setConfirmOpen }: { onBack: () => void; confirmOpen: boolean; setConfirmOpen: (x: boolean) => void }) {
@@ -118,10 +119,9 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** `.cs-msg`: 15 pt, --label2, announced. */
+/** `.cs-msg` (15 pt --label2, 1.45), announced as the web's role=status. */
 function Message({ text }: { text: string }) {
-  const t = useTokens()
-  return <Text accessibilityLiveRegion="polite" style={[tx(15, 400, 1.45), { color: t.label2, paddingHorizontal: 4 }]}>{text}</Text>
+  return <View accessibilityLiveRegion="polite"><Sub style={[tx(15, 400, 1.45), { paddingHorizontal: 4 }]}>{text}</Sub></View>
 }
 
 /**

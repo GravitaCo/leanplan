@@ -5,7 +5,7 @@
  *   (apps/native) npm run test:account
  */
 import { readBackup } from '../../../src/data/backup.native.ts'
-import { codeFrom, coverFrame, photoHeight, typedOk } from '../lib/account/rules.ts'
+import { codeFrom, coverFrame, photoHeight, reauthMatches, typedOk } from '../lib/account/rules.ts'
 import { gateStep, pendingFor } from '../lib/account/gateModel.ts'
 
 let failed = 0
@@ -60,6 +60,12 @@ check('pending: the live session’s account', pendingFor('a', { authed: true, s
 check('pending: not another session’s', !pendingFor('a', { authed: true, sessionUid: 'b', owner: 'a' }))
 check('pending: offline, this phone’s owner', pendingFor('a', { authed: false, sessionUid: null, owner: 'a' }))
 check('pending: offline, not another owner’s', !pendingFor('a', { authed: false, sessionUid: null, owner: 'b' }))
+
+/* ---------- re-sign-in before deleting: the same account ---------- */
+check('reauth: the same account', reauthMatches('a', 'a'))
+check('reauth: another account is refused', !reauthMatches('a', 'b'))
+check('reauth: no recorded owner (the deletion checks it again)', reauthMatches(undefined, 'b'))
+check('reauth: compared with the owner, not the signed-out fallback', reauthMatches('a', 'a') && !reauthMatches('00000000-0000-0000-0000-000000000001', 'a'))
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} passed`)
 process.exit(failed ? 1 : 0)

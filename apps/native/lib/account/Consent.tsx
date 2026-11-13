@@ -19,6 +19,7 @@ import { CONSENT, PRIVACY_SHEET, REGRANT } from '@/copy/account'
 import { BTN, tx, useTokens } from '../theme'
 import { dark } from '../tokens.generated'
 import { Btn, Card, LinkBtn, List } from '../ui/kit'
+import { Sub } from '../ui/text'
 import { NavBtn, Sheet } from '../ui/primitives'
 import { Icon } from '../ui/icons'
 import { openLegal } from './legal'
@@ -103,24 +104,20 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
 
 /** "Read the privacy notice" / "What's sent, and where": the short privacy text, and the policy. */
 export function PrivacySheet({ onClose }: { onClose: () => void }) {
-  const t = useTokens()
   return (
     <Sheet title={PRIVACY_SHEET.title} onClose={onClose} left={null} right={<NavBtn bold title="Done" onPress={onClose} />}>
       <View style={{ paddingHorizontal: 4, gap: 10 }}>
-        <P color={t.label2}>{PRIVACY_SHEET.p1}</P>
-        <P color={t.label2}>{PRIVACY_SHEET.p2.before}<Link onPress={() => openLegal('privacy')}>{PRIVACY_SHEET.p2.link}</Link>{PRIVACY_SHEET.p2.after}</P>
+        <Sub style={tx(15, 400, 1.45)}>{PRIVACY_SHEET.p1}</Sub>
+        <Sub style={tx(15, 400, 1.45)}>{PRIVACY_SHEET.p2.before}<Link onPress={() => openLegal('privacy')}>{PRIVACY_SHEET.p2.link}</Link>{PRIVACY_SHEET.p2.after}</Sub>
       </View>
     </Sheet>
   )
 }
 
-/** `.prose` paragraph: 15 pt, 1.45. */
-export function P({ children, color }: { children: ReactNode; color?: string }) {
-  const t = useTokens()
-  return <Text style={[tx(15, 400, 1.45), { color: color ?? t.label }]}>{children}</Text>
-}
-
-/** An `<a>` inside a sentence: the tint colour, its own tap (the website's legal pages). */
+/**
+ * An `<a>` inside a sentence (LegalLink: the website's legal pages), a link for VoiceOver.
+ * TODO(N1-followup): lib/ui's TextLink with a link role (it's a button, for the web's `.linkbtn.inl`).
+ */
 export function Link({ children, onPress, underline }: { children: ReactNode; onPress: () => void; underline?: boolean }) {
   const t = useTokens()
   return <Text accessibilityRole="link" onPress={onPress} suppressHighlighting style={[{ color: t.tint }, underline && { textDecorationLine: 'underline' }]}>{children}</Text>

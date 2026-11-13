@@ -27,3 +27,13 @@ export function coverFrame(imgW: number, imgH: number, boxW: number, boxH: numbe
   const scale = Math.max(boxW / imgW, boxH / imgH), width = imgW * scale, height = imgH * scale
   return { width, height, left: (boxW - width) / 2, top: -(height - boxH) * 0.3 }
 }
+
+/**
+ * A Google (or Apple) re-sign-in before deleting confirms the same account: the one this phone's
+ * data belongs to (`_meta.owner`), not whatever `getUid()` holds (its signed-out fallback is
+ * LOCAL_USER, e.g. on a launch with a weak signal). With no recorded owner there's nothing to compare
+ * and the deletion's own owner check (tokenMatchesOwner) fails closed anyway.
+ */
+export function reauthMatches(owner: string | undefined, signedInAs: string): boolean {
+  return !owner || owner === signedInAs
+}

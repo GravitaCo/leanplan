@@ -11,8 +11,9 @@
  */
 import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
-import { getUid, supabase } from '@/data/supabase'
-import { codeFrom } from './rules'
+import { supabase } from '@/data/supabase'
+import { useStore } from '@/store/store'
+import { codeFrom, reauthMatches } from './rules'
 import { setGoogleOAuth } from '@/data/platform'
 
 export const REDIRECT = 'tilo://auth-callback'
@@ -59,13 +60,12 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
 
 /**
  * The shared account code (src/data/account.ts reauthWithGoogle, before deleting the account) reaches
- * this sheet through the platform. It confirms the same account: a different Google account picked in
- * the chooser is not a re-sign-in, so it reports an error (and the store's owner check then holds that
+ * this sheet through the platform. It confirms the same account (the phone's recorded owner,
+ * rules.ts reauthMatches): a different Google account picked in the chooser is not a re-sign-in, so it reports an error (and the store's owner check then holds that
  * other session back; ship-critic, 13 Nov).
  */
 setGoogleOAuth(async (q) => {
-  const before = getUid()
   const r = await googleSignIn(q)
   if (r.status !== 'ok') return r.status
-  return before && r.uid !== before ? 'error' : 'ok'
+  return reauthMatches(useStore.getState().data._meta?.owner, r.uid) ? 'ok' : 'error'
 })

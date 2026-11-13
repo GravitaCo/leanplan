@@ -5,7 +5,7 @@ import { Text, View } from 'react-native'
 import { Btn } from './ui/kit'
 import { font, useTokens } from './theme'
 
-/** A plain centred message for states the spike doesn't build yet. */
+/** A plain centred message (the gate's loading state). */
 export function Notice({ title, body, action }: { title: string; body?: string; action?: { title: string; onPress: () => void } }) {
   const t = useTokens()
   return (
