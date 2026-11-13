@@ -25,14 +25,46 @@
 //
 // Health consent (docs/migrations/2026-09-28-health-consent-server.sql): someone whose latest
 // health answer isn't a yes gets no reminders, and their profile isn't read.
+//
+// The iPhone app (native-build-plan N12; written 13 Nov 2026, not yet deployed: needs docs/migrations/2026-11-13-native-push.sql
+// and the APNs secrets): a phone's row in push_subscriptions has platform 'apns' or 'apns-sandbox'
+// and its device token in `endpoint`. The same reminders, claims and budget go to it, through Apple's
+// push service instead of Web Push, with the words public/sw.js would show (../_shared/apns.ts
+// forApns), except supplement names: generic text on a phone unless APNS_SUPP_NAMES is "on". Secrets: APNS_KEY_P8 (the .p8 key's PEM), APNS_KEY_ID, APNS_TEAM_ID. Without them,
+// phone rows are counted as failed and left alone; Web Push is unaffected either way.
 // ============================================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push";
 import { dueKinds, isCapped, localNow, payloadFor, suppPayload, suppsDue, type MindKind } from "../_shared/reminders.ts";
+import { APNS_HOSTS, apnsBody, apnsGone, apnsHeaders, apnsIat, apnsJwt, apnsKey, apnsTokenRefused, forApns, isApns, isApnsToken } from "../_shared/apns.ts";
 
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
+const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
+const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
+const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
+// supplement names through APNs (readable by Apple): only once DPIA 8.8's APNs addendum is signed
+const APNS_SUPP_NAMES = Deno.env.get("APNS_SUPP_NAMES") === "on";
+
+// The APNs provider token, kept for its window: Apple refuses one refreshed more often than every
+// 20 minutes, and this runs every minute.
+let apnsToken: { iat: number; jwt: string } | null = null;
+let apnsSigner: Promise<CryptoKey> | null = null;
+async function apnsJwtNow(): Promise<string | null> {
+  if (!APNS_KEY_P8 || !APNS_KEY_ID || !APNS_TEAM_ID) return null;
+  const iat = apnsIat(Date.now());
+  if (apnsToken && apnsToken.iat === iat) return apnsToken.jwt;
+  try {
+    apnsSigner ??= apnsKey(APNS_KEY_P8);
+    apnsToken = { iat, jwt: await apnsJwt(await apnsSigner, APNS_KEY_ID, APNS_TEAM_ID, iat) };
+    return apnsToken.jwt;
+  } catch {
+    apnsSigner = null;
+    console.error("apns key unusable");
+    return null;
+  }
+}
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   (webpush as any).setVapidDetails("mailto:benn@gravita.co", VAPID_PUBLIC, VAPID_PRIVATE);
@@ -81,7 +113,7 @@ function reviewDue(p: any, today: string, dow: number, time: string): boolean {
   return unopened(p, today) < 3;
 }
 
-type Sub = { id: string; user_id: string; endpoint: string; p256dh: string; auth_key: string };
+type Sub = { id: string; user_id: string; endpoint: string; p256dh: string | null; auth_key: string | null; platform?: string | null };
 
 Deno.serve(async (req: Request) => {
   // Fail closed. The secret comes from the CRON_SECRET env var if set,
@@ -103,9 +135,15 @@ Deno.serve(async (req: Request) => {
   const now = new Date();
   const london = localNow("Europe/London", now);
 
-  const { data: subscriptions, error } = await supabase
+  let { data: subscriptions, error } = await supabase
     .from("push_subscriptions")
-    .select("id, user_id, endpoint, p256dh, auth_key");
+    .select("id, user_id, endpoint, p256dh, auth_key, platform");
+  // before docs/migrations/2026-11-13-native-push.sql: no platform column, so every row is Web Push
+  if (error?.code === "42703") {
+    ({ data: subscriptions, error } = await supabase
+      .from("push_subscriptions")
+      .select("id, user_id, endpoint, p256dh, auth_key"));
+  }
 
   if (error) console.error(`subscriptions query failed: ${error.code}`);
   if (error || !subscriptions?.length) {
@@ -147,7 +185,43 @@ Deno.serve(async (req: Request) => {
     for (const r of ns ?? []) sentRows.set(r.user_id, r);
   }
 
+  // a phone: Apple's push service, with the words the service worker would show
+  const sendApns = async (sub: Sub, payload: unknown): Promise<"ok" | "gone" | "failed"> => {
+    const jwt = await apnsJwtNow();
+    if (!jwt || !isApns(sub.platform) || !isApnsToken(sub.endpoint)) {
+      failed++;
+      return "failed";
+    }
+    const shown = forApns(payload, APNS_SUPP_NAMES);
+    try {
+      const res = await fetch(`${APNS_HOSTS[sub.platform]}/3/device/${sub.endpoint}`, {
+        method: "POST",
+        headers: apnsHeaders(shown, jwt, Date.now()),
+        body: apnsBody(shown, crypto.randomUUID()),
+      });
+      if (res.ok) {
+        sent++;
+        return "ok";
+      }
+      let reason: unknown = null;
+      try { reason = (await res.json())?.reason; } catch { /* no body */ }
+      failed++;
+      console.error(`apns failed: status ${res.status} ${typeof reason === "string" ? reason.slice(0, 40) : ""}`);
+      if (apnsTokenRefused(res.status, reason)) apnsToken = null;
+      if (apnsGone(res.status, reason)) {
+        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+        return "gone";
+      }
+      return "failed";
+    } catch {
+      failed++;
+      console.error("apns failed: no answer");
+      return "failed";
+    }
+  };
+
   const send = async (sub: Sub, payload: unknown): Promise<"ok" | "gone" | "failed"> => {
+    if (isApns(sub.platform)) return sendApns(sub, payload);
     try {
       await (webpush as any).sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },

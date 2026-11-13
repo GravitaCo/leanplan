@@ -5,6 +5,7 @@ import { checkPer100 } from '@/core/domain/checks'
 import { Sheet, Seg, BackButton } from '@/ui/primitives'
 import { Checks, LabelPhotoButton } from './common'
 import { useDuplicateSave } from './DuplicateViews'
+import { CREATE_FOOD } from '@/copy/food'
 
 /** Save a food from its packet label, then pick the portion. */
 export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note, onLabelPhoto }: {
@@ -27,9 +28,9 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
   const given = { k: f.k !== '', macros: f.p !== '' || f.c !== '' || f.fat !== '' }
   const checks = checkPer100(vals, given)
   const commit = () => {
-    if (!f.n.trim()) { showToast('Give it a name'); return }
+    if (!f.n.trim()) { showToast(CREATE_FOOD.needName); return }
     // a likely typo gets one nudge; the user has the packet, so a second Save keeps their numbers
-    if (!warned && checks.some((c) => c.level === 'warn')) { setWarned(true); showToast('Check the note below, or tap Save again to keep these numbers'); return }
+    if (!warned && checks.some((c) => c.level === 'warn')) { setWarned(true); showToast(CREATE_FOOD.checkNote); return }
     dup.save({ n: f.n.trim(), g: num(f.g) || 100, ...vals, ml: unit === 'ml', ...(barcode ? { barcode } : {}) })
   }
   const row = (key: keyof typeof f, label: string, u: string, ph = '0') => (
@@ -41,30 +42,30 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
     </div>
   )
   return (
-    <Sheet title="Create a food" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
-      right={<button className="navbtn b" onClick={commit}>Save</button>}>
-      {note && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><span>{note}{barcode && <span className="num muted"> Barcode {barcode}.</span>}</span></div>}
+    <Sheet title={CREATE_FOOD.title} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}
+      right={<button className="navbtn b" onClick={commit}>{CREATE_FOOD.save}</button>}>
+      {note && <div className="note" role="status" style={{ marginTop: 0, marginBottom: 12 }}><span>{note}{barcode && <span className="num muted">{CREATE_FOOD.barcode(barcode)}</span>}</span></div>}
       {onLabelPhoto && (
         <div className="stack" style={{ marginTop: 0, marginBottom: 12 }}>
           <LabelPhotoButton onPress={onLabelPhoto} />
         </div>
       )}
       <div className="sub" style={{ padding: '0 4px 12px' }}>
-        Copy the “per 100 {unit}” column from the packet. Saved foods appear in search from now on{barcode ? ', and open when you scan this barcode' : ''}.
+        {CREATE_FOOD.intro(unit, !!barcode)}
       </div>
-      <Seg<'g' | 'ml'> options={[['g', 'Grams'], ['ml', 'Millilitres']]} value={unit} onChange={setUnit} />
+      <Seg<'g' | 'ml'> options={[['g', CREATE_FOOD.grams], ['ml', CREATE_FOOD.millilitres]]} value={unit} onChange={setUnit} />
       <div className="list" style={{ marginTop: 12 }}>
-        {row('n', 'Name', '', "Mum's chilli")}
-        {row('g', 'Serving', unit, '100')}
+        {row('n', CREATE_FOOD.name, '', CREATE_FOOD.namePh)}
+        {row('g', CREATE_FOOD.serving, unit, '100')}
       </div>
-      <div className="lbl">Per 100 {unit}</div>
+      <div className="lbl">{CREATE_FOOD.per100(unit)}</div>
       <div className="list">
-        {row('k', 'Calories', 'kcal')}
-        {row('p', 'Protein', 'g')}
-        {row('c', 'Carbs', 'g')}
-        {row('fat', 'Fat', 'g')}
+        {row('k', CREATE_FOOD.calories, 'kcal')}
+        {row('p', CREATE_FOOD.protein, 'g')}
+        {row('c', CREATE_FOOD.carbs, 'g')}
+        {row('fat', CREATE_FOOD.fat, 'g')}
       </div>
-      <Checks checks={checks} ok={given.k && given.macros ? 'Adds up: the calories match the protein, carbs and fat.' : undefined}
+      <Checks checks={checks} ok={given.k && given.macros ? CREATE_FOOD.addsUp : undefined}
         onFix={(k) => setF({ ...f, k: String(k) })} />
       {dup.sheet}
     </Sheet>
