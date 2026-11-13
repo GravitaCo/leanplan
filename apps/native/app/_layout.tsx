@@ -1,21 +1,13 @@
 import { useEffect } from 'react'
-import { AppState, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useFonts } from 'expo-font'
 import { FONTS } from '../lib/theme'
 import { useStore } from '@/store/store'
-import { supabase } from '@/data/supabase'
 import { useGate } from '../lib/gate'
-
-// supabase-js on React Native: refresh the session only while the app is in front
-AppState.addEventListener('change', (s) => {
-  if (s === 'active') supabase.auth.startAutoRefresh()
-  else supabase.auth.stopAutoRefresh()
-})
-// a cold launch is already active, so no change fires for it (security-data finding 3)
-if (AppState.currentState === 'active') supabase.auth.startAutoRefresh()
+import '../lib/e2eHook'
 
 export default function Root() {
   const [fontsLoaded] = useFonts(FONTS)

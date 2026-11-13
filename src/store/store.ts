@@ -53,7 +53,7 @@ import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAcc
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
-import { onForeground } from '@/data/platform'
+import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
@@ -68,7 +68,7 @@ import { answerFoodOptInIn, type FoodOptInAnswer } from '@/core/domain/foodMode'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { isUnderAge, reminderAction } from '@/core/domain/age'
+import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
@@ -695,7 +695,7 @@ export const useStore = create<StoreState>()(
         if (!get().data.profile.notificationsEnabled) return
         const can = get().authed && navigator.onLine && consentLetsSync(get().data)
         const ok = can ? await withTimeout(resubscribePush(), 8000, false) : false
-        if (!ok && !get().underAge) {
+        if (restoreTurnsOff({ registered: ok, stopped: !!get().underAge, pushSupported: pushSupported(), keepWithoutPush: KEEP_REMINDERS_WITHOUT_PUSH })) {
           set((st) => { st.data.profile.notificationsEnabled = false; markSettingsDirty(st.data) })
           saved()
         }
