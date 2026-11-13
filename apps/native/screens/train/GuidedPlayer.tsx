@@ -7,7 +7,7 @@
  * The same logic as the web, line for line; only the drawing is React Native.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AccessibilityInfo, AppState, Modal, Pressable, ScrollView, Text, View } from 'react-native'
+import { AccessibilityInfo, AppState, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { cancelRestAlert, scheduleRestAlert, setGuidedSessionOpen } from './session'
@@ -37,7 +37,7 @@ import { FinishSheet } from './FinishSheet'
 import { HoldTimer } from './HoldTimer'
 import { SwapSheet } from './SwapSheet'
 import { WarmupPlayer } from './WarmupPlayer'
-import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
+import { ClipView, Still, useClip, useReducedMotion } from './media'
 import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Row, Sheet, Toggle } from '../../lib/ui/primitives'
@@ -71,17 +71,39 @@ function chime() {
  * clock; it never claims to count the person's reps.
  */
 function TempoCount({ player, media, playing }: { player: ReturnType<typeof useClip>['player']; media: ExerciseMedia; playing: boolean }) {
-  const t = useClipTime(player)
+  // Read the clip's clock on every frame, as the web does (requestAnimationFrame over
+  // video.currentTime), and redraw only when the count or phase changes. The player's own time
+  // events arrive about every 100 ms and unevenly on iOS, which made the count lag and lurch.
+  const [s, setS] = useState(() => tempoAt(media, player.currentTime))
+  useEffect(() => {
+    if (!playing) return
+    const update = (time: number) => {
+      const next = tempoAt(media, time)
+      setS((cur) => (cur.kind === next.kind && cur.count === next.count && cur.countOf === next.countOf ? cur : next))
+    }
+    // Android: reading currentTime blocks the main thread there, so it takes the player's time events
+    if (Platform.OS === 'android') {
+      player.timeUpdateEventInterval = 0.1
+      const sub = player.addListener('timeUpdate', (e) => update(e.currentTime))
+      return () => sub.remove()
+    }
+    let raf = 0
+    const tick = () => { update(player.currentTime); raf = requestAnimationFrame(tick) }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [player, media, playing])
   if (!playing) return null
-  const s = tempoAt(media, t)
-  const sh = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 24 }
+  // No text shadow (Benn, 13 Nov): the shade over the clip keeps the white figures readable.
   return (
     <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', left: 0, right: 0, top: '39%', alignItems: 'center' }}>
       {s.kind === 'ready'
-        ? <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
+        ? <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>{PHASE_LABEL.ready}</Text>
         : <>
-          <Text style={[font(200), num, sh, { fontSize: 112, lineHeight: 112, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
-          <Text style={[font(500), sh, { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
+          {/* A fixed-width box so the centred figure never shifts between digits. lineHeight at least
+              Geist's own line height (1.3 em), so iOS centres the glyphs instead of clipping them
+              (RCTAttributedTextUtils), pulled back with negative margins to the web's 112 box. */}
+          <Text style={[font(200), num, { width: 160, textAlign: 'center', fontSize: 112, lineHeight: 146, marginVertical: -17, letterSpacing: -5.6, color: '#fff' }]}>{s.count}</Text>
+          <Text style={[font(500), { fontSize: 17, color: '#fff', marginTop: 4 }]}>of {s.countOf} · {PHASE_LABEL[s.kind]}</Text>
         </>}
     </View>
   )

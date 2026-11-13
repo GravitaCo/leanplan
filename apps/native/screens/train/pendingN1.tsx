@@ -1,16 +1,15 @@
 /**
- * TODO(N1-followup): what Train still needs that lib/ui doesn't have yet, each a direct port of a
- * web class: `Li`/`LiText` for rows lib/ui's Row can't hold (a thumbnail, a control, a wrapped sub),
- * `.x-btn` (`XBtn`), `.stack` (`Stack`), the inline, flat and labelled `.linkbtn` (`TextLink`),
- * `.list`'s 8 pt below (`LIST_GAP`) and the form rows (`.frow`, its input and select: N1's
- * "fields", P2). Train-only: nothing else imports this file. Emptied and deleted before the
- * screens merge.
+ * TODO(N1-followup): what Train still needs that lib/ui doesn't have yet: `Li`/`LiText` for rows not
+ * yet moved onto lib/ui's Row, `XBtn` with a chevron for the builder's move up/down (lib/ui's XBtn is
+ * the x only), `Stack` (`.stack`), the flat and labelled `.linkbtn` (`TextLink`; lib/ui's TextLink
+ * is the inline one), `LIST_GAP` (`.list`'s 8 below) and the select for a form row (`FSelect`,
+ * used as lib/ui FRow's `right`). Train-only: nothing else imports this file. Emptied and deleted
+ * before the screens' next merge.
  */
 import type { ReactNode } from 'react'
-import { toPoint } from './nav'
-import { ActionSheetIOS, Alert, Platform, Pressable, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
+import { ActionSheetIOS, Alert, Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
+import { font, tx, useTokens } from '../../lib/theme'
 
 
 /** What the Train screens hand back to the app shell (the lead wires these in app/(tabs)/train.tsx). */
@@ -76,24 +75,7 @@ export function LiText({ t: title, s, tStyle, sStyle, wrap, children }: { t: Rea
 }
 
 
-/** `.frow`: label left, the value right-aligned */
-export function FRow({ label, children }: { label: string; children: ReactNode }) {
-  const t = useTokens()
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 16 }}>
-      <Text style={[tx(17, 400), { minWidth: 96, flexShrink: 0, color: t.label }]}>{label}</Text>
-      {children}
-    </View>
-  )
-}
 
-/** an input as `.frow input`: right-aligned, no box */
-export function FInput(p: TextInputProps & { numeric?: boolean; decimal?: boolean }) {
-  const t = useTokens()
-  const { numeric, decimal, style, onChangeText, ...rest } = p
-  return <TextInput onChangeText={onChangeText && ((v) => onChangeText(decimal ? toPoint(v) : v))} placeholderTextColor={t.label3} keyboardType={decimal ? 'decimal-pad' : numeric ? 'number-pad' : 'default'}
-    style={[font(400), { flex: 1, minWidth: 0, fontSize: 17, color: t.label, textAlign: 'right', paddingVertical: 11 }, (numeric || decimal) && num, style]} {...rest} />
-}
 /**
  * `.frow select`: the value in label2; tapping it offers the options the way the platform shows a
  * select (an action sheet on iOS, a list on Android), as the web's select does on a phone.

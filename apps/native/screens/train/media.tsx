@@ -101,7 +101,6 @@ export function useClip(path: string | undefined, autoPlay: boolean): { player: 
   const player = useVideoPlayer(source, (p) => {
     p.loop = true
     p.muted = true
-    p.timeUpdateEventInterval = 0.1
     if (autoPlay) p.play()
   })
   // Reduce Motion turning on (or resolving late) stops a clip that started on its own
@@ -112,10 +111,30 @@ export function useClip(path: string | undefined, autoPlay: boolean): { player: 
   return { player, playing: isPlaying, failed: status === 'error', toggle }
 }
 
-/** The clip's own clock, for the tempo count and the demo player (the web reads `video.currentTime`). */
-export function useClipTime(player: VideoPlayer): number {
-  const { currentTime } = useEvent(player, 'timeUpdate', { currentTime: player.currentTime, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
-  return currentTime
+/**
+ * The clip's own clock, read on every frame on iOS (and the web build) as the web's demo player does (requestAnimationFrame
+ * over `video.currentTime`), while it plays; once more when it pauses, so a paused clip shows where
+ * it stopped. The player's own time events come about every 100 ms and unevenly on iOS, which made
+ * the count lag and jump (Benn, 13 Nov).
+ */
+export function useClipTime(player: VideoPlayer, playing: boolean): number {
+  const [t, setT] = useState(() => player.currentTime)
+  // Android: reading currentTime blocks the main thread there, so it keeps the player's time events
+  const { currentTime: evT } = useEvent(player, 'timeUpdate', { currentTime: player.currentTime, bufferedPosition: 0, currentLiveTimestamp: null, currentOffsetFromLive: null })
+  useEffect(() => {
+    if (Platform.OS !== 'android') return
+    setT(evT)
+  }, [evT])
+  useEffect(() => {
+    if (Platform.OS === 'android') { player.timeUpdateEventInterval = playing ? 0.1 : 0; return }
+    setT(player.currentTime)
+    if (!playing) return
+    let raf = 0
+    const tick = () => { setT(player.currentTime); raf = requestAnimationFrame(tick) }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [player, playing])
+  return t
 }
 
 const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 } as const

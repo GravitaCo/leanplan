@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from 'react'
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
-import { tx, useTokens } from '../theme'
+import { BODY_TRACK, BTN, tx, useTokens } from '../theme'
 import { LinkBtn } from './kit'
 
 /** `.lbl`: 13 pt medium, --label2, padding 18 4 8. `style` for a screen's own padding (`.mind-lbl-first`). */
@@ -86,13 +86,15 @@ export function Empty({ children, status }: { children: ReactNode; status?: bool
  * A web `<button>`, so a button for VoiceOver, with the web's aria-label and expanded state when
  * it opens something in place.
  */
-export function TextLink({ children, onPress, label, expanded, style }: {
+export function TextLink({ children, onPress, label, expanded, style, inButton }: {
   children: ReactNode; onPress: () => void; label?: string; expanded?: boolean; style?: StyleProp<TextStyle>
+  /** inside a web <button>, whose text the browser doesn't track */
+  inButton?: boolean
 }) {
   const t = useTokens()
   return (
     <Text accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }}
-      onPress={onPress} suppressHighlighting={false} style={[{ color: t.tint }, style]}>{children}</Text>
+      onPress={onPress} suppressHighlighting={false} style={[{ color: t.tint, letterSpacing: inButton ? BTN : BODY_TRACK }, style]}>{children}</Text>
   )
 }
 

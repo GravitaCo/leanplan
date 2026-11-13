@@ -165,6 +165,8 @@ const SHIPPED = {
   check('the doc states the shipped list, each code under its category',
     Object.entries(SHIPPED).every(([c, rs]) => JSON.stringify((docRow(c).match(/[0-9A-F]{4}\.1/g) ?? []).sort()) === JSON.stringify(rs)) && /privacy_file_aggregation_enabled/.test(doc),
     Object.fromEntries(Object.keys(SHIPPED).map((c) => [c, docRow(c)])))
+  const docCats = doc.split('\n').filter((l) => /^\| [A-Z][A-Za-z]+ \| [0-9A-F]{4}\.1/.test(l)).map((l) => l.split('|')[1].trim())
+  check('the doc\'s table lists only categories that ship', docCats.length === Object.keys(SHIPPED).length && docCats.every((c) => SHIPPED[c]), docCats)
   const bp = (app.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties') ?? [])[1]
   check('aggregation stays on (nothing turns it off)', bp?.ios?.privacyManifestAggregationEnabled !== false)
 }

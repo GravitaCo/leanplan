@@ -14,7 +14,7 @@ import { exById, holdTarget } from '@/core/domain/library'
 import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
 import { Icon } from '../../lib/ui/icons'
 import { font, num } from '../../lib/theme'
-import { Shade } from './gp'
+import { Shade, geistLine } from './gp'
 
 const shadow = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }
 
@@ -60,7 +60,7 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
   const m = ex.video!
   const insets = useSafeAreaInsets()
   const { player, playing, failed, toggle } = useClip(m.src, true)
-  const t = useClipTime(player)
+  const t = useClipTime(player, playing)
   // offline vs a device that can't decode the clip: the copy differs
   // navigator.onLine is the app's own network module (lib/platform), as the web reads it
   const online = typeof navigator !== 'undefined' && navigator.onLine !== false
@@ -148,7 +148,9 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
                 <Text style={[...sub, { marginTop: 0, marginBottom: 2 }]}>{s.rep ? `Rep ${s.rep} of ${s.reps}` : s.reps === 1 ? '1 rep' : `${s.reps} reps`}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
                   <Text style={[font(700), W, shadow, { fontSize: 28, lineHeight: 32, flexShrink: 1 }]}>{PHASE_LABEL[s.kind]}</Text>
-                  {s.kind !== 'ready' && <Text style={[font(700), num, W, shadow, { fontSize: 56, lineHeight: 52 }]}>{s.count}</Text>}
+                  {/* the web's line-height 0.9 box (50.4): Geist's own line height so iOS centres the glyphs,
+                      pulled back to that box with negative margins */}
+                  {s.kind !== 'ready' && <Text style={[font(700), num, W, shadow, { fontSize: 56, lineHeight: geistLine(56), marginVertical: -(geistLine(56) - 56 * 0.9) / 2 }]}>{s.count}</Text>}
                 </View>
                 <View style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden', marginTop: 14, marginBottom: 16 }}>
                   <View style={{ height: '100%', width: `${Math.round(s.progress * 1000) / 10}%`, backgroundColor: '#fff' }} />
