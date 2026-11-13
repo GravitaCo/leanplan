@@ -76,7 +76,16 @@
         }
       ],
       "./modules/tilo-camera/app.plugin.js",
-      "./plugins/withNotifyExtension"
+      "./plugins/withNotifyExtension",
+      "expo-video",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
