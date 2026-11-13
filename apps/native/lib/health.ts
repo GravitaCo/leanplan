@@ -8,26 +8,19 @@
  * (nutrition-accuracy).
  */
 import { Platform } from 'react-native'
-import {
-  isHealthDataAvailable,
-  requestAuthorization,
-  queryCategorySamples,
-  queryStatisticsForQuantity,
-  queryWorkoutSamples,
-  CategoryValueSleepAnalysis,
-  WorkoutActivityType,
-} from '@kingstinct/react-native-healthkit'
+import { healthModuleAvailable, requestHealthAuthorization, sleepSamples, stepSum, walkingWorkouts as walkingSpans } from '../modules/tilo-health'
 import { bandOfMinutes, bandWords } from '@/core/domain/sleep'
 import type { SleepBand } from '@/core/types'
 
-const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis' as const
-const STEPS = 'HKQuantityTypeIdentifierStepCount' as const
+/** Apple's HKCategoryValueSleepAnalysis raw values that count as asleep (unspecified, core, deep, REM);
+ *  in bed (0) and awake (2) don't. Stages are only summed into "asleep", never shown. */
+const ASLEEP = new Set<number>([1, 3, 4, 5])
 
-export const healthAvailable = (): boolean => Platform.OS === 'ios' && isHealthDataAvailable()
+export const healthAvailable = (): boolean => Platform.OS === 'ios' && healthModuleAvailable()
 
 /** Asks once for read access to sleep, steps and workouts (iOS shows its own sheet). */
 export async function askHealth(): Promise<boolean> {
-  return requestAuthorization({ toRead: [SLEEP, STEPS, 'HKWorkoutTypeIdentifier'] })
+  return requestHealthAuthorization()
 }
 
 export interface NightRead {
@@ -40,23 +33,17 @@ export interface NightRead {
   samples: number
 }
 
-const ASLEEP = new Set<number>([
-  CategoryValueSleepAnalysis.asleepUnspecified,
-  CategoryValueSleepAnalysis.asleepCore,
-  CategoryValueSleepAnalysis.asleepDeep,
-  CategoryValueSleepAnalysis.asleepREM,
-])
 
 /** Last night: asleep stretches from 18:00 yesterday to 14:00 today, overlaps merged (a watch and
  *  a phone can both record the same night). Stages are only summed into "asleep", never shown. */
 export async function lastNight(now = new Date()): Promise<NightRead | null> {
   const start = new Date(now); start.setDate(start.getDate() - 1); start.setHours(18, 0, 0, 0)
   const end = new Date(now); end.setHours(14, 0, 0, 0)
-  const rows = await queryCategorySamples(SLEEP, { limit: 0, ascending: true, filter: { date: { startDate: start, endDate: end } } })
+  const rows = await sleepSamples(start, end)
   const spans = rows
-    .filter((r) => ASLEEP.has(Number(r.value)))
+    .filter((r) => ASLEEP.has(r.value))
     // clipped to the window, so a stretch that began before 18:00 (a long nap) doesn't count in full
-    .map((r) => [Math.max(new Date(r.startDate).getTime(), start.getTime()), Math.min(new Date(r.endDate).getTime(), end.getTime())] as [number, number])
+    .map((r) => [Math.max(r.start, start.getTime()), Math.min(r.end, end.getTime())] as [number, number])
     .filter(([a, b]) => b > a)
     .sort((a, b) => a[0] - b[0])
   if (!spans.length) return null
@@ -86,14 +73,14 @@ export interface WalkingRead {
 
 export async function walking(now = new Date()): Promise<WalkingRead> {
   const midnight = new Date(now); midnight.setHours(0, 0, 0, 0)
-  const stat = await queryStatisticsForQuantity(STEPS, ['cumulativeSum'], { filter: { date: { startDate: midnight, endDate: now } }, unit: 'count' })
+  const steps = await stepSum(midnight, now)
   const weekAgo = new Date(midnight); weekAgo.setDate(weekAgo.getDate() - 7)
-  const ws = await queryWorkoutSamples({ limit: 0, ascending: false, filter: { workoutActivityType: WorkoutActivityType.walking, date: { startDate: weekAgo, endDate: now } } })
+  const ws = (await walkingSpans(weekAgo, now)).slice().sort((a, b) => b.start - a.start)
   return {
-    steps: stat.sumQuantity ? Math.round(stat.sumQuantity.quantity) : null,
+    steps: steps == null ? null : Math.round(steps),
     walks: ws.map((w) => ({
-      day: new Date(w.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
-      mins: Math.round((new Date(w.endDate).getTime() - new Date(w.startDate).getTime()) / 60000),
+      day: new Date(w.start).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
+      mins: Math.round((w.end - w.start) / 60000),
     })),
   }
 }

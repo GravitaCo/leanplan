@@ -14,13 +14,11 @@
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
     "doctor": "expo-doctor",
     "test": "node scripts/run-tests.mjs",
-    "test:reminders": "npx --yes esbuild@0.21.5 scripts/test-reminders.ts --bundle --platform=node --log-level=error --alias:@=../../src --alias:react-native=./scripts/fakes/react-native.ts --alias:expo=./scripts/fakes/expo.ts --alias:expo-notifications=./scripts/fakes/expo-notifications.ts --alias:expo-application=./scripts/fakes/expo-application.ts --alias:react-native-mmkv=./scripts/fakes/react-native-mmkv.ts --resolve-extensions=.native.ts,.ts,.tsx,.js,.mjs,.json --define:import.meta.env={} --outfile=node_modules/.cache/test-reminders.cjs && node node_modules/.cache/test-reminders.cjs",
+    "test:reminders": "npx --yes esbuild@0.21.5 scripts/test-reminders.ts --bundle --platform=node --log-level=error --alias:@=../../src --alias:react-native=./scripts/fakes/react-native.ts --alias:expo=./scripts/fakes/expo.ts --alias:expo-notifications=./scripts/fakes/expo-notifications.ts --alias:expo-application=./scripts/fakes/expo-application.ts --resolve-extensions=.native.ts,.ts,.tsx,.js,.mjs,.json --define:import.meta.env={} --outfile=node_modules/.cache/test-reminders.cjs && node node_modules/.cache/test-reminders.cjs",
     "test:extension": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-extension.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/geist": "^0.4.2",
-    "@kingstinct/react-native-healthkit": "^16.2.0",
-    "@react-native-community/netinfo": "12.0.1",
     "@supabase/supabase-js": "^2.119.0",
     "babel-preset-expo": "~58.0.0",
     "expo": "~58.0.23",
@@ -34,27 +32,24 @@
     "expo-linking": "~58.0.16",
     "expo-notifications": "~58.1.9",
     "expo-router": "~58.0.30",
-    "expo-secure-store": "~58.0.2",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.7",
     "expo-web-browser": "~58.0.8",
     "immer": "^11.2.9",
     "react": "19.3.0",
-    "react-dom": "19.3.0",
     "react-native": "0.88.1",
-    "react-native-mmkv": "^4.3.2",
-    "react-native-nitro-modules": "^0.37.2",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
     "react-native-svg": "15.16.0",
     "react-native-url-polyfill": "^4.0.0",
-    "react-native-web": "^0.21.4",
     "react-native-worklets": "0.13.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "react-dom": "19.3.0",
+    "react-native-web": "^0.21.4",
     "typescript": "~6.0.3"
   }
 }

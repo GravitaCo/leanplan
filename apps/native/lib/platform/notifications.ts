@@ -23,11 +23,11 @@ import { useStore } from '@/store/store'
 import { checkPushToken, pushSupported, pushTokenChanged } from './push'
 import { takeNotifyEvents } from '@/data/notifyLog'
 import { recordNotifyEvent } from './notifyStore'
-import { notifyKV } from './notifyMMKV'
+import { notifyKV } from './notifyKV'
 import { takeExtensionDeliveries } from '../../modules/tilo-notify'
 import { fromExtension, keyOf, mindKindOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, type NotifyEv, type Presented, type Seen } from './notifyReconcile'
 
-// ---- the log: N3's tali-notify store (./notifyMMKV), so its clear removes the seen list too ----
+// ---- the log: N3's tali-notify store (./notifyKV), so its clear removes the seen list too ----
 const store = notifyKV
 const SEEN = 'seen'
 const readSeen = (): Seen => { try { return parseSeen(store()?.getString(SEEN)) } catch { return {} } }

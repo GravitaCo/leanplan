@@ -37,7 +37,7 @@ check('onlineFrom: ignores isInternetReachable', onlineFrom({ isConnected: true,
 }
 
 await (async () => {
-  // launch with no connection: NetInfo reports before the store listens
+  // launch with no connection: the network module reports before the store listens
   const ev = connectionEvents()
   ev.setOnline(false)
   const got = []
