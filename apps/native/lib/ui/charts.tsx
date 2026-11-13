@@ -170,7 +170,9 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
         const fs = f.size * k, lh = fs * 1.3, top = (f.y - f.size * 1.005) * k
         const box = f.anchor === 'end' ? { left: 0, width: f.x * k } : { left: (f.x - 40) * k, width: 80 * k }
         return (
-          <Text key={i} numberOfLines={1} style={[{ position: 'absolute', top, ...box, textAlign: f.anchor === 'end' ? 'right' : 'center', fontFamily: GEIST[500], fontSize: fs, lineHeight: lh, color: f.color }, num]}>
+          // fixed to the chart's scale (the SVG never follows Larger Text, nor does the web's), and read
+          // only through the chart's own label
+          <Text key={i} numberOfLines={1} allowFontScaling={false} accessibilityElementsHidden importantForAccessibility="no" style={[{ position: 'absolute', top, ...box, textAlign: f.anchor === 'end' ? 'right' : 'center', fontFamily: GEIST[500], fontSize: fs, lineHeight: lh, color: f.color }, num]}>
             {f.text}
           </Text>
         )
