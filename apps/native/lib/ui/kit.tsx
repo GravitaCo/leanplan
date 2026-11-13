@@ -168,10 +168,14 @@ export const initials = (name: string) => name.trim().split(/\s+/).filter(Boolea
  * `.list`: an inset grouped list (radius 18) whose rows are split by 1 px --sep lines starting 16 pt
  * in, or 58 pt in with `icons` (rows that start with a settings icon).
  */
-export function List({ children, icons = false, wrap = false, style }: {
+export function List({ children, icons = false, wrap = false, inset, style }: {
   children: ReactNode; icons?: boolean
   /** `.nf-rows` (Profile's notification rows): a row's sub wraps and its value is never cut */
-  wrap?: boolean; style?: StyleProp<ViewStyle>
+  wrap?: boolean
+  /** where the separators start, when not 16 (58 with `icons`): 72 for the exercise library's
+   *  thumbnail rows (`.list .lib-row`), 0 for Train's Today list (`.tlist`, radius 20 in `style`) */
+  inset?: number
+  style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const bg = useSurface(t)
@@ -183,7 +187,7 @@ export function List({ children, icons = false, wrap = false, style }: {
       {rows.map((c, i) => (
         <View key={i}>
           {i > 0 && rows[i - 1] && !(isValidElement(c) && (c.props as { noSep?: boolean }).noSep) && (
-            <View style={{ position: 'absolute', top: 0, left: icons ? 58 : 16, right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
+            <View style={{ position: 'absolute', top: 0, left: inset ?? (icons ? 58 : 16), right: 0, height: 1, backgroundColor: t.sep, zIndex: 1 }} />
           )}
           {c}
         </View>

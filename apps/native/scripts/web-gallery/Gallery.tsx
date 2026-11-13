@@ -377,6 +377,19 @@ export function Gallery() {
         </div>
       </Sec>
 
+      <Sec id="insets" title="List inset (72: library rows; 0: Today list)">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="list">
+            <button className="li lib-row"><span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--fill)', flex: 'none' }} /><div className="m"><div className="t">Goblet squat</div><div className="s">Legs · dumbbell</div></div><Chevron /></button>
+            <button className="li lib-row"><span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--fill)', flex: 'none' }} /><div className="m"><div className="t">Push-up</div><div className="s">Chest · body weight</div></div><Chevron /></button>
+          </div>
+          <div className="list tlist">
+            <button className="li"><div className="m"><div className="t">Full body</div><div className="s">6 exercises</div></div><Chevron /></button>
+            <button className="li"><div className="m"><div className="t">Walk</div><div className="s">30 min</div></div><Chevron /></button>
+          </div>
+        </div>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="banner">

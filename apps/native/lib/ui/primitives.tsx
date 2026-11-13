@@ -8,7 +8,7 @@
  * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
  */
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, BackHandler, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
@@ -271,7 +271,7 @@ function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode
  * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
  * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
  */
-export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap }: {
+export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
   title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
   /** default: shown when the row is tappable and has no right control */
   chevron?: boolean; act?: boolean; icon?: IconName
@@ -282,6 +282,8 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
   label?: string; accessibilityLabel?: string
   /** the title wraps instead of truncating (`.del .li .t`) */
   wrap?: boolean
+  /** a screen's own row spacing on top of `.li` (`.lib-row`: min-height 64; `.trow`: 76, padding 12 14) */
+  style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   const li = useLi()
@@ -316,9 +318,10 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
     </>
   )
   const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
+  const rs: StyleProp<ViewStyle> = [s, style]
   return onPress
-    ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View accessible={label != null} accessibilityLabel={label} style={s}>{body}</View>
+    ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View accessible={label != null} accessibilityLabel={label} style={rs}>{body}</View>
 }
 
 /** `.tag`: a small uppercase label beside a title ("Mine"), 11 pt bold on --fill. */

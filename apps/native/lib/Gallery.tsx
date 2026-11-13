@@ -354,6 +354,19 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </View>
       </Sec>
 
+      <Sec id="insets" title="List inset (72: library rows; 0: Today list)">
+        <View style={{ gap: 10 }}>
+          <List inset={72}>
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Goblet squat" sub="Legs · dumbbell" style={{ minHeight: 64 }} onPress={() => {}} />
+            <Row lead={<View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: t.fill }} />} title="Push-up" sub="Chest · body weight" style={{ minHeight: 64 }} onPress={() => {}} />
+          </List>
+          <List inset={0} style={{ borderRadius: 20 }}>
+            <Row title="Full body" sub="6 exercises" onPress={() => {}} />
+            <Row title="Walk" sub="30 min" onPress={() => {}} />
+          </List>
+        </View>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <View style={{ gap: 10 }}>
           <Banner icon="leaf" iconColor={t.mindInk} title="Welcome back." body="A day off logging doesn't undo anything. Pick up from here." onDismiss={() => {}} />
