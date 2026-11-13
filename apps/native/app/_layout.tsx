@@ -7,11 +7,14 @@ import { useFonts, Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_7
 import { useStore } from '@/store/store'
 import { useGate } from '../lib/gate'
 import '../lib/e2eHook'
+import { useNotifications } from '../lib/platform/notifications'
 
 export default function Root() {
   const [fontsLoaded] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold })
   const initAuth = useStore((s) => s.initAuth)
   useEffect(() => { initAuth() }, [initAuth])
+  // reminders: taps, the delivery log and the push token (N12)
+  useNotifications()
   // the navigator stays mounted (Expo Router needs it); its screens render nothing while gated
   const gate = useGate(fontsLoaded)
   return (
