@@ -25,7 +25,9 @@ import { Icon } from '../ui/icons'
 import { TaliMark } from '../ui/brand'
 import { Link } from './Consent'
 import { openLegal } from './legal'
-import { emailRedirect, googleSignIn } from './oauth'
+import { appleSignIn, emailRedirect, googleSignIn } from './oauth'
+import { AppleButton, appleAvailable } from '../../modules/tilo-auth'
+import { dark } from '../tokens.generated'
 import { coverFrame, photoHeight } from './rules'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
@@ -90,6 +92,16 @@ export function AuthScreen() {
     if (r.status === 'error') setErr(r.message)
   }
 
+  async function apple() {
+    if (busy) return
+    setErr('')
+    beginSignIn()
+    setBusy(true)
+    const r = await appleSignIn()
+    setBusy(false)
+    if (r.status === 'error') setErr(r.message)
+  }
+
   async function resend() {
     if (busy || !email) return
     setErr('')
@@ -105,7 +117,8 @@ export function AuthScreen() {
 
   const copy = AUTH.modes[mode]
   const photoH = photoHeight(mode, vh)
-  // TODO(N1-followup): fields. .auth2-fields / .auth2-f as the spec: a card of labelled inputs
+  // .auth2-fields / .auth2-f: the sign-in screen's own card of labelled borderless inputs (theme.css
+  // keeps them to this screen; lib/ui's Field is .field, a filled input, a different look)
   // (the web render only: react-native-web's focus outline, which the phone doesn't draw)
   const field = [tx(17, 400, 26), { height: 26, padding: 0, color: t.label }, Platform.OS === 'web' && { outlineWidth: 0 }]
   const fieldBox = (first: boolean) => [{ paddingVertical: 11, paddingHorizontal: 16, gap: 2 }, !first && { borderTopWidth: 1, borderTopColor: t.sep }]
@@ -125,11 +138,12 @@ export function AuthScreen() {
             <Defs><LinearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#000" stopOpacity={0.34} /><Stop offset="1" stopColor="#000" stopOpacity={0} /></LinearGradient></Defs>
             <Rect x="0" y="0" width="100%" height="140" fill="url(#shade)" />
           </Svg>
-          <View style={{ position: 'absolute', left: 20, top: ins.top + 18 }}><WhiteMark width={76} /></View>
+          <View style={{ position: 'absolute', left: 20, top: ins.top + 18 }}><TaliMark width={76} color="#ffffff" /></View>
         </View>
 
         <View style={{ flex: 1, marginTop: -48, backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 26, paddingHorizontal: 20, paddingBottom: 24 + ins.bottom, gap: 16 }}>
-          {/* TODO(N1-followup): Banner without an icon (the web's plain .banner) */}
+          {/* the web's plain .banner with the notice as its only, regular-weight line (lib/ui's Banner
+              sets its first line bold, so the card is used as the .banner box) */}
           {notice && mode !== 'check-email' ? (
             <Card plain style={{ paddingVertical: 12, paddingHorizontal: 14 }}><Text accessibilityRole="text" accessibilityLiveRegion="polite" style={[tx(15, 400, 1.35), { color: t.label }]}>{notice}</Text></Card>
           ) : null}
@@ -196,14 +210,28 @@ export function AuthScreen() {
 
               {errLine}
 
-              <GoButton title={busy ? AUTH.wait : copy.cta} arrow={!busy} disabled={busy} onPress={submit} />
+              {/* .btn.auth2-go: 54 high, the arrow after the words */}
+              <Btn title={busy ? AUTH.wait : copy.cta} disabled={busy} onPress={() => void submit()} style={big}
+                iconAfter={busy ? undefined : (
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={t.btnInk} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+                    <Path d="M5 12h14M13 6l6 6-6 6" />
+                  </Svg>
+                )} />
 
               {mode !== 'forgot' && (
                 <>
-                  {mode === 'signin' && (
+                  {/* the "or" rule: sign-in only, as the web; also creating an account on iOS, where Apple's black
+                      pill would otherwise sit right under the ink one (design, 13 Nov) */}
+                  {(mode === 'signin' || appleAvailable()) && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4 }}>
                       <View style={{ flex: 1, height: 1, backgroundColor: t.sep }} /><Text style={[tx(13), { color: t.label2 }]}>{AUTH.or}</Text><View style={{ flex: 1, height: 1, backgroundColor: t.sep }} />
                     </View>
+                  )}
+                  {/* Sign in with Apple (iOS only; Benn, 13 Nov 2026): Apple's own button, the same size as
+                      Google's and above it, black in light mode and white in dark, as Apple asks */}
+                  {appleAvailable() && (
+                    <AppleButton appearance={t === dark ? 'white' : 'black'} cornerRadius={27} onPress={() => void apple()}
+                      style={{ height: 54, alignSelf: 'stretch' }} />
                   )}
                   {/* .auth2-google: a card-coloured button with a 1 px --sep ring, 16 pt, Google's own G */}
                   <Btn kind="gray" title={AUTH.google} icon={<GoogleG />} onPress={() => void google()}
@@ -232,38 +260,6 @@ export function AuthScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  )
-}
-
-/**
- * `.btn.auth2-go`: the 54 pt ink pill with its words and the arrow after them.
- * TODO(N1-followup): a trailing icon on Btn; this is the web markup as the spec.
- */
-function GoButton({ title, arrow, disabled, onPress }: { title: string; arrow: boolean; disabled: boolean; onPress: () => void }) {
-  const t = useTokens()
-  return (
-    <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
-      style={({ pressed }) => ({ minHeight: 54, borderRadius: 27, backgroundColor: t.btn, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
-      <Text style={[tx(17, 600, 1.3, BTN), { color: t.btnInk }]}>{title}</Text>
-      {arrow && (
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={t.btnInk} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
-          <Path d="M5 12h14M13 6l6 6-6 6" />
-        </Svg>
-      )}
-    </Pressable>
-  )
-}
-
-/**
- * The Tilo mark in white over the photo (.auth2-photo .tali-mark { color: #fff }).
- * TODO(N1-followup): a colour on TaliMark; the path is brand.tsx's.
- */
-const MARK = 'M123.57.33c-17.27,0-31.27,14-31.27,31.27s14,31.27,31.27,31.27,31.27-14,31.27-31.27S140.85.33,123.57.33ZM123.57,45.88c-7.87,0-14.27-6.4-14.27-14.27s6.4-14.27,14.27-14.27,14.27,6.4,14.27,14.27-6.4,14.27-14.27,14.27ZM65.63,28.52V.33h-17v28.19c0,18.59,15.13,33.72,33.72,33.72h9.95v-17h-9.95c-9.22,0-16.72-7.5-16.72-16.72ZM9.95,0H0v17h9.95c9.22,0,16.72,7.5,16.72,16.72v28.19h17v-28.19C43.67,15.13,28.54,0,9.95,0Z'
-function WhiteMark({ width }: { width: number }) {
-  return (
-    <Svg width={width} height={(width * 62.88) / 154.85} viewBox="0 0 154.85 62.88" accessible accessibilityRole="image" accessibilityLabel="Tilo">
-      <Path fill="#ffffff" d={MARK} />
-    </Svg>
   )
 }
 

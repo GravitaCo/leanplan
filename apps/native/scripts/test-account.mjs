@@ -5,7 +5,7 @@
  *   (apps/native) npm run test:account
  */
 import { readBackup } from '../../../src/data/backup.native.ts'
-import { codeFrom, coverFrame, photoHeight, reauthMatches, typedOk } from '../lib/account/rules.ts'
+import { appleAlways, codeFrom, coverFrame, photoHeight, reauthMatches, reauthWays, typedOk } from '../lib/account/rules.ts'
 import { gateStep, pendingFor } from '../lib/account/gateModel.ts'
 
 let failed = 0
@@ -66,6 +66,16 @@ check('reauth: the same account', reauthMatches('a', 'a'))
 check('reauth: another account is refused', !reauthMatches('a', 'b'))
 check('reauth: no recorded owner (the deletion checks it again)', reauthMatches(undefined, 'b'))
 check('reauth: compared with the owner, not the signed-out fallback', reauthMatches('a', 'a') && !reauthMatches('00000000-0000-0000-0000-000000000001', 'a'))
+
+/* ---------- how to re-confirm before deleting ---------- */
+const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+check('ways: email', eq(reauthWays(['email'], true), ['password']))
+check('ways: Google', eq(reauthWays(['google'], true), ['google']))
+check('ways: Apple on iOS', eq(reauthWays(['apple'], true), ['apple']))
+check('ways: Google that linked Apple offers both', eq(reauthWays(['google', 'apple'], true), ['apple', 'google']))
+check('ways: Apple where Apple isn’t offered falls back to the password', eq(reauthWays(['apple'], false), ['password']))
+check('ways: no provider known: the password', eq(reauthWays([], true), ['password']))
+check('apple always: an Apple account on iOS', appleAlways(['email', 'apple'], true) && !appleAlways(['email'], true) && !appleAlways(['apple'], false))
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} passed`)
 process.exit(failed ? 1 : 0)
