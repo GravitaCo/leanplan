@@ -12,7 +12,7 @@ import { warmupStartAt, type WarmupBlock } from '@/core/domain/warmup'
 import { fmtClock } from '@/core/domain/guided'
 import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { ClipView, Still, useClip, useReducedMotion } from './media'
-import { GpBar, GpBot, GpClock, GpRound, GpSec, GpMain, GpPill, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
+import { BRAND_COLOR, GpBar, GpBot, GpClock, GpRound, GpSec, GpMain, GpPill, GpShade, GpTextBtn, GpTop, vibrate } from './gp'
 import { Icon, font } from './ui'
 
 export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLeave, onProgress }: {
@@ -101,18 +101,18 @@ export function WarmupPlayer({ block, after, from = 0, hold = false, onEnd, onLe
       <GpShade />
 
       <GpTop plain={plain}>
-        <GpRound label="Leave the workout" onPress={onLeave} plain={plain}><Icon name="x" size={16} stroke={2.6} color="#fff" /></GpRound>
+        <GpRound label="Leave the workout" onPress={onLeave} plain={plain}><Icon name="x" size={20} stroke={2.6} color="#fff" /></GpRound>
         <GpPill plain={plain}>Warm-up · {i + 1} of {moves.length} · {block.mins} min</GpPill>
         <View style={{ width: 40 }} />
       </GpTop>
 
       <GpBot label={`Warm-up: ${m.n}`} style={{ gap: 10 }}>
-        <Text style={[font(500), { fontSize: 13, color: 'rgba(255,255,255,0.85)' }]}>{gap ? 'Get ready' : second ? 'Switch sides' : 'Warm-up'}</Text>
-        <Text accessibilityRole="header" style={[font(600), { fontSize: 28, lineHeight: 32, letterSpacing: -0.56, color: '#fff' }]}>{m.n}</Text>
-        <Text style={[font(400), { fontSize: 15, lineHeight: 21, color: 'rgba(255,255,255,0.85)' }]}>{m.cue}</Text>
-        <GpClock big={fmtClock(sec)} small={gap ? `then ${upNext}` : `of ${fmtClock(m.sec)}${m.perSide ? (second ? ' · second side' : ` · switch sides at ${fmtClock(half)}`) : ''}`} label={`${fmtClock(sec)} of ${fmtClock(total)} left`} />
+        <Text style={[font(600), { fontSize: 13, color: BRAND_COLOR }]}>{gap ? 'Get ready' : second ? 'Switch sides' : 'Warm-up'}</Text>
+        <Text accessibilityRole="header" style={[font(600), { fontSize: 28, lineHeight: 32, letterSpacing: -0.56, color: '#fff', marginTop: -4 }]}>{m.n}</Text>
+        <Text style={[font(400), { fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,0.88)' }]}>{m.cue}</Text>
+        <GpClock size={56} light={200} big={fmtClock(sec)} small={gap ? `then ${upNext}` : `of ${fmtClock(m.sec)}${m.perSide ? (second ? ' · second side' : ` · switch sides at ${fmtClock(half)}`) : ''}`} label={`${fmtClock(sec)} of ${fmtClock(total)} left`} />
         <GpBar value={Math.min(1, Math.max(0, 1 - left / (total * 1000)))} />
-        {!gap && !!upNext && <Text style={[font(400), { fontSize: 15, color: '#fff' }]}>Next: {upNext}</Text>}
+        {!gap && !!upNext && <Text style={[font(400), { fontSize: 14, color: 'rgba(255,255,255,0.85)' }]}>Next: {upNext}</Text>}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <GpSec title={paused ? 'Resume' : 'Pause'} onPress={() => setPaused(!paused)} />
           {gap ? <GpMain title="Start now" onPress={start} /> : <GpMain title="Skip this move" onPress={() => next(true)} />}

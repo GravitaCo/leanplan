@@ -5,24 +5,57 @@
  * never counts the person's reps. A hold clip has no count: it says what to hold and for how long.
  * Looks the same in light and dark (video screens rule).
  */
-import { Modal, Pressable, Text, View } from 'react-native'
+import { Animated, Easing, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import NetInfo from '@react-native-community/netinfo'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ExerciseTemplate } from '@/core/types'
 import { PHASE_LABEL, PHASE_SHORT, tempoAt } from '@/core/domain/tempo'
 import { exById, holdTarget } from '@/core/domain/library'
-import { ClipView, Still, useClip, useClipTime } from './media'
+import { ClipView, Still, useClip, useClipTime, useReducedMotion } from './media'
 import { Icon, Shade, font, num } from './ui'
 
 const shadow = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }
 
-export function DemoPlayer({ ex, onClose, back }: {
+/** Where the clip was opened from, in window coordinates (the library's poster). */
+export interface Origin { x: number; y: number; width: number; height: number }
+
+export function DemoPlayer({ ex, onClose: done, back, origin }: {
   ex: ExerciseTemplate
   onClose: () => void
   /** opened from the library's poster: it leads with Back, since it stands in for the page underneath */
   back?: boolean
+  /** the library's poster: the player grows out of it and closes back into it (380 / 300 ms, as the web), not with Reduce Motion */
+  origin?: Origin
 }) {
+  const win = useWindowDimensions()
+  const reduced = useReducedMotion()
+  const [grows] = useState(() => !!origin && !reduced && win.width / win.height < 3 / 4)
+  // the picture's box: from the poster's rect and corner radius to the full screen
+  const p = useRef(new Animated.Value(grows ? 0 : 1)).current
+  const fade = useRef(new Animated.Value(grows ? 0 : 1)).current
+  useEffect(() => {
+    if (!grows) return
+    Animated.timing(p, { toValue: 1, duration: 380, easing: Easing.bezier(0.2, 0.8, 0.2, 1), useNativeDriver: false }).start()
+    Animated.timing(fade, { toValue: 1, duration: 200, delay: 260, useNativeDriver: false }).start()
+  }, [grows, p, fade])
+  const closing = useRef(false)
+  const onClose = () => {
+    if (closing.current) return
+    closing.current = true
+    if (!grows) return done()
+    Animated.timing(fade, { toValue: 0, duration: 120, useNativeDriver: false }).start()
+    Animated.timing(p, { toValue: 0, duration: 300, easing: Easing.bezier(0.4, 0, 0.2, 1), useNativeDriver: false }).start(() => done())
+  }
+  const o = origin ?? { x: 0, y: 0, width: win.width, height: win.height }
+  const box = {
+    position: 'absolute' as const, overflow: 'hidden' as const, backgroundColor: '#000',
+    left: p.interpolate({ inputRange: [0, 1], outputRange: [o.x, 0] }),
+    top: p.interpolate({ inputRange: [0, 1], outputRange: [o.y, 0] }),
+    width: p.interpolate({ inputRange: [0, 1], outputRange: [o.width, win.width] }),
+    height: p.interpolate({ inputRange: [0, 1], outputRange: [o.height, win.height] }),
+    borderRadius: p.interpolate({ inputRange: [0, 1], outputRange: [22, 0] }),
+  }
   const m = ex.video!
   const insets = useSafeAreaInsets()
   const { player, playing, failed, toggle } = useClip(m.src, true)
@@ -41,8 +74,8 @@ export function DemoPlayer({ ex, onClose, back }: {
   const sub = [font(500), W, shadow, { fontSize: 13, opacity: 0.75, marginTop: 2 }]
 
   return (
-    <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent supportedOrientations={['portrait']}>
-      <View accessibilityViewIsModal accessibilityLabel={`Example: ${ex.n}`} style={{ flex: 1, backgroundColor: '#000' }}>
+    <Modal visible transparent={grows} animationType={grows ? 'none' : 'fade'} onRequestClose={onClose} statusBarTranslucent supportedOrientations={['portrait']}>
+      <Animated.View accessibilityViewIsModal accessibilityLabel={`Example: ${ex.n}`} style={box}>
         {m.poster && <Still path={m.poster} />}
         {failed ? (
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, justifyContent: 'center', paddingHorizontal: 32 }}>
@@ -56,6 +89,8 @@ export function DemoPlayer({ ex, onClose, back }: {
           </Pressable>
         )}
 
+        {/* the overlays arrive once the picture has nearly filled the screen */}
+        <Animated.View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height, opacity: fade }}>
         {/* .demo-top: title and kit, the close button (or Back from the library) */}
         <View pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, paddingTop: insets.top + 14, paddingHorizontal: 20, flexDirection: back ? 'column' : 'row', alignItems: back ? 'flex-start' : 'flex-start', justifyContent: 'space-between', gap: back ? 4 : 16, paddingBottom: 48 }}>
           <Shade stops={[[0, 0.55], [1, 0]]} />
@@ -72,7 +107,7 @@ export function DemoPlayer({ ex, onClose, back }: {
           {!back && (
             <Pressable accessibilityRole="button" accessibilityLabel="Close example" onPress={onClose} hitSlop={6}
               style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="x" size={18} stroke={2.4} color="#fff" />
+              <Icon name="x" size={20} stroke={2.4} color="#fff" />
             </Pressable>
           )}
         </View>
@@ -131,7 +166,8 @@ export function DemoPlayer({ ex, onClose, back }: {
             )}
           </View>
         )}
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   )
 }

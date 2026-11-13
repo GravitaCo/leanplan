@@ -21,7 +21,7 @@ export function DayNav() {
   const short = f.full.split(' ').slice(0, 2).join(' ')
   const btn = (d: -1 | 1) => (
     <Pressable accessibilityRole="button" accessibilityLabel={d < 0 ? 'Previous day' : 'Next day'} hitSlop={10} onPress={() => setDate(shiftDay(cur, d))} style={{ paddingHorizontal: 4 }}>
-      <Icon name={d < 0 ? 'chevL' : 'chevR'} size={16} stroke={2.6} color={t.tint} />
+      <Icon name={d < 0 ? 'chevL' : 'chevR'} size={20} stroke={2.6} color={t.tint} />
     </Pressable>
   )
   return (
@@ -41,11 +41,11 @@ export function TrainHeader({ title, top }: { title: string; top: number }) {
   // `.hdr-top` (the eyebrow; the connection pill on its right is N3's) over `.hdr-row.av` (the title, the avatar top-aligned beside it)
   return (
     <View style={{ paddingTop: top + 18, paddingBottom: 12 }}>
-      <View style={{ minHeight: 20, flexDirection: 'row', alignItems: 'center', marginLeft: -4 }}><DayNav /></View>
+      <View style={{ minHeight: 20, flexDirection: 'row', alignItems: 'center' }}><DayNav /></View>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <Text accessibilityRole="header" style={[font(600), { flex: 1, minWidth: 0, fontSize: 34, lineHeight: 40, letterSpacing: -0.85, color: t.label, marginTop: 2 }]}>{title}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onProfile} hitSlop={2}
-          style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+          style={{ marginTop: 2, width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={[font(600), { fontSize: 16, color: t.tint }]}>{initials(name) || '·'}</Text>
         </Pressable>
       </View>

@@ -173,11 +173,11 @@ function Train() {
   const trow = { paddingVertical: 12, paddingHorizontal: 14, minHeight: 76 }
   const doneChk = (size: number) => (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: t.moveFill, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name="check" size={16} stroke={2.6} color={t.label} />
+      <Icon name="check" size={20} stroke={2.6} color={t.label} />
     </View>
   )
   const ph = (icon: 'leaf' | 'dumbbell') => (
-    <View aria-hidden style={{ width: 52, height: 64, borderRadius: 12, backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={22} color={t.label2} /></View>
+    <View aria-hidden style={{ width: 52, height: 64, borderRadius: 12, backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={20} color={t.label2} /></View>
   )
   const tb = [font(600), { fontSize: 17, color: t.label }]
   const ts = [font(400), { fontSize: 13, color: t.label2, marginTop: 2 }]
@@ -240,7 +240,7 @@ function Train() {
                   <Text numberOfLines={1} style={tb}>{keyTitle(r.k, routines)}</Text>
                   <Text numberOfLines={1} style={[...ts, num]}>{r.inProgress ? `In progress · ${r.done} of ${r.sets} sets` : r.sub}</Text>
                 </View>
-                <Button sm title={r.inProgress ? 'Resume' : 'Start'} onPress={() => openWorkout(r.k)} style={{ paddingHorizontal: 18 }} />
+                <Button sm title={r.inProgress ? 'Resume' : 'Start'} onPress={() => openWorkout(r.k)} style={{ paddingHorizontal: 18, alignSelf: 'center' }} />
               </Li>
               {/* a lighter week or maintenance: a quiet way back to the full workout, never a nudge on a
                   low check-in day or in gentle mode, and after maintenance's first week only the link */}

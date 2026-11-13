@@ -325,7 +325,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           )}
 
           <GpTop>
-            <GpRound label="Leave the workout" onPress={() => setSheet('leave')} plain={plain}><Icon name="x" size={16} stroke={2.6} color="#fff" /></GpRound>
+            <GpRound label="Leave the workout" onPress={() => setSheet('leave')} plain={plain}><Icon name="x" size={20} stroke={2.6} color="#fff" /></GpRound>
             <GpPill plain={plain}>{pos + 1} of {order.length}{gentle ? '' : ` · ${mm}`}</GpPill>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {clip === 'ok' && <PlayToggle />}
@@ -377,7 +377,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
               </View>
               <Text style={[font(400), num, dim, { fontSize: 13, textAlign: 'center' }]}>Aim for {calib.t.reps?.hi ?? 10} reps with {calib.t.rir.lo} or {calib.t.rir.hi} to spare</Text>
               <View style={{ flexDirection: 'row' }}><GpMain title="Start set 1" disabled={findW == null} onPress={() => setFound({ ...found, [slot.i]: String(findW) })} /></View>
-              <GpTextBtn title={FIRST_SESSION.know} onPress={() => { setFound({ ...found, [slot.i]: '' }); setSheet('adjust') }} />
+              <GpTextBtn regular title={FIRST_SESSION.know} onPress={() => { setFound({ ...found, [slot.i]: '' }); setSheet('adjust') }} />
             </GpBot>
           ) : (
             <GpBot label={name}>
@@ -514,7 +514,7 @@ function PlayToggle() {
   useEffect(() => { const f = () => force((n) => n + 1); clipCtl.listeners.add(f); return () => { clipCtl.listeners.delete(f) } }, [])
   return (
     <GpRound label={clipCtl.playing ? 'Pause the demo' : 'Play the demo'} onPress={() => clipCtl.toggle?.()}>
-      <Icon name={clipCtl.playing ? 'pause' : 'play'} size={16} stroke={2.6} color="#fff" />
+      <Icon name={clipCtl.playing ? 'pause' : 'play'} size={20} stroke={2.6} color="#fff" />
     </GpRound>
   )
 }
@@ -547,7 +547,7 @@ function Arrow({ label, icon, onPress, disabled }: { label: string; icon: 'chevL
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
       style={({ pressed }) => ({ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : pressed ? 0.75 : 1 })}>
-      <Icon name={icon} size={18} stroke={2.4} color="#fff" />
+      <Icon name={icon} size={20} stroke={2.4} color="#fff" />
     </Pressable>
   )
 }
