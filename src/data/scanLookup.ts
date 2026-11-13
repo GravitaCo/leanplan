@@ -3,15 +3,15 @@
  * then a food already on the device (offline too), then Tilo's shared product list (when it's on),
  * then Open Food Facts; anything else is "missing" and goes to Create a food with the barcode.
  *
- * No React and no UI: every outside call is injected, so the order and the results can be checked
- * against the web's with the same fixtures (test-scan.ts). The web keeps this logic inside its
- * component; proposal to the lead: move this function into src/data/ so both apps call one copy.
+ * One copy for both apps: the web's ScanView and the native scanner (apps/native/screens/scan)
+ * call it. No React and no UI: every outside call is injected, so the order and every outcome are
+ * checked with fixtures (apps/native/screens/scan/test-scan.ts).
  */
 import type { Food } from '@/core/types'
 import { draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
 import { draftFromShared } from '@/core/domain/sharedProduct'
-import type { lookupProduct } from '@/data/products'
-import type { lookupShared } from '@/data/sharedProducts'
+import type { lookupProduct } from './products'
+import type { lookupShared } from './sharedProducts'
 
 export type ScanOutcome =
   | { kind: 'local'; food: Food; custom: boolean }

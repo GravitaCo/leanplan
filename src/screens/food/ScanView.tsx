@@ -7,24 +7,19 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '@/store/store'
-import type { Food, MealSlot } from '@/core/types'
+import type { MealSlot } from '@/core/types'
 import { FOODS } from '@/core/data/foods'
-import { confirmLiveRead, draftFromOff, findByBarcode, linkableFood, normalizeBarcode, type ScanDraft } from '@/core/domain/barcode'
+import { confirmLiveRead, normalizeBarcode } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
-import { draftFromShared } from '@/core/domain/sharedProduct'
+import { resolveBarcode, type ScanOutcome } from '@/data/scanLookup'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { decodePhoto, getDecoder, type Decoder, type Hit } from './barcodeDecoder'
 import { startRearCamera, stopCamera as stopStream } from './camera'
 import { SCAN, SCAN_CAMERA_NOTE, SCAN_TITLE } from '@/copy/scan'
 
-export type ScanOutcome =
-  | { kind: 'local'; food: Food; custom: boolean }
-  | { kind: 'found'; draft: ScanDraft }
-  /** on Tilo's shared product list (sp-2, sp-3, sp-3b) */
-  | { kind: 'shared'; draft: ScanDraft }
-  | { kind: 'missing'; barcode: string; why: 'not-found' | 'offline' | 'error' }
+export type { ScanOutcome }
 
 type Camera = 'starting' | 'on' | 'denied' | 'none' | 'noscan'
 
@@ -54,41 +49,23 @@ export function ScanView({ onBack, onClose, animate, onResult }: {
     streamRef.current = null
   }
 
-  /** A code from any path: validate, then local, then Open Food Facts. */
+  /** A code from any path: validate, then the device, the shared list and Open Food Facts
+   *  (src/data/scanLookup.ts, shared with the native app). */
   const handle = async (raw: string, format?: string) => {
     if (doneRef.current) return
-    const norm = normalizeBarcode(raw, format)
-    if (!norm) { setMsg(SCAN.badCheck); return }
+    const ctl = new AbortController()
+    const r = resolveBarcode(raw, format, {
+      all, customFoods: customFoods || [], linkBarcode, sharedEnabled: SHARED_PRODUCTS_ENABLED, lookupShared, lookupProduct,
+      signal: ctl.signal, alive: () => aliveRef.current,
+    })
+    if (r.kind === 'invalid') { setMsg(SCAN.badCheck); return }
     doneRef.current = true
     stopCamera()
-    const local = findByBarcode(all, norm.code) ?? (norm.alt ? findByBarcode(all, norm.alt) : undefined)
-    if (local) { onResult({ kind: 'local', food: local, custom: !!local.id }); return }
-    setBusy(norm.code)
-    const ctl = new AbortController()
+    if (r.kind === 'done') { onResult(r.outcome); return }
     lookupRef.current = ctl
-    // Tilo's shared list first (it never holds Open Food Facts products); no connection there
-    // means none for Open Food Facts either
-    if (SHARED_PRODUCTS_ENABLED) {
-      const sh = await lookupShared(norm, { signal: ctl.signal })
-      if (!aliveRef.current) return
-      if (sh.status === 'found') { onResult({ kind: 'shared', draft: draftFromShared(sh.product, norm.code, all.map((f) => f.n)) }); return }
-      if (sh.status === 'offline') { onResult({ kind: 'missing', barcode: norm.code, why: 'offline' }); return }
-    }
-    const res = await lookupProduct(norm, { signal: ctl.signal })
-    if (!aliveRef.current) return
-    if (res.status !== 'found') { onResult({ kind: 'missing', barcode: norm.code, why: res.status }); return }
-    let draft: ScanDraft
-    try {
-      draft = draftFromOff(res.code, res.product, all.map((f) => f.n))
-    } catch {
-      onResult({ kind: 'missing', barcode: norm.code, why: 'error' }); return
-    }
-    // the user already saved this product by hand under the same name: link the barcode to it
-    // (their own label values stay) rather than saving a "(2)" copy
-    const mine = linkableFood(customFoods || [], draft.baseName)
-    const linked = mine?.id ? linkBarcode(mine.id, res.code) : null
-    if (linked) onResult({ kind: 'local', food: linked, custom: true })
-    else onResult({ kind: 'found', draft })
+    setBusy(r.code)
+    const outcome = await r.result
+    if (outcome) onResult(outcome)
   }
   const firstValid = (hits: Hit[]) => hits.find((h) => normalizeBarcode(h.raw, h.format))
 

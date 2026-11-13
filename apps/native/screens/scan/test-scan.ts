@@ -5,7 +5,7 @@
  *
  * - The platform scanner's reads (expo-camera's names, iOS's UPC-A quirk) give the same code as the
  *   web decoder's reads of the same pack, and so the same lookups.
- * - The lookup chain (lookup.ts) in the web's order, with every outcome, and the requests it sends
+ * - The lookup chain (src/data/scanLookup.ts) in the web's order, with every outcome, and the requests it sends
  *   through the shared src/data functions (lookup-product body, Open Food Facts URL).
  * - Label photos: the web's sizes and JPEG tries; the read (labelRead.ts) carries over
  *   e2e-label-scan's outcomes: a good read, a function error, offline, the function missing
@@ -21,7 +21,7 @@ import { lookupShared } from '@/data/sharedProducts'
 import { readLabel } from '@/data/labelReader'
 import { setSession } from '@/data/supabase'
 import { typedDigits, webFormat, NATIVE_FORMATS } from './barcode'
-import { resolveBarcode, type LookupDeps, type ScanOutcome } from './lookup'
+import { resolveBarcode, type LookupDeps, type ScanOutcome } from '@/data/scanLookup'
 import { b64Bytes, edgeOf, fitLongEdge, jpegSteps, MAX_BYTES } from './photoSize'
 import { readBody, readPhotos, thenKey, typedDraft, type ReadDeps } from './labelRead'
 

@@ -1,7 +1,7 @@
 /**
  * The barcode scan screen's behaviour with no UI, for the scan screen to draw once N1's kit lands:
  * the camera permission, the platform's own barcode reads (expo-camera: AVFoundation on iOS, ML Kit
- * on Android, in place of the web's JS decoder), the typed number, and the lookup (lookup.ts).
+ * on Android, in place of the web's JS decoder), the typed number, and the lookup (src/data/scanLookup.ts).
  *
  * Matches the web's ScanView: the camera is asked for when the screen opens; a live read counts
  * once the same valid number is read twice running (core confirmLiveRead); a bad check digit says
@@ -15,7 +15,7 @@ import { confirmLiveRead, normalizeBarcode } from '@/core/domain/barcode'
 import { lookupProduct } from '@/data/products'
 import { lookupShared, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { NATIVE_FORMATS, typedDigits, webFormat } from './barcode'
-import { resolveBarcode, type ScanOutcome } from './lookup'
+import { resolveBarcode, type ScanOutcome } from '@/data/scanLookup'
 
 /** The web's camera states, less 'noscan' (the web decoder's first-load download; none here). */
 export type ScanCamera = 'starting' | 'on' | 'denied' | 'none'
