@@ -29,8 +29,7 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
   const t = useTokens()
   const m = usePlanTab()
   const row = (r: IfThenRow) => (
-    // TODO(N1-P1b): the web's row has a second sub line, "Backup: …" (Row's wrapping sub)
-    <Row key={r.id} title={r.title} sub={r.backup ? `${r.sub}\nBackup: ${r.backup}` : r.sub} onPress={() => go({ v: 'ifthen', id: r.id })} />
+    <Row key={r.id} title={r.title} sub={r.sub} sub2={r.backup ? `Backup: ${r.backup}` : undefined} onPress={() => go({ v: 'ifthen', id: r.id })} />
   )
   const g = guide ? PLAN_GUIDES.find((x) => x.id === guide) : undefined
   return (
