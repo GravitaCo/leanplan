@@ -126,13 +126,14 @@ export function Note({ children, kind = 'info', icon, action, status, style }: {
   action?: { title: string; onPress: () => void }; status?: boolean; style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
+  const surface = useSurface(t)
   const ok = kind === 'ok'
   const ic = icon === null ? null : icon ?? (ok ? 'checkc' : 'info')
   const ink = ok ? t.energyInk : kind === 'warn' ? t.tint : t.label2
   return (
     <View accessibilityLiveRegion={status ? 'polite' : undefined}
       style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'flex-start', marginTop: 10 },
-        ok ? { paddingTop: 8, paddingHorizontal: 4 } : { paddingVertical: 10, paddingHorizontal: 14, borderRadius: t.radius, backgroundColor: useSurface(t) }, style]}>
+        ok ? { paddingTop: 8, paddingHorizontal: 4 } : { paddingVertical: 10, paddingHorizontal: 14, borderRadius: t.radius, backgroundColor: surface }, style]}>
       {ic && <View style={{ marginTop: 1 }}><Icon name={ic} color={ink} /></View>}
       <Text style={[tx(ok ? 13 : 15, 400, 1.35), { color: ok ? t.label2 : t.label, flex: 1, minWidth: '60%' }]}>{children}</Text>
       {action && <View style={{ width: '100%', paddingLeft: 27 }}><Btn small title={action.title} onPress={action.onPress} /></View>}
@@ -146,11 +147,13 @@ export function Chips({ children }: { children: ReactNode }) {
 }
 
 /** `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2). */
-export function LinkBtn({ title, onPress, style, muted }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean }) {
+export function LinkBtn({ title, onPress, style, muted, label }: { title: string; onPress: () => void; style?: StyleProp<TextStyle>; muted?: boolean; label?: string }) {
   const t = useTokens()
+  // 15 pt regular (a pillar card's links are 500: `.pcard .linkbtn`, pass it in `style`); the 31.5 pt
+  // box reaches 44 pt with the touch padding
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(15, 500, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(15, 400, 1.3, BTN), { color: muted ? t.label2 : t.tint, paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
 }

@@ -309,7 +309,7 @@ export function Gallery() {
         <div style={{ fontSize: 15, lineHeight: 1.45 }}>
           Today can be lighter. <button type="button" className="linkbtn inl">Change what Summary shows</button>, or <button type="button" className="linkbtn inl" aria-label="Open support" aria-expanded={false}>find support</button>.
         </div>
-        <div className="grp-h">Your workouts<button className="linkbtn" style={{ padding: 0, fontSize: 15 }}>See all</button></div>
+        <div className="grp-h">Your workouts<button className="linkbtn">See all</button></div>
         <div className="lbl" style={{ paddingTop: 4 }}>A label with less space above</div>
       </Sec>
 

@@ -7,6 +7,7 @@
 import type { ReactNode } from 'react'
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { tx, useTokens } from '../theme'
+import { LinkBtn } from './kit'
 
 /** `.lbl`: 13 pt medium, --label2, padding 18 4 8. `style` for a screen's own padding (`.mind-lbl-first`). */
 export function Lbl({ children, right, style }: { children: ReactNode; right?: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -26,7 +27,8 @@ export function GrpH({ children, small, link }: { children: ReactNode; small?: R
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 22, paddingHorizontal: 4, paddingBottom: 8 }}>
       <Text style={[tx(20, 600, 1.3, -0.01), { color: t.label }]}>{children}</Text>
       {small != null && <Text style={[tx(14, 400, 1.3, 0), { color: t.label2 }]}>{small}</Text>}
-      {link && <TextLink onPress={link.onPress} label={link.label} style={tx(15, 400, 1.3, 0)}>{link.title}</TextLink>}
+      {/* a .linkbtn (padding 6 4, a 44 pt touch area), as FoodScreen's "Manage" */}
+      {link && <LinkBtn title={link.title} onPress={link.onPress} label={link.label} />}
     </View>
   )
 }

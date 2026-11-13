@@ -285,7 +285,9 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
   const fg = act ? t.tint : needsnet ? t.label2 : t.label
   const wrapTitle = nested || pv
   const icons = useContext(InIconList)
+  // a pv sub wraps at the body's 1.3; wrapSub (.mind-skills, .wd-steps) wraps at 1.35
   const subWraps = wrapSub || pv
+  const subLh = wrapSub ? 1.35 : 1.3
   const body = (
     <>
       {lead}
@@ -296,7 +298,7 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
         <Text numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, 400, 1.3, tr), { color: fg }]}>{title}</Text>
         {(sub != null || tag != null) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-            {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subWraps ? 1.35 : 1.3, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
+            {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
             {tag != null && <Tag>{tag}</Tag>}
           </View>
         )}
@@ -304,20 +306,22 @@ export function Row({ title, tag, sub, sub2, value, strong, right, onPress, chev
       </View>
       {/* .tr (.tr.kc: --label, 16 pt medium); in a .list.icons 15 pt, filling the rest, right-aligned */}
       {value != null && <Text numberOfLines={1} style={[tx(icons ? 15 : strong ? 16 : 17, strong ? 500 : 400, 1.3, tr), num, { color: strong ? t.label : t.label2 }, icons && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>}
-      {right ?? ((chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />)}
+      {/* centred in the row whatever it is (a small Btn pins itself to the start of a column) */}
+      {right != null ? <View style={{ alignSelf: 'center' }}>{right}</View> : (chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />}
     </>
   )
   const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [s, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
-    : <View accessibilityLabel={label} style={s}>{body}</View>
+    : <View accessible={label != null} accessibilityLabel={label} style={s}>{body}</View>
 }
 
 /** `.tag`: a small uppercase label beside a title ("Mine"), 11 pt bold on --fill. */
 export function Tag({ children }: { children: ReactNode }) {
   const t = useTokens()
   return (
-    <View style={{ marginLeft: 6, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
+    // `vertical-align: 1px` on the web: sits 1 pt above the line's centre
+    <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
       <Text style={[tx(11, 700, 1.3, 0.3 / 11), { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
     </View>
   )
