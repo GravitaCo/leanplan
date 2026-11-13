@@ -19,7 +19,9 @@ import { Chip, Chips, List } from '../../lib/ui/kit'
 import { NavBtn, SettingRow, Sheet, Toggle } from '../../lib/ui/primitives'
 import { num, tx, useTokens } from '../../lib/theme'
 import { Foot, Lbl } from '../../lib/ui/text'
-import { FInput, FRow, FSelect, LIST_GAP, Li, LiText } from './pendingN1'
+import { FRow } from '../../lib/ui/fields'
+import { toPoint } from './nav'
+import { FSelect, LIST_GAP, Li, LiText } from './pendingN1'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -98,10 +100,10 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
         {MODALITIES.map((k) => <Chip key={k} title={MODALITY_LABEL[k]} on={modality === k} onPress={() => setModality(k)} />)}
       </Chips></View>
       <List style={LIST_GAP}>
-        {modality === 'cardio' && <FRow label="Type"><FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} /></FRow>}
-        <FRow label="Name"><FInput value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} accessibilityLabel="Name" /></FRow>
-        <FRow label="Minutes"><FInput numeric value={mins} placeholder={String(DEFAULT_MINS[modality])} onChangeText={setMins} accessibilityLabel="Minutes" /></FRow>
-        {modality === 'cardio' && <FRow label="Distance (km)"><FInput decimal value={km} placeholder="Optional" onChangeText={setKm} accessibilityLabel="Distance (km)" /></FRow>}
+        {modality === 'cardio' && <FRow label="Type" right={<FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} />} />}
+        <FRow label="Name" value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} />
+        <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder={String(DEFAULT_MINS[modality])} onChangeText={setMins} />
+        {modality === 'cardio' && <FRow label="Distance (km)" keyboardType="decimal-pad" value={km} placeholder="Optional" onChangeText={(v) => setKm(toPoint(v))} />}
       </List>
       <Lbl>How did it feel? <Text style={{ color: t.label2 }}>Optional</Text></Lbl>
       <View accessibilityLabel="Effort"><Chips>

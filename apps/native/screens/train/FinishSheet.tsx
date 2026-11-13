@@ -12,7 +12,8 @@ import { Btn, List } from '../../lib/ui/kit'
 import { BareSheet, NavBtn } from '../../lib/ui/primitives'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
-import { FInput, FRow, LIST_GAP, Li, Stack } from './pendingN1'
+import { FRow } from '../../lib/ui/fields'
+import { LIST_GAP, Li, Stack } from './pendingN1'
 
 export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinish, onBack }: {
   title: string
@@ -48,7 +49,7 @@ export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinis
       <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingBottom: 8, paddingHorizontal: 4 }]}>How did it feel overall? <Text style={{ color: t.label3 }}>Optional</Text></Text>
       <ChoiceGrid options={EFFORTS} value={effort} onPick={(k) => setEffort(effort === k ? null : k)} cols={4} label="Effort" />
       <List style={{ marginBottom: 8, marginTop: 14 }}>
-        <FRow label="Minutes"><FInput numeric value={m} placeholder="Optional" onChangeText={setM} accessibilityLabel="Minutes" /></FRow>
+        <FRow label="Minutes" keyboardType="number-pad" value={m} placeholder="Optional" onChangeText={setM} />
       </List>
       <TextInput accessibilityLabel="Note" value={note} placeholder="Add a note" placeholderTextColor={t.label3} maxLength={500} onChangeText={setNote}
         style={[font(400), { backgroundColor: t.elev, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, fontSize: 17, color: t.label, marginTop: 6 }]} />
