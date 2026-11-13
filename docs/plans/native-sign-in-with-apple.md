@@ -1,8 +1,11 @@
 # Sign in with Apple on native: proposal and technical plan (draft)
 
-Drafted 13 Nov 2026 by the N2 sub-engineer for the lead engineer. **Status: proposal. Nothing is
-built.** It adds a button the web app doesn't have, so it needs a board on the Design canvas, the
-`design` agent, and Benn's or Sara's approval first (CLAUDE.md; native-build-brief §0.2). Labels:
+Drafted 13 Nov 2026 by the N2 sub-engineer for the lead engineer. **Status: approved by Benn
+(13 Nov: "I would like that option enabled"; no board, `design` reviews the screen), being built on
+`native/n2-account`:** `modules/tilo-auth` (AuthenticationServices, our own Swift, not
+expo-apple-authentication: dependency policy rule 1), `lib/account/oauth.ts` appleSignIn, the
+button on the sign-in screen, Apple re-confirmation before deletion. Still to do as separate reviewed
+increments: token revocation on deletion, and the privacy policy naming Apple. Labels:
 **[E]** checked in a source today, **[I]** to confirm, **[G]** judgement call.
 
 ## Why
@@ -55,3 +58,52 @@ built.** It adds a button the web app doesn't have, so it needs a board on the D
 
 About half a day of code once the board is approved and the Supabase provider is set up; the server
 revocation (5) and the policy update (6) are separate reviewed changes.
+
+## What Benn does (13 Nov 2026)
+
+Three one-off steps in Apple's and Supabase's consoles. Labels are as they read when this was
+written [I: Apple and Supabase rename menu items now and then; the destination is what matters].
+No key or secret goes into the repo or a chat: secrets go only into Supabase's settings.
+
+**1. The capability on the App ID** (EAS usually turns it on itself on the next build, because the
+app now has the `com.apple.developer.applesignin` entitlement; do this only if the build log says the
+capability is missing, or to be sure):
+1. developer.apple.com, Account, Certificates, Identifiers & Profiles, Identifiers.
+2. Open `fit.tilo.app`.
+3. In Capabilities, tick **Sign In with Apple** (leave it as a primary App ID, no server endpoint).
+4. Save, then Confirm. Existing provisioning profiles become invalid; EAS makes new ones on the next build.
+
+**2. The Apple provider in Supabase** (native sign-in only, so no Services ID and no secret key):
+1. Supabase dashboard, the Tilo project, Authentication, Sign In / Providers, **Apple**.
+2. Turn it on.
+3. In **Client IDs**, enter `fit.tilo.app` (the bundle ID). Nothing else is needed for the iPhone app.
+   Leave the Secret Key (for OAuth) empty: that's only for signing in on a website.
+4. Save.
+
+**3. A key for revoking Apple sign-ins when an account is deleted** (needed by the revocation
+increment, not by sign-in itself; Apple asks apps to revoke on deletion):
+1. Certificates, Identifiers & Profiles, **Keys**, then +.
+2. Name it "Tilo Sign in with Apple", tick **Sign in with Apple**, Configure, choose `fit.tilo.app` as
+   the primary App ID, Save, Continue, Register.
+3. Download the `.p8` file (Apple lets you download it once) and note its **Key ID**. The Team ID is
+   `M8R77TCYF8`.
+4. Give them to the lead as Supabase Edge Function secrets, not in a message: `APPLE_TEAM_ID`,
+   `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (the .p8 file's contents), `APPLE_CLIENT_ID` = `fit.tilo.app`.
+   Supabase dashboard, Edge Functions, Secrets (or the lead sets them with the Supabase CLI).
+
+## How revocation will work (increment (a), not built yet)
+
+No Apple token is stored anywhere. Deleting an Apple account already asks the person to sign in
+with Apple again (the server's re-auth rule), and that sign-in returns a fresh one-time
+`authorizationCode`. The app sends it with the delete request; `delete-account` makes a client secret
+(an ES256 JWT signed with the key above), exchanges the code at Apple's `/auth/token` for a refresh
+token, calls `/auth/revoke` with it, and then deletes the account as now. If Apple can't be reached,
+the deletion still goes ahead and the failure is logged without personal data [G: to agree with
+`security-data` and `compliance`]. A server change, deployed through `main`.
+
+## Data (for `compliance`)
+
+Only the email scope is requested, not the name: the profile's name is what the person types, so
+nothing more is collected. Apple may give a private relay address (Hide My Email), which becomes the
+account's email. Apple's stable user id is kept by Supabase as the identity. The privacy policy and
+register name Apple as a sign-in provider (increment (b)).
