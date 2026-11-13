@@ -13,12 +13,12 @@ import { copyWeek, planWeekNotes } from '@/core/domain/plans'
 import { isBuiltinKey, keyTitle, keyVideo, routineFor, type WorkoutKey } from '@/core/domain/routines'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { keyLine, knownKeys } from '@/screens/plan/planModel'
-import { LinkBtn, List } from '../../lib/ui/kit'
+import { DashAdd, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, Row, Sheet, TitleRow } from '../../lib/ui/primitives'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Thumb } from '../train'
 import { PlanNote } from './PlanParts'
-import { AddRow, AddWorkoutSheet, PlanPage, PvBack } from './PlanViews'
+import { AddWorkoutSheet, PlanPage, PvBack } from './PlanViews'
 
 /** Most workouts a day in a plan (the same cap cleanPhases applies). */
 const MAX_A_DAY = 4
@@ -89,10 +89,10 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
     <PlanPage>
       <PvBack><BackButton label={backLabel} onPress={onBack} /></PvBack>
       <TitleRow title={day} />
-      <Sub style={{ marginTop: 2, marginBottom: 16 }}>{rest ? 'Rest day · recovery counts too' : `Every week of ${phase}`}</Sub>
+      <Sub style={{ marginTop: 2, marginBottom: rest ? 4 : 16 }}>{rest ? 'Rest day · recovery counts too' : `Every week of ${phase}`}</Sub>
 
       {!rest && (
-        <List style={{ marginBottom: 8 }}>
+        <List>
           {keys.map((k, i) => (
             <Row key={k + i} pv title={keyTitle(k, routines)} sub={<Text style={num}>{keyLine(k, routines, training, ONBOARDING_ENABLED, true)}</Text>} label={`View ${keyTitle(k, routines)}`}
               onPress={() => onOpenWorkout(k)} lead={<Thumb video={keyVideo(k, routines)} shape={k === 'Cardio' ? 'duration' : undefined} />}
@@ -101,7 +101,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
           ))}
         </List>
       )}
-      {keys.length < MAX_A_DAY && <AddRow top={rest ? 0 : 4} title={rest ? 'Add a workout' : 'Add another'} onPress={() => setSheet('add')} />}
+      {keys.length < MAX_A_DAY && <DashAdd title={rest ? 'Add a workout' : 'Add another'} onPress={() => setSheet('add')} />}
 
       {rest && <Lbl>Or</Lbl>}
       <List style={{ marginTop: rest ? 0 : 12, marginBottom: 8 }}>

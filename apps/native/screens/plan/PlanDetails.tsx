@@ -3,7 +3,7 @@
  * (Plans 4). Lines come from planModel (detailsLines, lighterWeekAt, phaseRowDetail).
  */
 import { useState, type ReactNode } from 'react'
-import { Image, Text, View } from 'react-native'
+import { Text, View } from 'react-native'
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { useStore } from '@/store/store'
 import type { TrainingPlan } from '@/core/types'
@@ -19,7 +19,7 @@ import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Input, NameField } from '../../lib/ui/fields'
 import { Foot, Sub } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
-import { Cell, PlanHero, PlanTile, Timeline } from './PlanParts'
+import { Cell, Photo, PlanHero, PlanTile, Timeline } from './PlanParts'
 import { PlanPage, PvBack, RowLink } from './PlanViews'
 
 const day = shortDateOf
@@ -179,7 +179,7 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
         </>
       }>
         <View style={{ height: art != null ? 330 : 160, marginHorizontal: -16, backgroundColor: art != null ? t.sep : 'transparent' }}>
-          {art != null && <Image source={art} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />}
+          {art != null && <Photo art={art} />}
           <Fade color={t.bg} />
         </View>
         <View style={{ alignItems: 'center', gap: 8, marginTop: -40, marginBottom: 16 }}>

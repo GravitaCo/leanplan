@@ -7,19 +7,20 @@ import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useStore } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
 import type { Goal, PlanPhase, PlanWeek } from '@/core/types'
-import { shortDateOf, todayStr } from '@/core/domain/date'
-import { bestFit, catalogue, eatingLine, filterCatalogue, fitOf, fits, PLAN_TEMPLATES, phaseWeek, planStart, timeline, totalWeeks, type CatalogueEntry, type PlanFilters } from '@/core/domain/plans'
+import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
+import { bestFit, catalogue, eatingLine, filterCatalogue, fitOf, fits, PLAN_TEMPLATES, phaseWeek, planStart, startOn, timeline, totalWeeks, type CatalogueEntry, type PlanFilters } from '@/core/domain/plans'
 import { GOAL_CHIP, PLAN_FILTER_DAYS as DAYS, PLAN_FILTER_EXPERIENCE as EXPERIENCE, PLAN_FILTER_LENGTH as LENGTH, PLAN_FILTER_MADE as MADE, PLAN_FILTER_WHERE as WHERE } from '@/copy/plan'
 import { goalLabel } from '@/screens/plan/planModel'
 import { planArt } from '@/screens/plan/planArt'
-import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
-import { BackButton, NavBtn, Row, Sheet, TitleRow } from '../../lib/ui/primitives'
+import { Btn, Chip, Chips, DashAdd, LinkBtn, List } from '../../lib/ui/kit'
+import { BackButton, NavBtn, Row, Sheet, Swatch, TitleRow } from '../../lib/ui/primitives'
 import { SearchBar } from '../../lib/ui/fields'
+import { PickerSheet } from '../../lib/ui/pickers'
 import { Empty, Foot } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
 import { num, tx, useTokens } from '../../lib/theme'
 import { FitsBadge, PlanHero, PlanNote, PlanTile, Timeline, TimelineKey, WeekRows } from './PlanParts'
-import { AddRow, PlanPage, PvBack } from './PlanViews'
+import { PlanPage, PvBack } from './PlanViews'
 
 const toggle = <T,>(list: T[] | undefined, v: T): T[] => (list?.includes(v) ? list.filter((x) => x !== v) : [...(list ?? []), v])
 
@@ -115,14 +116,15 @@ export function PlanLibrary({ onBack, onOpen, onNew }: { onBack: () => void; onO
         {narrowed && <Foot style={{ paddingTop: 0, paddingHorizontal: 4, marginBottom: 8 }}>{`${list.length} ${list.length === 1 ? 'plan' : 'plans'}`}</Foot>}
         {lead && tile(lead, true)}
         {rest.length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, marginBottom: 12 }}>
+          // the grid's 12 below collapses into the dashed button's 12 above on the web
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
             {rest.slice(0, shown).map((e) => tile(e))}
             {rest.length > shown && <View style={{ width: '48.5%', height: 196, borderRadius: 22, backgroundColor: t.sep }} />}
           </View>
         )}
-        {/* TODO(N1-P3): `.dash-empty`, the dashed empty box; lib/ui's Empty stands in */}
+        {/* TODO(N1): `.dash-empty`, the dashed empty box; lib/ui's Empty stands in */}
         {list.length === 0 && <Empty>{f.q && !filtered && !f.goal?.length ? `No plans called “${f.q}”.` : 'No plans match yet. Try removing a filter, or build your own.'}</Empty>}
-        <AddRow top={list.length === 0 ? 12 : 0} title="New plan" onPress={onNew} />
+        <DashAdd title="New plan" onPress={onNew} />
       </ScrollView>
       {sheet && <FilterSheet value={f} onChange={(v) => { setViaSheet(true); setF(v) }} onClose={() => setSheet(false)} count={filterCatalogue(all, f).length} />}
     </View>
@@ -135,13 +137,15 @@ export function StartChoice({ value, onChange }: { value: string; onChange: (d: 
   const today = todayStr()
   const monday = planStart(today, 'monday')
   const picked = value !== today && value !== monday
+  const [pick, setPick] = useState(false)
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel="Starts" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <Text style={[tx(14), { color: t.label2, marginRight: 4 }]}>Starts</Text>
       <Chip role="radio" on={value === today} tone={value === today ? 'ink' : 'plain'} title="Today" onPress={() => onChange(today)} />
       <Chip role="radio" on={value === monday} tone={value === monday ? 'ink' : 'plain'} title={shortDateOf(monday)} onPress={() => onChange(monday)} />
-      {/* TODO(N1-P4): "Pick a date" opens tilo-pickers' date picker (today to a year ahead, startOn); until then only a chosen date shows */}
-      {picked && <Chip role="radio" on tone="ink" title={shortDateOf(value)} onPress={() => onChange(value)} />}
+      <Chip role="radio" on={picked} tone={picked ? 'ink' : 'plain'} title={picked ? shortDateOf(value) : 'Pick a date'} label="Pick a start date" onPress={() => setPick(true)} />
+      {pick && <PickerSheet mode="date" label="Pick a start date" value={picked ? value : ''} min={today} max={shiftDay(today, 365)}
+        onDone={(v) => onChange(startOn(today, v))} onClose={() => setPick(false)} />}
     </View>
   )
 }
@@ -203,10 +207,9 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
           <WeekRows week={weeks[shown].week} routines={routines} />
         </>
       )}
-      {/* TODO(N1): `.catsq.sm` leads these rows once lib/ui has it (asked N1) */}
       <List style={{ marginBottom: 8 }} wrap>
-        <Row wrapSub title="After the plan: maintenance" sub="When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need." onPress={onMaintenance} />
-        {tp && <Row wrapSub title="Eating for this plan" sub={eatingLine(tp, profile.goal, quiet)} />}
+        <Row wrapSub title="After the plan: maintenance" sub="When the plan ends, you can switch to maintenance: the same workouts with fewer sets, to keep what you've built for as long as you need." lead={<Swatch sm color={t.fill} />} onPress={onMaintenance} />
+        {tp && <Row wrapSub title="Eating for this plan" sub={eatingLine(tp, profile.goal, quiet)} lead={<Swatch sm color={t.foodFill} />} />}
       </List>
       {tp && (
         <List style={{ marginBottom: 8 }}>

@@ -13,7 +13,7 @@ import type { WorkoutKey } from '@/core/domain/routines'
 import { WEEK_ORDER } from '@/core/domain/week'
 import type { BuiltPlan } from '@/screens/plan/planModel'
 import { Btn, LinkBtn, List } from '../../lib/ui/kit'
-import { BackButton, NavBtn, Row, Toggle, XBtn } from '../../lib/ui/primitives'
+import { BackButton, NavBtn, Row, Swatch, Toggle, XBtn } from '../../lib/ui/primitives'
 import { NameField } from '../../lib/ui/fields'
 import { Foot } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
@@ -99,8 +99,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         </View>
         <View style={{ paddingTop: 4, paddingHorizontal: 4, paddingBottom: 16 }}><Timeline cells={cells} /></View>
         <List wrap style={{ marginBottom: 8 }}>
-          {/* TODO(N1): `.catsq.sm` leads this row once lib/ui has it (asked N1) */}
-          <Row wrapSub title="When it ends: maintenance, if you choose it" sub="The same workouts with fewer sets, to keep what you built. Read how it works" onPress={onMaintenance} />
+          <Row wrapSub title="When it ends: maintenance, if you choose it" sub="The same workouts with fewer sets, to keep what you built. Read how it works" lead={<Swatch sm color={t.fill} />} onPress={onMaintenance} />
         </List>
         <Foot style={{ paddingTop: 0, paddingHorizontal: 4 }}>Most plans run 6 to 12 weeks. You can add a lighter week later in Plan details, and an easier first week until the plan starts.</Foot>
       </PlanPage>

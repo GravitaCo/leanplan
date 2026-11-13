@@ -20,14 +20,14 @@ import { aboutLine, keyTitle, keyVideo, routineEstMins, routineFor, slotsOf, tal
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { bareName } from '@/screens/train/trainModel'
 import { keyLine, plannedDaysLine, workoutKind, workoutSub } from '@/screens/plan/planModel'
-import { Btn, LinkBtn, List } from '../../lib/ui/kit'
-import { BackButton, NavBtn, Row, Sheet, TitleRow } from '../../lib/ui/primitives'
+import { Btn, DashAdd, LinkBtn, List } from '../../lib/ui/kit'
+import { BackButton, NavBtn, Row, Sheet, Swatch, TitleRow } from '../../lib/ui/primitives'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
 import { Check } from '../../lib/ui/choices'
 import { num, tx, useTokens } from '../../lib/theme'
-import { LibrarySheet, Thumb } from '../train'
-import { PlanNote } from './PlanParts'
+import { LibrarySheet, Poster, Thumb } from '../train'
+import { PlanNote, Shade } from './PlanParts'
 
 
 /** Change the repeating week, with a toast that can undo it. */
@@ -65,14 +65,6 @@ export function RowLink({ title }: { title: string }) {
   return <Text style={[tx(15, 500, 1.3, 0), { color: t.tint, paddingVertical: 6, paddingHorizontal: 4 }]}>{title}</Text>
 }
 
-/**
- * `.dash-add`. TODO(N1-P3): lib/ui's dashed add button. Until it lands, the same action as lib/ui's
- * action row, so the view works.
- */
-export function AddRow({ title, onPress, top = 4 }: { title: string; onPress: () => void; top?: number }) {
-  // the web's .dash-add has 12 above and none below; after a list (8 below it) that collapses to 12, so 4 here
-  return <List style={{ marginTop: top }}><Row act icon="plus" title={title} onPress={onPress} /></List>
-}
 
 type Cat = { id: string; label: string; items: WorkoutKey[]; sub?: string }
 
@@ -84,6 +76,7 @@ type Cat = { id: string; label: string; items: WorkoutKey[]; sub?: string }
 export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
   idx: number; onClose: () => void; onAdd?: (k: WorkoutKey) => void; have?: WorkoutKey[]; notesFor?: (k: WorkoutKey) => string[]
 }) {
+  const t = useTokens()
   const schedule = useStore((s) => s.data.schedule)
   const routines = useStore((s) => s.data.routines)
   const training = useStore((s) => s.data.profile.training)
@@ -144,9 +137,9 @@ export function AddWorkoutSheet({ idx, onClose, onAdd, have = [], notesFor }: {
     )
   }
   const row = (c: Cat) => (
-    // TODO(N1): `.catsq` (a plain colour square, 36 radius 10) leads this row once lib/ui has it (asked N1)
-    <Row key={c.id} pv title={c.label} sub={c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`} onPress={() => setCat(c)} />
+    <Row key={c.id} pv title={c.label} sub={c.sub ?? `${c.items.length} ${c.items.length === 1 ? 'workout' : 'workouts'} · ${c.items.map((k) => keyTitle(k, routines)).join(', ')}`} lead={<Swatch color={color(c)} />} onPress={() => setCat(c)} />
   )
+  const color = (c: Cat) => (c.id === 'mine' ? t.btn : c.id === 'weights' ? t.moveFill : t.mindFill)
   const ready = cats.filter((c) => c.id !== 'mine')
   const own = cats.find((c) => c.id === 'mine')
   return (
@@ -188,14 +181,15 @@ export function DayView({ idx, onBack, onOpenWorkout }: { idx: number; onBack: (
     <PlanPage>
       <PvBack><BackButton label="My week" onPress={onBack} /></PvBack>
       <TitleRow title={day} />
-      <Sub style={{ marginTop: 2, marginBottom: 16 }}>{v === 'Rest' ? 'Rest day · recovery counts too' : 'Every week'}</Sub>
+      {/* margins collapse on the web: the sub's 16 and the dashed button's 12 make 16 */}
+      <Sub style={{ marginTop: 2, marginBottom: v === 'Rest' ? 4 : 16 }}>{v === 'Rest' ? 'Rest day · recovery counts too' : 'Every week'}</Sub>
       {v !== 'Rest' && (
-        <List style={{ marginBottom: 8 }}>
+        <List>
           <Row pv title={shortTitle(v)} sub={<Text style={num}>{`${workoutKind(v)} · ${workoutSub(v)}`}</Text>} onPress={() => onOpenWorkout(v)}
             lead={<Thumb video={firstVideo(v)} shape={v === 'Cardio' ? 'duration' : undefined} />} right={<RowLink title="View" />} />
         </List>
       )}
-      <AddRow top={v === 'Rest' ? 0 : 4} title={v === 'Rest' ? 'Add a workout' : 'Change workout'} onPress={() => setSheet('add')} />
+      <DashAdd title={v === 'Rest' ? 'Add a workout' : 'Change workout'} onPress={() => setSheet('add')} />
       {v === 'Rest' && <Lbl>Or</Lbl>}
       <List style={{ marginTop: v === 'Rest' ? 0 : 12, marginBottom: 8 }}>
         {v !== 'Rest' && <Row title={`Make ${day} a rest day`} sub="Rest is part of the plan" chevron={false} onPress={() => change({ ...schedule, [idx]: 'Rest' }, `${day} is a rest day now`)} />}
@@ -257,13 +251,18 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: { type: WorkoutKey
   const thisWeek = weekOf(todayStr())
   const when = plannedDaysLine(WEEK_ORDER.filter((d) => plannedKeys(data, thisWeek[(d + 6) % 7]).includes(type)))
   const n = r ? slotsOf(r).length : 0
+  const [failed, setFailed] = useState(false)
+  const v = keyVideo(type, routines)
+  const poster = v?.poster && !failed ? v.poster : undefined
   const sub = r
     ? [`${ONBOARDING_ENABLED ? 'warm-up and ' : ''}${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
     : workoutSub(type as WorkoutType)
   return (
     <PlanPage>
-      {/* `.wv-hero.plain`. TODO(N7): the clip's poster (300 pt hero) once Train exports its poster image */}
-      <View style={{ height: insets.top + 190, marginHorizontal: -16, backgroundColor: t.hero }}>
+      {/* `.wv-hero`: the clip's poster (300 pt), or `.plain` (safe area + 190) without one or offline */}
+      <View style={{ height: poster ? 300 : insets.top + 190, marginHorizontal: -16, backgroundColor: t.hero, overflow: 'hidden' }}>
+        {poster && <Poster key={poster} path={poster} onError={() => setFailed(true)} />}
+        {poster && <Shade stops={[[0, 0.2], [0.3, 0], [0.55, 0], [1, 0.6]]} />}
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack}
           style={({ pressed }) => ({ position: 'absolute', left: 16, top: insets.top + 54, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
           <Icon name="chevL" size={18} stroke={2.6} color="#1d1d1f" />

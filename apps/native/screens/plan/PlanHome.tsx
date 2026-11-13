@@ -69,8 +69,7 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
         </List>
       )}
 
-      {/* the web's <h2 class="grp-h"> keeps the browser's h2 margins (about 16.6 pt), collapsing with the card's above */}
-      <View style={{ marginTop: 5, marginBottom: 16 }}><GrpH>This week</GrpH></View>
+      <GrpH h2>This week</GrpH>
       <WeekList rows={m.week} onDay={(d) => go({ v: 'day', d })} />
       {/* a note's 8 above collapses into the week list's 8 below */}
       {m.notes.map((n, i) => <PlanNote key={n} style={i === 0 ? { marginTop: 0 } : undefined}>{n}</PlanNote>)}

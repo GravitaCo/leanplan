@@ -4,7 +4,7 @@
  * tokens and text; shared pieces (rows, chips, sheets) come from lib/ui, never from here.
  */
 import type { ReactNode } from 'react'
-import { Image, Pressable, Text, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native'
+import { Pressable, Text, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Defs, Line, LinearGradient, Pattern, Rect, Stop } from 'react-native-svg'
 import type { PlanWeek, Routine } from '@/core/types'
@@ -15,6 +15,7 @@ import { useStore } from '@/store/store'
 import type { PlanArt } from '@/screens/plan/planArt'
 import { List, useSurface } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
+import { CoverImage } from '../../lib/ui/CoverImage'
 import { Thumb } from '../train'
 import { num, tx, useTokens } from '../../lib/theme'
 
@@ -102,9 +103,9 @@ export function Shade({ stops, color = '#000' }: { stops: [number, number][]; co
   )
 }
 
-/** The photograph filling its box. TODO(N1-followup): the web crops at 50% 40%; RN's cover crops at the centre. */
-export const Photo = ({ art }: { art: PlanArt }) => (
-  <Image source={art} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+/** The photograph filling its box, cropped where the web puts it (`object-position`: tiles 50% 40%, heroes 50% 45%). */
+export const Photo = ({ art, y = 0.4 }: { art: PlanArt; y?: number }) => (
+  <CoverImage source={art} y={y} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
 )
 
 /** `.ptile`: a plan's photograph with its name (Fits your goal on the best fit), or an own plan's card with a dot. */
@@ -162,7 +163,7 @@ export function PlanHero({ art, height, onBack, children }: { art?: PlanArt; hei
   const insets = useSafeAreaInsets()
   return (
     <View style={{ height: height ?? (art != null ? 380 : 240), marginHorizontal: -16, marginBottom: 18, backgroundColor: art != null ? t.sep : t.hero }}>
-      {art != null && <Photo art={art} />}
+      {art != null && <Photo art={art} y={0.45} />}
       {art != null && <Shade stops={[[0, 0.3], [0.22, 0], [0.5, 0], [1, 0.65]]} />}
       <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack}
         style={({ pressed }) => ({ position: 'absolute', left: 16, top: insets.top + 14, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
@@ -212,8 +213,8 @@ export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress
       </View>
       {keys.length > 0 && (keys[0] === 'Cardio'
         ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.move, marginRight: 4 }} />
-        // `.wk-row .thumb`: 36 × 44, radius 8, cut from Train's 44 pt Thumb. TODO(N7): a size prop on Thumb
-        : <View style={{ width: 36, height: 44, borderRadius: 8, overflow: 'hidden' }}><View style={{ marginLeft: -4 }}><Thumb video={keyVideo(keys[0], routines)} /></View></View>)}
+        // `.wk-row .thumb`: 36 × 44, radius 8
+        : <Thumb video={keyVideo(keys[0], routines)} size={{ width: 36, height: 44, radius: 8 }} />)}
     </>
   )
   const s: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: today ? t.tintSoft : undefined }
@@ -254,7 +255,7 @@ export function PlanCardView({ name, art, big, small, cells, endLabel, note, onP
       style={({ pressed }) => ({ backgroundColor: surface, borderRadius: t.radius, overflow: 'hidden', marginBottom: 12, opacity: pressed ? 0.85 : 1 })}>
       <View style={{ flexDirection: 'row', gap: 14, paddingTop: 16, paddingHorizontal: 16, alignItems: 'center' }}>
         {art != null
-          ? <Image source={art} resizeMode="cover" style={{ width: 56, height: 56, borderRadius: 14 }} />
+          ? <CoverImage source={art} y={0.4} style={{ width: 56, height: 56, borderRadius: 14, overflow: 'hidden' }} />
           : <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.tint }} /></View>}
         <View style={{ flex: 1 }}>
           <Text style={[tx(13, 600, 1.3, 0), { color: t.tint }]}>Your plan</Text>
