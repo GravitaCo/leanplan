@@ -14,6 +14,8 @@
     "bundle:ios": "expo export --platform ios --output-dir dist-check --clear",
     "doctor": "expo-doctor",
     "test": "node scripts/run-tests.mjs",
+    "test:reminders": "npx --yes esbuild@0.21.5 scripts/test-reminders.ts --bundle --platform=node --log-level=error --alias:@=../../src --alias:react-native=./scripts/fakes/react-native.ts --alias:expo=./scripts/fakes/expo.ts --alias:expo-notifications=./scripts/fakes/expo-notifications.ts --alias:expo-application=./scripts/fakes/expo-application.ts --resolve-extensions=.native.ts,.ts,.tsx,.js,.mjs,.json --define:import.meta.env={} --outfile=node_modules/.cache/test-reminders.cjs && node node_modules/.cache/test-reminders.cjs",
+    "test:extension": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/test-extension.mjs",
     "test:mind": "node --experimental-transform-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --import ./scripts/ts-alias-hooks.mjs screens/mind/mind.test.ts"
   },
   "dependencies": {
@@ -21,6 +23,7 @@
     "@supabase/supabase-js": "^2.119.0",
     "babel-preset-expo": "~58.0.0",
     "expo": "~58.0.23",
+    "expo-application": "~58.1.2",
     "expo-build-properties": "~58.0.12",
     "expo-constants": "~58.0.15",
     "expo-crypto": "~58.0.7",
@@ -28,6 +31,7 @@
     "expo-font": "~58.0.11",
     "expo-haptics": "~58.0.7",
     "expo-linking": "~58.0.16",
+    "expo-notifications": "~58.1.9",
     "expo-router": "~58.0.30",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.7",
