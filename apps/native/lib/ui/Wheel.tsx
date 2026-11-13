@@ -48,8 +48,9 @@ export function Wheel({ min, max, value, initial, onChange, label, unit, valueTe
     p.value = drag != null || reduce ? pos : withTiming(pos, { duration: 180, easing: Easing.out(Easing.ease) })
   }, [pos, drag, reduce]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const live = useRef({ base, onChange, clamp })
-  live.current = { base, onChange, clamp }
+  // the responder is made once and reads every prop through this ref (fresh after any change)
+  const live = useRef({ base, onChange, clamp, min, max, rowH, half })
+  live.current = { base, onChange, clamp, min, max, rowH, half }
   const start = useRef({ pos: 0, moved: false })
   const pan = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -57,17 +58,18 @@ export function Wheel({ min, max, value, initial, onChange, label, unit, valueTe
     onPanResponderGrant: () => { start.current = { pos: live.current.base, moved: false } },
     onPanResponderMove: (_, g) => {
       if (Math.abs(g.dy) > 4) start.current.moved = true
-      if (start.current.moved) setDrag(Math.min(max + 0.4, Math.max(min - 0.4, start.current.pos - g.dy / rowH)))
+      const l = live.current
+      if (start.current.moved) setDrag(Math.min(l.max + 0.4, Math.max(l.min - 0.4, start.current.pos - g.dy / l.rowH)))
     },
     onPanResponderRelease: (e, g) => {
-      const { clamp: c, onChange: done, base: b } = live.current
+      const { clamp: c, onChange: done, base: b, rowH: rh, half: hf } = live.current
       setDrag(null)
-      if (start.current.moved) return done(c(Math.round(start.current.pos - g.dy / rowH)))
+      if (start.current.moved) return done(c(Math.round(start.current.pos - g.dy / rh)))
       // a tap: the row under the finger (the middle row picks what's shown)
-      done(c(b + Math.floor(e.nativeEvent.locationY / rowH) - half))
+      done(c(b + Math.floor(e.nativeEvent.locationY / rh) - hf))
     },
     onPanResponderTerminate: () => setDrag(null),
-  }), [min, max, rowH, half])
+  }), [])
 
   const from = Math.max(min, Math.floor(pos) - half - 1)
   const to = Math.min(max, Math.ceil(pos) + half + 1)

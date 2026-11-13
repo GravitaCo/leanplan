@@ -32,22 +32,23 @@ export function Ruler({ min, max, value, initial, onChange, label, valueText, ma
   }, [pos, drag, reduce, px]) // eslint-disable-line react-hooks/exhaustive-deps
   const track = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }))
 
-  // the responder reads the latest props through a ref (it is made once)
-  const live = useRef({ base, pos, onChange, clamp })
-  live.current = { base, pos, onChange, clamp }
+  // the responder is made once and reads every prop through this ref, so a unit switch (kg to lb,
+  // cm to ft/in changes min, max and px) is seen by the very next gesture
+  const live = useRef({ base, onChange, clamp, min, max, px })
+  live.current = { base, onChange, clamp, min, max, px }
   const start = useRef(0)
   const pan = useMemo(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 3 && Math.abs(g.dx) > Math.abs(g.dy),
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: () => { start.current = live.current.base },
-    onPanResponderMove: (_, g) => setDrag(Math.min(max + 0.4, Math.max(min - 0.4, start.current - g.dx / px))),
+    onPanResponderMove: (_, g) => { const l = live.current; setDrag(Math.min(l.max + 0.4, Math.max(l.min - 0.4, start.current - g.dx / l.px))) },
     onPanResponderRelease: (_, g) => {
-      const v = live.current.clamp(Math.round(start.current - g.dx / px))
+      const v = live.current.clamp(Math.round(start.current - g.dx / live.current.px))
       setDrag(null)
       live.current.onChange(v)
     },
     onPanResponderTerminate: () => setDrag(null),
-  }), [min, max, px])
+  }), [])
 
   const step = (by: number) => onChange(clamp(base + by))
 
