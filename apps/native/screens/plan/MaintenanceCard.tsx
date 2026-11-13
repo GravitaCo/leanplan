@@ -20,7 +20,7 @@ export function MaintenanceCard({ onClose }: { onClose: () => void }) {
   return (
     <Sheet title="After your plan" onClose={onClose} tall left={null} right={<NavBtn title="Close" onPress={onClose} />}>
       <Text accessibilityRole="header" style={[tx(28, 600, 1.3, -0.02), { color: t.label, marginHorizontal: 4, marginBottom: 14 }]}>Keeping what you've built</Text>
-      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: 4, marginBottom: 18 }}>
+      <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: 4, marginBottom: 18 }}>
         {bar('Your plan: building', false, 3)}{bar('Maintenance: holding steady', true, 2)}
       </View>
       <View style={{ gap: 16 }}>

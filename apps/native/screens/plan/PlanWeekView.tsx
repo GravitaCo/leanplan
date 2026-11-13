@@ -26,7 +26,8 @@ export function PlanWeekView({ planId, phaseIndex, onBack, onDay }: { planId: st
       <View style={{ paddingTop: insets.top + 16, paddingBottom: 6, marginLeft: -6 }}><BackButton label="Plan" onPress={onBack} /></View>
       <TitleRow title={ph?.name ?? 'Week'} />
       <Sub style={{ marginTop: 2, marginBottom: 16 }}>{plan.name} · {ph?.weeks} {ph?.weeks === 1 ? 'week' : 'weeks'}</Sub>
-      <WeekList rows={planWeekRows(week, routines)} onDay={onDay} />
+      {/* the web's phase week lists names only, no exercise count */}
+      <WeekList rows={planWeekRows(week, routines).map((r) => ({ ...r, sub: '' }))} onDay={onDay} />
       {planWeekNotes(week, routines).map((n) => <PlanNote key={n}>{n}</PlanNote>)}
       <Foot>Tap a day to change it. Changes repeat every week of {ph?.name ?? 'this phase'}.</Foot>
     </ScrollView>
