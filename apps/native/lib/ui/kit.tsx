@@ -4,8 +4,8 @@
  * from the CSS; every tappable thing has at least a 44 pt touch area (hitSlop where the web's box is
  * smaller), and the pressed state is the web's `:active` one.
  */
-import { createContext, useContext, useEffect, Children, Fragment, isValidElement, type ReactNode } from 'react'
-import { AccessibilityInfo, Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
+import { createContext, useContext, useEffect, useState, Children, Fragment, isValidElement, type ReactNode } from 'react'
+import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { create } from 'zustand'
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -63,7 +63,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
   const h = small ? 36 : 50
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
-      hitSlop={small ? slop(0, 36) : undefined}
+      hitSlop={slop(0, Number(StyleSheet.flatten(style)?.height ?? StyleSheet.flatten(style)?.minHeight ?? h))}
       style={({ pressed }) => [{
         minHeight: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
@@ -84,7 +84,7 @@ export function Chip({ title, sub, on, onPress }: { title: string; sub?: string;
   const fg = on ? t.onTint : t.label
   return (
     <Pressable accessibilityRole="button" accessibilityState={on === undefined ? undefined : { selected: on }} onPress={onPress} hitSlop={slop(0, 32)}
-      style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
+      style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, justifyContent: 'center', paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
       <Text style={[tx(15, 400, 1.2, BTN), { color: fg }]}>{title}</Text>
       {sub != null && <Text style={[tx(12, 400, 1.2, BTN), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
     </Pressable>
@@ -182,7 +182,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
       <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
       <Pressable accessibilityRole="button" onPress={action.run} hitSlop={slop(0, 26)}>
-        <Text style={[tx(16, 600, 20, BTN), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
+        <Text style={[tx(16, 600, 21, BTN), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
     </View>
   )
@@ -198,19 +198,38 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
  * `.sheet-root` 60); a sheet is a Modal, which covers everything under it, so while one is open the
  * topmost sheet draws the toast inside its own Modal and the shell's host stands down.
  */
-export const useOpenSheets = create<{ n: number }>(() => ({ n: 0 }))
+export const useOpenSheets = create<{ ids: number[] }>(() => ({ ids: [] }))
+let nextSheet = 1
+/**
+ * Registers an open sheet for as long as it is mounted; returns its id. Ids are taken in render
+ * order, so a sheet opened over another (or replacing it) always has the larger id, even when both
+ * mount in one commit (effects run child-first, render runs parent-first): the topmost sheet is
+ * the open one with the largest id.
+ */
+export function useSheetId(): number {
+  const [id] = useState(() => nextSheet++)
+  useEffect(() => {
+    useOpenSheets.setState((s) => ({ ids: [...s.ids, id] }))
+    return () => useOpenSheets.setState((s) => ({ ids: s.ids.filter((x) => x !== id) }))
+  }, [id])
+  return id
+}
 
 /**
  * The app's one toast (App.tsx's `.toast`), from the store's `toast` and `toastAction`: 72 pt above
  * the bottom safe area, fading and rising 10 pt over 0.25 s (no movement with Reduce Motion on).
  * Announced politely, as the web's role=status (VoiceOver through announceForAccessibility; TalkBack
- * through the live region). The shell mounts it once; `depth` is for sheets (see useOpenSheets).
+ * through the live region). The shell mounts it once with no `sheet`; each sheet mounts one with its
+ * id, and only the host of the topmost open sheet (or the shell's, with none open) draws.
  */
-export function ToastHost({ depth = 0 }: { depth?: number } = {}) {
+export function ToastHost({ sheet }: { sheet?: number } = {}) {
   const insets = useSafeAreaInsets()
-  const top = useOpenSheets((s) => s.n) === depth
+  const top = useOpenSheets((s) => (s.ids.length ? Math.max(...s.ids) === sheet : sheet === undefined))
   const toast = useStore((s) => s.toast)
   const action = useStore((s) => s.toastAction)
+  // keep the last words on screen while the toast fades out (0.25 s), as the web does
+  const [last, setLast] = useState<{ text: string; action: typeof action }>({ text: '', action: null })
+  useEffect(() => { if (toast) setLast({ text: toast, action }) }, [toast, action])
   const reduce = useReducedMotion()
   const shown = useSharedValue(0)
   useEffect(() => { shown.value = withTiming(toast ? 1 : 0, { duration: 250 }) }, [toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -220,7 +239,7 @@ export function ToastHost({ depth = 0 }: { depth?: number } = {}) {
   return (
     <Animated.View pointerEvents={toast && action ? 'box-none' : 'none'} accessibilityLiveRegion="polite"
       style={[{ position: 'absolute', left: 0, right: 0, bottom: 72 + insets.bottom, alignItems: 'center' }, style]}>
-      {toast ? <View style={action ? { alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' } : { maxWidth: '88%' }}><ToastView text={toast} action={action && { label: action.label, run: () => { action.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View> : null}
+      {last.text ? <View style={last.action ? { alignSelf: 'stretch', marginHorizontal: 16, alignItems: 'center' } : { maxWidth: '88%' }}><ToastView text={last.text} action={last.action && { label: last.action.label, run: () => { last.action?.run(); useStore.setState({ toast: null, toastAction: null }) } }} /></View> : null}
     </Animated.View>
   )
 }

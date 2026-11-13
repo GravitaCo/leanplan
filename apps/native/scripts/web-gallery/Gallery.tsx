@@ -278,6 +278,7 @@ export function Gallery() {
           </div>
           <div className="stack">
             <button className="btn gray" onClick={() => useStore.getState().showToast('Entry deleted', { label: 'Undo', run: () => {} })}>Show a toast</button>
+            <button className="btn gray" onClick={() => { setSheet('bare'); useStore.getState().showToast('Swapped') }}>Swap to the bare sheet</button>
             <button className="btn" onClick={() => setSheet(null)}>Save</button>
           </div>
         </Sheet>

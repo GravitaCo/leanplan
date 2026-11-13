@@ -251,6 +251,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           </List>
           <View style={{ marginTop: 16, gap: 8 }}>
             <Btn kind="gray" title="Show a toast" onPress={() => useStore.getState().showToast('Entry deleted', { label: 'Undo', run: () => {} })} />
+            <Btn kind="gray" title="Swap to the bare sheet" onPress={() => { setSheet('bare'); useStore.getState().showToast('Swapped') }} />
             <Btn title="Save" onPress={() => setSheet(null)} />
           </View>
         </Sheet>

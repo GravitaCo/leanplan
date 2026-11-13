@@ -198,7 +198,7 @@ export function Summary() {
               </>
             )}
             {/* .pcard .btn.gray: 48 high, 16 pt */}
-            <Btn kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={later('Add food')} style={{ height: 48, borderRadius: 24 }} textStyle={{ fontSize: 16 }}
+            <Btn kind="gray" title={yes ? FOOD9.logMeal : 'Add food'} onPress={later('Add food')} style={{ minHeight: 48, borderRadius: 24 }} textStyle={{ fontSize: 16 }}
               icon={<Icon name="plus" size={20} stroke={2.6} color={t.label} />} />
           </Card>
         )}
@@ -217,7 +217,7 @@ export function Summary() {
                 {T([tx(12), { color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
               </View>
               {/* .tile.mvt .btn.sm: 32 high, 14 pt */}
-              {!logged && !isRest && <View style={{ marginTop: 10 }}><Btn small title="Start" onPress={later('Train')} style={{ height: 32, borderRadius: 16, paddingHorizontal: 14 }} textStyle={{ fontSize: 14 }} /></View>}
+              {!logged && !isRest && <View style={{ marginTop: 10 }}><Btn small title="Start" onPress={later('Train')} style={{ minHeight: 32, borderRadius: 16, paddingHorizontal: 14 }} textStyle={{ fontSize: 14 }} /></View>}
             </Tile>
             <View style={{ flex: 1 }}>{weightTile}</View>
           </View>
@@ -231,7 +231,7 @@ export function Summary() {
                 {T([font(400), { fontSize: 13, color: t.label2 }], lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub)}
               </View>
               {/* .mv .btn.sm: 40 high */}
-              {!logged && !isRest ? <Btn small title="Start" onPress={later('Train')} style={{ height: 40, borderRadius: 20, paddingHorizontal: 18 }} /> : <Chevron color={t.label3} />}
+              {!logged && !isRest ? <Btn small title="Start" onPress={later('Train')} style={{ minHeight: 40, borderRadius: 20, paddingHorizontal: 18 }} /> : <Chevron color={t.label3} />}
             </View>
           </Card>
         )}

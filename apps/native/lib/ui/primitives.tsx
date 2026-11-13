@@ -17,7 +17,7 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
-import { InIconList, InSheet, ToastHost, initials, slop, useOpenSheets, useSurface } from './kit'
+import { InIconList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
 import { BTN, num, tx, useTokens, type Tokens } from '../theme'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
@@ -177,7 +177,7 @@ export function Seg<T extends string>({ options, value, onChange, label }: { opt
       {options.map(([v, l]) => {
         const on = v === value
         return (
-          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(v)} hitSlop={{ top: 6, bottom: 6 }}
+          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onChange(v)} hitSlop={slop(0, 28.9)}
             style={{ flex: 1, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
             <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
@@ -306,11 +306,7 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, header, childr
 }) {
   const t = useTokens()
   // this sheet's place in the stack, so the topmost one carries the toast
-  const [depth] = useState(() => useOpenSheets.getState().n + 1)
-  useEffect(() => {
-    useOpenSheets.setState((s) => ({ n: s.n + 1 }))
-    return () => useOpenSheets.setState((s) => ({ n: s.n - 1 }))
-  }, [])
+  const sheetId = useSheetId()
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const reduce = useReducedMotion()
@@ -336,7 +332,7 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, header, childr
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
-      <ToastHost depth={depth} />
+      <ToastHost sheet={sheetId} />
     </Modal>
   )
 }

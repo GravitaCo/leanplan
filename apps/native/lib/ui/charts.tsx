@@ -124,6 +124,8 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
     }
     return ly
   }
+  // `.num`: tabular figures, no tracking
+  const tnum = { fontFeatureSettings: "'tnum' 1", letterSpacing: 0 }
   const txt = (w: 500 | 600) => ({ fontFamily: GEIST[w], fontSize: 11 })
   return (
     <View accessible accessibilityRole="image" accessibilityLabel={label} style={{ width: '100%', aspectRatio: W / H, marginTop: inCard ? 0 : 6, marginBottom: inCard ? 0 : 2 }}>
@@ -131,7 +133,7 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
         {grid.map((v) => (
           <G key={'g' + v}>
             <Line x1={0} x2={PW} y1={gy(v)} y2={gy(v)} stroke={t.grid} strokeWidth={1} />
-            {numbers && <SvgText x={W} y={gy(v) + 3.5} textAnchor="end" fill={t.label2} {...txt(500)} fontSize={10}>{v.toLocaleString('en-GB')}</SvgText>}
+            {numbers && <SvgText x={W} y={gy(v) + 3.5} textAnchor="end" fill={t.label2} {...txt(500)} {...tnum} fontSize={10}>{v.toLocaleString('en-GB')}</SvgText>}
           </G>
         ))}
         {rows.map((x, i) => {
@@ -143,7 +145,7 @@ export function WeekBars({ rows, lo, hi, cur, numbers = true }: { rows: DayStat[
               {x.logged ? (
                 <>
                   <Rect x={cx - bw / 2} y={top} width={bw} height={Math.max(4, base - top)} rx={6} fill={on ? t.energyInk : t.energy} />
-                  {numbers && <SvgText x={cx} y={lift(top - 5)} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(500)}>{Math.round(x.t.k).toLocaleString('en-GB')}</SvgText>}
+                  {numbers && <SvgText x={cx} y={lift(top - 5)} textAnchor="middle" fill={on ? t.label : t.label2} {...txt(500)} {...tnum}>{Math.round(x.t.k).toLocaleString('en-GB')}</SvgText>}
                 </>
               ) : !x.future ? (
                 <Rect x={cx - bw / 2} y={base - 3} width={bw} height={3} rx={1.5} fill={t.fill3} />

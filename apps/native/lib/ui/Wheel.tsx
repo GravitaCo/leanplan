@@ -84,7 +84,10 @@ export function Wheel({ min, max, value, initial, onChange, label, unit, valueTe
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(e) => onChange(clamp(base + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', borderRadius: 14 }}>
-        {items.map((i) => <Row key={i} i={i} pos={p} half={half} rowH={rowH} color={color} bold={Math.abs(i - pos) < 0.5} />)}
+        {/* the rows never take the touch, so a tap's locationY is measured from the column's top */}
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {items.map((i) => <Row key={i} i={i} pos={p} half={half} rowH={rowH} color={color} bold={Math.abs(i - pos) < 0.5} />)}
+        </View>
       </View>
       {unit && (
         <View pointerEvents="none" style={{ position: 'absolute', left: '50%', marginLeft: 38, top: half * rowH, height: rowH, justifyContent: 'center' }}>

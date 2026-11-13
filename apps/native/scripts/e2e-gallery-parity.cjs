@@ -91,7 +91,12 @@ async function run() {
         if (close) { await x.page.getByText('Show a toast', { exact: true }).click(); await x.page.waitForTimeout(400) }
         await x.page.screenshot({ path: path.join(dir, `${scheme}-${tag}.png`) })
         if (close) {
-          const count = () => x.page.getByText('Entry deleted', { exact: true }).count()
+          // shown = on the page and not faded out (the toast keeps its words while it fades, as on the web)
+          const count = () => x.page.evaluate(() => [...document.querySelectorAll('span, div')].filter((e) => {
+            if (e.childElementCount || e.textContent.trim() !== 'Entry deleted') return false
+            for (let a = e; a; a = a.parentElement) if (getComputedStyle(a).opacity === '0' || getComputedStyle(a).visibility === 'hidden') return false
+            return true
+          }).length)
           const before = await count()
           await x.page.getByText('Undo', { exact: true }).last().click()
           await x.page.waitForTimeout(400)
@@ -102,6 +107,37 @@ async function run() {
         await x.page.waitForTimeout(300)
       }
       await sideBySide(browser, path.join(dir, `${scheme}-web.png`), path.join(dir, `${scheme}-native.png`), path.join(dir, `${scheme}-side.png`), `${name} · ${scheme}`)
+    }
+    // the Wheel's gestures (tap a row, drag) pick the same values on both sides
+    if (!ONLY || ONLY.includes('wheel')) {
+      const seq = {}
+      for (const [x, tag, sel, read] of [
+        [w, 'web', '[data-g="wheel"] [role="slider"]', (e) => e.getAttribute('aria-valuenow')],
+        [n, 'native', '[data-testid="g-wheel"] [aria-label="Age in years"]', (e) => [...e.querySelectorAll('div')].find((d) => d.childElementCount === 0 && getComputedStyle(d).fontFamily.includes('600'))?.textContent],
+      ]) {
+        const el = x.page.locator(sel).first()
+        await el.scrollIntoViewIfNeeded()
+        const box = await el.boundingBox(), cx = box.x + box.width / 2
+        const out = [await el.evaluate(read)]
+        for (const row of [1, 2, 4]) { await x.page.mouse.click(cx, box.y + row * 48 + 24); await x.page.waitForTimeout(400); out.push(await el.evaluate(read)) }
+        const y0 = box.y + 2 * 48 + 24
+        await x.page.mouse.move(cx, y0); await x.page.mouse.down()
+        for (let i = 1; i <= 10; i++) await x.page.mouse.move(cx, y0 - i * 9.6)
+        await x.page.mouse.up(); await x.page.waitForTimeout(400)
+        out.push(await el.evaluate(read))
+        seq[tag] = out.join(',')
+      }
+      check(`${scheme}: the Wheel's taps and drag pick the same values (34, row above, middle, two below, drag up two)`, seq.web === seq.native && seq.web === '34,33,33,35,37', seq)
+    }
+    // one sheet replacing another in a single change still shows the toast (the sheet stack, not a count)
+    if (!ONLY || ONLY.includes('sheets')) for (const [x, tag] of [[w, 'web'], [n, 'native']]) {
+      await x.page.getByText('Open a sheet', { exact: true }).click()
+      await x.page.waitForTimeout(600)
+      await x.page.getByText('Swap to the bare sheet', { exact: true }).click()
+      await x.page.waitForTimeout(500)
+      check(`${scheme} ${tag}: a toast raised as one sheet replaces another shows`, await x.page.getByText('Swapped', { exact: true }).last().isVisible())
+      await x.page.mouse.click(195, 60)
+      await x.page.waitForTimeout(300)
     }
     check(`${scheme}: no page errors on web`, !w.errors.length, w.errors)
     check(`${scheme}: no page errors on native`, !n.errors.length, n.errors)

@@ -1,14 +1,15 @@
 // Generates lib/tokens.generated.ts from the web's style sheets (every :root block in src/styles and
 // its dark twin), so web and native read the same Studio tokens and can't drift (native-app-plan §2).
 // Run: npm run tokens. `npm run check:tokens` fails if the committed file is out of date.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-// every `:root` block in the app's style sheets: theme.css first (the base), then the few sheets
-// that add their own tokens (loop.css's --raised; theme.css's later --hero block)
-const SHEETS = ['theme.css', 'loop.css', 'mind.css', 'onboarding.css']
+// every `:root` block in every style sheet in src/styles: theme.css first (the base), then the rest
+// in name order (loop.css adds --raised; theme.css's later block adds --hero)
+const STYLES = path.resolve(here, '../../../src/styles')
+const SHEETS = ['theme.css', ...readdirSync(STYLES).filter((f) => f.endsWith('.css') && f !== 'theme.css').sort()]
 const out = path.resolve(here, '../lib/tokens.generated.ts')
 
 const block = (src) => {
@@ -18,7 +19,7 @@ const block = (src) => {
 }
 const root = {}, darkOnly = {}
 for (const f of SHEETS) {
-  const css = readFileSync(path.resolve(here, '../../../src/styles', f), 'utf8')
+  const css = readFileSync(path.join(STYLES, f), 'utf8')
   const inDark = new Set()
   for (const m of css.matchAll(/@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{([^}]*)\}/g)) {
     Object.assign(darkOnly, block(m[1]))
