@@ -81,6 +81,8 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
                 <Path d={line} fill="none" stroke={t.bodyInk} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
                 {dots.length > 0 && <Circle cx={dots[dots.length - 1].x} cy={dots[dots.length - 1].y} r={4.5} fill={t.bodyInk} />}
               </Svg>
+              {/* the web's inline SVG sits on a text baseline: about 5 px under the chart */}
+              <View style={{ height: 5 }} />
             </Card>
           )}
           {points.length > 0 && (

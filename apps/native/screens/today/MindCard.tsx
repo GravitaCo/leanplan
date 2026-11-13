@@ -14,7 +14,7 @@ import { SUMMARY_MIND } from '@/screens/today/summaryCopy'
 import { checkedIn, checkinTime, makePlanOffered } from '@/screens/today/summary'
 import { thingView } from '@/screens/today/summary'
 import { BTN, tx, useTokens } from '../../lib/theme'
-import { Btn, LinkBtn } from '../../lib/ui/kit'
+import { Btn, Card, LinkBtn } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 
 export interface MindCardProps {
@@ -53,8 +53,8 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
   const dot = (p: Pillar, size = 8) => <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: DOT[p] }} />
 
   return (
-    // .card.pcard.wb-mind: gap 12
-    <View accessibilityLabel="Mind" style={{ backgroundColor: t.card, borderRadius: t.radius, padding: 16, gap: 12 }}>
+    // .card.pcard.wb-mind (the .pcard gap of 14 wins over .wb-mind's 12 on the web)
+    <View accessibilityLabel="Mind"><Card>
       <Pressable accessibilityRole="button" onPress={onOpen} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, opacity: pressed ? 0.7 : 1 })}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.mindFill, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="mind" size={20} color={t.mindInk} />
@@ -71,6 +71,7 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
       {chips && (
         <>
           <Text style={[tx(13, 400), { color: t.label2 }, { marginBottom: -4 }]}>{SUMMARY_MIND.thingLead}</Text>
+          {/* TODO(N1-followup): `.wb-things .chip` (44 tall, a pillar dot) until N1 has the chip variant */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {options.map((x) => (
               <Pressable key={x.key} accessibilityRole="button" accessibilityState={{ selected: false }} onPress={() => { pickThing(x.key) }}
@@ -104,6 +105,6 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
           {makePlanOffered(picked, plans, day, { windDownAt }) && <View style={{ marginTop: -10 }}><LinkBtn title={SUMMARY_MIND.makePlan} onPress={() => onMakePlan(picked)} style={{ paddingVertical: 12, paddingHorizontal: 0 }} /></View>}
         </>
       )}
-    </View>
+    </Card></View>
   )
 }

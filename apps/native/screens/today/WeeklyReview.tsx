@@ -26,7 +26,7 @@ import { weekPicture, type MindContext, type WeekPicture } from '@/core/domain/w
 import type { IfThenPlan } from '@/core/types'
 import { LOOP, PLAN_CARD, REVIEW, spanText } from '@/copy/review'
 import { pushSupported } from '@/data/push'
-import { font, num, tx, useTokens, type Tokens } from '../../lib/theme'
+import { BTN, font, num, tx, useTokens, type Tokens } from '../../lib/theme'
 import { BareSheet } from '../../lib/ui/primitives'
 import { Icon, type IconName } from '../../lib/ui/icons'
 
@@ -248,8 +248,9 @@ function PillBtn({ kind, title, onPress, sm, disabled }: { kind: 'done' | 'keep'
 /** `.rv-pill` (36 tall, 44 touch) */
 function Pill({ title, on, onPress, bg }: { title: string; on?: boolean; onPress?: () => void; bg: string }) {
   const t = useTokens()
-  const s = { height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center' as const, backgroundColor: bg, borderWidth: on ? 1.5 : 0, borderColor: t.label }
-  const label = <Text style={[tx(14, 600), { color: t.label }]}>{title}</Text>
+  // the web's on state is an inset 1.5 ring that changes no size: a border always drawn, clear when off
+  const s = { height: 36, paddingHorizontal: 12.5, borderRadius: 18, justifyContent: 'center' as const, backgroundColor: bg, borderWidth: 1.5, borderColor: on ? t.label : 'transparent' }
+  const label = <Text style={[tx(14, 600, 1.3, BTN), { color: t.label }]}>{title}</Text>
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress} hitSlop={{ top: 4, bottom: 4 }} style={s}>{label}</Pressable>
     : <View accessibilityLiveRegion="polite" style={s}>{label}</View>
@@ -551,8 +552,8 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
             const on = day === n
             return (
               <Pressable key={n} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={full} onPress={() => setPrefs({ reviewDay: n })}
-                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : dark ? t.fill2 : t.card }}>
-                <Text style={[tx(15, 600), { color: on ? t.onTint : t.label }]}>{s}</Text>
+                style={{ width: 44, flexShrink: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : dark ? t.fill2 : t.card }}>
+                <Text style={[tx(15, 600, 1.3, BTN), { color: on ? t.onTint : t.label }]}>{s}</Text>
               </Pressable>
             )
           })}

@@ -387,7 +387,7 @@ function SummaryPage() {
                     ? <Text style={[tx(24, 600), { color: t.label }, { lineHeight: 29 }]}>{st.gentle}</Text>
                     : (
                       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                        <Text style={[tx(44, 600), num, { lineHeight: 46, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
+                        <Text style={[tx(44, 600), num, { lineHeight: 44, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
                         <Text style={[tx(15, 400), num, { color: t.label2 }]}>of {fmt(r.lo)}–{fmt(r.hi)} kcal</Text>
                       </View>
                     )}

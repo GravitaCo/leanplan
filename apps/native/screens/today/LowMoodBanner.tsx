@@ -11,7 +11,8 @@ import { tx, useTokens } from '../../lib/theme'
 import { Btn } from '../../lib/ui/kit'
 import { Icon } from '../../lib/ui/icons'
 
-/** The banner marks the day it showed when it is drawn (on mount), as the web's LowMoodSignpost does. */
+/** TODO(N1-followup): `.lm-banner` (a square icon, a button, a 28 pt close circle) until N1's Banner has it.
+ *  The banner marks the day it showed when it is drawn (on mount), as the web's LowMoodSignpost does. */
 export function LowMoodBanner({ today, markShown, onSupport, onDismiss }: { today: string; markShown: () => boolean; onSupport: () => void; onDismiss: () => void }) {
   const t = useTokens()
   useMarkSignpostShown(today, markShown)

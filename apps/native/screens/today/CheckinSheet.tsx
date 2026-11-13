@@ -45,6 +45,8 @@ function Scale({ labels, value, onChange, renderLabel, onStyle }: {
           </Pressable>
         )
       })}
+      {/* `.scale` is a 5-column grid: a 3-option row keeps fifth-width buttons, left-aligned */}
+      {Array.from({ length: Math.max(0, 5 - labels.length) }, (_, i) => <View key={'gap' + i} style={{ flex: 1, minWidth: 0 }} />)}
     </View>
   )
 }
@@ -114,15 +116,16 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
                     <Text style={[tx(14, 700, 1.2, BTN), num]}>{bandLabel(b as SleepBand)}</Text>{'\n'}{CHECKIN_SLEEP.hours}
                   </Text>
                 )} />
-              <List style={{ marginTop: 10 }}>
+              <List style={{ marginTop: 10, marginBottom: 8 }}>
                 {/* .frow: the label and a 24-hour time field (the web's <input type="time">) */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 16, gap: 12 }}>
-                  <Text style={[tx(17, 400), { color: t.label, flex: 1 }]} numberOfLines={1}>{CHECKIN_SLEEP.woke}</Text>
+                  <Text style={[tx(17, 400), { color: t.label, flexShrink: 0 }]}>{CHECKIN_SLEEP.woke}</Text>
+                  <View style={{ flex: 1 }} />
                   <TextInput accessibilityLabel={CHECKIN_SLEEP.woke} value={wakeAt} placeholder="--:--" placeholderTextColor={t.label3}
                     keyboardType="numbers-and-punctuation" maxLength={5}
                     onChangeText={(v) => { setWakeAt(v); setTouched(true) }}
                     onBlur={() => { if (wakeAt && !isHHMM(wakeAt)) setWakeAt(normTime(wakeAt)) }}
-                    style={[tx(17, 400), num, { color: t.label, minWidth: 64, textAlign: 'right', paddingVertical: 10 }]} />
+                    style={[tx(17, 400), num, { color: t.label, width: 72, textAlign: 'right', paddingVertical: 10 }]} />
                 </View>
               </List>
               <Foot>{CHECKIN_SLEEP.foot}</Foot>
@@ -143,7 +146,7 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
       {WELLBEING_ENABLED
         ? (
           <>
-            <Foot>{f.before}<Text accessibilityRole="link" onPress={onSupport} style={{ color: t.tint }}>{f.link}</Text>{f.after}</Foot>
+            <Foot>{f.before}<Text accessibilityRole="link" onPress={onSupport} style={{ color: t.tint }}>{f.link.replace(/ /g, '\u00a0')}</Text>{f.after}</Foot>
             <Foot>{CHECKIN_SLEEP.sheetFoot}</Foot>
           </>
         )
