@@ -72,17 +72,19 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
   const fg = kind === 'ink' ? t.btnInk : kind === 'gray' ? t.label : kind === 'tinted' ? t.tint : t.red
   const so = kind === 'signout'
   const h = small ? 36 : 50
-  return (
+  const btn = (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       hitSlop={slop(0, touchHeight(style, h))}
       style={({ pressed }) => [{
-        minHeight: h, borderRadius: so ? 16 : h / 2, marginTop: so ? 24 : 0, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
+        minHeight: h, borderRadius: so ? 16 : h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
       <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
     </Pressable>
   )
+  // .btn.signout's 24 above sits outside the button, as a CSS margin does
+  return so ? <View style={{ marginTop: 24 }}>{btn}</View> : btn
 }
 
 /**
