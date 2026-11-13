@@ -2,14 +2,14 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useStore, type MindView } from '@/store/store'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { healthDeclined } from '@/data/consent'
-import { DAY_NAME, parseYmd, todayStr } from '@/core/domain/date'
-import { ENERGY, MOODS, SLEEP, STRESS } from '@/core/domain/insights'
+import { todayStr } from '@/core/domain/date'
 import { skillById, skillsWithScreen } from '@/core/data/skills'
 import type { CheckIn } from '@/core/types'
 import { PageHeader } from '@/ui/primitives'
 import { Chevron, Icon, type IconName } from '@/ui/icons'
 import { CheckinSheet } from '../today/CheckinSheet'
 import { MIND, SHARED } from './copy'
+import { checkinPairs, mindEyebrow } from './pageLogic'
 import { SupportSheet } from './SupportSheet'
 import { ReflectionCard } from './ReflectionCard'
 import { ResetScreen } from './ResetScreen'
@@ -17,28 +17,7 @@ import { UnloadSheet } from './UnloadSheet'
 import { WindDownScreen } from './WindDownScreen'
 import { OutsideScreen } from './OutsideScreen'
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-/** "Thursday 8 October" (deck B5.3). */
-export function mindEyebrow(ymd: string): string {
-  const d = parseYmd(ymd)
-  return `${DAY_NAME[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
-}
-
-/**
- * Today's answers as label and value pairs, in the B5 order: Mood, Sleep, Stress, Energy. Only
- * answered ones show. Hunger and soreness stay on the Summary card and in the sheet: the approved
- * board draws the four pairs only, though the sample person answered hunger (deck B5 text says
- * "Hunger and soreness only if answered"; the board wins, flagged for design).
- */
-export function checkinPairs(c: CheckIn | null | undefined): [string, string][] {
-  if (!c) return []
-  const rows: [string, number | undefined, readonly string[]][] = [
-    [MIND.mood, c.mood, MOODS], [MIND.sleep, c.sleep, SLEEP], [MIND.stress, c.stress, STRESS],
-    [MIND.energy, c.energy, ENERGY],
-  ]
-  return rows.filter(([, v, labels]) => !!v && !!labels[v - 1]).map(([k, v, labels]) => [k, labels[v! - 1]])
-}
+export { checkinPairs, mindEyebrow }
 
 /**
  * The Mind tab root (wellbeing board B5 as a tab: Benn, 8 Oct 2026; navigation board "Mind · tab

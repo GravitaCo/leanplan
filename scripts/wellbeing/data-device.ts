@@ -36,7 +36,7 @@ async function withFetch<T>(f: typeof fetch, run: () => Promise<T>): Promise<T> 
   try { return await run() } finally { globalThis.fetch = real }
 }
 
-const NOTES_ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/UnloadSheet.tsx']
+const NOTES_ALLOWED = ['src/data/deviceOnly.ts', 'src/data/persistence.ts', 'src/data/backup.ts', 'src/screens/mind/unloadNotes.ts']
 const isDeviceOnly = (spec: string) => /(^|\/)deviceOnly(\.tsx?|\.js)?$/.test(spec)
 const namesIn = (clause: string): string[] =>
   clause.trim().startsWith('*') ? ['*'] : clause.replace(/[{}]/g, '').split(',').map((x) => x.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]).filter(Boolean)
@@ -71,9 +71,10 @@ export function boundaryIssues(rel: string, code: string): string[] {
 /** Every .ts/.tsx/.js file under a directory. */
 function files(dir: string): string[] {
   const out: string[] = []
+  if (!existsSync(dir)) return out
   for (const n of readdirSync(dir)) {
     const p = join(dir, n)
-    if (statSync(p).isDirectory()) out.push(...files(p))
+    if (statSync(p).isDirectory()) { if (!/^(node_modules|dist.*|\..*|ios|android)$/.test(n)) out.push(...files(p)) }
     else if (/\.(tsx?|js)$/.test(n)) out.push(p)
   }
   return out
@@ -121,10 +122,11 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
   /* ---------- the import boundary ---------- */
   {
     const root = process.cwd()
-    const src = files(join(root, 'src'))
+    // the native app's own code too (apps/native: it reaches notes only through unloadNotes.ts)
+    const src = [...files(join(root, 'src')), ...['app', 'lib', 'screens', 'modules'].flatMap((d) => files(join(root, 'apps/native', d)))]
     const ALLOWED = NOTES_ALLOWED
     const offenders = src.flatMap((f) => boundaryIssues(relative(root, f).split('\\').join('/'), readFileSync(f, 'utf8')))
-    checks.push(['import graph: only persistence, backup, deviceOnly and UnloadSheet use the notes accessors, only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
+    checks.push(['import graph: only persistence, backup, deviceOnly and mind/unloadNotes use the notes accessors (src and apps/native), only persistence the load and restore helpers' + (offenders.length ? ' (' + offenders.join(', ') + ')' : ''), !offenders.length])
     // the checker itself catches each way round it
     const caught = (code: string, rel = 'src/screens/X.tsx') => boundaryIssues(rel, code).length > 0
     checks.push(['boundary check catches a re-export, a dynamic import, bracket access and destructuring', [
@@ -138,7 +140,8 @@ export async function dataDeviceSuite(fakeServer: FakeServer): Promise<number> {
       "import { unloadNotes } from '@/data/deviceOnly'",
     ].every((c) => caught(c))])
     checks.push(['boundary check: the load and restore helpers are persistence.ts only', caught("import { mergeUnloadForImport } from './deviceOnly'", 'src/data/backup.ts') && caught("import { cleanDeviceOnly } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx') && !caught("import { cleanDeviceOnly, mergeUnloadForImport } from './deviceOnly'", 'src/data/persistence.ts')])
-    checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
+    checks.push(['boundary check catches a native screen and the web sheet reaching the accessors directly', caught("import { unloadNotes } from '@/data/deviceOnly'", 'apps/native/screens/mind/UnloadSheet.tsx') && caught("import { addUnloadNote } from '@/data/deviceOnly'", 'src/screens/mind/UnloadSheet.tsx')])
+    checks.push(['boundary check passes the allowed uses', !caught("import { unloadCount, clearDeviceHealth } from './deviceOnly'", 'src/data/consent.ts') && !caught("import { unloadNotes } from '@/data/deviceOnly'", 'src/screens/mind/unloadNotes.ts')])
     const quiet = ALLOWED.filter((f) => existsSync(join(root, f))).filter((f) => /console\.\w+\([^)]*(note|pairs|unload|mind|next)/i.test(readFileSync(join(root, f), 'utf8')))
     checks.push(['no console call in those files takes a note', !quiet.length])
     const elsewhere = ['src/data/sync.ts', 'src/data/push.ts', 'src/data/labelReader.ts', 'public/sw.js', 'supabase/functions/send-supplement-reminders/index.ts']
