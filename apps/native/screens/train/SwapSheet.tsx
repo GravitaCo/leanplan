@@ -4,23 +4,31 @@
  * planned exercise is one tap away. With sets already logged it asks first (they're kept).
  */
 import { useState } from 'react'
-import { Text } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 import type { Exercise } from '@/core/types'
 import { alternativesFor, exById } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { CARE_DISCLAIMER } from '@/copy/train'
 import { Btn, List } from '../../lib/ui/kit'
-import { Row as LiRow, Sheet } from '../../lib/ui/primitives'
-import { font } from '../../lib/theme'
+import { Sheet } from '../../lib/ui/primitives'
+import { font, tx, BTN, useTokens } from '../../lib/theme'
 import { Foot, GrpH, Sub } from '../../lib/ui/text'
 import { Stack } from './ui'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
+  const t = useTokens()
+  // `.li` with two `.s` lines (the care line is a second sub, one line, not lib/ui Row's wrapping sub2)
+  const s = [tx(13, 400, 1.3, BTN), { color: t.label2, marginTop: 2 }]
   return (
-    <LiRow onPress={onPick} label={x.n} chevron={false} title={x.n}
-      sub={[tag, tag === 'Easier' || tag === 'Harder' ? '' : LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}
-      sub2={x.care?.length ? `Asks quite a lot of ${careList(x.care)}` : undefined} />
+    <Pressable accessibilityRole="button" accessibilityLabel={x.n} onPress={onPick}
+      style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }, pressed && { backgroundColor: t.fill }]}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={[tx(17, 400, 1.3, BTN), { color: t.label }]}>{x.n}</Text>
+        <Text numberOfLines={1} style={s}>{[tag, tag === 'Easier' || tag === 'Harder' ? '' : LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}</Text>
+        {x.care?.length ? <Text numberOfLines={1} style={s}>Asks quite a lot of {careList(x.care)}</Text> : null}
+      </View>
+    </Pressable>
   )
 }
 

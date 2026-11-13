@@ -189,7 +189,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
                     In place of {bareName(s.planned.n)}, today only. <InlineLink onPress={() => onSwap(s.i, s.planned.id!)}>Undo</InlineLink>
                     {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}
                   </> : gentler ? `New to this? The ${gentler.n.toLowerCase()} is a good place to start. Tap Swap.` : undefined}
-                  right={s.x && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  right={s.x && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     {generated && s.x && !s.swapped && (
                       <View style={{ flexDirection: 'row', gap: 6 }}>
                         <Pressable accessibilityRole="button" accessibilityLabel={`I like ${bareName(s.shown.n)}`} accessibilityState={{ selected: liked }} onPress={() => rate(generated.id, s.i, 'up')}
