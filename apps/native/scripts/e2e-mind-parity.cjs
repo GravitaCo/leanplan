@@ -143,7 +143,8 @@ const ADAPTERS = {
     // TODO(N1-followup): Seg sets accessibilityState only, so the web render has no aria-checked; until it
     // does, the picked segment is the raised one (on --segon)
     picked: async (p) => p.evaluate(() => { const r = [...document.querySelectorAll('[role="radio"]')].find((e) => getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)'); return r ? r.innerText.trim() : '' }),
-    supportNames: (p) => p.getByTestId('support-row'),
+    // lib/ui Signposts: each service is a direct child of the group inside support-rows
+    supportNames: (p) => p.locator('[data-testid="support-rows"] > div > *'),
     unloadMind: (p) => p.getByTestId('unload-mind'),
     unloadNext: (p) => p.getByTestId('unload-next'),
     noteDays: (p) => p.getByTestId('unload-note'),
