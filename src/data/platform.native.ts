@@ -19,3 +19,6 @@ export const AUTH_OPTIONS = {
 export function onForeground(fn: () => void): void {
   AppState.addEventListener('change', (s) => { if (s === 'active') fn() })
 }
+
+/** The native app has no push yet (N12): a reminder setting made on the web stays on. */
+export const KEEP_REMINDERS_WITHOUT_PUSH = true
