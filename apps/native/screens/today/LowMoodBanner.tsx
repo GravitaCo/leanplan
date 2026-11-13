@@ -5,13 +5,16 @@
  */
 import { Pressable, Text, View } from 'react-native'
 import { LOW_MOOD_LINE_ANY_NATION } from '@/core/domain/mind'
-import { LOW_MOOD } from '@/screens/mind/copy'
+import { LOW_MOOD } from '@/copy/mind'
+import { useMarkSignpostShown } from '@/screens/today/lowMoodSignpost'
 import { tx, useTokens } from '../../lib/theme'
 import { Btn } from '../../lib/ui/kit'
 import { Icon } from '../../lib/ui/icons'
 
-export function LowMoodBanner({ onSupport, onDismiss }: { onSupport: () => void; onDismiss: () => void }) {
+/** The banner marks the day it showed when it is drawn (on mount), as the web's LowMoodSignpost does. */
+export function LowMoodBanner({ today, markShown, onSupport, onDismiss }: { today: string; markShown: () => boolean; onSupport: () => void; onDismiss: () => void }) {
   const t = useTokens()
+  useMarkSignpostShown(today, markShown)
   return (
     <View accessibilityRole="summary" style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }}>
       <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: t.mindFill, alignItems: 'center', justifyContent: 'center' }}>

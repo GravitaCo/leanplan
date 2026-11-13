@@ -12,10 +12,8 @@ import { weightWeekDelta } from '@/core/domain/insights'
 import { foodView } from '@/core/domain/foodMode'
 import { num, tx, useTokens } from '../../lib/theme'
 import { Card, List } from '../../lib/ui/kit'
-import { NavBtn, Sheet } from '../../lib/ui/primitives'
-
-/** `.li` with a title and a right-hand value (TODO(N1-followup): N1's list row when it lands). */
-const LI = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 } as const
+import { NavBtn, Row, Sheet } from '../../lib/ui/primitives'
+import { Foot } from '../../lib/ui/text'
 
 interface Point { d: string; w: number }
 
@@ -65,8 +63,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
       </Card>
       {back && (
         <>
-          {/* .foot */}
-          <Text style={[tx(13, 400, 1.38), { color: t.label2, paddingTop: 7, paddingHorizontal: 16, paddingBottom: 8 }]}>Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.</Text>
+          <Foot style={{ paddingBottom: 8 }}>Weight swings 1–2 kg day to day with water, salt and sleep. The weekly average is the number to watch.</Foot>
           {points.length >= 2 && (
             <Card plain style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
@@ -89,10 +86,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
           {points.length > 0 && (
             <List>
               {points.slice().reverse().slice(0, 14).map((p) => (
-                <View key={p.d} style={LI}>
-                  <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }, { flex: 1 }]}>{fmtDate(p.d).full}</Text>
-                  <Text style={[tx(17, 400), { color: t.label2 }, num]}>{r1(p.w)} kg</Text>
-                </View>
+                <Row key={p.d} title={fmtDate(p.d).full} value={`${r1(p.w)} kg`} />
               ))}
             </List>
           )}

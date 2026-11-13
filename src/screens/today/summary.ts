@@ -123,7 +123,7 @@ export function thingView(t: Thing, reviewed: boolean): MindView | null {
 }
 
 /**
- * The low-mood signpost's showing rules (WP15), with no React; lowMoodSignpost.ts's hook runs them.
+ * The low-mood signpost's showing rules (WP15), with no React; lowMoodSignpost.ts's hooks run them.
  * `session` is the day the signpost showed in this app session and whether it was dismissed: it
  * stays up across tab switches that day until dismissed, and a relaunch doesn't bring it back.
  */
@@ -134,9 +134,9 @@ export function signpostFresh(due: boolean, today: string, shownOn: string | und
   return due && shownOn !== today
 }
 
-/** Mark it shown now: fresh, and not already shown in this session today. */
-export function signpostMarkNow(fresh: boolean, today: string, session: SignpostSession): boolean {
-  return fresh && session.day !== today
+/** Mark it shown now (the banner has just been drawn): not already shown in this session today. */
+export function signpostMarkNow(today: string, session: SignpostSession): boolean {
+  return session.day !== today
 }
 
 /** It shows when due and fresh, or when it already showed in this session today and wasn't dismissed. */

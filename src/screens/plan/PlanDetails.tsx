@@ -9,6 +9,7 @@ import {
 import { Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { planArt, PlanTile, Timeline } from './PlanParts'
+import { detailsLines, lighterWeekAt, phaseRowDetail } from './planModel'
 
 const day = shortDateOf
 const short = dayMonthOf
@@ -49,18 +50,13 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
   const n = totalWeeks(plan)
   const end = endDate(plan)
   const rows = phaseRows(plan, today)
-  const done = workoutsDone(data, plan, today)
   const started = !!pos
   const cur = pos && pos.maintenanceWeek == null ? pos : null
   const inMaint = pos?.maintenanceWeek != null
   const carrying = inMaint && !!pos?.phase.full
-  const sub = plan.startedAt ? (started ? `Started ${day(plan.startedAt)}` : `Starts ${day(plan.startedAt)}`) + (end ? ` · ends ${day(shiftDay(end, -1))}` : '') : ''
-  const where = !pos ? `${n} weeks · starts ${day(plan.startedAt!)}`
-    : inMaint ? `${carrying ? 'Carrying on' : 'Maintenance'} · week ${pos.maintenanceWeek}`
-    : pos.ended ? `${n} weeks, done${done ? ` · ${done} ${done === 1 ? 'workout' : 'workouts'}` : ''}`
-    : `Week ${pos.week} of ${n}${done ? ` · ${done} ${done === 1 ? 'workout' : 'workouts'} so far` : ''}`
+  const { sub, where } = detailsLines(plan, pos, data, today)
   // a lighter week goes after this week, and no earlier than halfway
-  const lighterAt = Math.min(Math.max((cur?.week ?? 0) + 1, Math.ceil(n / 2) + 1), n + 1)
+  const lighterAt = lighterWeekAt(plan, pos)
   const editRow = cur ? rows.find((r) => r.state === 'now') : rows.find((r) => r.kind !== 'lighter')
 
   return (
@@ -76,7 +72,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
           const ph = plan.phases[r.index]
           const w = phaseWeek(plan, r.index)
           const lift = liftingDays(w, data.routines)
-          const detail = r.kind === 'lighter' ? `${weeksSpan(r)} · shorter version` : `${weeksSpan(r)} · ${lift} lifting ${lift === 1 ? 'day' : 'days'}`
+          const detail = phaseRowDetail(r, weeksSpan(r), lift)
           const body = (
             <>
               <span className={`tl-c pd-sq ${r.kind === 'lighter' || r.kind === 'easier' ? 'easier' : 'full'} ${r.state === 'done' ? 'done' : r.state === 'now' ? 'now' : 'next'}`} aria-hidden="true" />

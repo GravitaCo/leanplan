@@ -1,10 +1,12 @@
 /**
  * Whether the first-run wizard shows (plan §12), without the feature flag so `npm test` can run
- * it (screens/onboarding/Consent.tsx wizardDue adds the flag). No React.
+ * it (wizardDue below adds the flag). No React, so the native app imports it too.
  */
 import type { PersistedState } from './persistence'
 import type { WizardDraft } from '@/core/domain/wizard'
 import { hasExistingData } from './consent'
+import { loadDraft, setupCardHidden } from './onboardingDraft'
+import { ONBOARDING_ENABLED } from './onboardingFlag'
 
 /**
  * How long the first run waits for the first pull (a second device, or someone who used Tilo
@@ -46,4 +48,29 @@ export function wizardDueFor(s: PersistedState, x: FirstRunCtx): boolean | 'wait
   if (usedBefore(s)) return false
   if (x.online && x.signedIn && !s._meta?.lastPull) return 'wait'
   return true
+}
+
+/**
+ * The first-run wizard is due (behind ONBOARDING_ENABLED): wizardDueFor with this device's draft.
+ * Online and signed in it waits for the first full pull (`_meta.lastPull`), so a second device, or
+ * someone who used Tilo before, never sees the wizard flash up; once it's on screen and the person
+ * has started, it stays.
+ */
+export function wizardDue(s: PersistedState, x: { online: boolean; signedIn: boolean; showing: boolean }): boolean | 'wait' {
+  if (!ONBOARDING_ENABLED) return false
+  return wizardDueFor(s, { ...x, draft: loadDraft() })
+}
+
+/** Today's "Finish your setup" card (ob2-0b): onboarded, on the Starter week, not waved off here. */
+export function setupCardDue(s: PersistedState): boolean {
+  if (!ONBOARDING_ENABLED || !s.profile?.onboardedAt || setupCardHidden()) return false
+  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
+  return !!p && !!p.why?.some((w) => w.code === 'starter')
+}
+
+/** Plan's "Build my plan" card (ob6-4): anyone whose running week wasn't built from their answers. */
+export function buildCardDue(s: PersistedState): boolean {
+  if (!ONBOARDING_ENABLED) return false
+  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
+  return !(p?.source === 'recommended' && p.why?.length && !p.why.some((w) => w.code === 'starter'))
 }

@@ -13,6 +13,7 @@
 import { LOW_MOOD_LINE_ANY_NATION } from '@/core/domain/mind'
 import { Icon } from '@/ui/icons'
 import { LOW_MOOD } from '../mind/copy'
+import { useMarkSignpostShown } from './lowMoodSignpost'
 
 export function LowMoodBanner({ onSupport, onDismiss }: {
   onSupport: () => void
@@ -32,5 +33,19 @@ export function LowMoodBanner({ onSupport, onDismiss }: {
   )
 }
 
-/** The hook lives in lowMoodSignpost.ts (shared with native); kept here for existing imports. */
+/** The hooks live in lowMoodSignpost.ts (shared with native); re-exported for existing imports. */
 export { useLowMoodSignpost } from './lowMoodSignpost'
+
+/** The banner plus its one write: on mount (it is really drawn), the first time this page session
+ *  that day, record the local date it showed. Mount only happens where Summary renders it, so a
+ *  render path that never draws Summary (the weekly review opened by ?review=1) can't use up the
+ *  signpost's 30 days. */
+export function LowMoodSignpost({ today, markShown, onSupport, onDismiss }: {
+  today: string
+  markShown: () => boolean
+  onSupport: () => void
+  onDismiss: () => void
+}) {
+  useMarkSignpostShown(today, markShown)
+  return <LowMoodBanner onSupport={onSupport} onDismiss={onDismiss} />
+}

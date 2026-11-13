@@ -21,22 +21,11 @@ import { BTN, num, tx, useTokens } from '../../lib/theme'
 import { normTime } from './wakeTime'
 import { List, slop } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
+import { Foot, Lbl } from '../../lib/ui/text'
 import { Chevron } from '../../lib/ui/icons'
 
-/* TODO(N1-followup): `.lbl`, `.foot` and `.scale` are shared classes N1's kit doesn't have yet; until
-   they land, they are drawn here from the web markup (theme.css) and swapped when they do. */
-
-/** `.lbl` */
-function Lbl({ children, top = 18 }: { children: ReactNode; top?: number }) {
-  const t = useTokens()
-  return <Text style={[tx(13, 500), { color: t.label2, paddingTop: top, paddingHorizontal: 4, paddingBottom: 8 }]}>{children}</Text>
-}
-
-/** `.foot` */
-function Foot({ children }: { children: ReactNode }) {
-  const t = useTokens()
-  return <Text style={[tx(13, 400, 1.38), { color: t.label2, paddingTop: 7, paddingHorizontal: 16 }]}>{children}</Text>
-}
+/* TODO(N1-followup): `.scale` is a shared class N1's kit doesn't have yet (P4); until it lands it is
+   drawn here from the web markup (theme.css) and swapped when it does. */
 
 /** `.scale` in a sheet: five equal buttons on --elev, the chosen one in the tint (or `onStyle`). */
 function Scale({ labels, value, onChange, renderLabel, onStyle }: {
@@ -114,7 +103,7 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
           </Pressable>
           {more && (
             <View>
-              <Lbl top={0}>{CHECKIN_SLEEP.howLong}</Lbl>
+              <View style={{ marginTop: -18 }}><Lbl>{CHECKIN_SLEEP.howLong}</Lbl></View>
               {/* B10: a picked band is the neutral range grey with a 2 px ring */}
               <Scale labels={SLEEP_BANDS} value={band ? SLEEP_BANDS.indexOf(band) + 1 : 0}
                 onChange={(v) => { setBand(v ? SLEEP_BANDS[v - 1] : ''); setTouched(true) }}

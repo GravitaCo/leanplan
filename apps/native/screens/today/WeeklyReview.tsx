@@ -157,7 +157,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
           {rv.why.length > 0 && !rv.welcomeBack && !hard && (
             <View accessibilityLabel={REVIEW.why} style={[card, { gap: 8 }]}>
               <Text style={[tx(13, 600), { color: t.label2 }]}>{REVIEW.why}</Text>
-              {rv.why.map((w) => <Text style={[tx(17, 400), { color: t.label }, { lineHeight: 24 }]}>“{w}”</Text>)}
+              {rv.why.map((w) => <Text key={w} style={[tx(17, 400), { color: t.label }, { lineHeight: 24 }]}>“{w}”</Text>)}
             </View>
           )}
 

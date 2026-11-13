@@ -41,7 +41,8 @@ import { LIGHTER_CHOICES, SAME_AS_YESTERDAY } from '@/copy/summary'
 import { useLowMoodSignpost } from '@/screens/today/lowMoodSignpost'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { Banner, Btn, Card, Chip, Chips, LinkBtn, List, Tile } from './ui/kit'
-import { CatHead, PageHeader } from './ui/primitives'
+import { CatHead, PageHeader, Row } from './ui/primitives'
+import { Foot, Lbl } from './ui/text'
 import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
@@ -220,7 +221,7 @@ function SummaryPage() {
   const ifThenGo = ifThenDue && shown('if-then-offer')
   const foodAskGo = foodAsk0 && shown('food-ask') ? foodAsk0 : null
   const suggestVisible = suggestShown && shown('activity') ? suggestShown : null
-  const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data), markLowMoodShown)
+  const signpost = useLowMoodSignpost(!!pick?.show.includes('signpost'), cur, lowMoodShownOn(data))
   useEffect(() => { if (reaskGo && !sheet) setReask(true) }, [reaskGo]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (medReaskGo && !reaskGo && !reask && !sheet) setMedReask(true) }, [medReaskGo, reaskGo, reask]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (ifThenGo && !reaskGo && !medReaskGo && !reask && !medReask && !sheet) setIfThen(true) }, [ifThenGo, reaskGo, medReaskGo, reask, medReask]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -298,7 +299,7 @@ function SummaryPage() {
           </Tile>
         )}
 
-        {signpost.show && <LowMoodBanner onSupport={openSupport} onDismiss={signpost.dismiss} />}
+        {signpost.show && <LowMoodBanner today={cur} markShown={markLowMoodShown} onSupport={openSupport} onDismiss={signpost.dismiss} />}
 
         {reviewDue && shown('review') && (
           // .card.rv-due
@@ -415,20 +416,16 @@ function SummaryPage() {
               <Text style={[tx(15, 400), { color: t.label2 }]}>{flags.length === 1 ? 'This estimate moves' : 'These estimates move'} your total the most. A quick tweak keeps your numbers honest.</Text>
             </View>
             {flags.slice(0, 3).map(({ x, i }) => (
-              <Pressable key={i} accessibilityRole="button" onPress={openEditEntry} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{x.n}</Text>
-                  <Text numberOfLines={1} style={[tx(13, 400), { color: t.label2 }, { marginTop: 2 }]}>{x.how ? CAPTURE_LABEL[x.how] : 'Estimate'}{gentle ? '' : ` · ± ${fmt(x.k * entryErr(x))} kcal`}</Text>
-                </View>
-                <Text style={[tx(17, 400, 1.3, BTN), { color: t.tint }]}>Adjust</Text>
-              </Pressable>
+              <Row key={i} onPress={openEditEntry} title={x.n}
+                sub={`${x.how ? CAPTURE_LABEL[x.how] : 'Estimate'}${gentle ? '' : ` · ± ${fmt(x.k * entryErr(x))} kcal`}`}
+                right={<Text style={[tx(17, 400, 1.3, BTN), { color: t.tint }]}>Adjust</Text>} />
             ))}
           </List>
         )}
 
         {on.food && (us.length > 0 || same) && (
           <View>
-            <Text style={[tx(13, 500), { color: t.label2, paddingTop: 18, paddingHorizontal: 4, paddingBottom: 8 }]}>Your usual {MEAL_LABEL[meal].toLowerCase()}</Text>
+            <Lbl>Your usual {MEAL_LABEL[meal].toLowerCase()}</Lbl>
             <List style={{ marginBottom: 8 }}>
               {same && (
                 <Pressable accessibilityRole="button" onPress={() => repeatYesterday(meal)} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
@@ -440,16 +437,11 @@ function SummaryPage() {
                 </Pressable>
               )}
               {us.map((u) => (
-                <Pressable key={u.n} accessibilityRole="button" onPress={() => logEntries(usualEntries(data, u.n, meal))} style={({ pressed }) => [LI, pressed && { backgroundColor: t.fill }]}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={[tx(17, 400), { color: t.label }]}>{u.n}</Text>
-                    <Text numberOfLines={1} style={[tx(13, 400), { color: t.label2 }, { marginTop: 2 }]}>{portionText(u.last)}{gentle ? '' : ` · ${fmt(u.last.k)} kcal`}</Text>
-                  </View>
-                  <AddCircle />
-                </Pressable>
+                <Row key={u.n} onPress={() => logEntries(usualEntries(data, u.n, meal))} title={u.n}
+                  sub={`${portionText(u.last)}${gentle ? '' : ` · ${fmt(u.last.k)} kcal`}`} right={<AddCircle />} />
               ))}
             </List>
-            {us.length > 0 && <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, paddingTop: 7, paddingHorizontal: 16 }]}>Logged {us[0].count} times recently. One tap adds your usual portion.</Text>}
+            {us.length > 0 && <Foot>Logged {us[0].count} times recently. One tap adds your usual portion.</Foot>}
           </View>
         )}
 
@@ -566,7 +558,8 @@ function SummaryPage() {
   )
 }
 
-/** `.li`: a list row (TODO(N1-followup): N1's list row when it lands; drawn from theme.css meanwhile). */
+/** `.li` for the Same as yesterday row, whose sub wraps (`.s.wrap`). TODO(N1-followup): N1's Row
+ *  with a wrapping sub (P1b), then this goes. */
 const LI = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 } as const
 
 /** `.addc` */

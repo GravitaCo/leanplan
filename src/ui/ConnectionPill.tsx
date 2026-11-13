@@ -7,9 +7,10 @@ import { useStore } from '@/store/store'
 import { useConnection } from '@/store/hooks'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { Icon, type IconName } from './icons'
+import { NEEDS_NET } from '@/copy/connection'
 
-/** The note beside an online-only feature (plan §7; board ob6-8). */
-export const NEEDS_NET = 'Needs a connection. Search works offline.'
+/** The note beside an online-only feature (plan §7; board ob6-8), in src/copy/connection.ts. */
+export { NEEDS_NET }
 
 const ICON: Record<ConnectionKind, IconName> = {
   'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert', 'phone-only': 'cloudOff',

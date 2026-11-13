@@ -11,13 +11,14 @@
 import { useState, type ReactNode } from 'react'
 import { useStore } from '@/store/store'
 import { unconsentedCopyLine } from '@/data/consent'
-import { wizardDueFor } from '@/data/firstRun'
 import { LegalLink } from '../legal/LegalDoc'
-import { loadDraft, setupCardHidden, hideSetupCard } from '@/data/onboardingDraft'
+import { hideSetupCard } from '@/data/onboardingDraft'
 import type { PersistedState } from '@/data/persistence'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Icon } from '@/ui/icons'
 import { SETUP_CARD } from './copyApp'
+import { BUILD_PLAN } from './copy'
+import { HEALTH_TICKS as HEALTH_TICKS_COPY, PRIVACY_SHEET } from '@/copy/account'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 
 export { ONBOARDING_ENABLED }
@@ -41,35 +42,13 @@ export function existingDue(_s: PersistedState, _online: boolean): boolean {
 
 export { usedBefore } from '@/data/firstRun'
 
-/**
- * The first-run wizard is due (behind ONBOARDING_ENABLED): data/firstRun.ts wizardDueFor. Online
- * and signed in it waits for the first full pull (`_meta.lastPull`), so a second device, or
- * someone who used Tilo before, never sees the wizard flash up; once it's on screen and the person
- * has started, it stays.
- */
-export function wizardDue(s: PersistedState, x: { online: boolean; signedIn: boolean; showing: boolean }): boolean | 'wait' {
-  if (!ONBOARDING_ENABLED) return false
-  return wizardDueFor(s, { ...x, draft: loadDraft() })
-}
-
-/** Today's "Finish your setup" card (ob2-0b): onboarded, on the Starter week, not waved off here. */
-export function setupCardDue(s: PersistedState): boolean {
-  if (!ONBOARDING_ENABLED || !s.profile?.onboardedAt || setupCardHidden()) return false
-  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
-  return !!p && !!p.why?.some((w) => w.code === 'starter')
-}
-
-/** Plan's "Build my plan" card (ob6-4): anyone whose running week wasn't built from their answers. */
-export function buildCardDue(s: PersistedState): boolean {
-  if (!ONBOARDING_ENABLED) return false
-  const p = (s.trainingPlans || []).find((x) => x.state === 'active')
-  return !(p?.source === 'recommended' && p.why?.length && !p.why.some((w) => w.code === 'starter'))
-}
+/** When the wizard and the two cards show: in data/firstRun.ts, so the native app shares them. */
+export { wizardDue, setupCardDue, buildCardDue } from '@/data/firstRun'
 
 /* ---------------- shared pieces ---------------- */
 
 /** The card of ticked lines on each consent screen. */
-export function Ticks({ items, tight }: { items: string[]; tight?: boolean }) {
+export function Ticks({ items, tight }: { items: readonly string[]; tight?: boolean }) {
   return (
     <section className={'ticks' + (tight ? ' tight' : '')}>
       <ul>
@@ -79,12 +58,8 @@ export function Ticks({ items, tight }: { items: string[]; tight?: boolean }) {
   )
 }
 
-export const HEALTH_TICKS = [
-  'It’s private to your account. Nobody else can see it.',
-  'It’s never sold or used for ads.',
-  'Download it or delete it any time in Profile.',
-  'Saved on this phone first, so this works offline too.',
-]
+/** Shared with native (src/copy/account.ts). */
+export const HEALTH_TICKS: readonly string[] = HEALTH_TICKS_COPY
 export const AI_TICKS = [
   'Nothing is sent unless you use one of these features.',
   'Everything else in Tilo works without it, offline too.',
@@ -95,10 +70,10 @@ export const AI_TICKS = [
  *  (the full notice is still to be written, plan §8). */
 export function PrivacySheet({ onClose }: { onClose: () => void }) {
   return (
-    <Sheet title="Privacy" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={PRIVACY_SHEET.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="prose sub" style={{ padding: '0 4px' }}>
-        <p>Your log is stored on this phone and, once you agree, synced to a private database tied to your account. It’s never sold or used for ads.</p>
-        <p style={{ margin: 0 }}>The full details are in the <LegalLink id="privacy">privacy policy</LegalLink>.</p>
+        <p>{PRIVACY_SHEET.p1}</p>
+        <p style={{ margin: 0 }}>{PRIVACY_SHEET.p2.before}<LegalLink id="privacy">{PRIVACY_SHEET.p2.link}</LegalLink>{PRIVACY_SHEET.p2.after}</p>
       </div>
     </Sheet>
   )
@@ -193,11 +168,11 @@ export function ExistingConsentSheet() {
 /** On Plan, above the week (behind ONBOARDING_ENABLED): opens the setup card on its own. */
 export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
   return (
-    <section className="card buildplan" aria-label="Build my plan">
-      <div className="bp-new">New</div>
-      <div className="bp-t">Build my plan</div>
-      <div className="bp-s">Answer a few questions about your time, kit and what you enjoy, and Tilo builds a week from your answers. Your current week stays until you choose.</div>
-      <button className="btn gray bp-btn" onClick={onBuild}>Build my plan</button>
+    <section className="card buildplan" aria-label={BUILD_PLAN.t}>
+      <div className="bp-new">{BUILD_PLAN.k}</div>
+      <div className="bp-t">{BUILD_PLAN.t}</div>
+      <div className="bp-s">{BUILD_PLAN.s}</div>
+      <button className="btn gray bp-btn" onClick={onBuild}>{BUILD_PLAN.go}</button>
     </section>
   )
 }
