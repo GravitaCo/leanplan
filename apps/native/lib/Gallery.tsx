@@ -14,7 +14,7 @@ import { connectionLabel } from '@/core/domain/connection'
 import { G } from './galleryData'
 import { dayStat, weekOf } from '@/core/domain/insights'
 import { Icon, ICON_NAMES } from './ui/icons'
-import { Banner, Btn, Card, List, Tile, ToastView } from './ui/kit'
+import { Banner, Btn, Card, Chip, Chips, List, Tile, ToastView } from './ui/kit'
 import { BackButton, BareSheet, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
 import { DayNav, MoveStrip, WeekStrip } from './ui/WeekStrip'
@@ -205,6 +205,15 @@ export function Gallery({ top }: { top?: number } = {}) {
           <CheckTiles label="What you enjoy" opts={G.enjoy} value={enjoy} onToggle={(k) => setEnjoy((x) => flip(x, k))} grid tall />
           <ChoiceTiles label="How often" opts={G.three} value={often} onPick={setOften} three />
         </View>
+      </Sec>
+
+      <Sec id="chips" title="Chips">
+        <Chips>
+          <Chip title="Keep it" onPress={() => {}} />
+          <Chip title="Turn it off" onPress={() => {}} />
+          <Chip title="Breakfast" sub="7 to 10 am" on onPress={() => {}} />
+          <Chip title="Lunch" sub="12 to 2 pm" on={false} onPress={() => {}} />
+        </Chips>
       </Sec>
 
       <Sec id="banner" title="Banner">

@@ -215,6 +215,15 @@ export function Gallery() {
         </div>
       </Sec>
 
+      <Sec id="chips" title="Chips">
+        <div className="chips">
+          <button className="chip">Keep it</button>
+          <button className="chip">Turn it off</button>
+          <button className="chip on" aria-pressed>Breakfast<small>7 to 10 am</small></button>
+          <button className="chip" aria-pressed={false}>Lunch<small>12 to 2 pm</small></button>
+        </div>
+      </Sec>
+
       <Sec id="banner" title="Banner">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="banner">

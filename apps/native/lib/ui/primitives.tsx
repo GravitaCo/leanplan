@@ -73,9 +73,10 @@ export function ConnectionLine() {
 export function ProfileButton({ onPress }: { onPress?: () => void }) {
   const t = useTokens()
   const name = useStore((s) => s.data.profile.name)
+  const setTab = useStore((s) => s.setTab)
   const ini = initials(name || '')
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
         {ini ? <Text style={[tx(16, 600), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}

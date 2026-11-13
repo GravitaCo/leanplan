@@ -64,13 +64,35 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, disabled, style
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       hitSlop={small ? slop(0, 36) : undefined}
       style={({ pressed }) => [{
-        height: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
+        minHeight: h, borderRadius: h / 2, paddingHorizontal: small ? 16 : 0, alignSelf: small ? 'flex-start' : 'stretch', backgroundColor: bg,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
       <Text style={[tx(small ? 15 : 17, kind === 'danger' ? 400 : 600), { color: fg }, textStyle]}>{title}</Text>
     </Pressable>
   )
+}
+
+/**
+ * `.chip`: a soft pill (15 pt, 7 × 13 padding), tinted when chosen; `sub` is its small second line.
+ * `on` given makes it a toggle for VoiceOver (selected state); without it the chip is a plain button.
+ * Put chips in `Chips` (as the web always puts `.chip` in `.chips`): a row stretches them to one height.
+ */
+export function Chip({ title, sub, on, onPress }: { title: string; sub?: string; on?: boolean; onPress: () => void }) {
+  const t = useTokens()
+  const fg = on ? t.onTint : t.label
+  return (
+    <Pressable accessibilityRole="button" accessibilityState={on === undefined ? undefined : { selected: on }} onPress={onPress} hitSlop={slop(0, 32)}
+      style={({ pressed }) => ({ backgroundColor: on ? t.tint : t.fill, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 13, opacity: pressed ? 0.7 : 1 })}>
+      <Text style={[tx(15, 400, 1.2), { color: fg }]}>{title}</Text>
+      {sub != null && <Text style={[tx(12, 400, 1.2), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
+    </Pressable>
+  )
+}
+
+/** `.chips`: chips in a wrapping row, 8 apart. */
+export function Chips({ children }: { children: ReactNode }) {
+  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{children}</View>
 }
 
 /** `.linkbtn`: tinted words, 15 pt, padding 6 4 (`muted` in --label2). */

@@ -7,7 +7,6 @@
  */
 import type { ReactNode } from 'react'
 import { Alert, ScrollView, Text, View } from 'react-native'
-import { openLab } from './labSheet'
 import { selectAskCtx, useStore } from '@/store/store'
 import { healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { plannedKeys } from '@/core/domain/plans'
@@ -136,7 +135,7 @@ export function Summary() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>
-      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" onProfile={openLab} />
+      <PageHeader eyebrow={`${isToday ? 'Today' : f.dow} · ${f.full.split(' ').slice(0, 2).join(' ')}`} title="Summary" />
       <WeekStrip />
 
       <View style={{ gap: 14 }}>
