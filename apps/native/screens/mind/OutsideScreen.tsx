@@ -33,18 +33,18 @@ export function OutsideScreen({ onBack }: { onBack: () => void }) {
           <Text style={[tx(17), { color: t.label2, marginTop: 2, marginHorizontal: 4, marginBottom: 4 }]}>{skill.sub}</Text>
           {/* .card.go-lead */}
           <Card plain style={{ padding: 16, paddingVertical: 16, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
-            <GoSquare icon="sun" size={26} />
+            <GoSquare icon="sun" size={20} />
             <Text style={[tx(17, 400, 1.4), { flex: 1, color: t.label }]}>{OUTSIDE.lead}</Text>
           </Card>
           <Lbl style={{ paddingTop: 10, paddingBottom: 0 }}>{OUTSIDE.walkHeading}</Lbl>
-          <List>
+          <List style={{ marginBottom: 8 }}>
             {/* .li.go-walk: the Start pill 44 tall. TODO(N1-followup): the row's 76 pt minimum height
                 and its title at weight 600 (`.li.go-walk .t`) need a Row option */}
-            <Row title={OUTSIDE.walk} sub={OUTSIDE.walkTime} lead={<GoSquare icon="leaf" size={24} />}
+            <Row title={OUTSIDE.walk} sub={OUTSIDE.walkTime} lead={<GoSquare icon="leaf" size={20} />}
               right={<Btn title={OUTSIDE.start} small style={{ height: 44, minHeight: 44, borderRadius: 22, paddingHorizontal: 18 }} onPress={() => { setDate(todayStr()); openTrain(TRAIN_LOG_WALK) }} />} />
           </List>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 4, lineHeight: 18.2 }}>{OUTSIDE.walkFoot}</Foot>
-          <List><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
+          <List style={{ marginBottom: 8 }}><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
           <Foot style={{ textAlign: 'center', paddingTop: 6, paddingHorizontal: 4 }}>{SHARED.wellness}</Foot>
         </View>
       </ScrollView>

@@ -22,8 +22,8 @@ import { tx, useTokens } from '../../lib/theme'
 import { SupportSheet } from './SupportSheet'
 import { unloadInitial, unloadReducer, unloadView } from './model'
 
-/** `.foot` in the sheet keeps its own padding, 7 16 0 */
-const foot = { lineHeight: 17.9 }
+/** `.unload .foot`: padding 0 4, 8 below, line-height 1.4 */
+const foot = { paddingTop: 0, paddingHorizontal: 4, marginBottom: 8, lineHeight: 18.2 }
 
 export function UnloadSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
@@ -73,7 +73,7 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
             onChangeText={(x) => dispatch({ type: 'pair', i, patch: { next: x } })} style={[field, { minHeight: 68 }]} />
         </Card>
       ))}
-      <List>
+      <List style={{ marginBottom: 8 }}>
         {v.canAdd && <Row title={UNLOAD.addAnother} act icon="plus" onPress={() => dispatch({ type: 'add' })} />}
         {/* TODO(N1-followup): Row needs an `expanded` state for screen readers (web aria-expanded) */}
         <Row title={UNLOAD.wentOk} onPress={() => dispatch({ type: 'toggleOk' })} right={<Chevron color={t.label3} rotate={f.okOpen ? 90 : 0} />} />
@@ -88,7 +88,8 @@ export function UnloadSheet({ onClose }: { onClose: () => void }) {
       <Foot style={foot}>{v.foots.local}</Foot>
       <Foot style={foot}>{v.foots.notReadLead}<TextLink label={v.foots.notReadLink} onPress={() => setSupport(true)}>{v.foots.notReadLink}</TextLink>.</Foot>
       <Foot style={foot}>{v.foots.notCrisis}</Foot>
-      <List style={{ marginTop: 4 }}><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
+      {/* .ul-support's 4 above collapses into the last foot's 8 (block layout on the web) */}
+      <List><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
       {supportSheet}
     </Sheet>
   )

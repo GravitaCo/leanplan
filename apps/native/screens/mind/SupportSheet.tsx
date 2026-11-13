@@ -35,7 +35,7 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
           : (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 4 }}>
               <Text style={[tx(13), { color: t.label2, flexShrink: 1 }]}>{m.showing}</Text>
-              <LinkBtn title={m.pick} onPress={() => setPicking(true)} style={[tx(13, 600), { paddingHorizontal: 0 }]} />
+              <LinkBtn title={m.pick} onPress={() => setPicking(true)} style={[tx(13, 600), { paddingHorizontal: 0, paddingVertical: 0 }]} />
             </View>
           )}
         <View testID="support-rows"><Signposts list={supportList(nation, { context: 'mind' })} support /></View>

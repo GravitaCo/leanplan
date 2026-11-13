@@ -313,6 +313,9 @@ const SCENARIOS = [
     await btn(page, 'Start').click()
     await page.clock.runFor(1500)
     f.mid = { ...(await now()), sub: await has(page, 'A few slow breaths. Eyes open is fine.') }
+    // the sphere grows on the first breath in (design review: a reset effect once cancelled it on native)
+    const scale = await a.sphere(page).evaluate((e) => { const m = getComputedStyle(e).transform.match(/matrix\(([-\d.]+)/); return m ? Number(m[1]) : 1 })
+    f.sphereGrowing = scale > 0.8 && scale < 1
     await shots(app, 'reset-in')
     const words = []
     for (let t = 0; t < 12000; t += 250) { const s = await now(); if (s.word && s.word !== words[words.length - 1]) words.push(s.word); await page.clock.runFor(250) }

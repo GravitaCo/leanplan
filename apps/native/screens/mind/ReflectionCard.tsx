@@ -36,7 +36,7 @@ export function ReflectionCardView({ v, onWeek }: { v: ReflectionView; onWeek: (
   const t = useTokens()
   return (
     <>
-      <Lbl right={v.span}>{v.title}</Lbl>
+      <Lbl right={<Text style={[tx(13, 500), num, { color: t.label2 }]}>{v.span}</Text>}>{v.title}</Lbl>
       <Card plain style={{ padding: 16, paddingVertical: 16, paddingHorizontal: 16, gap: 12 }}>
         <View testID="mind-week" accessibilityLabel={v.title} style={{ gap: 12 }}>
           {v.count && <Text style={[tx(17, 600), num, { color: t.label }]}>{v.count}</Text>}

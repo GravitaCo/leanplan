@@ -41,7 +41,8 @@ function Sphere() {
   return (
     <Svg width={SPHERE} height={SPHERE}>
       <Defs>
-        <RadialGradient id="resetGlow" cx={r} cy={r} r={r} gradientUnits="userSpaceOnUse">
+        {/* CSS radial-gradient(circle at 50% 50%) reaches the box's farthest corner, r·√2, not its edge */}
+        <RadialGradient id="resetGlow" cx={r} cy={r} r={r * Math.SQRT2} gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor={t.card} />
           <Stop offset="0.58" stopColor={t.card} />
           <Stop offset="0.88" stopColor={t.mindFill} />
@@ -65,6 +66,9 @@ export function PacerCard({ pattern, minutes, run, reduced, onLeft, onDone }: {
 }) {
   const t = useTokens()
   const full = useSharedValue(0)
+  // a new run (or none) starts the sphere at rest; declared before the clock, whose effect starts
+  // the first breath's movement, so this reset never cancels it
+  useEffect(() => { cancelAnimation(full); full.value = 0 }, [run, full])
   const animate = (seg: PacerSegment) => {
     full.value = seg.from
     full.value = withTiming(seg.to, { duration: seg.durationMs, easing: EASE, reduceMotion: ReduceMotion.Never })
@@ -80,8 +84,6 @@ export function PacerCard({ pattern, minutes, run, reduced, onLeft, onDone }: {
     const seg = segmentNow()
     if (seg) animate(seg)
   }, [reduced]) // eslint-disable-line react-hooks/exhaustive-deps
-  // a new run (or none) starts the sphere at rest
-  useEffect(() => { cancelAnimation(full); full.value = 0 }, [run, full])
   // iOS has no live regions: VoiceOver hears each new word (never the count) as an announcement
   const word = st && !st.done ? st.word : ''
   useEffect(() => { if (word && Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(word) }, [word, st?.breath])

@@ -13,12 +13,13 @@ import { fmtLeft, runMs } from '@/core/domain/pacer'
 import { SHARED } from '@/copy/mind'
 import { RESET } from '@/copy/mindReset'
 import { onPacerDone, resetInitial, resetReducer, type ResetLength } from '@/screens/mind/resetStages'
-import { BackButton, Row, Seg, TitleRow } from '../../lib/ui/primitives'
+import { Row, Seg } from '../../lib/ui/primitives'
 import { Btn, Card, List } from '../../lib/ui/kit'
 import { Foot } from '../../lib/ui/text'
 import { num, tx, useTokens } from '../../lib/theme'
 import { resetView } from './model'
 import { PacerCard } from './PacerCard'
+import { PushedTop } from './PushedTop'
 import { SupportSheet } from './SupportSheet'
 import { useReduceMotion } from './useReduceMotion'
 
@@ -42,14 +43,13 @@ export function ResetScreen({ onBack, backLabel }: { onBack: () => void; backLab
   return (
     <View testID="screen-reset" style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 + insets.bottom }}>
-        {/* .pv-back: safe area + 16 above, 6 below */}
-        <View style={{ paddingTop: insets.top + 16, paddingBottom: 6 }}><BackButton label={backLabel} onPress={onBack} /></View>
-        <TitleRow title={RESET.title} />
+        <PushedTop back={backLabel} onBack={onBack} title={RESET.title} />
         {/* .reset-main: a column 10 apart, 6 from the title */}
         <View style={{ gap: 10, paddingTop: 6 }}>
           {v.intro && (
             <>
               <Text style={[tx(17), { color: t.label2, marginTop: 2, marginHorizontal: 4, marginBottom: 4 }]}>{RESET.sub}</Text>
+              {/* TODO(N1-followup): `.reset-main .seg button { min-height: 32px }` needs a Seg min-height option */}
               <Seg options={v.lengths} value={String(rs.len)} onChange={(x) => dispatch({ type: 'length', len: Number(x) as ResetLength })} />
               <Text style={[tx(15, 400, 1.45), { color: t.label, paddingTop: 4, paddingHorizontal: 4 }]}>{RESET.how}</Text>
             </>
@@ -67,7 +67,7 @@ export function ResetScreen({ onBack, backLabel }: { onBack: () => void; backLab
           <Btn title={v.button.title} kind={v.button.kind} onPress={press} />
           <Foot style={{ paddingTop: 0, paddingHorizontal: 4 }}>{RESET.stopAnyTime}</Foot>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 4 }}>{RESET.dizzy}</Foot>
-          <List><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
+          <List style={{ marginBottom: 8 }}><Row title={SHARED.support} onPress={() => setSupport(true)} /></List>
           <Foot style={{ textAlign: 'center', paddingTop: 6, paddingHorizontal: 4 }}>{SHARED.wellness}</Foot>
         </View>
       </ScrollView>
