@@ -15,17 +15,19 @@ built only after Benn's or Sara's approval. This file records each one, what it 
 - **Approval:** Benn, 13 Nov 2026, relayed by the lead engineer (session message, 11:14 UTC). Not seen
   first-hand by this stream.
 
-## 2. Rest that keeps running in the background — approved, built (needs N12 to switch on)
+## 2. Rest that keeps running in the background — approved, built
 
 - **What:** if the app goes to the background during rest, one notification arrives when rest ends:
   title "Rest over", body the line the web already announces ("Set 2 of 3, Barbell squat."). It is
-  cancelled when the app comes back, when rest is skipped or ends, and when the player closes. Rest
-  itself always ran on the device clock, so the in-app countdown is right on return either way.
-- **Rules:** Train never asks for notification permission: no permission, no alert. Notifications are
-  N12's: N12 registers the scheduler (`setRestAlerter` in `session.ts`), keeps this alert out of the
-  reminder budget (`kind: 'tilo-rest'`), and its tap handler leaves a session in progress where it is
-  (`guidedSessionOpen()`).
-- **Words:** `REST_ALERT` in `src/copy/train.ts`, pending `mental-performance`.
+  cancelled, and removed from the tray if it already arrived, when the app comes back, when rest is
+  skipped or ends, and when the player closes. Rest always ran on the device clock, so the in-app
+  countdown is right on return either way, and no second cue plays if rest ended while away.
+- **How:** N12's `lib/platform/restTimer.ts` (`scheduleRestEnd`, `cancelRestEnd`): one at a time,
+  outside the reminder budget, quiet hours and the delivery log; never asks for permission (no
+  permission, no alert); a tap opens Train. Called from `session.ts`.
+- **Words:** `REST_ALERT` in `src/copy/train.ts`, approved by `mental-performance` (13 Nov).
+- **Open (N12):** the alert always uses the default sound; `mental-performance` asked that it be a
+  silent banner when the player's Sound is off.
 - **Approval:** Benn, 13 Nov 2026, relayed by the lead engineer (as above).
 
 ## Not built (candidates only)

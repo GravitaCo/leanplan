@@ -4,7 +4,7 @@
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { cancelRestAlert, guidedSessionOpen, onGuidedSession, scheduleRestAlert, setGuidedSessionOpen, setRestAlerter, type RestAlert } from '../screens/train/session'
+import { cancelRestAlert, guidedSessionOpen, onGuidedSession, restTimer, scheduleRestAlert, setGuidedSessionOpen } from '../screens/train/session'
 
 let bad = 0
 const ok = (name: string, v: boolean, info?: unknown) => { if (!v) bad++; console.log(v ? 'PASS' : 'FAIL', 'train:', name, v || info === undefined ? '' : JSON.stringify(info)) }
@@ -18,23 +18,17 @@ async function main() {
   ok('open while the player is on screen, told once per change', seen.join() === 'true,false', seen)
   off()
 
-  // the rest alert: nothing without N12's scheduler; one alert, cancelled when rest is over
-  await scheduleRestAlert(Date.now() + 60_000, 'Set 2 of 3, Barbell squat', true)
-  ok('nothing scheduled before N12 registers', true)
+  // the rest alert through N12's restTimer: one schedule with the web words; cancelled on return
   const log: string[] = []
-  let got: RestAlert | null = null
-  setRestAlerter({ schedule: async (a) => { got = a; log.push('s'); return 'id1' }, cancel: async (id) => { log.push('c:' + id) } })
-  await scheduleRestAlert(Date.now() + 75_000, 'Set 2 of 3, Barbell squat', false)
-  const a = got as RestAlert | null
-  ok('alert at rest end with the web words, silent when Sound is off', !!a && a.title === 'Rest over' && a.body === 'Set 2 of 3, Barbell squat.' && a.kind === 'tilo-rest' && a.sound === false && Math.abs(a.seconds - 75) <= 1, a)
-  await scheduleRestAlert(Date.now() + 30_000, 'Barbell squat', true)
-  ok('a new rest replaces the old alert', log.join() === 's,c:id1,s', log)
-  await cancelRestAlert(); await cancelRestAlert()
-  ok('cancelled once when rest ends or the app returns', log.join() === 's,c:id1,s,c:id1', log)
+  restTimer.schedule = async (seconds, copy) => { log.push(`s:${seconds}:${copy.title}|${copy.body}`); return true }
+  restTimer.cancel = async () => { log.push('c') }
+  await scheduleRestAlert(Date.now() + 75_000, 'Set 2 of 3, Barbell squat', true)
+  ok('alert at rest end with the web words', log.length === 1 && /^s:7[45]:Rest over\|Set 2 of 3, Barbell squat\.$/.test(log[0]), log)
+  await cancelRestAlert()
+  ok('cancelled when the app returns or rest ends', log[1] === 'c', log)
   log.length = 0
   await scheduleRestAlert(Date.now() + 1000, 'x', true)
-  ok('no alert for the last second of rest', log.length === 0, log)
-  setRestAlerter(null)
+  ok('no alert for the last second of rest (any earlier one cancelled)', log.join() === 'c', log)
 
   // the chime: the web's 880 Hz sine, 0.55 s, peak 0.2 at 0.02 s
   const wav = readFileSync(join(process.cwd(), 'assets', 'sounds', 'chime.wav'))
