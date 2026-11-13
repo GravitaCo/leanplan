@@ -10,7 +10,7 @@
  * - SourceCard: `.sp-src` (shared product source with Report this product).
  * - ServingMargin: `.sp-serv` (One serving with its ± margin).
  * - SpTile: `.sp-tile` (the 52 pt soft-mauve tile at the top of the bare sheets).
- * - ReasonList: `.sp-why` (the report sheet's radio rows).
+ * - ReportHead: `.sp-rep-hd`; ReasonList: `.sp-why` (the report sheet's radio rows).
  */
 import type { ReactNode } from 'react'
 import { Image, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native'
@@ -162,6 +162,17 @@ export function SheetTitle({ children, legend }: { children: ReactNode; legend?:
 export function SheetBody({ children }: { children: ReactNode }) {
   const t = useTokens()
   return <Text style={[tx(17, 400, 1.45), { color: t.label2, marginTop: 10 }]}>{children}</Text>
+}
+
+/** `.sp-rep-hd`: the product's name (17 semibold) over its barcode (13, muted), 4 in. */
+export function ReportHead({ name, barcode }: { name: string; barcode: string }) {
+  const t = useTokens()
+  return (
+    <View style={{ paddingHorizontal: 4 }}>
+      <Text style={[tx(17, 600), { color: t.label }]}>{name}</Text>
+      <Text style={[tx(13), num, { color: t.label2, marginTop: 2 }]}>{barcode}</Text>
+    </View>
+  )
 }
 
 /** `.sp-why`: radio rows (52 high, a 24 pt dot that fills with the tint and a tick when chosen). */
