@@ -70,13 +70,16 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
   }, [])
 
   const keep = (shot: Shot | null) => {
-    if (!shot || !aliveRef.current) return
+    if (!shot) return
+    // closed while the photo was being made: the close already cleared the folder, so this one goes too
+    if (!aliveRef.current) { discardShot(shot); return }
     if (isFront) { discardShot(front); setFront(shot) } else { discardShot(panel); setPanel(shot) }
     setStep('review')
   }
 
   const read = async () => {
-    if (!panel) return
+    // one read per tap: a quick second tap mustn't send the photos twice
+    if (!panel || readRef.current) return
     setStep('reading')
     const ctl = new AbortController()
     readRef.current = ctl

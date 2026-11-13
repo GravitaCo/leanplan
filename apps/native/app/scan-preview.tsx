@@ -1,6 +1,7 @@
 // The scan screens in their states (screens/scan/ScanPreview.tsx) for design review and the parity
-// screenshots, in EXPO_PUBLIC_E2E builds only: elsewhere the route renders nothing, and the inlined
-// flag lets the bundler drop the preview from a release bundle.
+// screenshots, in EXPO_PUBLIC_E2E builds only: elsewhere it redirects home. The preview's code still
+// ships in the bundle (Metro keeps the import) but is unreachable and holds fixture packs only. In an
+// e2e build it drives the real screens on the real store, so run e2e builds on test accounts only.
 import { Redirect } from 'expo-router'
 import { ScanPreview } from '../screens/scan/ScanPreview'
 

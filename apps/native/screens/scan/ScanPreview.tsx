@@ -2,7 +2,8 @@
  * Every scan screen in its states, for design review and the parity screenshots (app/scan-preview,
  * e2e builds only: never in a release bundle). `?s=` picks one: scan, label, confirm-<draft>,
  * share-<draft>, optin, report, inoff, row-on, row-offline. Nothing here is a screen of its own:
- * each state renders the real component with fixed data.
+ * each state renders the real component with fixed data, on the real store: Save, Share and Send act
+ * for real, so e2e builds run on test accounts only.
  */
 import { useMemo } from 'react'
 import { View } from 'react-native'

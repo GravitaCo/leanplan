@@ -251,7 +251,11 @@ final class TiloCameraView: ExpoView, AVCaptureMetadataOutputObjectsDelegate, AV
       result = .failure(Exception(name: "NoPhoto", description: "The photo had no data"))
     }
     DispatchQueue.main.async { [weak self] in
-      guard let promise = self?.pendingPhotos.removeValue(forKey: id) else { return }
+      guard let promise = self?.pendingPhotos.removeValue(forKey: id) else {
+        // nobody waits for it any more (the camera stopped and its promise was rejected): the file goes
+        if case .success(let v) = result, let uri = v["uri"] as? String { TemporaryPhotos.delete(uri) }
+        return
+      }
       switch result {
       case .success(let v): promise.resolve(v)
       case .failure(let e): promise.reject(e)
