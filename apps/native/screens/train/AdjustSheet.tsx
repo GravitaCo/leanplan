@@ -10,10 +10,10 @@ import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
 import { Btn, LinkBtn, List } from '../../lib/ui/kit'
-import { BareSheet, Seg, Toggle } from '../../lib/ui/primitives'
+import { BareSheet, Row, Seg, Toggle } from '../../lib/ui/primitives'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot } from '../../lib/ui/text'
-import { Li, LiText, Stack, TextLink } from './pendingN1'
+import { Stack, TextLink } from './ui'
 import { toPoint } from './nav'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
@@ -60,7 +60,7 @@ export function ChoiceGrid<T extends string>({ options, value, onPick, cols, lab
   )
 }
 
-export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: warm0, allowWarmup, stepUp, onLog, onGentler, onTimer, onClose }: {
+export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: warm0, allowWarmup, stepUp, onLog, onGentler, onTimer, onClose, overlay }: {
   name: string
   x?: Exercise
   shape: LogShape
@@ -78,6 +78,8 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
   onGentler?: () => void
   onTimer?: () => void
   onClose: () => void
+  /** drawn over the guided player (lib/ui Sheet `overlay`) */
+  overlay?: boolean
 }) {
   const t = useTokens()
   const p = parseRx(rx)
@@ -109,7 +111,7 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
   const empty = shape === 'weight-reps' ? !w && !reps : shape === 'hold' ? !sec : shape === 'duration' ? !mins : shape === 'check' ? false : !reps
 
   return (
-    <BareSheet label={`Adjust set ${setNo + 1}, ${name}`} onClose={onClose}>
+    <BareSheet label={`Adjust set ${setNo + 1}, ${name}`} onClose={onClose} overlay={overlay}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
         <Text accessibilityRole="header" style={[font(600), { flex: 1, fontSize: 22, lineHeight: 26, letterSpacing: -0.2, color: t.label }]}>{warmup ? 'Warm-up' : `Set ${setNo + 1}`} · {name}</Text>
         {target && !warmup && <Text style={[tx(13, 400), num, { color: t.label2, paddingTop: 4, textAlign: 'right' }]}>Target {fmtTarget(target, shape)}</Text>}
@@ -142,7 +144,7 @@ export function AdjustSheet({ name, x, shape, rx, setNo, target, first, warmup: 
       {shape === 'hold' && onTimer && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title="Use the timer" onPress={onTimer} /></View>}
       {allowWarmup && (
         <List style={{ marginBottom: 8, marginTop: 10 }}>
-          <Li><LiText t="Warm-up set" s="Doesn't count towards your targets" /><Toggle on={warmup} label="Warm-up set" onChange={() => setWarmup(!warmup)} /></Li>
+          <Row title="Warm-up set" sub="Doesn't count towards your targets" right={<Toggle on={warmup} label="Warm-up set" onChange={() => setWarmup(!warmup)} />} />
         </List>
       )}
       {!warmup && shape !== 'check' && (

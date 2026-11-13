@@ -16,12 +16,12 @@ import { quietNumbers } from '@/data/consent'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
 import { Chip, Chips, List } from '../../lib/ui/kit'
-import { NavBtn, SettingRow, Sheet, Toggle } from '../../lib/ui/primitives'
-import { num, tx, useTokens } from '../../lib/theme'
+import { NavBtn, Row, SettingRow, Sheet, Toggle } from '../../lib/ui/primitives'
+import { tx, useTokens } from '../../lib/theme'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
 import { toPoint } from './nav'
-import { FSelect, LIST_GAP, Li, LiText } from './pendingN1'
+import { FSelect } from './ui'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -38,31 +38,28 @@ export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClos
   const mine = (all || []).filter((r) => !r.archived && !planned?.includes(r.id))
   return (
     <Sheet title="Add something" onClose={onClose}>
-      <List icons style={LIST_GAP}>
+      <List icons style={{ marginBottom: 8 }}>
         <SettingRow icon="plus" color={t.activity} label="Log a session" sub="A walk, yoga, pilates, anything" onPress={onLog} right={<></>} />
       </List>
       <Lbl>Do a different workout today</Lbl>
-      <List style={LIST_GAP}>
+      <List style={{ marginBottom: 8 }}>
         {others.map((w) => (
-          <Li key={w} onPress={() => onWorkout(w)}>
-            <LiText t={shortTitle(w)} s={w === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[w].ex.length} exercises · ${setCount(WORKOUTS[w].ex)}`} />
-          </Li>
+          <Row key={w} onPress={() => onWorkout(w)} chevron={false} title={shortTitle(w)} sub={w === 'Cardio' ? WORKOUTS.Cardio.ex[0].t : `${WORKOUTS[w].ex.length} exercises · ${setCount(WORKOUTS[w].ex)}`} />
         ))}
       </List>
       {mine.length > 0 && (
         <>
           <Lbl>Your workouts</Lbl>
-          <List style={LIST_GAP}>
+          <List style={{ marginBottom: 8 }}>
             {mine.map((r) => (
-              <Li key={r.id} onPress={() => onWorkout(r.id)}>
-                <LiText t={r.name} s={[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')} />
-              </Li>
+              <Row key={r.id} onPress={() => onWorkout(r.id)} chevron={false} title={r.name}
+                sub={[MODALITY_LABEL[r.modality], `${routineSlots(r).length} ${routineSlots(r).length === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, all, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')} />
             ))}
           </List>
         </>
       )}
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 12 }}>This only changes today. To change your week or build your own workouts, go to Plan.</Foot>
-      <List icons style={LIST_GAP}>
+      <List icons style={{ marginBottom: 8 }}>
         <SettingRow icon="book" color={t.tint} label="Exercise library" sub="How to do each move, easier and harder options" onPress={onLibrary} right={<></>} />
       </List>
     </Sheet>
@@ -99,7 +96,7 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
       <View accessibilityLabel="Kind of session" style={{ marginBottom: 14 }}><Chips>
         {MODALITIES.map((k) => <Chip key={k} title={MODALITY_LABEL[k]} on={modality === k} onPress={() => setModality(k)} />)}
       </Chips></View>
-      <List style={LIST_GAP}>
+      <List style={{ marginBottom: 8 }}>
         {modality === 'cardio' && <FRow label="Type" right={<FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} />} />}
         <FRow label="Name" value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} />
         <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder={String(DEFAULT_MINS[modality])} onChangeText={setMins} />
@@ -124,17 +121,15 @@ export function SupportSheet({ onClose }: { onClose: () => void }) {
       <Text style={[tx(17, 400), { lineHeight: 24, color: t.label, marginTop: 4, marginHorizontal: 4, marginBottom: 14 }]}>
         Finding it hard to ease off is more common than you might think, and talking to someone can help.
       </Text>
-      <List style={LIST_GAP}>
+      <List style={{ marginBottom: 8 }}>
         {SUPPORT_LINES.map(([name, number, note]) => (
-          <Li key={name} label={`${name}, ${number}. ${note}`} onPress={() => { Linking.openURL('tel:' + number.replace(/\s/g, '')).catch(() => {}) }}>
-            <LiText t={name} s={note} />
-            <Text style={[tx(17, 400), num, { color: t.tint }]}>{number}</Text>
-          </Li>
+          <Row key={name} label={`${name}, ${number}. ${note}`} onPress={() => { Linking.openURL('tel:' + number.replace(/\s/g, '')).catch(() => {}) }} chevron={false}
+            title={name} sub={note} value={<Text style={{ color: t.tint }}>{number}</Text>} />
         ))}
       </List>
       <Foot style={{ paddingTop: 7, paddingHorizontal: 4, paddingBottom: 14 }}>In an emergency, call 999.</Foot>
-      <List style={LIST_GAP}>
-        <Li><LiText t="Gentle mode" s="Hides calorie numbers and body weight" /><Toggle on={gentle} label="Gentle mode" onChange={() => setPrefs({ gentle: !gentle })} /></Li>
+      <List style={{ marginBottom: 8 }}>
+        <Row title="Gentle mode" sub="Hides calorie numbers and body weight" right={<Toggle on={gentle} label="Gentle mode" onChange={() => setPrefs({ gentle: !gentle })} />} />
       </List>
     </Sheet>
   )

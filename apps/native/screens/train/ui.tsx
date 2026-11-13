@@ -1,22 +1,13 @@
 /**
- * TODO(N1-followup): what Train still needs that lib/ui doesn't have yet: `Li`/`LiText` for rows not
- * yet moved onto lib/ui's Row, `XBtn` with a chevron for the builder's move up/down (lib/ui's XBtn is
- * the x only), `Stack` (`.stack`), the flat and labelled `.linkbtn` (`TextLink`; lib/ui's TextLink
- * is the inline one), `LIST_GAP` (`.list`'s 8 below) and the select for a form row (`FSelect`,
- * used as lib/ui FRow's `right`). Train-only: nothing else imports this file. Emptied and deleted
- * before the screens' next merge.
+ * Train's own small pieces that lib/ui doesn't offer: `Stack` (`.stack`), the flat and labelled
+ * `.linkbtn` (`TextLink`; lib/ui's TextLink is the inline one inside a sentence), the round button
+ * with a chevron for the builder's move up/down (`XBtn`; lib/ui's XBtn is the x only) and the
+ * select for a form row (`FSelect`, used as lib/ui FRow's `right`). Rows are lib/ui's Row.
  */
 import type { ReactNode } from 'react'
 import { ActionSheetIOS, Alert, Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from '../../lib/ui/icons'
 import { font, tx, useTokens } from '../../lib/theme'
-
-
-/** What the Train screens hand back to the app shell (the lead wires these in app/(tabs)/train.tsx). */
-
-
-/** `.list`'s 8 pt below (theme.css .list); lib/ui List has no bottom margin yet. TODO(N1-followup) */
-export const LIST_GAP: ViewStyle = { marginBottom: 8 }
 
 /** `.stack`: buttons in a column, 8 apart, 16 above */
 export function Stack({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -54,27 +45,6 @@ export function XBtn({ label, onPress, icon = 'x', disabled, rotate = 0 }: { lab
     </Pressable>
   )
 }
-
-
-/** `.li`: a 44 px row, 10×16 padding, 12 gap; pressable when `onPress` is set */
-export function Li({ children, onPress, style, label, disabled }: { children: ReactNode; onPress?: () => void; style?: StyleProp<ViewStyle>; label?: string; disabled?: boolean }) {
-  const base: StyleProp<ViewStyle> = [{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }, style]
-  if (!onPress) return <View style={base}>{children}</View>
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={({ pressed }) => [base, pressed && { opacity: 0.6 }]}>{children}</Pressable>
-}
-/** `.li .m` with `.t` and `.s`; `wrap` lets them wrap (`.s.wrap`, `.pv-row .t`) */
-export function LiText({ t: title, s, tStyle, sStyle, wrap, children }: { t: ReactNode; s?: ReactNode; tStyle?: StyleProp<TextStyle>; sStyle?: StyleProp<TextStyle>; wrap?: boolean; children?: ReactNode }) {
-  const t = useTokens()
-  return (
-    <View style={{ flex: 1, minWidth: 0 }}>
-      <Text numberOfLines={wrap ? undefined : 1} style={[tx(17, 400), { color: t.label }, tStyle]}>{title}</Text>
-      {s != null && s !== '' && <Text numberOfLines={wrap ? undefined : 1} style={[tx(13, 400), { color: t.label2, marginTop: 2 }, sStyle]}>{s}</Text>}
-      {children}
-    </View>
-  )
-}
-
-
 
 /**
  * `.frow select`: the value in label2; tapping it offers the options the way the platform shows a

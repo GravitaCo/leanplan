@@ -10,23 +10,21 @@ import { alternativesFor, exById } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { CARE_DISCLAIMER } from '@/copy/train'
 import { Btn, List } from '../../lib/ui/kit'
-import { Sheet } from '../../lib/ui/primitives'
+import { Row as LiRow, Sheet } from '../../lib/ui/primitives'
 import { font } from '../../lib/theme'
 import { Foot, GrpH, Sub } from '../../lib/ui/text'
-import { LIST_GAP, Li, LiText, Stack } from './pendingN1'
+import { Stack } from './ui'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'
   return (
-    <Li onPress={onPick} label={x.n}>
-      <LiText t={x.n} s={[tag, tag === 'Easier' || tag === 'Harder' ? '' : LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}>
-        {x.care?.length ? <Sub style={{ fontSize: 13, marginTop: 2 }}>Asks quite a lot of {careList(x.care)}</Sub> : null}
-      </LiText>
-    </Li>
+    <LiRow onPress={onPick} label={x.n} chevron={false} title={x.n}
+      sub={[tag, tag === 'Easier' || tag === 'Harder' ? '' : LEVEL_LABEL[x.difficulty], kit, x.defaultRx].filter(Boolean).join(' · ')}
+      sub2={x.care?.length ? `Asks quite a lot of ${careList(x.care)}` : undefined} />
   )
 }
 
-export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, onClose }: {
+export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, onClose, overlay }: {
   current: Exercise
   /** a shorter day: no "Harder" step (no progression prompts that day, plan §4.0.5) */
   shorter?: boolean
@@ -36,6 +34,8 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
   loggedSets?: number
   onPick: (id: string) => void
   onClose: () => void
+  /** drawn over the guided player (lib/ui Sheet `overlay`) */
+  overlay?: boolean
 }) {
   const [confirm, setConfirm] = useState<string | null>(null)
   const all = alternativesFor(planned ?? current)
@@ -44,7 +44,7 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
   const to = exById(confirm ?? undefined)
   if (confirm && to) {
     return (
-      <Sheet title="Swap exercise" onClose={onClose}>
+      <Sheet title="Swap exercise" onClose={onClose} overlay={overlay}>
         <Sub style={{ paddingHorizontal: 4, paddingBottom: 14 }}>
           You've logged {loggedSets} {loggedSets === 1 ? 'set' : 'sets'} of {current.n} today. {loggedSets === 1 ? 'It stays' : 'They stay'} in today's log, and {to.n} starts fresh.
         </Sub>
@@ -57,17 +57,17 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
   }
   const shown = (x?: Exercise) => !!x && x.id !== current.id
   return (
-    <Sheet title="Swap exercise" onClose={onClose} tall>
+    <Sheet title="Swap exercise" onClose={onClose} tall overlay={overlay}>
       <Foot style={{ paddingTop: 0, paddingHorizontal: 4, paddingBottom: 12 }}>
         Instead of <Text style={font(600)}>{current.n}</Text>, today only. Your workout stays the same for next time.
       </Foot>
       {planned && planned.id !== current.id && (
-        <List style={LIST_GAP}><Row x={planned} tag="Back to planned" onPick={() => pick(planned.id)} /></List>
+        <List style={{ marginBottom: 8 }}><Row x={planned} tag="Back to planned" onPick={() => pick(planned.id)} /></List>
       )}
       {(shown(alt.easier) || shown(alt.harder)) && (
         <>
           <GrpH>Same move, different step</GrpH>
-          <List style={LIST_GAP}>
+          <List style={{ marginBottom: 8 }}>
             {shown(alt.easier) && <Row x={alt.easier!} tag="Easier" onPick={() => pick(alt.easier!.id)} />}
             {shown(alt.harder) && <Row x={alt.harder!} tag="Harder" onPick={() => pick(alt.harder!.id)} />}
           </List>
@@ -76,7 +76,7 @@ export function SwapSheet({ current, planned, shorter, loggedSets = 0, onPick, o
       {alt.similar.some(shown) ? (
         <>
           <GrpH>Works the same area</GrpH>
-          <List style={LIST_GAP}>
+          <List style={{ marginBottom: 8 }}>
             {alt.similar.filter(shown).map((x) => (
               <Row key={x.id} x={x} tag={x.id === (planned ?? current).gentler ? 'Gentler' : undefined} onPick={() => pick(x.id)} />
             ))}
