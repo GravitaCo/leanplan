@@ -9,7 +9,7 @@
 import { connectionEvents, onlineFrom } from '../lib/platform/connection.ts'
 import { readFileSync } from 'node:fs'
 import { clearEvents, NOTIFY_KINDS, NOTIFY_MAX, recordNotifyEvent, takeEvents } from '../lib/platform/notifyStore.ts'
-import { deliveryKey, fromExtension, mindKindOf, msOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX, sightingOf } from '../lib/platform/notifyReconcile.ts'
+import { deliveryKey, fromExtension, mindKindOf, msOf, noteOpened, noteShown, parseSeen, reconcile, routeFor, SEEN_MAX, sightingOf, tapRoute } from '../lib/platform/notifyReconcile.ts'
 import { apnsPlatform, apnsToken, deletePath, parseSaved, permFrom, REST_KIND, restSeconds, tokenRow } from '../lib/platform/pushRules.ts'
 import { REMINDER_COPY, SUPP_NAMED } from '../../../supabase/functions/_shared/reminders.ts'
 
@@ -174,6 +174,8 @@ check('kind: supplement and review reminders are not recorded',
 check('kind: anything else is nothing', mindKindOf(null) === null && mindKindOf('checkin') === null && mindKindOf({ kind: 'toString' }) === null && mindKindOf({ tag: 'constructor' }) === null)
 check('route: the review reminder opens the review', routeFor({ kind: 'review' }) === 'review' && routeFor({ tag: 'tali-review' }) === 'review')
 check('route: the rest timer opens Train', routeFor({ kind: REST_KIND }) === 'train')
+check('tap during a guided session: stays put, whatever the notification', [{ kind: 'checkin' }, { kind: 'review' }, { kind: REST_KIND }, { kind: 'supp' }].every((d) => tapRoute(d, true) === null))
+check('tap with no session: goes where routeFor says', tapRoute({ kind: 'review' }, false) === 'review' && tapRoute({ kind: 'checkin' }, false) === 'today' && tapRoute({ kind: REST_KIND }, false) === 'train')
 check('rest timer: not a reminder type, never in the delivery log', mindKindOf({ kind: REST_KIND }) === null && mindKindOf({ kind: REST_KIND, tag: 'tali-rest-end' }) === null)
 check('rest timer: whole seconds from 1 to an hour', restSeconds(90) === 90 && restSeconds(89.6) === 90 && restSeconds(1) === 1 && restSeconds(3600) === 3600
   && restSeconds(0) === null && restSeconds(-5) === null && restSeconds(3601) === null && restSeconds(NaN) === null && restSeconds('90') === null)

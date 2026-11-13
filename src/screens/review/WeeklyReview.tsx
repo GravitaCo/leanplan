@@ -23,14 +23,10 @@ import { BareSheet } from '@/ui/primitives'
 import { Icon, type IconName } from '@/ui/icons'
 import { PlanEditSheet } from '../plan/PlanSheets'
 import { DAYS, dayName } from './reviewModel'
+import { LOOP, PLAN_CARD, REVIEW, spanText } from '@/copy/review'
 
-/** "28 Sept to 4 Oct", or "5 to 11 Oct" within a month. */
-export function spanText(a: string, b: string): string {
-  const d = (x: string, o: Intl.DateTimeFormatOptions) => new Date(x + 'T12:00').toLocaleDateString('en-GB', o)
-  return d(a, { month: 'short' }) === d(b, { month: 'short' })
-    ? `${d(a, { day: 'numeric' })} to ${d(b, { day: 'numeric', month: 'short' })}`
-    : `${d(a, { day: 'numeric', month: 'short' })} to ${d(b, { day: 'numeric', month: 'short' })}`
-}
+/** "28 Sept to 4 Oct", or "5 to 11 Oct" within a month (in copy/review.ts, shared with native). */
+export { spanText }
 
 const ICON: Record<'mind' | 'move' | 'food' | 'weight', IconName> = { mind: 'heart', move: 'dumbbell', food: 'fork', weight: 'weight' }
 
@@ -74,7 +70,7 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
     if ((chosen === 'range-less' || chosen === 'range-more') && rv.changeOne.range) applyRange(rv.changeOne.range)
     // the one next step that exists today: an if-then plan for hungry days (ml-a5); the rest are noted
     if (chosen === 'hungry-days-plan' || chosen === 'hungry-evenings-plan') { setSheet({ plan: '' }); return }
-    if (chosen) showToast('Noted for next week.')
+    if (chosen) showToast(REVIEW.noted)
     // then whichever weight-based sheet is new this week (opt-in only; never after welcome back).
     // Each shows in the first week it applies, not every week after: compared with a week ago.
     // none in a care week or with wellbeing routed, nor on a second opening the same day; a week
@@ -108,18 +104,18 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
     <div className="rv" data-testid="weekly-review">
       <header>
         <div className="rv-top">
-          <button className="rv-back" aria-label="Back" onClick={onBack}><Icon name="chevL" size={18} stroke={2.4} /></button>
-          <span className="rv-span">{rv.welcomeBack ? 'This week so far' : spanText(rv.week.from, rv.week.to)}</span>
+          <button className="rv-back" aria-label={REVIEW.back} onClick={onBack}><Icon name="chevL" size={18} stroke={2.4} /></button>
+          <span className="rv-span">{rv.welcomeBack ? REVIEW.soFar : spanText(rv.week.from, rv.week.to)}</span>
         </div>
-        <h1 className="rv-h1">{rv.welcomeBack ? 'Welcome back' : 'Your week'}</h1>
+        <h1 className="rv-h1">{rv.welcomeBack ? REVIEW.titleBack : REVIEW.title}</h1>
         {rv.welcomeBack
-          ? <div className="rv-lead big">Nothing to catch up on. Here’s where things are now.</div>
-          : <div className="rv-lead">A two-minute look back</div>}
+          ? <div className="rv-lead big">{REVIEW.leadBack}</div>
+          : <div className="rv-lead">{REVIEW.lead}</div>}
       </header>
       <main className="rv-main">
         {(rows.length > 0 || !rv.welcomeBack) && (
           <section className="rv-card rv-did" aria-labelledby="rv-did-h">
-            <h2 id="rv-did-h">{rv.welcomeBack && rv.since ? `What you did since ${new Date(rv.since + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' })}` : 'What you did'}</h2>
+            <h2 id="rv-did-h">{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</h2>
             <div className="enc">{ENCOURAGE[rv.encouragement]}</div>
             {rows.map((r) => (
               <div className="rv-row" key={r.pillar}>
@@ -135,7 +131,7 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
           <section className="rv-card rv-pat" aria-labelledby="rv-pat-h">
             <span className="rv-sq mind" aria-hidden="true"><Icon name="trend" size={18} /></span>
             <div style={{ flex: 1 }}>
-              <h2 id="rv-pat-h">Something in your data</h2>
+              <h2 id="rv-pat-h">{REVIEW.pattern}</h2>
               <div className="p">{patternText(patternLine.code, rv.gentle)}</div>
               <div className="f">{PATTERN_FOOT}</div>
             </div>
@@ -145,7 +141,7 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
         {/* ml-a3: a harder week keeps to what you did and next week */}
         {rv.why.length > 0 && !rv.welcomeBack && !hard && (
           <section className="rv-card rv-why" aria-labelledby="rv-why-h">
-            <h2 id="rv-why-h">Why this matters to you</h2>
+            <h2 id="rv-why-h">{REVIEW.why}</h2>
             {rv.why.map((w) => <div className="q" key={w}>“{w}”</div>)}
           </section>
         )}
@@ -153,7 +149,7 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
         {plans.map((pl) => <PlanCard key={pl.id} plan={pl} onAnswer={(r) => reviewPlans({ [pl.id]: r })} onChange={() => setSheet({ plan: pl.id })} />)}
 
         <section className="rv-next" aria-labelledby="rv-next-h">
-          <h2 id="rv-next-h">For next week</h2>
+          <h2 id="rv-next-h">{REVIEW.next}</h2>
           <div role="radiogroup" aria-labelledby="rv-next-h" className="rv-radios">
             {choices.map((c) => (
               <div key={c.k} role="radio" aria-checked={pick === c.k} tabIndex={0} className="rv-radio"
@@ -169,11 +165,11 @@ export function WeeklyReviewScreen({ onBack }: { onBack: () => void }) {
                         <button key={o} type="button" className={'rv-chip' + (option === o ? ' on' : '')} aria-pressed={option === o} onClick={() => setOption(o)}>{optionText(o, null).title}</button>
                       ))}
                     </div>
-                  : <button type="button" className="rv-link" onClick={(e) => { e.stopPropagation(); setSheet('change') }}>{option ? optionText(option, rv.changeOne.range).title : 'See the options'}</button>)}
+                  : <button type="button" className="rv-link" onClick={(e) => { e.stopPropagation(); setSheet('change') }}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</button>)}
               </div>
             ))}
           </div>
-          <button type="button" className="rv-done" onClick={done}>Done</button>
+          <button type="button" className="rv-done" onClick={done}>{REVIEW.done}</button>
         </section>
       </main>
 
@@ -200,14 +196,14 @@ function PlanCard({ plan, onAnswer, onChange }: { plan: IfThenPlan; onAnswer: (r
   const [said, setSaid] = useState<'worked' | 'no' | null>(null)
   const answer = (r: 'worked' | 'no') => { setSaid(r); onAnswer(r) }
   return (
-    <section className="rv-card rv-plan" aria-label="Your plan">
-      <h2 className="rv-k">Your plan</h2>
-      <div className="p">If {plan.when.replace(/^when\s+/i, '')}, then I’ll {plan.then.replace(/\.$/, '')}.</div>
-      <div className="ask">How did it go this week?</div>
+    <section className="rv-card rv-plan" aria-label={PLAN_CARD.label}>
+      <h2 className="rv-k">{PLAN_CARD.label}</h2>
+      <div className="p">{PLAN_CARD.line(plan.when, plan.then)}</div>
+      <div className="ask">{PLAN_CARD.ask}</div>
       <div className="rv-pills">
-        <button type="button" className={'rv-pill' + (said === 'worked' ? ' on' : '')} aria-pressed={said === 'worked'} onClick={() => answer('worked')}>It helped</button>
-        <button type="button" className={'rv-pill' + (said === 'no' ? ' on' : '')} aria-pressed={said === 'no'} onClick={() => answer('no')}>Not really</button>
-        <button type="button" className="rv-pill" onClick={onChange}>Change it</button>
+        <button type="button" className={'rv-pill' + (said === 'worked' ? ' on' : '')} aria-pressed={said === 'worked'} onClick={() => answer('worked')}>{PLAN_CARD.helped}</button>
+        <button type="button" className={'rv-pill' + (said === 'no' ? ' on' : '')} aria-pressed={said === 'no'} onClick={() => answer('no')}>{PLAN_CARD.notReally}</button>
+        <button type="button" className="rv-pill" onClick={onChange}>{PLAN_CARD.change}</button>
       </div>
     </section>
   )
@@ -244,13 +240,13 @@ function ChangeOneSheet({ mind, ctx, options, range, value, onClose, onPick }: {
   // nothing changes here: a range change applies on the review's Done, if "Change one thing" is still the pick
   const tryIt = () => { if (o) onPick(o) }
   return (
-    <LoopSheet label="Change one thing" onClose={onClose}>
-      <SheetHead title="Change one thing" close="Cancel" onClose={onClose} />
+    <LoopSheet label={LOOP.changeOne} onClose={onClose}>
+      <SheetHead title={LOOP.changeOne} close={LOOP.cancel} onClose={onClose} />
       <div className="lp-lead">{changeOneLead(ctx, mind)}</div>
-      <div role="radiogroup" aria-label="Change one thing" className="rv-radios">
+      <div role="radiogroup" aria-label={LOOP.changeOne} className="rv-radios">
         {options.map((x) => <OptionRow key={x} o={x} range={range} on={o === x} onPick={() => setO(x)} long />)}
       </div>
-      <button type="button" className="rv-done" onClick={tryIt} disabled={!o}>Try this next week</button>
+      <button type="button" className="rv-done" onClick={tryIt} disabled={!o}>{LOOP.tryIt}</button>
     </LoopSheet>
   )
 }
@@ -262,22 +258,23 @@ function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: Week
   const quietOk = useStore((s) => !loopSafety(s.data, null, healthLoggingAllowed(s.data)).quiet)
   const rows: [string, 'mind' | 'move' | 'food', ReactNode][] = []
   const add = (l: string, k: 'mind' | 'move' | 'food', v: ReactNode | null) => { if (v) rows.push([l, k, v]) }
-  const lw = (x: string | null) => (x && span && /\d+ days$/.test(x) ? x + ' last week' : x)
-  add('Sleep', 'mind', lw(sleepWords(m)))
-  add('Stress', 'mind', lw(stressWords(m)))
-  add('Mood', 'mind', moodWords(m))
-  add('Hunger', 'mind', hungerWords(m, !!sleepHunger))
+  const lw = (x: string | null) => (x && span && /\d+ days$/.test(x) ? x + LOOP.lastWeek : x)
+  const L = LOOP.rows
+  add(L.sleep, 'mind', lw(sleepWords(m)))
+  add(L.stress, 'mind', lw(stressWords(m)))
+  add(L.mood, 'mind', moodWords(m))
+  add(L.hunger, 'mind', hungerWords(m, !!sleepHunger))
   const mv = (span ?? week).move, fd = (span ?? week).food
   const sess = mv.sessions - mv.walks
-  add('Move', 'move', sess ? <><b>{sess} {sess === 1 ? 'session' : 'sessions'}</b> done{mv.walks ? ', plus walks' : ''}</> : mv.walks ? <><b>{mv.walks} {mv.walks === 1 ? 'walk' : 'walks'}</b></> : null)
+  add(L.move, 'move', sess ? <><b>{LOOP.sessions(sess)}</b>{LOOP.sessionsDone}{mv.walks ? LOOP.plusWalks : ''}</> : mv.walks ? <><b>{LOOP.walks(mv.walks)}</b></> : null)
  // the check sheets only open with numbers allowed; the guard keeps it that way
   // never "0 days in your range": the clause only when there were some (design, 8 Oct)
-  add('Food', 'food', food ?? (fd.loggedDays && quietOk ? <>Averaged <b>{fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10)} kcal</b>{fd.inRangeDays ? <>, with {fd.inRangeDays} {fd.inRangeDays === 1 ? 'day' : 'days'} in your range</> : null}</> : null))
+  add(L.food, 'food', food ?? (fd.loggedDays && quietOk ? <>{LOOP.averaged}<b>{LOOP.kcal(fmt(Math.round((fd.avgKcal ?? 0) / 10) * 10))}</b>{fd.inRangeDays ? LOOP.inRange(fd.inRangeDays) : null}</> : null))
   return (
-    <section className="lp-card" aria-label={`${cap}, all together`}>
+    <section className="lp-card" aria-label={LOOP.allTogether(cap)}>
       <div className="cap">{cap}</div>
       {rows.map(([l, k, v]) => <div className="lp-r num" key={l}><span className={'l ' + k}>{l}</span><span>{v}</span></div>)}
-      {weight && <div className="lp-r num"><span className="l food">Weight</span><span>{weight}</span></div>}
+      {weight && <div className="lp-r num"><span className="l food">{L.weight}</span><span>{weight}</span></div>}
     </section>
   )
 }
@@ -289,7 +286,7 @@ function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'option
   const choose = useStore((s) => s.chooseNextWeek)
   const n = r.trend.n
   const pace = r.kind === 'on-pace' ? 'in-line' : r.pace
-  const weight = <>Weighed in {n} times. {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}</>
+  const weight = <>{LOOP.weighedIn(n)} {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}</>
   const pickIt = (x: LoopOption) => {
     setO(x)
     if (r.kind === 'options' && (x === 'range-less' || x === 'range-more') && r.range) applyRange(r.range)
@@ -298,21 +295,21 @@ function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'option
   }
   return (
     <LoopSheet label={CHECK_TITLE} onClose={onClose}>
-      <SheetHead title={CHECK_TITLE} close="Close" onClose={onClose} />
+      <SheetHead title={CHECK_TITLE} close={LOOP.close} onClose={onClose} />
       {r.kind === 'on-pace' ? (
-        <div className="lp-ok"><span className="ic" aria-hidden="true"><Icon name="check" size={16} stroke={3} /></span><div>No change needed. Four weeks in line with your pace, so we’ll keep things as they are.</div></div>
+        <div className="lp-ok"><span className="ic" aria-hidden="true"><Icon name="check" size={16} stroke={3} /></span><div>{LOOP.onPace}</div></div>
       ) : <div className="lp-lead">{CHECK_LEAD}</div>}
       <SideBySide week={r.week} span={r.span} cap={CHECK_ROWS} weight={weight} />
-      {r.kind === 'options' && r.ctx === 'hard' && <div className="lp-say">After a week like this one, the sleep and stress options come first.</div>}
+      {r.kind === 'options' && r.ctx === 'hard' && <div className="lp-say">{LOOP.hardFirst}</div>}
       {r.kind === 'options' ? (
         <>
-          <div role="radiogroup" aria-label="Options" className="rv-radios">
+          <div role="radiogroup" aria-label={LOOP.options} className="rv-radios">
             {r.options.map((x) => <OptionRow key={x} o={x} range={r.range} on={o === x} onPick={() => pickIt(x)} />)}
           </div>
-          <button type="button" className="rv-keep" onClick={() => { choose('keep'); onClose() }}>Keep things as they are</button>
-          <div className="rv-note">Nothing changes unless you choose it.</div>
+          <button type="button" className="rv-keep" onClick={() => { choose('keep'); onClose() }}>{LOOP.keep}</button>
+          <div className="rv-note">{LOOP.nothingChanges}</div>
         </>
-      ) : <button type="button" className="rv-done" onClick={onClose}>Good, carry on</button>}
+      ) : <button type="button" className="rv-done" onClick={onClose}>{LOOP.carryOn}</button>}
     </LoopSheet>
   )
 }
@@ -331,18 +328,18 @@ function DriftSheet({ r, onClose }: { r: Extract<DriftSuggestion, { kind: 'drift
     onClose()
   }
   return (
-    <LoopSheet label="Keeping it steady" onClose={onClose}>
-      <SheetHead title="Keeping it steady" close="Close" onClose={onClose} />
-      <div className="lp-lead">Your weigh-ins have sat a little {r.side} your steady range for 2 weeks. That’s common, and there are a few ways to steer it.</div>
-      <section className="lp-card" aria-label="Weight">
-        <div className="lp-r"><span className="l food">Weight</span><span>Weighed in {r.weighIns} times over 2 weeks.</span></div>
+    <LoopSheet label={LOOP.driftTitle} onClose={onClose}>
+      <SheetHead title={LOOP.driftTitle} close={LOOP.close} onClose={onClose} />
+      <div className="lp-lead">{LOOP.driftLead(r.side)}</div>
+      <section className="lp-card" aria-label={LOOP.driftWeight}>
+        <div className="lp-r"><span className="l food">{LOOP.driftWeight}</span><span>{LOOP.driftWeighed(r.weighIns)}</span></div>
       </section>
-      <SideBySide week={r.week} cap="The last 2 weeks" />
-      <div role="radiogroup" aria-label="Options" className="rv-radios">
+      <SideBySide week={r.week} cap={LOOP.lastTwoWeeks} />
+      <div role="radiogroup" aria-label={LOOP.options} className="rv-radios">
         {r.options.map((x) => <OptionRow key={x} o={x} range={r.range} on={o === x} onPick={() => pickIt(x)} drift />)}
       </div>
-      <button type="button" className="rv-keep" onClick={() => { choose('keep'); onClose() }}>Keep things as they are</button>
-      <div className="rv-note">Nothing changes unless you choose it.</div>
+      <button type="button" className="rv-keep" onClick={() => { choose('keep'); onClose() }}>{LOOP.keep}</button>
+      <div className="rv-note">{LOOP.nothingChanges}</div>
     </LoopSheet>
   )
 }
@@ -366,29 +363,29 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
   }
   const ticks = [...new Set([r.start.lo, r.lo, r.hi, r.start.hi])].sort((a, b) => a - b)
   return (
-    <LoopSheet label="Your range, from your logs" onClose={onClose}>
-      <SheetHead title="Your range, from your logs" close="Close" onClose={onClose} />
+    <LoopSheet label={LOOP.learnedTitle} onClose={onClose}>
+      <SheetHead title={LOOP.learnedTitle} close={LOOP.close} onClose={onClose} />
       <section className="rv-card lp-learn">
-        <div className="k">What your logs say keeps you steady</div>
-        <div className="big num">{fmt(r.lo)} to {fmt(r.hi)} <small>kcal a day</small></div>
+        <div className="k">{LOOP.learnedKey}</div>
+        <div className="big num">{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<small>{LOOP.kcalADay}</small></div>
         <div className="bar" aria-hidden="true">
           <div className="wide" style={{ left: at(r.start.lo), width: `calc(${at(r.start.hi)} - ${at(r.start.lo)})` }} />
           <div className="narrow" style={{ left: at(r.lo), width: `calc(${at(r.hi)} - ${at(r.lo)})` }} />
           {/* the end labels sit inside the card: the first left-aligned, the last right-aligned */}
           {ticks.map((x, i) => <span key={x} className={'tk num' + (i === 0 ? ' first' : i === ticks.length - 1 ? ' last' : '')} style={{ left: at(x) }}>{fmt(x)}</span>)}
         </div>
-        <div className="d num">Narrower than the starting estimate of {fmt(r.start.lo)} to {fmt(r.start.hi)}, which came from your answers. It’s what keeps you steady going by what you log, so it works as a target even if some things go unlogged.</div>
-        {next?.floored && <div className="d">Tilo keeps your target at a safe minimum, so it starts a little higher than this.</div>}
+        <div className="d num">{LOOP.learnedNote(fmt(r.start.lo), fmt(r.start.hi))}</div>
+        {next?.floored && <div className="d">{LOOP.floored}</div>}
       </section>
-      <SideBySide week={week} span={span} cap={`Based on the last ${Math.round(r.days / 7)} weeks`}
-        food={<><b>{r.loggedDays} complete days</b> logged, averaging {fmt(r.avgKcal)} kcal</>}
-        weight={<><b>{r.weighIns} weigh-ins</b></>} />
+      <SideBySide week={week} span={span} cap={LOOP.basedOn(Math.round(r.days / 7))}
+        food={<><b>{LOOP.completeDays(r.loggedDays)}</b>{LOOP.averaging(fmt(r.avgKcal))}</>}
+        weight={<><b>{LOOP.weighIns(r.weighIns)}</b></>} />
       {next ? (
         <>
-          <button type="button" className="rv-done" onClick={use}>Use this range</button>
-          <button type="button" className="rv-keep" onClick={onClose}>Keep my current range</button>
+          <button type="button" className="rv-done" onClick={use}>{LOOP.useRange}</button>
+          <button type="button" className="rv-keep" onClick={onClose}>{LOOP.keepRange}</button>
         </>
-      ) : <button type="button" className="rv-done" onClick={onClose}>Good to know</button>}
+      ) : <button type="button" className="rv-done" onClick={onClose}>{LOOP.goodToKnow}</button>}
     </LoopSheet>
   )
 }
@@ -396,12 +393,12 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
 /** ml-c4: the one-time ask. Two equal choices; closing it leaves weight out. */
 function WeightAskSheet({ onAnswer }: { onAnswer: (on: boolean) => void }) {
   return (
-    <LoopSheet label="Include your weight in reviews?" onClose={() => onAnswer(false)}>
-      <div className="lp-hd"><h2>Include your weight in reviews?</h2></div>
-      <div className="lp-lead">It’s up to you. If you turn it on, your review shows how often you weighed in and, after 4 weeks, how things are going in words. Never a chart or a week-to-week number. You can change this any time.</div>
-      <div className="lp-chipsrow" aria-hidden="true">{['Sleep', 'Stress', 'Mood', 'Hunger', 'Movement', 'Food', 'Weight'].map((c) => <span key={c}>{c}</span>)}</div>
-      <button type="button" className="rv-done" onClick={() => onAnswer(true)}>Include it</button>
-      <button type="button" className="rv-keep" onClick={() => onAnswer(false)}>Leave it out</button>
+    <LoopSheet label={LOOP.weightAskTitle} onClose={() => onAnswer(false)}>
+      <div className="lp-hd"><h2>{LOOP.weightAskTitle}</h2></div>
+      <div className="lp-lead">{LOOP.weightAskLead}</div>
+      <div className="lp-chipsrow" aria-hidden="true">{LOOP.chips.map((c) => <span key={c}>{c}</span>)}</div>
+      <button type="button" className="rv-done" onClick={() => onAnswer(true)}>{LOOP.includeIt}</button>
+      <button type="button" className="rv-keep" onClick={() => onAnswer(false)}>{LOOP.leaveOut}</button>
     </LoopSheet>
   )
 }
@@ -418,31 +415,31 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
   const showToast = useStore((s) => s.showToast)
   const remind = async () => {
     const ok = await setReviewPush(true)
-    showToast(ok ? 'Weekly reminder on' : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'Notifications are off for Tilo in your settings' : 'Couldn’t turn the reminder on. Try again when you’re online')
+    showToast(ok ? LOOP.toastOn : typeof Notification !== 'undefined' && Notification.permission === 'denied' ? LOOP.toastDenied : LOOP.toastFailed)
   }
   return (
-    <LoopSheet label="Your weekly review" onClose={onClose}>
-      <SheetHead title="Your weekly review" close="Done" onClose={onClose} />
-      <div className="lp-lead">A two-minute look back at your week, with everything side by side.</div>
-      <div className="lp-chipsrow" aria-hidden="true">{['Sleep', 'Stress', 'Mood', 'Hunger', 'Movement', 'Food', 'Weight'].map((c) => <span key={c}>{c}</span>)}</div>
+    <LoopSheet label={LOOP.dayTitle} onClose={onClose}>
+      <SheetHead title={LOOP.dayTitle} close={LOOP.dayClose} onClose={onClose} />
+      <div className="lp-lead">{LOOP.dayLead}</div>
+      <div className="lp-chipsrow" aria-hidden="true">{LOOP.chips.map((c) => <span key={c}>{c}</span>)}</div>
       <section className="lp-sec" aria-labelledby="lp-day-h">
-        <h3 id="lp-day-h">Which day suits you?</h3>
+        <h3 id="lp-day-h">{LOOP.whichDay}</h3>
         <div role="radiogroup" aria-labelledby="lp-day-h" className="lp-days">
           {DAYS.map(([n, s, full]) => <button key={n} type="button" role="radio" aria-checked={day === n} aria-label={full} className="lp-day" onClick={() => setPrefs({ reviewDay: n })}>{s}</button>)}
         </div>
-        <div className="d">It’ll be waiting on Summary from {dayName(day)} morning. No pressure to open it that day.</div>
+        <div className="d">{LOOP.waiting(dayName(day))}</div>
       </section>
       <section className="lp-sec" aria-labelledby="lp-rem-h">
-        <h3 id="lp-rem-h">Want a reminder for your weekly review?</h3>
-        <div className="d">One note on {dayName(day)}, nothing else.</div>
+        <h3 id="lp-rem-h">{LOOP.wantReminder}</h3>
+        <div className="d">{LOOP.oneNote(dayName(day))}</div>
         {push
-          ? <div className="rv-pills"><span className="rv-pill on" aria-live="polite">Reminder on</span><button type="button" className="rv-pill" onClick={() => setReviewPush(false)}>Turn it off</button></div>
+          ? <div className="rv-pills"><span className="rv-pill on" aria-live="polite">{LOOP.reminderOn}</span><button type="button" className="rv-pill" onClick={() => setReviewPush(false)}>{LOOP.turnOff}</button></div>
           : <>
-              <button type="button" className="rv-done sm" onClick={remind}>Remind me</button>
-              <button type="button" className="rv-keep sm" onClick={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }}>No thanks</button>
+              <button type="button" className="rv-done sm" onClick={remind}>{LOOP.remindMe}</button>
+              <button type="button" className="rv-keep sm" onClick={() => { if (push === undefined) setPrefs({ reviewPush: false }); onClose() }}>{LOOP.noThanks}</button>
             </>}
         {/* compliance, 8 Oct: what the note says and when, in the place it's switched on */}
-        <div className="d">Once a week on {dayName(day)} at {time} UK time. It only says “Your week is ready”, nothing from your log. Turn it off any time in Profile.</div>
+        <div className="d">{LOOP.reminderNote(dayName(day), time)}</div>
       </section>
     </LoopSheet>
   )
