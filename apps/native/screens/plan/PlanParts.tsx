@@ -10,9 +10,12 @@ import Svg, { Defs, Line, LinearGradient, Pattern, Rect, Stop } from 'react-nati
 import type { PlanWeek, Routine } from '@/core/types'
 import type { WeekCell } from '@/core/domain/plans'
 import { planWeekRows, type WeekRowModel } from '@/screens/plan/planModel'
+import { keyVideo } from '@/core/domain/routines'
+import { useStore } from '@/store/store'
 import type { PlanArt } from '@/screens/plan/planArt'
 import { List, useSurface } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
+import { Thumb } from '../train'
 import { num, tx, useTokens } from '../../lib/theme'
 
 /* ---------------------------------------------------------------- timeline */
@@ -191,6 +194,7 @@ export function PlanNote({ children, style }: { children: ReactNode; style?: Sty
  */
 export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress?: () => void; emptyAdd?: boolean }) {
   const t = useTokens()
+  const routines = useStore((s) => s.data.routines)
   const { day, names, sub, today, keys, label } = row
   const body = (
     <>
@@ -207,8 +211,8 @@ export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress
       </View>
       {keys.length > 0 && (keys[0] === 'Cardio'
         ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: t.move, marginRight: 4 }} />
-        // TODO(N7): Train's Thumb (36 × 44, radius 8) goes here once N7 exports it from screens/train
-        : <View style={{ width: 36, height: 44, borderRadius: 8, backgroundColor: t.fill }} />)}
+        // `.wk-row .thumb`: 36 × 44, radius 8, cut from Train's 44 pt Thumb. TODO(N7): a size prop on Thumb
+        : <View style={{ width: 36, height: 44, borderRadius: 8, overflow: 'hidden' }}><View style={{ marginLeft: -4 }}><Thumb video={keyVideo(keys[0], routines)} /></View></View>)}
     </>
   )
   const s: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 44, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: today ? t.tintSoft : undefined }
