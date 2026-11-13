@@ -118,8 +118,11 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
   }
 
   let body: ReactNode
+  // the bottom list sits 18 below what's above; after a list (8 below it) that is 10 more, as the web's margins collapse
+  let endsWithList = false
   if (!query) {
     const { recipes: byUse, usuals: us, recent: rc, mine: cf, pair, common } = browseFoods(data, all, cur, meal)
+    endsWithList = common.length > 0 || (cf.length > 0 ? !pair : rc.length + us.length + byUse.length > 0)
     body = (
       <>
         {byUse.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List style={{ marginBottom: 8 }}>{byUse.map(recipeRow)}</List></>}
@@ -151,6 +154,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
     )
   } else {
     const { recipes, foods } = searchFoods(data, all, query)
+    endsWithList = recipes.length + foods.length > 0
     body = (
       <>
         {recipes.length > 0 && <><Lbl>{ADD_FOOD.yourRecipes}</Lbl><List style={{ marginBottom: 8 }}>{recipes.map((o) => recipeRow(o.ri))}</List></>}
@@ -166,7 +170,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
         right={<NavBtn icon="barcode" label={SCAN_ENTRY.barcode} onPress={toScan('scan')} style={{ paddingVertical: 4, paddingHorizontal: 2 }} />} />
       <View style={{ marginTop: 10, marginBottom: 2 }}><MealSeg value={meal} onChange={setMeal} /></View>
       {body}
-      <List icons style={{ marginTop: 18, marginBottom: 8 }}>
+      <List icons style={{ marginTop: endsWithList ? 10 : 18, marginBottom: 8 }}>
         <Row title={ADD_FOOD.quickEstimate} sub={ADD_FOOD.quickEstimateS} square={{ icon: 'bolt', fill: t.mind }} onPress={() => go({ kind: 'quick' })} />
         <Row title={SCAN_ENTRY.barcode} sub={online ? SCAN_ENTRY.barcodeSub : SCAN_ENTRY.barcodeSubOffline} square={{ icon: 'barcode', fill: t.tint }} onPress={toScan('scan')} />
         {LABEL_SCAN_ENABLED && (online

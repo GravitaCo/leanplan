@@ -67,7 +67,8 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
         {row('g', CREATE_FOOD.serving, unit, '100')}
       </List>
       <Lbl>{CREATE_FOOD.per100(unit)}</Lbl>
-      <List style={{ marginBottom: 8 }}>
+      {/* no 8 below: the checks' note brings its own 10, which the web collapses with it */}
+      <List>
         {row('k', CREATE_FOOD.calories, 'kcal')}
         {row('p', CREATE_FOOD.protein, 'g')}
         {row('c', CREATE_FOOD.carbs, 'g')}

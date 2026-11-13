@@ -95,7 +95,7 @@ function LikelySameSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answer: 
         <Row k={DUP.yours} title={ask.saved.n} />
         <Row k={v.theirs} title={ask.next.n} />
       </List>
-      <View accessibilityLabel={DUP.tableLabel(v.theirs, v.per)} style={{ marginTop: 8 }}>
+      <View accessibilityLabel={DUP.tableLabel(v.theirs, v.per)}>
         <List style={{ paddingHorizontal: 16, marginBottom: 8 }}>
           {tableRow('h', th(v.per.replace(/^per/, 'Per')), th(DUP.yours), th(v.theirs), true)}
           {v.rows.map((r) => tableRow(r.label,
@@ -104,7 +104,7 @@ function LikelySameSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answer: 
             <Text style={[tx(17, r.differs ? 600 : 400), num, { color: t.label }]}>{r.theirs}</Text>))}
         </List>
       </View>
-      <View style={{ gap: 8, marginTop: 20 }}>
+      <View style={{ gap: 8, marginTop: 12 }}>
         <Btn title={DUP.keepYours} onPress={() => answer('keep')} />
         <Btn kind="gray" title={DUP.useTheirs(v.theirs)} onPress={() => answer('use-theirs')} />
         <Btn kind="link" title={DUP.saveAsNew} onPress={() => answer('save-new')} style={{ marginTop: -4 }} />
@@ -141,16 +141,18 @@ export function SameFoodView({ pair, onBack, onClose, animate, cur }: { pair: [F
         </List>
       </View>
       <Lbl>{DUP.whatHappens}</Lbl>
-      <Card plain style={{ marginBottom: 10 }}><Text style={[tx(17), { color: t.label }]}>{what}</Text></Card>
+      {/* `.dup-what`: radius-sm, padding 12 16, 15 pt at 1.45, no margin */}
+      <Card plain style={{ borderRadius: t.radiusSm, paddingVertical: 12 }}><Text style={[tx(15, 400, 1.45), { color: t.label }]}>{what}</Text></Card>
       {switchable && (
         <>
-          <List style={{ marginBottom: 8 }}>
+          {/* `.dup-switch`: 8 above, none below */}
+          <List style={{ marginTop: 8 }}>
             <Row title={DUP.otherBarcode} right={<Toggle on={takeBarcode} onChange={() => setTakeBarcode(!takeBarcode)} label={DUP.otherBarcode} />} />
           </List>
           {offBarcode && <Foot>{DUP.offBarcode}</Foot>}
         </>
       )}
-      <View style={{ gap: 8, marginTop: 20 }}>
+      <View style={{ gap: 8, marginTop: 16 }}>
         <Btn title={DUP.keepThis} onPress={() => done(() => merge(keep.id!, drop.id!, switchable && takeBarcode))} />
         <Btn kind="gray" title={DUP.different} onPress={() => done(() => different(pair[0].id!, pair[1].id!))} />
       </View>

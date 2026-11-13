@@ -112,15 +112,17 @@ export function FoodScreen() {
           </View>
         )}
 
-        {MEALS.map((m) => {
+        {MEALS.map((m, mi) => {
           const items = groups[m]
+          // the web's list 8 below and a dashed add's 12 above collapse to 12: native leaves the 8 out there
+          const nextEmpty = mi < MEALS.length - 1 && !groups[MEALS[mi + 1]].length
           if (!items.length) {
             return <DashAdd key={m} title={MEAL_LABEL[m]} stroke={2.6} onPress={() => setSheet({ k: 'add', meal: m })} />
           }
           return (
             <View key={m} accessibilityLabel={MEAL_LABEL[m]}>
               <GrpH small={noKcal ? undefined : `${fmt(mealKcal(items))} kcal`}>{MEAL_LABEL[m]}</GrpH>
-              <List style={{ marginBottom: 8 }}>
+              <List style={{ marginBottom: nextEmpty ? 0 : 8 }}>
                 {items.map(row)}
                 <Row act icon="plus" title={FOOD.addTo(MEAL_LABEL[m])} onPress={() => setSheet({ k: 'add', meal: m })} />
               </List>

@@ -345,7 +345,8 @@ async function run() {
       'dup-4 keep this one': async (a) => {
         await btn(a, 'Add food').click(); await sheetOpen(a)
         await a.page.getByText('2 foods look the same', { exact: true }).click()
-        await a.page.getByText('Pick the one to keep', { exact: true }).waitFor()
+        await a.page.getByText('Pick the one to keep', { exact: true }).waitFor(); await a.page.waitForTimeout(450)
+        await a.page.screenshot({ path: path.join(OUT, `dup4-open-${a.which}.png`) })
         const t = await text(a, a.app.sheet)
         await btn(a, 'Keep this one').click()
         await a.page.getByText('Your usual lunch').or(a.page.getByText('My foods', { exact: true })).first().waitFor()
@@ -364,7 +365,8 @@ async function run() {
         const fill = async (label, v) => { await a.page.getByLabel(label, { exact: true }).last().fill(v) }
         await fill('Name', "Mum's chilli"); await fill('Serving', '350'); await fill('Calories', '120'); await fill('Protein', '9'); await fill('Carbs', '8'); await fill('Fat', '5')
         await btn(a, 'Save').click()
-        await a.page.getByText("Looks like your saved Mum's chilli.", { exact: true }).waitFor()
+        await a.page.getByText("Looks like your saved Mum's chilli.", { exact: true }).waitFor(); await a.page.waitForTimeout(450)
+        await a.page.screenshot({ path: path.join(OUT, `dup2-open-${a.which}.png`) })
         const t = norm(await a.page.locator(a.app.sheet).last().innerText())
         await btn(a, 'Keep yours').click()
         await a.page.getByText('How much?', { exact: true }).waitFor()

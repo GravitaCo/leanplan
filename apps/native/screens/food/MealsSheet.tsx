@@ -84,7 +84,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
           )) : <Empty>{RECIPES.empty}</Empty>}
         </List>
         {/* the card's 10 below and a note's 10 above collapse to 10 on the web */}
-        <Card plain style={{ marginTop: 8, marginBottom: draft.items.length > 0 ? 0 : 10 }}>
+        <Card plain style={{ marginBottom: draft.items.length > 0 ? 0 : 10 }}>
           {gentle ? line(<>{RECIPES.perServingLabel} {b(`${r0(totals.p / s)} g protein`)}</>) : <>
             {line(<>{RECIPES.wholeRecipe} {b(`${fmt(totals.k)} kcal`)} · {r0(totals.p)} P {r0(totals.c)} C {r0(totals.f)} F</>)}
             {line(<>{RECIPES.perServingLabel} {b(`${fmt(totals.k / s)} kcal`)}{totals.k > 0 && <Text style={[num, { color: t.label2 }]}> ± {fmt((totals.k / s) * CAPTURE_ERR.recipe)}</Text>} · {r0(totals.p / s)} P {r0(totals.c / s)} C {r0(totals.f / s)} F</>)}
@@ -101,7 +101,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
             ))}
           </List>
         )}
-        {idx >= 0 && <View style={{ marginTop: 16 }}><Btn kind="danger" title={RECIPES.delete} onPress={() => { deleteRecipe(idx); setDraft(null) }} /></View>}
+        {idx >= 0 && <View style={{ marginTop: matches.length > 0 ? 8 : 16 }}><Btn kind="danger" title={RECIPES.delete} onPress={() => { deleteRecipe(idx); setDraft(null) }} /></View>}
       </Sheet>
     )
   }
@@ -125,7 +125,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
           })}
         </List>
       ) : <Card plain style={{ paddingVertical: 0, paddingHorizontal: 0 }}><Empty>{RECIPES.none}</Empty></Card>}
-      <View style={{ marginTop: 16 }}><Btn title={RECIPES.new} onPress={() => { setMoved(true); setDraft({ name: '', servings: '1', items: [] }) }} /></View>
+      <View style={{ marginTop: recipes.length ? 8 : 16 }}><Btn title={RECIPES.new} onPress={() => { setMoved(true); setDraft({ name: '', servings: '1', items: [] }) }} /></View>
     </Sheet>
   )
 }
