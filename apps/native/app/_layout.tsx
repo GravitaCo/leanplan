@@ -9,6 +9,7 @@ import { useStore } from '@/store/store'
 import { useGate } from '../lib/gate'
 import '../lib/e2eHook'
 import { useNotifications } from '../lib/platform/notifications'
+import { ToastHost } from '../lib/ui/kit'
 
 export default function Root() {
   const [fontsLoaded] = useFonts(FONTS)
@@ -22,6 +23,9 @@ export default function Root() {
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }} />
+      {/* the app's one toast (App.tsx's .toast): above the tabs and pushed screens such as Profile,
+          and, as on the web, not over the gate screens */}
+      {!gate && <ToastHost />}
       {gate && <View style={StyleSheet.absoluteFill}>{gate}</View>}
     </SafeAreaProvider>
   )
