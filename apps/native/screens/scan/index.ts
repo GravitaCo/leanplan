@@ -8,7 +8,7 @@
  * - LabelCaptureView: onDone(draft, notice) opens ScanConfirmView; share mode passes forShare and
  *   onFail (a toast, back to the food).
  * - ScanConfirmView: onSaved(food) opens the portion view; pass N5's dup-1/dup-2 sheet as
- *   `duplicateSheet(ask, answer, dismiss)`.
+ *   `duplicateSheet(ask, answer, dismiss)` (required).
  * - ShareProductRow, InOffSheet: for the portion view's Share this product (with shared
  *   offBeforeShare from src/data/sharedProducts).
  */

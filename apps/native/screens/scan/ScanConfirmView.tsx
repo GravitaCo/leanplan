@@ -73,8 +73,8 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
   onLabelPhoto?: () => void
   /** "Share this product" from this saved food (sp-9): Share in place of Save */
   shareFor?: Food
-  /** N5's dup-1 / dup-2 sheet for the open duplicate question (the web's `dup.sheet`) */
-  duplicateSheet?: (ask: DuplicateAsk, answer: (a: DuplicateAnswer) => void, dismiss: () => void) => ReactNode
+  /** N5's dup-1 / dup-2 sheet for the open duplicate question (the web's `dup.sheet`); required, so a save never waits on a question nobody shows */
+  duplicateSheet: (ask: DuplicateAsk, answer: (a: DuplicateAnswer) => void, dismiss: () => void) => ReactNode
 }) {
   const t = useTokens()
   const queueSharedProduct = useStore((s) => s.queueSharedProduct)
@@ -330,7 +330,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
         </>
       )}
     </Sheet>
-    {dup.ask && duplicateSheet ? duplicateSheet(dup.ask, dup.answer, dup.dismiss) : null}
+    {dup.ask ? duplicateSheet(dup.ask, dup.answer, dup.dismiss) : null}
     {optIn && <ShareOptInSheet onAnswer={answerOptIn} />}
     {shareAsk && <ShareOptInSheet onAnswer={answerShareAsk} />}
     {reporting && shared && <ReportProductSheet name={draft.baseName} barcode={draft.barcode} version={shared.version} onClose={() => setReporting(false)} />}

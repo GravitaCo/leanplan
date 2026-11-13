@@ -13,22 +13,25 @@ import { InOffSheet, ReportProductSheet, ScanConfirmView, ScanView, LabelCapture
 import { CODE, previewDrafts } from './previewFixtures'
 
 const noop = () => {}
+// the preview's states never reach a duplicate question (no saved foods); N5's sheet is the host's
+const noSheet = () => null
 
 export function ScanPreview() {
   const t = useTokens()
   const { s = 'scan' } = useLocalSearchParams<{ s?: string }>()
   const drafts = useMemo(previewDrafts, [])
   const common = { meal: 'lunch' as const, setMeal: noop, onBack: noop, onClose: noop }
+  const confirm = { ...common, onSaved: noop, duplicateSheet: noSheet }
   let screen: React.ReactNode = null
   if (s === 'scan') screen = <ScanView {...common} onResult={noop} />
   else if (s === 'label') screen = <LabelCaptureView onBack={noop} onClose={noop} barcode={CODE} onDone={noop} />
   else if (s === 'label-share') screen = <LabelCaptureView onBack={noop} onClose={noop} barcode={CODE} onDone={noop} forShare onFail={noop} />
-  else if (s.startsWith('confirm-') && drafts[s.slice(8)]) screen = <ScanConfirmView {...common} draft={drafts[s.slice(8)]} onSaved={noop}
+  else if (s.startsWith('confirm-') && drafts[s.slice(8)]) screen = <ScanConfirmView {...confirm} draft={drafts[s.slice(8)]}
       // as the web's host: reading the user's own pack is offered on figures that didn't come from it
       onLabelPhoto={drafts[s.slice(8)].source !== 'label' ? noop : undefined} />
   else if (s.startsWith('share-') && drafts[s.slice(6)]) {
     const saved = { id: 'p1', n: 'Oat & raisin flapjack', k: 442, p: 5.5, c: 58, f: 20, barcode: CODE } as Food
-    screen = <ScanConfirmView {...common} draft={drafts[s.slice(6)]} onSaved={noop} shareFor={saved} />
+    screen = <ScanConfirmView {...confirm} draft={drafts[s.slice(6)]} shareFor={saved} />
   }
   else if (s === 'optin') screen = <ShareOptInSheet onAnswer={noop} />
   else if (s === 'report') screen = <ReportProductSheet name="Oat & raisin flapjack" barcode={CODE} version={2} onClose={noop} />
