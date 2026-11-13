@@ -7,7 +7,7 @@
  * to the caller's placeholder.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { AccessibilityInfo, Image, Platform, Text, View, type ImageStyle, type StyleProp } from 'react-native'
+import { AccessibilityInfo, Image, Platform, Text, View, useColorScheme, type ImageStyle, type StyleProp } from 'react-native'
 import { useVideoPlayer, VideoView, type VideoPlayer, type VideoSource } from 'expo-video'
 import { useEvent } from 'expo'
 import type { ExerciseMedia, LogShape } from '@/core/types'
@@ -50,8 +50,15 @@ export function useClipPreview(m: ExerciseMedia | undefined, motion: boolean): {
  * is one, else a typographic tile ("Cue", "Hold", "Time") or the dumbbell. The animated preview is
  * 320×180 with the vertical clip pillarboxed in the middle, so it's cropped as the web's `img.lb`.
  */
+/** `.thumb.ph`: the placeholder tile is the page colour in light, `--elev` in dark */
+export function usePhBg(): string {
+  const t = useTokens()
+  return useColorScheme() === 'dark' ? t.elev : t.bg
+}
+
 export function Thumb({ video, shape, play, big }: { video?: ExerciseMedia; shape?: LogShape; play?: boolean; big?: boolean }) {
   const t = useTokens()
+  const phBg = usePhBg()
   const { src, letterboxed, onError } = useClipPreview(video, true)
   const w = big ? 52 : 44, h = big ? 64 : 44
   const box = { width: w, height: h, borderRadius: 12, overflow: 'hidden' as const, backgroundColor: t.fill }
@@ -71,7 +78,7 @@ export function Thumb({ video, shape, play, big }: { video?: ExerciseMedia; shap
     )
   }
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[box, { backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }]}>
+    <View aria-hidden style={[box, { backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }]}>
       {shape ? <Text style={[font(600), { fontSize: 12, color: t.label2 }]}>{shape === 'hold' ? 'Hold' : shape === 'duration' ? 'Time' : 'Cue'}</Text> : <Icon name="dumbbell" size={22} color={t.label2} />}
     </View>
   )

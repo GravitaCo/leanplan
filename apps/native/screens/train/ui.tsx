@@ -5,7 +5,7 @@
  * and are swapped for N1's when they arrive. Values are the web's (src/styles/theme.css).
  */
 import { Children, createContext, isValidElement, useContext, useEffect, useRef, type ReactNode } from 'react'
-import { ActionSheetIOS, Alert, Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View, useWindowDimensions, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
+import { ActionSheetIOS, Alert, Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View, useWindowDimensions, type ScrollViewInstance, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg'
 import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
@@ -335,8 +335,11 @@ function SheetFrame({ onClose, tall, label, children }: { onClose: () => void; t
 }
 
 /** `Sheet`: a bottom sheet with the iOS header (left action · title · right action); `left` defaults to Cancel, null for nothing. */
-export function Sheet({ title, onClose, left, right, tall, children }: { title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean; children: ReactNode }) {
+export function Sheet({ title, onClose, left, right, tall, scrollKey, children }: { title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean; scrollKey?: string; children: ReactNode }) {
   const t = useTokens()
+  // views swapped inside one sheet (the library's entries) open at their top
+  const sv = useRef<ScrollViewInstance>(null)
+  useEffect(() => { sv.current?.scrollTo({ y: 0, animated: false }) }, [scrollKey])
   return (
     <SheetFrame onClose={onClose} tall={tall} label={title}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 10, paddingHorizontal: 16 }}>
@@ -344,7 +347,7 @@ export function Sheet({ title, onClose, left, right, tall, children }: { title: 
         <Text numberOfLines={1} accessibilityRole="header" style={[font(600), { fontSize: 17, maxWidth: 210, color: t.label, textAlign: 'center' }]}>{title}</Text>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
       </View>
-      <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: 2, paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={sv} style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: 2, paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
     </SheetFrame>
