@@ -30,5 +30,6 @@ jobs:
           cache-dependency-path: apps/native/package-lock.json
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run test:platform
       - run: npm run check:tokens
       - run: npx expo export --platform ios --output-dir /tmp/native-bundle
