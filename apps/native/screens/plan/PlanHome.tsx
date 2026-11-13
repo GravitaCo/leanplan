@@ -42,7 +42,7 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
           {m.suggested && (
             <>
               {/* .grp-h.sm */}
-              <Text accessibilityRole="header" style={[tx(13, 500), { color: t.label2, paddingHorizontal: 4, marginTop: 4, marginBottom: 8 }]}>Suggested for your goal</Text>
+              <Text accessibilityRole="header" style={[tx(13, 500), { color: t.label2, paddingHorizontal: 4, marginBottom: 8 }]}>Suggested for your goal</Text>
               <View style={{ marginBottom: 12 }}>
                 <PlanTile name={m.suggested.name} line={m.suggested.tagline} art={m.suggestedArt} fits big onPress={() => go({ v: 'preview-suggested' })} />
               </View>
@@ -69,7 +69,8 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
         </List>
       )}
 
-      <GrpH h2>This week</GrpH>
+      {/* the h2's 16.6 above collapses on the web into the margin of what sits above it (next row 8, end card 10, plan card 12, browse 8) */}
+      <View style={{ marginTop: -(m.next ? 8 : m.ended ? 10 : m.card ? 12 : 8) }}><GrpH h2>This week</GrpH></View>
       <WeekList rows={m.week} onDay={(d) => go({ v: 'day', d })} />
       {/* a note's 8 above collapses into the week list's 8 below */}
       {m.notes.map((n, i) => <PlanNote key={n} style={i === 0 ? { marginTop: 0 } : undefined}>{n}</PlanNote>)}

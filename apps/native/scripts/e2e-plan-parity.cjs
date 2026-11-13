@@ -161,7 +161,8 @@ async function run() {
       for (const p of [w.page, n.page]) {
         const h = await p.evaluate(() => Math.max(document.documentElement.scrollHeight, ...[...document.querySelectorAll('*')].map((e) => (e.scrollHeight > e.clientHeight + 4 && getComputedStyle(e).overflowY !== 'visible' ? e.scrollHeight + 120 : 0))))
         await p.setViewportSize({ width: 390, height: Math.min(Math.max(844, h), 6000) })
-        await p.waitForTimeout(300)
+        // photos framed after their size is known (CoverImage on react-native-web asks for it)
+        await p.waitForTimeout(1500)
       }
       await w.page.screenshot({ path: path.join(OUT, `plan-${file}-${scheme}-web.png`), fullPage: true })
       await n.page.screenshot({ path: path.join(OUT, `plan-${file}-${scheme}-native.png`), fullPage: true })
