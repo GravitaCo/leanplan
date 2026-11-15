@@ -42,7 +42,8 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | Continue with Apple (iOS only, not on the web: Benn approved 13 Nov; Apple's own button above Google's, same size) | ✓ built | U (re-confirm rules), Phone: needs a dev build with modules/tilo-auth; `design` reviews the screen from a phone screenshot |
 | Reset link signs in with no "set a new password" step | as web (web gap, separate task) | |
 | Banner (signed out elsewhere, guest gone) | ✓ | by reading |
-| Sign in with Apple revocation on deletion | not built: increment (a), docs/plans/native-sign-in-with-apple.md; before App Store review | |
+| Sign in with Apple revocation on deletion | ✓ built (increment (a), docs/plans/native-sign-in-with-apple.md); not deployed until the APPLE_* secrets are set | U (scripts/wellbeing/apple.ts, stand-in Apple), Phone after deploy |
+| Banner after a deletion when Apple couldn't be told: "Your account is deleted. Tilo couldn’t tell Apple, so Tilo may still be listed under Sign in with Apple in your Apple Account settings. You can remove it there." (DELETE.appleKept) | ✓ new words: compliance's wording; Benn approved (15 Nov, "Wording approved", in the lead's session) | by reading |
 
 ## Consent
 
