@@ -212,6 +212,8 @@ export const DELETE = {
   /** native (iOS) only, for an account that signed in with Apple (its button is Apple's own, which
    *  says "Continue with Apple"). New words: to approve with Sign in with Apple (Benn or Sara) */
   reauthApple: 'To delete your account, confirm it’s you: sign in with Apple again.',
+  /** after a deletion, when Apple couldn't be reached to remove Tilo's Sign in with Apple (new words: need Benn's or Sara's OK) */
+  appleKept: 'Your account is deleted. Tilo couldn’t remove Sign in with Apple, so you can remove Tilo yourself in your Apple Account settings, under Sign in with Apple.',
   password: 'Your password, to confirm it’s you',
   typed: 'Type DELETE to confirm',
   wrongPassword: 'That password doesn’t match this account. Nothing has been deleted.',

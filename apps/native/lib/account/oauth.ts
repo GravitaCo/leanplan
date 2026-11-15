@@ -78,7 +78,7 @@ setGoogleOAuth(async (q) => {
  * The session reaches the store through onAuthStateChange like any sign-in. Before deleting an
  * account (`expectOwner`), a different Apple ID is refused as the Google re-sign-in is.
  */
-export async function appleSignIn(): Promise<GoogleResult> {
+export async function appleSignIn(): Promise<GoogleResult & { code?: string }> {
   try {
     const raw = hex(getRandomBytes(32))
     const hashed = await digestStringAsync(CryptoDigestAlgorithm.SHA256, raw)
@@ -86,17 +86,19 @@ export async function appleSignIn(): Promise<GoogleResult> {
     if (!cred) return { status: 'cancelled' }
     const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken, nonce: raw })
     if (error || !data.session) return { status: 'error', message: error?.message ?? 'Sign in with Apple did not finish.' }
-    return { status: 'ok', uid: data.session.user.id }
+    // Apple's one-time authorization code: only the delete path uses it (the server revokes with it)
+    return { status: 'ok', uid: data.session.user.id, ...(cred.authorizationCode ? { code: cred.authorizationCode } : {}) }
   } catch (e) {
     return { status: 'error', message: e instanceof Error ? e.message : String(e) }
   }
 }
 
-/** Sign in with Apple again before deleting: 'ok' only for this phone's own account. */
-export async function appleReauth(): Promise<'ok' | 'cancelled' | 'error'> {
+/** Sign in with Apple again before deleting: 'ok' only for this phone's own account, with Apple's
+ *  one-time code for delete-account to revoke Tilo's Sign in with Apple (never stored or logged). */
+export async function appleReauth(): Promise<{ status: 'ok'; code?: string } | { status: 'cancelled' | 'error' }> {
   const r = await appleSignIn()
-  if (r.status !== 'ok') return r.status
-  return reauthMatches(useStore.getState().data._meta?.owner, r.uid) ? 'ok' : 'error'
+  if (r.status !== 'ok') return { status: r.status }
+  return reauthMatches(useStore.getState().data._meta?.owner, r.uid) ? { status: 'ok', code: r.code } : { status: 'error' }
 }
 
 const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')

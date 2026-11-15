@@ -74,6 +74,7 @@ import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, m
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
+import { DELETE } from '@/copy/account'
 
 enableMapSet()
 
@@ -392,7 +393,7 @@ export interface StoreState {
   /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
   deletingAccount: boolean
   /** needs a connection; wipes this device and signs out only after the server confirms */
-  deleteAccount: (reason?: 'under-age') => Promise<DeleteResult>
+  deleteAccount: (reason?: 'under-age', appleCode?: string) => Promise<DeleteResult>
   /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
   authProvider: string | null
 
@@ -2304,7 +2305,7 @@ export const useStore = create<StoreState>()(
         return 'ok'
       },
 
-      deleteAccount: async (reason) => {
+      deleteAccount: async (reason, appleCode) => {
         if (deleting) return { status: 'busy' }
         // whose account this is, for the pending under-age record after it's gone
         const goneUid = getUid()
@@ -2331,7 +2332,7 @@ export const useStore = create<StoreState>()(
               await defaultDeleteDeps.signOut()
               clearSavedSession()
             },
-          }, reason)
+          }, reason, appleCode)
           if (res.status !== 'ok') { failed = true; return res }
           // the wipe keeps a pending under-age record (wipeStorage); this account's is done now.
           // Another account's stays, so that one still gets deleted
@@ -2339,7 +2340,9 @@ export const useStore = create<StoreState>()(
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
             st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null; st.redoOpen = false; st.setupOpen = false
-            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = null; st.sync = 'idle'
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            // the sign-in screen's banner: Apple couldn't be told, so the person can remove Tilo there
+            st.authNotice = res.appleKept ? DELETE.appleKept : null
           })
           return res
         } finally {
