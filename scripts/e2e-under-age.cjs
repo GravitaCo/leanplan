@@ -168,7 +168,7 @@ async function stopCopy(page, { saved }) {
 async function typeAge(page, age) {
   await tab(page, 'Profile')
   await page.getByRole('button', { name: /Body and goal/ }).click()
-  await page.getByPlaceholder('35').fill(String(age))
+  await page.getByLabel('Age', { exact: true }).fill(String(age))
   await btn(page, 'Save metrics').click()
 }
 /** uploads of the settings row (the profile): the one a saved age would go in */
@@ -186,7 +186,7 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await page.waitForTimeout(1200) // the launch sync settles
     const before = await stored(page)
     const w0 = net.writes.length, r0 = net.reads.length
-    const input = page.getByPlaceholder('35')
+    const input = page.getByLabel('Age', { exact: true })
     await tab(page, 'Profile'); await page.getByRole('button', { name: /Body and goal/ }).click()
     expect(await input.getAttribute('min') === '18' && await input.getAttribute('max') === '120' && await input.getAttribute('inputmode') === 'numeric', 'min 18, max 120, numeric keyboard')
     await input.fill('15')
@@ -221,10 +221,10 @@ const REMINDERS = { ...PROFILE, notificationsEnabled: true }
     await btn(page, 'I typed my age wrong').click()
     await page.locator('.hdr .ltitle', { hasText: 'Profile' }).waitFor()
     expect((await page.locator(STOP).count()) === 0, 'stop gone')
-    expect(await page.getByPlaceholder('35').inputValue() === '34', 'the form shows the stored age')
+    expect(await page.getByLabel('Age', { exact: true }).inputValue() === '34', 'the form shows the stored age')
     expect((await stored(page)).profile.age === 34, 'stored age intact')
     // and an 18 saves normally, and syncs
-    await page.getByPlaceholder('35').fill('18')
+    await page.getByLabel('Age', { exact: true }).fill('18')
     await btn(page, 'Save metrics').click()
     await page.waitForTimeout(1500)
     expect((await page.locator(STOP).count()) === 0, 'no stop at 18')

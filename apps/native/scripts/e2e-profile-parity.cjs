@@ -189,7 +189,7 @@ const inputs = (page) => page.evaluate(() => [...document.querySelectorAll('inpu
  *  render (no native wheels) is a typed HH:MM field, then Done. */
 async function setTime(page, native, label, v) {
   if (!native) {
-    // Your times' inputs are labelled (<label for>); the supplement form's time input isn't, so find it by type
+    // every time input is named by its label now; the type fallback only covers an unlabelled one
     const byLabel = page.getByLabel(label, { exact: true })
     await ((await byLabel.count()) ? byLabel.last() : page.locator('input[type=time]').first()).fill(v)
     return

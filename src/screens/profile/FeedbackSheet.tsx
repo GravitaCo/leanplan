@@ -58,7 +58,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
         <>
           <p className="fb-q" id="fb-q">{area.question}</p>
           <div className="foot" style={{ padding: '0 0 12px' }}>{area.hint}</div>
-          <div className="scale" role="radiogroup" aria-labelledby="fb-q" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="scale fb-scale" role="radiogroup" aria-labelledby="fb-q" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             {FEEDBACK_RATINGS.map((r) => (
               <button key={r} role="radio" className={cur.rating === r ? 'on' : ''} aria-checked={cur.rating === r}
                 onClick={() => setArea({ rating: cur.rating === r ? undefined : r })}>{r}</button>

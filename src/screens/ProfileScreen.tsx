@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { cloneElement, useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { useStore } from '@/store/store'
 import type { AccuracyMode, ActivityLevel, DietPattern, HandPortion, Sex } from '@/core/types'
 import { DIETS } from '@/core/domain/diet'
@@ -156,7 +156,7 @@ export function ProfileScreen() {
     : pr.notificationsEnabled ? P.notify.on : P.notify.off
   const initials = (pr.name || '').trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
-  const field = (label: string, input: ReactNode) => <div className="field"><label>{label}</label>{input}</div>
+  const field = (label: string, input: ReactElement<{ id?: string }>) => <Field label={label}>{input}</Field>
 
   // the everyday range (workout days can add to it; Summary and Food show the day's own). Sometimes:
   // Food's maintenance range, nothing to edit; Yes (and pregnant Sometimes): no kcal at all
@@ -206,9 +206,9 @@ export function ProfileScreen() {
           <div className="grid2">
             {field(P.body.sex, <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
               <option value="M">{P.body.male}</option><option value="F">{P.body.female}</option></select>)}
-            {field(P.body.age, <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder={P.body.agePh} onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
-            {field(P.body.height, <input type="number" value={metrics.height} placeholder={P.body.heightPh} onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
-            {field(P.body.weight, <input type="number" step="0.1" value={metrics.weight} placeholder={P.body.weightPh} onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
+            {field(P.body.age, <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
+            {field(P.body.height, <input type="number" value={metrics.height} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
+            {field(P.body.weight, <input type="number" step="0.1" value={metrics.weight} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
           </div>
           {field(P.body.activity, <select value={metrics.activityLevel} onChange={(e) => setMetrics({ ...metrics, activityLevel: e.target.value as ActivityLevel })}>
             {Object.entries(ACTIVITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>)}
@@ -547,4 +547,10 @@ function HandsSheet({ onClose }: { onClose: () => void }) {
       </div>
     </Sheet>
   )
+}
+
+/** `.field`: the label linked to its input (htmlFor/id), so each field is named by its label, not its placeholder. */
+function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
+  const id = useId()
+  return <div className="field"><label htmlFor={id}>{label}</label>{cloneElement(children, { id })}</div>
 }
