@@ -225,7 +225,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             : []),
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
-          ...(native ? [`Apple: only if you choose "Continue with Apple" in the iPhone app. Apple handles that sign-in under its own privacy policy.`] : []),
+          ...(native ? [`Apple: only if you choose "Continue with Apple" in the iPhone app. Apple handles that sign-in under its own privacy policy. When you delete your account, we also ask Apple to remove Tilo from your Sign in with Apple apps. If that doesn't work, Tilo tells you how to remove it yourself in your Apple Account settings.`] : []),
         ],
       },
       {
