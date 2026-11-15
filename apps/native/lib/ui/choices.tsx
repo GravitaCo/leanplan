@@ -82,6 +82,22 @@ export function Check({ on, sm }: { on: boolean; sm?: boolean }) {
   )
 }
 
+/**
+ * `.dup-radio`: a 24 pt round radio dot, a 2 pt --fill3 ring; chosen, --tint with an --on-tint tick
+ * (20 pt: the web's svg.i rule wins over the 13 it asks for), 2 below the row's top. Drawn only;
+ * its row is the radio (as the web's label row with a hidden input).
+ */
+export function Radio({ on }: { on: boolean }) {
+  const t = useTokens()
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+      style={[{ width: 24, height: 24, borderRadius: 12, marginTop: 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+        on ? { backgroundColor: t.tint } : { borderWidth: 2, borderColor: t.fill3 }]}>
+      {on && <Icon name="check" size={20} stroke={3.2} color={t.onTint} />}
+    </View>
+  )
+}
+
 const tel = (n: string) => 'tel:' + n.replace(/\s/g, '')
 const open = (url: string) => { void Linking.openURL(url) }
 

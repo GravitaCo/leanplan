@@ -29,7 +29,7 @@ import { CheckTiles, ChoiceTiles } from './ui/Tiles'
 import { TaliMark } from './ui/brand'
 import { Empty, Foot, GrpH, Lbl, Prose, Sub, TextLink } from './ui/text'
 import { Field, FRow, Input, NameField, SearchBar } from './ui/fields'
-import { Check, ConsentRow, Opts, Signposts, Ticks } from './ui/choices'
+import { Check, ConsentRow, Opts, Radio, Signposts, Ticks } from './ui/choices'
 import { supportList } from '@/screens/profile/supportRows'
 import { num, tx, useTokens } from './theme'
 
@@ -413,7 +413,7 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         </View>
       </Sec>
 
-      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint">
+      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint · centred chips · Radio">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
           <RoundBtn label="Add food" onPress={() => {}} />
           <NavBtn icon="barcode" label="Scan barcode" style={{ paddingHorizontal: 2 }} onPress={() => {}} />
@@ -432,6 +432,13 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
           <FRow label="Palm" hint="Meat, fish, tofu" value="100" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
           <FRow label="Thumb" hint="Oil, butter, nut butter" value="12" unit="g" keyboardType="number-pad" onChangeText={() => {}} />
         </List>
+        <View style={{ marginTop: 10 }}>
+          <Chips center>{G.editSteps.map((v) => <Chip key={v} on={v === 1} title={v === 1 ? 'As logged' : '×' + v} onPress={() => {}} />)}</Chips>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <Radio on /><Radio on={false} />
+          <NavBtn icon="x" color={t.red} label="Remove Oats" onPress={() => {}} />
+        </View>
       </Sec>
 
       <Sec id="pickers" title="Time fields (tap for the wheels; both disabled) · a date in a sheet">

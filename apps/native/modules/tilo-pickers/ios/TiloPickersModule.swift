@@ -10,6 +10,8 @@ import UIKit
 ///   values: "HH:mm" and "yyyy-MM-dd".
 /// - TiloMenu: a button whose menu (UIMenu) lists the options, the chosen one ticked, anchored to
 ///   the field, as Safari opens a `<select>`.
+/// - TiloSlider: the system slider (UISlider), as Safari draws `<input type="range">` with an
+///   accent colour: the track tinted up to the thumb. Drawn, not hidden: it is the control.
 public class TiloPickersModule: Module {
   public func definition() -> ModuleDefinition {
     Name("TiloPickers")
@@ -46,6 +48,25 @@ public class TiloPickersModule: Module {
 
       // every prop is in before the picker is set, whatever order they arrive in
       OnViewDidUpdateProps { (view: TiloDatePickerView) in view.apply() }
+    }
+
+    View(TiloSliderView.self) {
+      Name("TiloSlider")
+      Events("onSlide")
+
+      Prop("min", 0.0) { (view: TiloSliderView, v: Double) in view.slider.minimumValue = Float(v) }
+      Prop("max", 1.0) { (view: TiloSliderView, v: Double) in view.slider.maximumValue = Float(v) }
+      /// the step the thumb snaps to, as Safari snaps a range input's (0: none)
+      Prop("step", 0.0) { (view: TiloSliderView, v: Double) in view.step = Float(v) }
+      /// the value, set when it differs from the thumb's (never fights a drag)
+      Prop("value", 0.0) { (view: TiloSliderView, v: Double) in view.value = Float(v) }
+      /// the accent colour (the web's accent-color: var(--tint)), "#rrggbb"
+      Prop("tint", "") { (view: TiloSliderView, v: String) in view.slider.minimumTrackTintColor = colorFrom(hex: v) }
+      Prop("label", "") { (view: TiloSliderView, v: String) in view.slider.accessibilityLabel = v }
+      /// what VoiceOver reads as the value (the app's words; the system's percentage otherwise)
+      Prop("valueText", "") { (view: TiloSliderView, v: String) in view.slider.valueText = v }
+
+      OnViewDidUpdateProps { (view: TiloSliderView) in view.apply() }
     }
 
     View(TiloMenuView.self) {
@@ -190,5 +211,76 @@ final class TiloMenuView: ExpoView {
     }
     button.menu = UIMenu(title: "", options: .singleSelection, children: actions)
     button.accessibilityValue = selected >= 0 && selected < options.count ? options[selected] : nil
+  }
+}
+
+/// "#rrggbb" as a colour (nil leaves the system's own)
+private func colorFrom(hex: String) -> UIColor? {
+  var h = hex.trimmingCharacters(in: .whitespaces)
+  if h.hasPrefix("#") { h.removeFirst() }
+  guard h.count == 6, let n = UInt32(h, radix: 16) else { return nil }
+  return UIColor(red: CGFloat((n >> 16) & 0xff) / 255, green: CGFloat((n >> 8) & 0xff) / 255, blue: CGFloat(n & 0xff) / 255, alpha: 1)
+}
+
+/// UISlider for VoiceOver as Safari's range input is: a swipe moves one step (UIKit's own moves a
+/// tenth of the range), and it reads the value (the app's words, else the number), not a percentage.
+final class StepSlider: UISlider {
+  var step: Float = 0
+  var valueText = ""
+  var onStep: (() -> Void)?
+
+  override var accessibilityValue: String? {
+    get {
+      if !valueText.isEmpty { return valueText }
+      let f = NumberFormatter()
+      f.maximumFractionDigits = 2
+      f.minimumFractionDigits = 0
+      return f.string(from: NSNumber(value: value))
+    }
+    set { }
+  }
+
+  private func move(_ dir: Float) {
+    let by = step > 0 ? step : (maximumValue - minimumValue) / 10
+    let next = Swift.min(maximumValue, Swift.max(minimumValue, value + dir * by))
+    guard next != value else { return }
+    setValue(next, animated: false)
+    onStep?()
+  }
+  override func accessibilityIncrement() { move(1) }
+  override func accessibilityDecrement() { move(-1) }
+}
+
+final class TiloSliderView: ExpoView {
+  let onSlide = EventDispatcher()
+  let slider = StepSlider()
+  var value: Float = 0
+  var step: Float = 0 { didSet { slider.step = step } }
+
+  required init(appContext: AppContext? = nil) {
+    super.init(appContext: appContext)
+    slider.isContinuous = true
+    slider.addTarget(self, action: #selector(changed), for: .valueChanged)
+    slider.onStep = { [weak self] in self?.changed() }
+    addSubview(slider)
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    slider.frame = bounds
+  }
+
+  func apply() {
+    if !slider.isTracking && slider.value != value { slider.setValue(value, animated: false) }
+  }
+
+  @objc func changed() {
+    // the thumb sits on a step, as Safari's does, never between two
+    if step > 0 {
+      let lo = slider.minimumValue
+      let snapped = Swift.min(slider.maximumValue, lo + (((slider.value - lo) / step).rounded()) * step)
+      if snapped != slider.value { slider.setValue(snapped, animated: false) }
+    }
+    onSlide(["value": Double(slider.value)])
   }
 }

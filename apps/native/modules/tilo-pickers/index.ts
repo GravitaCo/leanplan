@@ -2,7 +2,8 @@
  * The web's form controls as iOS Safari presents them (ios/TiloPickersModule.swift). Each native
  * view lies invisibly over text the app draws, and a tap opens the system's own pop-up:
  * `DatePickerNative` (UIDatePicker, compact: a calendar for a date, a time pop-up for a time) and
- * `MenuNative` (a UIMenu of the options, as Safari opens a select). Values are the web's: "HH:mm"
+ * `MenuNative` (a UIMenu of the options, as Safari opens a select); `SliderNative` is the system
+ * slider itself (UISlider), as Safari draws a range input. Values are the web's: "HH:mm"
  * and "yyyy-MM-dd". Both are null where the module isn't built in (web, Expo Go, Android): callers
  * fall back to a sheet.
  */
@@ -34,6 +35,19 @@ export interface MenuNativeProps extends ViewProps {
   onPick: (e: { nativeEvent: { index: number } }) => void
 }
 
+export interface SliderNativeProps extends ViewProps {
+  min: number
+  max: number
+  step?: number
+  value: number
+  /** the accent colour, "#rrggbb" */
+  tint: string
+  label: string
+  valueText?: string
+  onSlide: (e: { nativeEvent: { value: number } }) => void
+}
+
+export const SliderNative: ComponentType<SliderNativeProps> | null = TiloPickers ? requireNativeView<SliderNativeProps>('TiloPickers', 'TiloSlider') : null
 export const DatePickerNative: ComponentType<DatePickerNativeProps> | null = TiloPickers ? requireNativeView<DatePickerNativeProps>('TiloPickers', 'TiloDatePicker') : null
 export const MenuNative: ComponentType<MenuNativeProps> | null = TiloPickers ? requireNativeView<MenuNativeProps>('TiloPickers', 'TiloMenu') : null
 

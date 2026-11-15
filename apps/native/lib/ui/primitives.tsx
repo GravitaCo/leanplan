@@ -158,19 +158,21 @@ export function BackButton({ onPress, label = UI.back, small }: { onPress: () =>
 }
 
 /** `.navbtn`: a sheet header's Cancel or Done (`bold` is `.navbtn.b`). */
-export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, style }: {
+export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, color, style }: {
   /** the words; an icon-only navbtn (the search bar's scan button, a row's delete ✕) gives `icon` and `label` */
   title?: string; onPress: () => void; bold?: boolean; disabled?: boolean; icon?: IconName
   /** the web's aria label */
   label?: string
   /** in --label3 (a My foods row's delete) instead of the tint */
   muted?: boolean
+  /** any other colour (the recipe builder's remove ✕ in --red) */
+  color?: string
   /** a context's own padding (`.searchbar .scanbtn`: 4 2) */
   style?: StyleProp<ViewStyle>
 }) {
   const t = useTokens()
   // .navbtn:disabled is --label3 at full strength
-  const fg = disabled || muted ? t.label3 : t.tint
+  const fg = disabled || muted ? t.label3 : color ?? t.tint
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }}
       hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
@@ -486,8 +488,8 @@ export function overlayBack(): boolean {
 }
 
 /** The frame both sheets share: backdrop, the sheet sliding up, the grabber, Escape/back to close. */
-function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, header, children }: {
-  label: string; onClose: () => void; tall?: boolean; animate?: boolean; bare?: boolean; overlay?: boolean; header?: ReactNode; children: ReactNode
+function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay, header, children }: {
+  label: string; onClose: () => void; tall?: boolean; grow?: boolean; animate?: boolean; bare?: boolean; overlay?: boolean; header?: ReactNode; children: ReactNode
 }) {
   const t = useTokens()
   // this sheet's place in the stack, so the topmost one carries the toast
@@ -522,7 +524,7 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
             <InSheet.Provider value>
-              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
             </InSheet.Provider>
@@ -546,8 +548,12 @@ function SheetFrame({ label, onClose, tall, animate = true, bare, overlay, heade
  * `overlay`: draw the sheet over the current full-screen view instead of opening a new modal (for a
  * sheet over the guided player, itself a Modal); render it as that view's last child. It looks the same.
  */
-export function Sheet({ title, onClose, left, right, tall, animate = true, overlay, children }: {
-  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean; animate?: boolean; overlay?: boolean; children: ReactNode
+export function Sheet({ title, onClose, left, right, tall, grow, animate = true, overlay, children }: {
+  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean
+  /** the content fills the sheet's height (with `tall`), so a `<View style={{ flex: 1 }} />` spacer
+   *  sets what follows at the foot (`.dup-merge` with `.dup-grow`) */
+  grow?: boolean
+  animate?: boolean; overlay?: boolean; children: ReactNode
 }) {
   const t = useTokens()
   const header = (
@@ -557,7 +563,7 @@ export function Sheet({ title, onClose, left, right, tall, animate = true, overl
       <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
     </View>
   )
-  return <SheetFrame label={title} onClose={onClose} tall={tall} animate={animate} overlay={overlay} header={header}>{children}</SheetFrame>
+  return <SheetFrame label={title} onClose={onClose} tall={tall} grow={grow} animate={animate} overlay={overlay} header={header}>{children}</SheetFrame>
 }
 
 /** A bottom sheet without the navigation header, for sheets whose first line is their own large title. */
