@@ -45,7 +45,13 @@ function chainFoods() {
     import { FOODS } from '@/core/data/foods'
     import { SOURCES } from '@/core/data/sources'
     const chain = FOODS.filter((f) => f.src && SOURCES[f.src.split(':')[0]]?.err)
-    console.log(JSON.stringify(chain.map((f) => ({ n: f.n, src: f.src, each: !!f.each, published: Math.round(Math.round((f.k * f.g) / (f.each ? 1 : 100) * 10) / 10) }))))`
+    // the chain's own per-portion figure (ref) where it is one serving; else what the data implies
+    const derived = (f, x) => Math.round((f[x] * f.g) / (f.each ? 1 : 100) * 10) / 10
+    const one = (f) => f.ref && f.ref.g === f.g
+    console.log(JSON.stringify(chain.map((f) => ({ n: f.n, src: f.src, each: !!f.each,
+      published: Math.round(one(f) ? f.ref.k : derived(f, 'k')),
+      // only the macros the chain publishes (some refs carry kcal alone)
+      macros: one(f) ? Object.fromEntries(['p', 'c', 'f'].filter((x) => typeof f.ref[x] === 'number').map((x) => [x, f.ref[x]])) : null }))))`
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tilo-chain-'))
   const out = path.join(dir, 'chain.cjs')
   fs.writeFileSync(path.join(dir, 'chain.ts'), src)
@@ -115,12 +121,12 @@ const VIEWS = {
 }
 
 let bad = 0
-const check = (name, ok, detail) => { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'food parity:', name, !ok && detail !== undefined ? JSON.stringify(detail).slice(0, 900) : '') }
+const check = (name, ok, detail) => { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'food parity:', name, !ok && detail !== undefined ? JSON.stringify(detail).slice(0, +(process.env.DETAIL || 900)) : '') }
 
 /** the two apps, as selectors over the same page shapes */
 const APPS = {
   web: { kind: 'web', url: WEB, screen: '.screen', sheet: '.sheet', titles: '.sheet .li .t', search: 'Search foods' },
-  native: { kind: 'native', url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[data-testid="sheet"]', titles: '[data-testid="sheet"] [data-testid="row-title"]', search: 'Search foods' },
+  native: { kind: 'native', url: NATIVE, screen: '[data-testid="food-screen"]', sheet: '[aria-modal="true"]', titles: '[aria-modal="true"] [data-testid="row-title"]', search: 'Search foods' },
 }
 // NATIVE_KIND=web puts a second web build in the native slot: a before/after check of a web change
 if (process.env.NATIVE_KIND === 'web') APPS.native = { ...APPS.web, url: NATIVE }
@@ -187,7 +193,8 @@ const btn = (a, name, exact = true) => a.page.getByRole('button', { name, exact 
 /** a row in the open sheet with this title (web: `.li` with that `.t`; native: the row's label) */
 const sheetRow = (a, title) => a.app.kind === 'web'
   ? a.page.locator('.sheet .li').filter({ has: a.page.locator('.t', { hasText: new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }) }).first()
-  : a.page.locator(a.app.sheet).last().getByRole('button', { name: title, exact: true }).first()
+  // native rows are named by their whole text (as the web's), so find the one whose title is exactly this
+  : a.page.locator(a.app.sheet).last().getByRole('button').filter({ has: a.page.getByText(title, { exact: true }) }).first()
 const close = async (a) => { await a.page.keyboard.press('Escape').catch(() => {}); if (a.app.kind === 'native' || await a.page.locator(a.app.sheet).count()) { const c = btn(a, 'Cancel'); if (await c.count()) await c.last().click(); else { const d = btn(a, 'Done'); if (await d.count()) await d.last().click() } } await sheetGone(a).catch(() => {}) }
 
 async function same(name, w, n, fn) {
@@ -214,6 +221,9 @@ async function run() {
       if (!want('screen:' + view)) continue
       const [w, n] = await pair(state(o), scheme)
       await w.page.screenshot({ path: path.join(OUT, `food-${view}-${scheme}-web.png`), fullPage: true })
+      // the native tab scrolls inside its own view: grow the window to it, so the capture is the whole tab
+      const tall = await n.page.evaluate(() => document.querySelector('[data-testid="food-screen"] > div')?.scrollHeight ?? 0)
+      if (tall > 844) await n.page.setViewportSize({ width: 390, height: tall + 90 })
       await n.page.screenshot({ path: path.join(OUT, `food-${view}-${scheme}-native.png`), fullPage: true })
       if (scheme === 'light') {
         await same(`${view}: Food screen words and figures`, w, n, (a) => text(a, a.app.screen))
@@ -225,10 +235,10 @@ async function run() {
     }
   }
 
-  // 2. the sheets, numbers and gentle
-  for (const view of ['numbers', 'gentle']) {
-    if (!want('sheets:' + view)) continue
-    const [w, n] = await pair(state(VIEWS[view]), 'light')
+  // 2. the sheets, numbers and gentle, light; numbers again in dark for the captures
+  for (const [view, scheme] of [['numbers', 'light'], ['gentle', 'light'], ['numbers', 'dark']]) {
+    if (!want('sheets:' + view + (scheme === 'dark' ? ':dark' : ''))) continue
+    const [w, n] = await pair(state(VIEWS[view]), scheme)
     const sheet = async (label, openIt, after) => {
       for (const a of [w, n]) {
         try { await openIt(a); await sheetOpen(a) } catch (e) {
@@ -240,11 +250,18 @@ async function run() {
         await a.page.waitForTimeout(450)
       }
       await same(`${view}: ${label} sheet`, w, n, (a) => text(a, a.app.sheet))
-      for (const a of [w, n]) await a.page.screenshot({ path: path.join(OUT, `sheet-${view}-${label.replace(/\W+/g, '-')}-${a.which}.png`) })
+      for (const a of [w, n]) await a.page.screenshot({ path: path.join(OUT, `sheet-${view}${scheme === 'dark' ? '-dark' : ''}-${label.replace(/\W+/g, '-')}-${a.which}.png`) })
       if (after) await after()
       for (const a of [w, n]) await close(a)
     }
+    // the ± is shown only with numbers
     if (view === 'numbers') await sheet('margin', (a) => btn(a, 'About this estimate').click())
+    await sheet('same as yesterday', (a) => a.page.getByText('Same as yesterday', { exact: true }).click())
+    await sheet('log a recipe', async (a) => {
+      await a.page.getByText('What can I make?', { exact: true }).click(); await sheetOpen(a); await a.page.waitForTimeout(450)
+      await sheetRow(a, 'Chicken curry').click()
+      await a.page.getByText('The recipe makes 4 servings', { exact: false }).waitFor()
+    })
     await sheet('edit entry', (a) => a.page.locator(a.app.screen).getByText('Chicken sandwich', { exact: true }).click())
     await sheet('add food', (a) => btn(a, 'Add food').click())
     await sheet('recipes', (a) => a.page.locator(a.app.screen).getByText('Your recipes', { exact: true }).last().click())
@@ -273,11 +290,13 @@ async function run() {
   // 3. search: the same foods in the same order
   if (want('search')) {
     const [w, n] = await pair(state(VIEWS.numbers), 'light')
-    for (const a of [w, n]) { await btn(a, 'Add food').click(); await sheetOpen(a) }
-    await same('search: nothing typed (recipes, usuals, recent, my foods)', w, n, (a) => a.page.locator(a.app.titles).allInnerTexts())
+    // past the slide-up, so the sheet's text is laid out
+    for (const a of [w, n]) { await btn(a, 'Add food').click(); await sheetOpen(a); await a.page.waitForTimeout(600) }
+    await same('search: nothing typed (recipes, usuals, recent, my foods)', w, n, (a) => text(a, a.app.sheet))
     for (const q of ['chicken', 'greggs', 'sausage roll', 'milk', 'semi skimmed', 'oat', 'banana', 'rice', 'big mac', 'whopper', 'pret', 'coffee latte', 'curry', 'yogurt', 'egg', 'xyzzy']) {
       for (const a of [w, n]) { await a.page.getByLabel(a.app.search).fill(q); await a.page.waitForTimeout(200) }
-      await same(`search "${q}"`, w, n, async (a) => (await a.page.locator(a.app.titles).allInnerTexts()).map(norm))
+      // the whole sheet: every row's title and figures, in order
+      await same(`search "${q}"`, w, n, (a) => text(a, a.app.sheet))
     }
     await done(w, n, 'search')
   }
@@ -285,9 +304,12 @@ async function run() {
   // 4. the logging path: one serving through each app's screens
   if (want('log')) {
     const chain = chainFoods()
-    const pick = process.env.FOOD_ALL ? chain : chain.filter((_, i) => i % Math.max(1, Math.floor(chain.length / 24)) === 0)
+    // FOOD_ALL=1 logs every chain food; FOOD_SHARD=i/n takes every n-th of them from i, so n runs share the work
+    const [si, sn] = (process.env.FOOD_SHARD || '0/1').split('/').map(Number)
+    const all = process.env.FOOD_ALL ? chain.filter((_, i) => i % sn === si) : null
+    const pick = all ?? chain.filter((_, i) => i % Math.max(1, Math.floor(chain.length / 24)) === 0)
       .concat(chain.filter((f) => f.n === 'Greggs Bacon Breakfast Roll' || f.n === 'Burger King Whopper'))
-    const generic = ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black']
+    const generic = si === 0 ? ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black'] : []
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')
     let logged = 0
     for (const food of [...pick.map((f) => f.n), ...generic]) {
@@ -309,7 +331,10 @@ async function run() {
       }
       const ok = JSON.stringify(entries[0]) === JSON.stringify(entries[1])
       const ch = pick.find((f) => f.n === food)
-      const pub = ch ? Math.round(entries[1]?.[0]?.k) === ch.published : true
+      // kcal to the whole number shown, macros to the 0.1 g the entry keeps (within rounding)
+      const e1 = entries[1]?.[0]
+      const near = (a, b) => Math.abs(Math.round(a * 10) / 10 - Math.round(b * 10) / 10) <= 0.1
+      const pub = ch ? Math.round(e1?.k) === ch.published && (!ch.macros || Object.entries(ch.macros).every(([x, v]) => near(e1[x], v))) : true
       if (!ok || !pub) check(`log one serving of ${food}`, false, { web: entries[0], native: entries[1], published: ch?.published })
       else logged++
     }
@@ -323,7 +348,8 @@ async function run() {
       'dup-4 keep this one': async (a) => {
         await btn(a, 'Add food').click(); await sheetOpen(a)
         await a.page.getByText('2 foods look the same', { exact: true }).click()
-        await a.page.getByText('Pick the one to keep', { exact: true }).waitFor()
+        await a.page.getByText('Pick the one to keep', { exact: true }).waitFor(); await a.page.waitForTimeout(450)
+        await a.page.screenshot({ path: path.join(OUT, `dup4-open-${a.which}.png`) })
         const t = await text(a, a.app.sheet)
         await btn(a, 'Keep this one').click()
         await a.page.getByText('Your usual lunch').or(a.page.getByText('My foods', { exact: true })).first().waitFor()
@@ -342,7 +368,8 @@ async function run() {
         const fill = async (label, v) => { await a.page.getByLabel(label, { exact: true }).last().fill(v) }
         await fill('Name', "Mum's chilli"); await fill('Serving', '350'); await fill('Calories', '120'); await fill('Protein', '9'); await fill('Carbs', '8'); await fill('Fat', '5')
         await btn(a, 'Save').click()
-        await a.page.getByText("Looks like your saved Mum's chilli.", { exact: true }).waitFor()
+        await a.page.getByText("Looks like your saved Mum's chilli.", { exact: true }).waitFor(); await a.page.waitForTimeout(450)
+        await a.page.screenshot({ path: path.join(OUT, `dup2-open-${a.which}.png`) })
         const t = norm(await a.page.locator(a.app.sheet).last().innerText())
         await btn(a, 'Keep yours').click()
         await a.page.getByText('How much?', { exact: true }).waitFor()
@@ -353,7 +380,12 @@ async function run() {
       const [w, n] = await pair(state({ ...VIEWS.numbers, dupLogs: true }), 'light')
       try {
         // the web's fieldset legend is for screen readers only (native labels the group instead)
-        await same(name, w, n, async (a) => { const r = await flow(a); if (r.sheet) r.sheet = r.sheet.replace('Food to keep ', ''); return r })
+        await same(name, w, n, async (a) => {
+          const r = await flow(a)
+          await a.page.screenshot({ path: path.join(OUT, `dup-${name.replace(/\W+/g, '-')}-${a.which}.png`) })
+          if (r.sheet) r.sheet = r.sheet.replace('Food to keep ', '')
+          return r
+        })
       } catch (e) {
         for (const a of [w, n]) await a.page.screenshot({ path: path.join(OUT, `fail-${name.replace(/\W+/g, '-')}-${a.which}.png`) })
         check(name, false, String(e).slice(0, 300))
@@ -371,12 +403,69 @@ async function run() {
     }
   }
 
+  // 5b. paths the review asked for: Common in Add food, deleting a saved food, typed searches in
+  // the recipe builder and in What can I make?
+  if (want('more')) {
+    const open = async (a, how) => { await how(a); await sheetOpen(a); await a.page.waitForTimeout(600) }
+    {
+      // no recent foods and nothing saved: Add food shows Common
+      const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true, noCustom: true }), 'light')
+      await same('add food with nothing recent or saved (Common)', w, n, async (a) => { await open(a, (x) => btn(x, 'Add food').click()); return text(a, a.app.sheet) })
+      await done(w, n, 'common')
+    }
+    {
+      const [w, n] = await pair(state(VIEWS.numbers), 'light')
+      await same("delete a saved food (Mum's chilli)", w, n, async (a) => {
+        await open(a, (x) => btn(x, 'Add food').click())
+        await btn(a, "Delete Mum's chilli").click()
+        // past the toast, which native draws inside the open sheet
+        await a.page.waitForTimeout(2200)
+        const s = await stored(a)
+        return { sheet: await text(a, a.app.sheet), saved: s.customFoods.map((f) => f.n) }
+      })
+      await done(w, n, 'delete')
+    }
+    {
+      const [w, n] = await pair(state(VIEWS.numbers), 'light')
+      for (const q of ['chicken', 'olive oil', 'xyzzy']) {
+        await same(`recipe builder ingredient search "${q}"`, w, n, async (a) => {
+          if (!(await a.page.getByText('Edit recipe', { exact: true }).count())) {
+            await open(a, (x) => x.page.locator(x.app.screen).getByText('Your recipes', { exact: true }).last().click())
+            await btn(a, 'Edit').first().click()
+            await a.page.getByText('Edit recipe', { exact: true }).waitFor()
+          }
+          await a.page.getByLabel('Search ingredients').fill(q); await a.page.waitForTimeout(300)
+          return text(a, a.app.sheet)
+        })
+      }
+      // a decimal amount, typed a character at a time ("0" "." "5"), then the totals
+      await same('recipe builder: type 0.5 as an amount', w, n, async (a) => {
+        const box = a.page.getByLabel('Olive oil amount')
+        await box.fill(''); await box.pressSequentially('0.5'); await a.page.waitForTimeout(200)
+        // the web's number box shows a cleared 0 before the typing ("00.5"); both read 0.5, so compare what follows from it
+        return text(a, a.app.sheet)
+      })
+      await done(w, n, 'builder search')
+    }
+    {
+      const [w, n] = await pair(state(VIEWS.numbers), 'light')
+      for (const q of ['onion', 'rice', 'xyzzy']) {
+        await same(`what can I make "${q}"`, w, n, async (a) => {
+          if (!(await a.page.getByText('I have…', { exact: true }).count())) await open(a, (x) => x.page.getByText('What can I make?', { exact: true }).click())
+          await a.page.getByLabel('Add an ingredient you have').fill(q); await a.page.waitForTimeout(300)
+          return text(a, a.app.sheet)
+        })
+      }
+      await done(w, n, 'suggest search')
+    }
+  }
+
   // 6. offline: search and log with the network cut
   if (want('offline')) {
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')
     for (const a of [w, n]) await a.ctx.setOffline(true)
     await same('offline: search, log, and the Add food sheet', w, n, async (a) => {
-      await btn(a, 'Add food').click(); await sheetOpen(a)
+      await btn(a, 'Add food').click(); await sheetOpen(a); await a.page.waitForTimeout(600)
       const sheetText = await text(a, a.app.sheet)
       await a.page.getByLabel(a.app.search).fill('banana')
       await sheetRow(a, 'Banana (1 ~118g)').click()

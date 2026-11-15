@@ -27,6 +27,8 @@ export function allFoods(customFoods: Food[] | undefined): Food[] {
 
 /** A food at this index of `allFoods` is one of the user's own. */
 export const isMine = (index: number): boolean => index >= FOODS.length
+/** The `allFoods` index of the user's own food at this place in their list. */
+export const mineIndex = (i: number): number => FOODS.length + i
 
 // ───────────────────────── the Food tab ─────────────────────────
 
@@ -196,7 +198,7 @@ export const asIngredient = (f: Food): RecipeItem => ({ n: f.n, k: f.k, p: f.p, 
 
 /** The draft's totals and servings (an unreadable count is 1). */
 export function draftTotals(d: RecipeDraft) {
-  const servings = parseFloat(d.servings) || 1
+  const servings = numIn(d.servings) || 1
   return { servings, totals: recipeTotals({ id: '', name: d.name, servings, items: d.items }) }
 }
 
@@ -243,8 +245,22 @@ export function swapText(w: Swap, gentle: boolean, servings: number): string {
 
 // ───────────────────────── quick estimate and create a food ─────────────────────────
 
-/** A typed number; anything unreadable is 0. */
-export const numIn = (v: string): number => parseFloat(v) || 0
+/**
+ * A typed number; anything unreadable is 0. A phone's decimal pad types a comma in regions that use
+ * one ("12,5" is 12.5); a pasted thousands separator ("1,200") is a thousand. The web's number
+ * fields never pass a comma, so for them this is plain parseFloat.
+ */
+export function numIn(v: string): number {
+  const s = v.trim()
+  // a thousands separator never follows a leading 0 ("0,125" is a decimal). In a comma region "1,250"
+  // typed for 1.25 reads as 1250: three decimals are rare on UK labels and amounts, so the paste wins
+  const n = /^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s) ? s.replace(/,/g, '')
+    // a pasted European "1.234,5": dots group the thousands, the comma is the decimal. The comma is
+    // required: without it "1.250" is the ordinary decimal 1.25 a web number box or a UK keypad types
+    : /^[1-9]\d{0,2}(\.\d{3})+,\d+$/.test(s) ? s.replace(/\./g, '').replace(',', '.')
+    : s.replace(',', '.')
+  return parseFloat(n) || 0
+}
 
 /** The quick estimate as an entry, or null without calories. */
 export function quickEntry(f: { n: string; k: string; p: string; c: string; fat: string }, meal: MealSlot, err: number): LoggedFood | null {
