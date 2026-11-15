@@ -4,8 +4,9 @@
  * themselves are checked against the web in scripts/e2e-account-parity.cjs.
  *   (apps/native) npm run test:account
  */
+import { readFileSync } from 'node:fs'
 import { readBackup } from '../../../src/data/backup.native.ts'
-import { appleAlways, codeFrom, coverFrame, photoHeight, reauthMatches, reauthWays, typedOk } from '../lib/account/rules.ts'
+import { appleAlways, codeFrom, coverFrame, failureOf, isNetworkError, photoHeight, reauthMatches, reauthWays, typedOk } from '../lib/account/rules.ts'
 import { gateStep, pendingFor } from '../lib/account/gateModel.ts'
 
 let failed = 0
@@ -31,6 +32,7 @@ for (const no of ['', 'DELET', 'delete it', 'REMOVE', 'DELETE!']) check(`typed: 
 check('callback: the code', codeFrom('tilo://auth-callback?code=abc').code === 'abc')
 check('callback: an error in the query', codeFrom('tilo://auth-callback?error=access_denied&error_description=Denied').why === 'Denied')
 check('callback: an error after #', codeFrom('tilo://auth-callback#error_description=Link%20expired').why === 'Link expired')
+check('callback: the short error code for the log, never the description (it can hold the provider\'s code)', codeFrom('tilo://auth-callback?error=server_error&error_code=unexpected_failure&error_description=Unable%20to%20exchange%20external%20code%3A%20abc123').errCode === 'unexpected_failure' && codeFrom('tilo://auth-callback?error=access_denied').errCode === 'access_denied' && codeFrom('tilo://auth-callback?code=x').errCode === null)
 check('callback: neither', (() => { const r = codeFrom('tilo://auth-callback'); return r.code === null && r.why === null })())
 
 /* ---------- the sign-in photo (.auth2-photo) ---------- */
@@ -76,6 +78,30 @@ check('ways: Google that linked Apple offers both', eq(reauthWays(['google', 'ap
 check('ways: Apple where Apple isn’t offered falls back to the password', eq(reauthWays(['apple'], false), ['password']))
 check('ways: no provider known: the password', eq(reauthWays([], true), ['password']))
 check('apple always: an Apple account on iOS', appleAlways(['email', 'apple'], true) && !appleAlways(['email'], true) && !appleAlways(['apple'], false))
+
+// sign-in errors: the connection or the sign-in itself (no raw native errors on screen; lead, 15 Nov)
+const net = [
+  { name: 'AuthRetryableFetchError', message: 'anything', status: 0 },
+  { message: 'fetch failed: Could not connect to the server.' },
+  { message: 'Network request failed' },
+  { message: 'Failed to fetch' },
+  { message: 'The Internet connection appears to be offline.' },
+  { message: 'The network connection was lost.' },
+  { message: 'The request timed out.' },
+]
+check('network: what Expo, iOS, React Native and supabase-js say for no connection', net.every(isNetworkError))
+const notNet = [
+  { name: 'AuthApiError', message: 'Invalid login credentials', status: 400 },
+  { message: 'Unsupported provider: provider is not enabled' },
+  { name: 'AppleSignInFailed', message: 'Sign in with Apple failed (com.apple.AuthenticationServices.AuthorizationError 1000)' },
+  { message: 'invalid flow state, no valid flow state found' },
+  null, undefined, {},
+]
+check('not network: account answers, Apple 1000, a provider off, nothing', notNet.every((e) => !isNetworkError(e)))
+check('failure kind', failureOf(net[1]) === 'network' && failureOf(notNet[2]) === 'failed' && failureOf(null) === 'failed')
+
+const authSrc = readFileSync(new URL('../lib/account/Auth.tsx', import.meta.url), 'utf8')
+check('sign-in screen: no raw error on screen (Google, Apple and server errors go through the words)', !/setErr\((r|error|e)\.message\)/.test(authSrc) && /AUTH\.errGoogle/.test(authSrc) && /AUTH\.errApple/.test(authSrc) && /AUTH\.errOffline/.test(authSrc))
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} passed`)
 process.exit(failed ? 1 : 0)

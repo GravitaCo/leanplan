@@ -33,6 +33,11 @@ export const AUTH = {
   errMatch: 'Passwords do not match.',
   errShort: 'Password must be at least 8 characters.',
   errRate: 'Give it a minute, then try again.',
+  /** the phone app only: a sign-in, sign-up or reset request that couldn’t reach Tilo, and a Google or Apple sign-in
+   *  that didn't finish, in place of the raw system error (new words: need Benn's or Sara's OK) */
+  errOffline: 'This needs a connection. Check you’re online, then try again.',
+  errGoogle: 'Google sign-in didn’t finish. Try again in a moment.',
+  errApple: 'Sign in with Apple didn’t finish. Try again in a moment.',
   sent: (email: string) => `We sent a link to ${email || 'your inbox'}. Open it on this phone to continue.`,
   back: 'Back to sign in',
   resentLead: 'Sent again. It can take a minute or two. ',
