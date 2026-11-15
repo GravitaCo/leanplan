@@ -10,6 +10,8 @@ import UIKit
 ///   values: "HH:mm" and "yyyy-MM-dd".
 /// - TiloMenu: a button whose menu (UIMenu) lists the options, the chosen one ticked, anchored to
 ///   the field, as Safari opens a `<select>`.
+/// - TiloSlider: the system slider (UISlider), as Safari draws `<input type="range">` with an
+///   accent colour: the track tinted up to the thumb. Drawn, not hidden: it is the control.
 public class TiloPickersModule: Module {
   public func definition() -> ModuleDefinition {
     Name("TiloPickers")
@@ -46,6 +48,23 @@ public class TiloPickersModule: Module {
 
       // every prop is in before the picker is set, whatever order they arrive in
       OnViewDidUpdateProps { (view: TiloDatePickerView) in view.apply() }
+    }
+
+    View(TiloSliderView.self) {
+      Name("TiloSlider")
+      Events("onSlide")
+
+      Prop("min", 0.0) { (view: TiloSliderView, v: Double) in view.slider.minimumValue = Float(v) }
+      Prop("max", 1.0) { (view: TiloSliderView, v: Double) in view.slider.maximumValue = Float(v) }
+      /// the value, set when it differs from the thumb's (never fights a drag)
+      Prop("value", 0.0) { (view: TiloSliderView, v: Double) in view.value = Float(v) }
+      /// the accent colour (the web's accent-color: var(--tint)), "#rrggbb"
+      Prop("tint", "") { (view: TiloSliderView, v: String) in view.slider.minimumTrackTintColor = colorFrom(hex: v) }
+      Prop("label", "") { (view: TiloSliderView, v: String) in view.slider.accessibilityLabel = v }
+      /// what VoiceOver reads as the value (the app's words; the system's percentage otherwise)
+      Prop("valueText", "") { (view: TiloSliderView, v: String) in view.slider.accessibilityValue = v.isEmpty ? nil : v }
+
+      OnViewDidUpdateProps { (view: TiloSliderView) in view.apply() }
     }
 
     View(TiloMenuView.self) {
@@ -190,5 +209,39 @@ final class TiloMenuView: ExpoView {
     }
     button.menu = UIMenu(title: "", options: .singleSelection, children: actions)
     button.accessibilityValue = selected >= 0 && selected < options.count ? options[selected] : nil
+  }
+}
+
+/// "#rrggbb" as a colour (nil leaves the system's own)
+private func colorFrom(hex: String) -> UIColor? {
+  var h = hex.trimmingCharacters(in: .whitespaces)
+  if h.hasPrefix("#") { h.removeFirst() }
+  guard h.count == 6, let n = UInt32(h, radix: 16) else { return nil }
+  return UIColor(red: CGFloat((n >> 16) & 0xff) / 255, green: CGFloat((n >> 8) & 0xff) / 255, blue: CGFloat(n & 0xff) / 255, alpha: 1)
+}
+
+final class TiloSliderView: ExpoView {
+  let onSlide = EventDispatcher()
+  let slider = UISlider()
+  var value: Float = 0
+
+  required init(appContext: AppContext? = nil) {
+    super.init(appContext: appContext)
+    slider.isContinuous = true
+    slider.addTarget(self, action: #selector(changed), for: .valueChanged)
+    addSubview(slider)
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    slider.frame = bounds
+  }
+
+  func apply() {
+    if !slider.isTracking && slider.value != value { slider.setValue(value, animated: false) }
+  }
+
+  @objc private func changed() {
+    onSlide(["value": Double(slider.value)])
   }
 }

@@ -8,7 +8,7 @@
  */
 import { useRef, useState, type ReactNode } from 'react'
 import { PanResponder, Platform, Pressable, Text, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native'
-import { MenuNative } from '../../modules/tilo-pickers'
+import { MenuNative, SliderNative } from '../../modules/tilo-pickers'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
 import { Sheet } from './primitives'
@@ -23,7 +23,9 @@ export function snap(v: number, min: number, max: number, step: number): number 
 }
 
 /**
- * `input[type=range]`: 28 pt high; a 4 pt track, the tint up to the thumb and --fill2 after it; a
+ * `input[type=range]`. On iOS it is the system slider (modules/tilo-pickers' UISlider, its track
+ * tinted up to the thumb), as Safari draws the web's range input on an iPhone; picks snap to
+ * `step`. Elsewhere it is drawn: 28 pt high; a 4 pt track, the tint up to the thumb and --fill2 after it; a
  * 28 pt white thumb with a soft shadow (as iOS draws the web's range input). A tap on the track
  * jumps there and a drag follows the finger. VoiceOver adjusts it a step at a time, with the web's
  * aria label; `valueText` is what it reads (the value itself otherwise). The web's input sits on a
@@ -31,6 +33,21 @@ export function snap(v: number, min: number, max: number, step: number): number 
  */
 export function Slider({ min, max, step = 1, value, onChange, label, valueText, style }: {
   min: number; max: number; step?: number; value: number; onChange: (v: number) => void; label: string
+  valueText?: string; style?: object
+}) {
+  const t = useTokens()
+  if (Platform.OS === 'ios' && SliderNative) return (
+    <View style={[{ height: THUMB, marginBottom: 5, justifyContent: 'center' }, style]}>
+      <SliderNative min={min} max={max} value={value} tint={t.tint} label={label} valueText={valueText}
+        onSlide={(e) => { const v = snap(e.nativeEvent.value, min, max, step); if (v !== value) onChange(v) }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+    </View>
+  )
+  return <DrawnSlider min={min} max={max} step={step} value={value} onChange={onChange} label={label} valueText={valueText} style={style} />
+}
+
+function DrawnSlider({ min, max, step, value, onChange, label, valueText, style }: {
+  min: number; max: number; step: number; value: number; onChange: (v: number) => void; label: string
   valueText?: string; style?: object
 }) {
   const t = useTokens()
