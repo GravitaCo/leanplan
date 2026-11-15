@@ -64,7 +64,7 @@ public class TiloPickersModule: Module {
       Prop("tint", "") { (view: TiloSliderView, v: String) in view.slider.minimumTrackTintColor = colorFrom(hex: v) }
       Prop("label", "") { (view: TiloSliderView, v: String) in view.slider.accessibilityLabel = v }
       /// what VoiceOver reads as the value (the app's words; the system's percentage otherwise)
-      Prop("valueText", "") { (view: TiloSliderView, v: String) in view.slider.accessibilityValue = v.isEmpty ? nil : v }
+      Prop("valueText", "") { (view: TiloSliderView, v: String) in view.slider.valueText = v }
 
       OnViewDidUpdateProps { (view: TiloSliderView) in view.apply() }
     }
@@ -222,16 +222,46 @@ private func colorFrom(hex: String) -> UIColor? {
   return UIColor(red: CGFloat((n >> 16) & 0xff) / 255, green: CGFloat((n >> 8) & 0xff) / 255, blue: CGFloat(n & 0xff) / 255, alpha: 1)
 }
 
+/// UISlider for VoiceOver as Safari's range input is: a swipe moves one step (UIKit's own moves a
+/// tenth of the range), and it reads the value (the app's words, else the number), not a percentage.
+final class StepSlider: UISlider {
+  var step: Float = 0
+  var valueText = ""
+  var onStep: (() -> Void)?
+
+  override var accessibilityValue: String? {
+    get {
+      if !valueText.isEmpty { return valueText }
+      let f = NumberFormatter()
+      f.maximumFractionDigits = 2
+      f.minimumFractionDigits = 0
+      return f.string(from: NSNumber(value: value))
+    }
+    set { }
+  }
+
+  private func move(_ dir: Float) {
+    let by = step > 0 ? step : (maximumValue - minimumValue) / 10
+    let next = Swift.min(maximumValue, Swift.max(minimumValue, value + dir * by))
+    guard next != value else { return }
+    setValue(next, animated: false)
+    onStep?()
+  }
+  override func accessibilityIncrement() { move(1) }
+  override func accessibilityDecrement() { move(-1) }
+}
+
 final class TiloSliderView: ExpoView {
   let onSlide = EventDispatcher()
-  let slider = UISlider()
+  let slider = StepSlider()
   var value: Float = 0
-  var step: Float = 0
+  var step: Float = 0 { didSet { slider.step = step } }
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
     slider.isContinuous = true
     slider.addTarget(self, action: #selector(changed), for: .valueChanged)
+    slider.onStep = { [weak self] in self?.changed() }
     addSubview(slider)
   }
 
@@ -244,7 +274,7 @@ final class TiloSliderView: ExpoView {
     if !slider.isTracking && slider.value != value { slider.setValue(value, animated: false) }
   }
 
-  @objc private func changed() {
+  @objc func changed() {
     // the thumb sits on a step, as Safari's does, never between two
     if step > 0 {
       let lo = slider.minimumValue
