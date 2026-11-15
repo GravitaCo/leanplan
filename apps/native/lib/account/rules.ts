@@ -9,11 +9,14 @@ export const typedOk = (x: string): boolean => x.trim().toUpperCase() === DELETE
 
 /** The code from a tilo://auth-callback return, or the reason it failed (some error redirects carry
  *  it after # rather than in the query). */
-export function codeFrom(url: string): { code: string | null; why: string | null } {
+export function codeFrom(url: string): { code: string | null; why: string | null; errCode: string | null } {
   const back = new URL(url)
   const frag = new URLSearchParams(back.hash.replace(/^#/, ''))
   const why = back.searchParams.get('error_description') || frag.get('error_description') || back.searchParams.get('error') || frag.get('error')
-  return { code: back.searchParams.get('code'), why }
+  // the short code only (server_error, access_denied…), safe to log: Supabase's description can carry
+  // the provider's one-time code ("Unable to exchange external code: …"; security-data, 15 Nov)
+  const errCode = back.searchParams.get('error_code') || frag.get('error_code') || back.searchParams.get('error') || frag.get('error')
+  return { code: back.searchParams.get('code'), why, errCode }
 }
 
 /** The sign-in photo's height (.auth2-photo): 48% of the screen for sign-in (at least 260), 36% for
@@ -55,3 +58,20 @@ export function reauthWays(providers: readonly string[], appleHere: boolean): Re
 }
 /** An Apple account must sign in with Apple again on every deletion (see reauthWays). */
 export const appleAlways = (providers: readonly string[], appleHere: boolean): boolean => appleHere && providers.includes('apple')
+
+/**
+ * Whether a sign-in error is the connection rather than the account (lead, 15 Nov: no raw native
+ * errors on screen). supabase-js wraps a failed request as AuthRetryableFetchError (status 0); Expo's
+ * fetch says "fetch failed: …", iOS "Could not connect to the server", "The Internet connection appears
+ * to be offline", "The network connection was lost", "The request timed out"; React Native's own fetch
+ * "Network request failed"; a browser "Failed to fetch".
+ */
+export function isNetworkError(e: { name?: string; message?: string; status?: number } | null | undefined): boolean {
+  if (!e) return false
+  if (e.name === 'AuthRetryableFetchError') return true
+  return /fetch failed|network request failed|failed to fetch|could not connect|appears to be offline|network connection was lost|timed out|load failed/i.test(e.message ?? '')
+}
+
+/** What a sign-in failure is, for the words on screen: the connection, or the sign-in itself. */
+export type SignInFailure = 'network' | 'failed'
+export const failureOf = (e: { name?: string; message?: string; status?: number } | null | undefined): SignInFailure => (isNetworkError(e) ? 'network' : 'failed')
