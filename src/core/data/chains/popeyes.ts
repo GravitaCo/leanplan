@@ -25,7 +25,6 @@ const LISTED: Food[] = [
     "aka": [
       "Popeyes chicken",
       "Popeyes fried chicken",
-      "Popeyes chicken on the bone",
       "Popeyes chicken pieces"
     ]
   },
@@ -49,7 +48,6 @@ const LISTED: Food[] = [
     "aka": [
       "Popeyes chicken",
       "Popeyes fried chicken",
-      "Popeyes chicken on the bone",
       "Popeyes chicken pieces"
     ]
   },
@@ -73,7 +71,6 @@ const LISTED: Food[] = [
     "aka": [
       "Popeyes chicken",
       "Popeyes fried chicken",
-      "Popeyes chicken on the bone",
       "Popeyes chicken pieces"
     ]
   },
@@ -97,7 +94,6 @@ const LISTED: Food[] = [
     "aka": [
       "Popeyes chicken",
       "Popeyes fried chicken",
-      "Popeyes chicken on the bone",
       "Popeyes chicken pieces"
     ]
   },
@@ -3721,7 +3717,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 399.0,
@@ -3739,7 +3735,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 346.0,
@@ -3757,7 +3753,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 365.0,
@@ -3775,7 +3771,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 356.0,
@@ -3793,7 +3789,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 358.0,
@@ -3811,7 +3807,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 460.0,
@@ -3829,7 +3825,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 462.0,
@@ -3847,7 +3843,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 764.0,
@@ -3865,7 +3861,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 767.0,
@@ -3883,7 +3879,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 715.0,
@@ -3901,7 +3897,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 786.0,
@@ -3919,7 +3915,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 388.0,
@@ -3937,7 +3933,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 379.0,
@@ -3955,7 +3951,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 381.0,
@@ -3973,7 +3969,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 464.0,
@@ -3991,7 +3987,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "sauces",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 274.0,
@@ -4009,7 +4005,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 525.0,
@@ -4027,7 +4023,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 734.0,
@@ -4045,7 +4041,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 411.0,
@@ -4063,7 +4059,7 @@ const GONE_2026_11_15: Food[] = [
     "g": 1,
     "each": true,
     "cat": "fastfood",
-    "src": "popeyes-uk",
+    "src": "popeyes-uk-2026-09",
     "ref": {
       "g": 1,
       "k": 76.0,

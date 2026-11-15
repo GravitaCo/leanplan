@@ -37,8 +37,10 @@ export const SOURCES: Record<string, Source> = {
   'nandos-uk': { label: 'Nando’s UK, Sep 2026', url: 'https://www.nandos.co.uk/food/menu', err: MENU_ERR },
   'greggs-uk': { label: 'Greggs UK, Sep 2026', url: 'https://www.greggs.com/nutrition', err: MENU_ERR },
   // the figures popeyesuk.com/nutrition shows, from the feed the page loads (fetched 15 Nov 2026;
-  // scripts/import/popeyes.py). Items no longer listed keep the figures last published (Oct 2026).
+  // scripts/import/popeyes.py). Items no longer listed keep the figures last published (Sep 2026)
+  // and cite those, from the 25 Sep 2026 import.
   'popeyes-uk': { label: 'Popeyes UK, Nov 2026', url: 'https://popeyesuk.com/nutrition', err: MENU_ERR },
+  'popeyes-uk-2026-09': { label: 'Popeyes UK, Sep 2026 (no longer listed)', url: 'https://popeyesuk.com/nutrition', err: MENU_ERR },
   'pizzahut-uk': { label: 'Pizza Hut Restaurants UK (dine-in), Jul 2026', url: '', err: MENU_ERR },
   'pizzaexpress-uk': { label: 'PizzaExpress UK (England, Wales & Scotland), Sep 2026', url: 'https://www.pizzaexpress.com/allergens-and-nutritionals', err: MENU_ERR },
   'toby-uk': { label: 'Toby Carvery UK, Oct 2026', url: 'https://allergens.mbplc.io/AllergenGuideTobyEstate.html', err: MENU_ERR },

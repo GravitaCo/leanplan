@@ -48,8 +48,9 @@ MACRO_GAP = re.compile(r'Shake')
 # the sugar-free Red Bulls run the other way: kcal ~20-25% under 4 kcal/g of carbs, because part of
 # their carbs is sugar alcohol (polyols, 2.4 kcal/g; sugar is 8-13 g of 14-19 g). Kept as published.
 POLYOL = re.compile(r'^Red Bull Zero ')
-# kJ doesn't match kcal (2364 kJ = 565 kcal, published 545): kcal kept as published
-KJ_TYPO = {'Red Bean Creole Vegan Sandwich'}
+# kJ counts fibre at 2 kcal/g (Reg. 1169/2011 Annex XIV: about 2370 kJ) while the kcal leaves fibre
+# out, so the two disagree by design, not by a typo. The 545 kcal is kept as published.
+KJ_WITH_FIBRE = {'Red Bean Creole Vegan Sandwich'}
 DRINK_CATS = {'Drinks'}
 SAUCE_CATS = {'Dips'}
 # file order (ties in search keep database order): the chicken first, breakfast last
@@ -57,14 +58,16 @@ ORDER = ['Signature Louisiana Chicken', 'Tenders', 'Boneless', 'Hot Wings', 'San
 
 # Search aliases people type (never shown). Brand-prefixed, so an exact-alias match ("popeyes
 # chicken" ranks first) never takes over a plain query like "nuggets" or "fried chicken"; their
-# words still match those queries, after foods whose own name matches.
+# words still match those queries, after foods whose own name matches. Food words only: a short
+# word such as "on", "the" or "of" would match whole here but only inside words elsewhere
+# ("b|on|e"), and search then drops every other food ("chicken on the bone" listed only Popeyes).
 # 'Popeyes chicken' and the 'fried chicken' aliases go on the plain chicken (every count) and the
 # chicken sandwiches and wraps only, so those all fit in the 50 results ahead of the flavoured counts
 CHICKEN = 'Popeyes chicken'
 def aliases(cat, base, flavour_plain, name):
     a = []
     if cat == 'Signature Louisiana Chicken':
-        a += [CHICKEN, 'Popeyes fried chicken', 'Popeyes chicken on the bone', 'Popeyes chicken pieces']
+        a += [CHICKEN, 'Popeyes fried chicken', 'Popeyes chicken pieces']
     elif cat == 'Tenders':
         a += [CHICKEN, 'Popeyes fried chicken strips'] if flavour_plain else []
         a += ['Popeyes chicken tenders', 'Popeyes chicken strips', 'Popeyes strips']
@@ -105,7 +108,7 @@ def read_feed(path):
 def sane(r):
     n = r['name']
     assert r['sat'] <= r['f'] + 0.05 and r['su'] <= r['c'] + 0.2, f'sat/sugar above fat/carbs: {n}'
-    if n not in KJ_TYPO:
+    if n not in KJ_WITH_FIBRE:
         assert abs(r['kj'] - 4.184 * r['k']) <= max(8, 0.03 * r['kj']), f'kJ/kcal disagree: {n}'
     if MACRO_GAP.search(n): return
     if POLYOL.search(n):
@@ -114,6 +117,12 @@ def sane(r):
     macro = 4 * r['p'] + 4 * r['c'] + 9 * r['f']
     assert abs(macro - r['k']) <= max(15, 0.15 * r['k']), f'kcal far from macros: {n} {r["k"]} vs {macro:.0f}'
 
+
+# the dated source the current listed figures came from: a food that leaves the site keeps its
+# figures and cites this. Before the next re-import, add a source for the 15 Nov 2026 feed
+# (popeyes-uk-2026-11) to sources.ts and point this at it.
+PREVIOUS_SRC = 'popeyes-uk-2026-09'
+assert f"'{PREVIOUS_SRC}':" in open('src/core/data/sources.ts', encoding='utf-8').read(), f'{PREVIOUS_SRC} missing from sources.ts'
 
 BLOCK = re.compile(r'^(?:/\*\* (?P<doc>.*?) \*/\n)?(?:export )?const (?P<v>\w+): Food\[\] = (?P<json>\[\n.*?^\])$', re.M | re.S)
 GONE_DOC = re.compile(r'No longer on popeyesuk\.com, (\d{4}-\d{2}-\d{2})')
@@ -202,6 +211,10 @@ def main(path, fetched):
     if newly_gone: gone.setdefault(fetched, []).extend(newly_gone)
     gone = {d: [f for f in fs if f['n'] not in new_names] for d, fs in gone.items()}
     gone = {d: fs for d, fs in sorted(gone.items()) if fs}
+    # figures unchanged, but cited to the import they came from (the listed foods cite the new feed)
+    for fs in gone.values():
+        for f in fs:
+            if f['src'] == 'popeyes-uk': f['src'] = PREVIOUS_SRC
     back = [f['n'] for f in foods if f['n'] in old_by and f['n'] not in {x['n'] for x in old}]
 
     added = [f['n'] for f in foods if f['n'] not in old_by]

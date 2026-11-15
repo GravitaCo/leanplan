@@ -205,6 +205,22 @@ for (const [q, want] of [
     const ok = got === want; if (!ok) bad++
     console.log(ok ? 'PASS' : 'FAIL', `search popeyes: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
   }
+  // an alias with a short word ("on") once matched whole while generic foods only had it inside
+  // "bone", so the generic foods were dropped and only Popeyes was listed
+  for (const q of ['chicken on the bone', 'chicken on bone', 'on the bone']) {
+    const got = top(q)
+    const ok = (q === 'on the bone' || (got.includes('Fried chicken, coated, off the bone (takeaway)') && got.includes('Chicken drumstick, roasted, with skin, weighed with bone')))
+      && got.length > 0 && !got.every((n) => n.startsWith('Popeyes'))
+    if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: "${q}" keeps the generic foods`, JSON.stringify(got.slice(0, 4)))
+  }
+  // foods no longer on popeyesuk.com keep their figures and cite the import they came from
+  const gone = FOODS.filter((f) => f.src === 'popeyes-uk-2026-09').map((f) => f.n)
+  const wantGone = ['Popeyes Spicy Tender', 'Popeyes Double Chocolate Cookie', 'Popeyes Ghost Pepper Sandwich', 'Popeyes Bacon Roll - Plain', 'Popeyes Ghost Pepper Big Dip']
+  const okG = gone.length === 20 && wantGone.every((n) => gone.includes(n)) && !!SOURCES['popeyes-uk-2026-09']
+    && !FOODS.some((f) => f.src === 'popeyes-uk' && gone.includes(f.n))
+  if (!okG) bad++
+  console.log(okG ? 'PASS' : 'FAIL', 'popeyes: no-longer-listed foods cite popeyes-uk-2026-09', okG ? '' : JSON.stringify(gone))
 }
 
 // Common UK takeaway searches find a generic dish first, never a chain's, and the takeaway dish
