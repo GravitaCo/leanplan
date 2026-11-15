@@ -43,7 +43,8 @@ export function useAccountDeletion(): {
   /** true when the sign-in behind this session is over 5 minutes old: re-confirm first */
   needsReauth: () => boolean
   reauth: (how: { password: string } | { google: true }) => Promise<ReauthResult>
-  run: () => Promise<{ result: DeleteResult; message: string | null }>
+  /** `appleCode`: the one-time code from a fresh Sign in with Apple, for the server to revoke it */
+  run: (appleCode?: string) => Promise<{ result: DeleteResult; message: string | null }>
 } {
   const provider = useStore((s) => s.authProvider)
   const needsReauth = useStore((s) => s.deleteNeedsReauth)
@@ -53,8 +54,8 @@ export function useAccountDeletion(): {
   const deleting = useStore((s) => s.deletingAccount)
   const del = useStore((s) => s.deleteAccount)
   const reason = !online ? DELETE_MESSAGES.offline : !authed ? DELETE_MESSAGES['no-session'] : null
-  const run = useCallback(async () => {
-    const result = await del()
+  const run = useCallback(async (appleCode?: string) => {
+    const result = await del(undefined, appleCode)
     return { result, message: result.status === 'ok' ? null : DELETE_MESSAGES[result.status] }
   }, [del])
   return { canDelete: !reason && !deleting, reason, deleting, provider, needsReauth, reauth, run }

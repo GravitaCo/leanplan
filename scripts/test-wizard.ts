@@ -514,7 +514,7 @@ async function compliance(): Promise<void> {
       const stop = f.indexOf("if (!uid) { clearDraft(); return { status: 'no-session' } }")
       return stop > 0 && stop < f.indexOf('markPendingDeletion(') && stop < f.indexOf('saveState(') && stop < f.indexOf('freshForAccount(') })()],
     ['a normal account deletion clears the pending record only when it is that account\'s', (() => {
-      const f = STORE.slice(STORE.indexOf('deleteAccount: async (reason)'), STORE.indexOf('signOut: async (opts)'))
+      const f = STORE.slice(STORE.indexOf('deleteAccount: async (reason'), STORE.indexOf('signOut: async (opts)'))
       return /const goneUid = getUid\(\)/.test(f) && /if \(goneUid && pendingDeletion\(\)\?\.uid === goneUid\) clearPendingDeletion\(\)/.test(f)
         && f.indexOf('clearPendingDeletion()') > f.indexOf("if (res.status !== 'ok')") })()],
     ['sign out and remove this device\'s log: the draft and setup-card choice go, the pending record stays (37c)', (() => {

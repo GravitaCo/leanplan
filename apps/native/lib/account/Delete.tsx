@@ -77,6 +77,8 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     return () => { on = false }
   }, [])
   const [appleDone, setAppleDone] = useState(false)
+  // Apple's one-time code from that sign-in, sent with the delete so the server can revoke it (memory only)
+  const [appleCode, setAppleCode] = useState<string | undefined>(undefined)
   const apple = appleAlways(providers, appleAvailable()) && !appleDone
   const google = !apple && stale && provider === 'google'
   const needPw = !apple && stale && provider !== 'google'
@@ -93,9 +95,11 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
       if (r === 'offline') { setMsg(DELETE_MESSAGES.offline); return }
       if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     }
-    const { result, message } = await run()
+    const { result, message } = await run(appleCode)
     // the server still wants a fresh sign-in: an Apple account goes back to Sign in with Apple, never a password
-    if (result.status === 'reauth') { setStale(true); setAppleDone(false) }
+    if (result.status === 'reauth') setStale(true)
+    // Apple's code works once: whenever it may have reached the server, a retry signs in with Apple afresh
+    if (result.status === 'reauth' || result.status === 'error' || result.status === 'unavailable') { setAppleDone(false); setAppleCode(undefined) }
     if (message) setMsg(message)
   }
 
@@ -121,9 +125,10 @@ export function DeleteConfirmSheet({ onClose }: { onClose: () => void }) {
     setBusy(true)
     const r = await appleReauth()
     setBusy(false)
-    if (r === 'cancelled') return
-    if (r !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
+    if (r.status === 'cancelled') return
+    if (r.status !== 'ok') { setMsg(DELETE_MESSAGES.error); return }
     setMsg(null)
+    setAppleCode(r.code)
     setAppleDone(true)
     setStale(needsReauth())
   }
