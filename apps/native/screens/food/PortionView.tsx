@@ -4,10 +4,14 @@
  * comes from the shared portionPreview (core's buildEntry), so one serving here equals one serving
  * on the web and the published figure.
  */
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Linking, Text, View } from 'react-native'
 import { useStore } from '@/store/store'
-import { kcalHidden } from '@/data/consent'
+import { hasConsent, kcalHidden } from '@/data/consent'
+import { shareRowState } from '@/core/domain/sharedProduct'
+import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
+import { ShareProductRow } from '../scan'
 import type { FatChoice, Food, HandPortion, MealSlot } from '@/core/types'
 import { fmt, r1 } from '@/core/domain/date'
 import { amountText, headline } from '@/core/domain/nutrition'
@@ -26,15 +30,17 @@ import { MealSeg } from './common'
 
 type Mode = Portion['mode']
 
-export function PortionView({ food, custom, meal, setMeal, onBack, onClose, animate, extra }: {
+export function PortionView({ food, custom, meal, setMeal, onBack, onClose, animate, share }: {
   food: Food; custom: boolean; meal: MealSlot; setMeal: (m: MealSlot) => void
   onBack?: () => void; onClose: () => void; animate: boolean
-  /** under the Add button: the Scanning stream's "Share this product" row (sp-7) */
-  extra?: ReactNode
+  /** "Share this product" (sp-7): offered on a saved food that qualifies; `busy` while its Open Food Facts lookup runs */
+  share?: { onShare: () => void; busy: boolean }
 }) {
   const t = useTokens()
   const data = useStore((s) => s.data)
   const logEntries = useStore((s) => s.logEntries)
+  const online = useStore((s) => s.online)
+  const underAge = useStore((s) => !!s.underAge)
   const profile = data.profile
   const gentle = kcalHidden(data)
 
@@ -60,6 +66,11 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
     onClose()
   }
   const setG = (g: number) => { setGrams(g); setGText(null) }
+  // the saved food as it is now: its share row goes once it's shared or Open Food Facts has it. A read
+  // is queued only with a yes to health data, and no photo leaves the phone while an under-18 age is on screen
+  const saved = custom && food.id ? (data.customFoods || []).find((f) => f.id === food.id) : undefined
+  const shareOk = SHARED_PRODUCTS_ENABLED && LABEL_SCAN_ENABLED && hasConsent(data, 'health') && !underAge
+  const shareRow = saved ? shareRowState(saved, { enabled: shareOk, online }) : 'hidden'
   const maxG = gramsMax(food)
   // per-item foods are counted only, so they have no mode to choose
   const modes = portionModes(food)
@@ -88,7 +99,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
             <Scale items={SERV_STEPS.map((v) => ({
               key: v, big: frac(v),
               text: each ? (gentle ? `${r1(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${r1(food.g * v)} ${u}`,
-            }))} value={serv} onPick={setServ} />
+            }))} value={serv} onPick={setServ} tall /* 44 pt minimum (Benn, 15 Nov 2026) */ />
             {/, raw\b/i.test(food.n) && <Foot>{PORTION.weighRaw}</Foot>}
             <Foot>{each ? PORTION.perItem(source?.text.split(',')[0] ?? PORTION.theMaker) : PORTION.oneServing(amountText(food.g, u))}</Foot>
           </>
@@ -148,7 +159,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
         </Text>
       </Card>
       <Btn title={PORTION.addTo(MEAL_LABEL[meal])} onPress={commit} disabled={!entry.grams} />
-      {extra}
+      {shareRow !== 'hidden' && share && <ShareProductRow state={shareRow} busy={share.busy} onShare={share.onShare} />}
     </Sheet>
   )
 }

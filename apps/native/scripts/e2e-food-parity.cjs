@@ -460,6 +460,28 @@ async function run() {
     }
   }
 
+  // 7. scanning from Add food (N6's views, hosted by Add food): a typed barcode, as the camera can't run here.
+  // A saved food's barcode opens its portion; an unknown one opens Create a food with the lookup's note
+  // (the stand-in blocks Open Food Facts, so the lookup can't answer)
+  if (want('scan')) {
+    const st = state(VIEWS.numbers)
+    st.customFoods = st.customFoods.map((f) => (f.id === 'cf-3' ? { ...f, barcode: '5000000000012' } : f))
+    for (const [label, code, lands] of [['a saved food', '5000000000012', "Mum's chilli"], ['an unknown product', '5012345678900', 'Create a food']]) {
+      const [w, n] = await pair(st, 'light')
+      await same(`scan: type the barcode of ${label}`, w, n, async (a) => {
+        await btn(a, 'Add food').click(); await sheetOpen(a); await a.page.waitForTimeout(450)
+        await btn(a, 'Scan barcode').first().click()
+        await a.page.getByLabel('Barcode', { exact: true }).last().fill(code)
+        await btn(a, 'Look up').click()
+        await a.page.locator(a.app.sheet).last().getByText(lands, { exact: true }).first().waitFor({ timeout: 15000 })
+        await a.page.waitForTimeout(500)
+        await a.page.screenshot({ path: path.join(OUT, `scan-${label.replace(/\W+/g, '-')}-${a.which}.png`) })
+        return text(a, a.app.sheet)
+      })
+      await done(w, n, `scan ${label}`)
+    }
+  }
+
   // 6. offline: search and log with the network cut
   if (want('offline')) {
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')

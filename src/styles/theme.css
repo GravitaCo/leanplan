@@ -325,6 +325,8 @@ a.srcln:hover, a.srcln:focus-visible { text-decoration: underline; }
 .scale button.on { background: var(--tint); color: var(--on-tint); }
 /* the check-in's scales: 44 px targets (Benn, 13 Nov 2026), the same look, a little taller */
 .ck-scale button { min-height: 44px; }
+/* Food's serving scales (portion, recipe log): 44 px tap targets at least (Benn, 15 Nov 2026) */
+.food-scale button { min-height: 44px; }
 .stepper { display: inline-flex; align-items: center; background: var(--fill); border-radius: 9px; }
 .stepper button { background: none; border: 0; width: 44px; height: 34px; font-size: 22px; color: var(--label); }
 .stepper span { min-width: 52px; text-align: center; font-weight: 600; }

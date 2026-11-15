@@ -28,7 +28,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
       right={<button className="navbtn b" onClick={commit}>{RECIPES.add}</button>}>
       <MealSeg value={meal} onChange={setMeal} />
       <div className="lbl">{RECIPES.servings}</div>
-      <div className="scale">
+      <div className="scale food-scale">
         {recipeSteps(q).map((v) => (
           <button key={v} className={q === v ? 'on' : ''} onClick={() => setQ(v)}>
             <b className="num">{frac(v)}</b>{gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal`}
