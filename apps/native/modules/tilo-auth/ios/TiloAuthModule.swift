@@ -26,9 +26,12 @@ public class TiloAuthModule: Module {
       if self.request != nil {
         promise.reject(Exception(name: "Busy", description: "Sign in with Apple is already open")); return
       }
-      // no window to show the sheet over: say so, rather than a sheet that never appears and a
-      // request that stays open (every later try would then be "Busy")
-      guard let anchor = self.appContext?.utilities?.currentViewController()?.view.window else {
+      // the screen on top, else the foreground scene's key window (a sheet still closing can leave
+      // the top view controller without a window for a moment). With neither, say so, rather than a
+      // sheet that never appears and a request that stays open (every later try would be "Busy")
+      let anchor = self.appContext?.utilities?.currentViewController()?.view.window ?? keyWindow()
+      guard let anchor else {
+        NSLog("[TiloAuth] Sign in with Apple: no window to present from")
         promise.reject(Exception(name: "NoScreen", description: "Nothing to show Sign in with Apple from")); return
       }
       let request = AppleSignIn(promise: promise, anchor: anchor) { [weak self] in self?.request = nil }
@@ -43,6 +46,15 @@ public class TiloAuthModule: Module {
       Prop("cornerRadius") { (view: TiloAppleButtonView, value: Double) in view.cornerRadius = CGFloat(value) }
     }
   }
+}
+
+/// The key window of the foreground scene, if there is one.
+private func keyWindow() -> UIWindow? {
+  UIApplication.shared.connectedScenes
+    .compactMap { $0 as? UIWindowScene }
+    .filter { $0.activationState == .foregroundActive }
+    .flatMap { $0.windows }
+    .first { $0.isKeyWindow }
 }
 
 /// One Sign in with Apple request: the controller's delegate and presentation anchor.
@@ -92,6 +104,13 @@ final class AppleSignIn: NSObject, ASAuthorizationControllerDelegate, ASAuthoriz
     if let e = error as? ASAuthorizationError, e.code == .canceled {
       promise.resolve(nil); return
     }
-    promise.reject(Exception(name: "AppleSignInFailed", description: error.localizedDescription))
+    // A diagnostic for the device log (lead, 15 Nov): Apple's code and the underlying error's domain
+    // and code, which say why 1000 ("unknown") happened (the capability missing from the app's
+    // profile, no Apple Account signed in on the phone, Apple's servers). Nothing personal is in them.
+    let ns = error as NSError
+    let under = ns.userInfo[NSUnderlyingErrorKey] as? NSError
+    let detail = "\(ns.domain) \(ns.code)" + (under.map { ", underlying \($0.domain) \($0.code)" } ?? "")
+    NSLog("[TiloAuth] Sign in with Apple failed: %@", detail)
+    promise.reject(Exception(name: "AppleSignInFailed", description: "Sign in with Apple failed (\(detail))"))
   }
 }
