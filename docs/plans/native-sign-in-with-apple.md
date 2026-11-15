@@ -103,13 +103,27 @@ increment, not by sign-in itself; Apple asks apps to revoke on deletion):
   in the help copy before launch (new words: a board or Benn's or Sara's OK).
 - A different Apple ID picked when re-confirming before a deletion is refused; it does quietly create
   an empty account with no consent and no sync, as a different Google account does. That account
-  keeps an email nobody meant to sign up with: decide with increment (a) whether to remove it there
-  (ship-critic, 13 Nov).
+  keeps an email nobody meant to sign up with (ship-critic, 13 Nov). Decided with increment (a): it
+  is not removed automatically. The app can't tell a brand-new stray account from a real account the
+  person already had under that Apple ID, and deleting the wrong one would be far worse than leaving
+  an empty one; the owner question then asks whose data the phone holds, and nothing syncs without
+  consent. The person can delete it like any account. Revisit if support sees it happen.
 - An Apple-only account on Android or the web, signed in more than 5 minutes ago, is asked for a
   password it doesn't have before a deletion. Narrow (Android can't sign in with Apple); test it and
   give it a way through before Android ships.
 
-## How revocation will work (increment (a), not built yet)
+## How revocation works (increment (a): built 15 Nov, not deployed)
+
+Built in `supabase/functions/_shared/apple.ts` and `delete-account`, tested in
+`scripts/wellbeing/apple.ts` against a stand-in for Apple. Not deployed: the function deploys through
+`main` after review, and needs the four secrets from step 3 first (without them every Apple account's
+deletion says Apple couldn't be told). The app keeps the code in memory only, for the one delete it
+was fetched for; a server error or timeout asks for Sign in with Apple again, since a code works once.
+When Apple can't be told, the sign-in screen's banner says (`DELETE.appleKept`, new words: Benn's or
+Sara's OK needed): "Your account is deleted. Tilo couldn’t remove Sign in with Apple, so you can remove
+Tilo yourself in your Apple Account settings, under Sign in with Apple."
+
+The design, as agreed:
 
 No Apple token is stored anywhere. Deleting an Apple account already asks the person to sign in
 with Apple again (the server's re-auth rule), and that sign-in returns a fresh one-time
