@@ -99,7 +99,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
             <Scale items={SERV_STEPS.map((v) => ({
               key: v, big: frac(v),
               text: each ? (gentle ? `${r1(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${r1(food.g * v)} ${u}`,
-            }))} value={serv} onPick={setServ} />
+            }))} value={serv} onPick={setServ} tall /* 44 pt minimum (Benn, 15 Nov 2026) */ />
             {/, raw\b/i.test(food.n) && <Foot>{PORTION.weighRaw}</Foot>}
             <Foot>{each ? PORTION.perItem(source?.text.split(',')[0] ?? PORTION.theMaker) : PORTION.oneServing(amountText(food.g, u))}</Foot>
           </>

@@ -32,7 +32,7 @@ export function RecipeLogView({ index, meal, setMeal, onBack, onClose, animate }
       right={<NavBtn bold title={RECIPES.add} onPress={commit} />}>
       <MealSeg value={meal} onChange={setMeal} />
       <Lbl>{RECIPES.servings}</Lbl>
-      <Scale items={recipeSteps(q).map((v) => ({ key: v, big: frac(v), text: gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal` }))} value={q} onPick={setQ} />
+      <Scale items={recipeSteps(q).map((v) => ({ key: v, big: frac(v), text: gentle ? `${Math.round(per.p * v)} g protein` : `${fmt(per.k * v)} kcal` }))} value={q} onPick={setQ} tall /* 44 pt minimum (Benn, 15 Nov 2026) */ />
       <Foot>{RECIPES.makes(recipe.servings)}</Foot>
       <Card plain style={{ marginTop: 14, marginBottom: 10 }}>
         {!gentle && <Big value={fmt(per.k * q)} unit="kcal" pm={`± ${fmt(per.k * q * CAPTURE_ERR.recipe)}`} />}
