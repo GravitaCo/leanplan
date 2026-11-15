@@ -76,7 +76,7 @@ export async function appleClientSecret(cfg: AppleConfig, nowS: number): Promise
 
 export type AppleRevoke = 'revoked' | 'failed'
 /** Why it failed, for the function's log: a step name only, never a value. */
-export type AppleStep = 'config' | 'secret' | 'token' | 'mismatch' | 'revoke'
+export type AppleStep = 'config' | 'secret' | 'token' | 'mismatch' | 'revoke' | 'no_code'
 
 type Fetch = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal }) => Promise<{ status: number; json: () => Promise<unknown> }>
 

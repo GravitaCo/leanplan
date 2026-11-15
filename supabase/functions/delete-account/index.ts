@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
   if (appleId) {
     const r = isAppleCode(body.apple_code)
       ? await revokeApple(body.apple_code, appleId, appleConfig((k) => Deno.env.get(k)), Math.floor(Date.now() / 1000), fetch)
-      : { result: 'failed' as const, step: 'no_code' }
+      : { result: 'failed' as const, step: 'no_code' as const }
     apple = r.result
     if (r.step) log('apple_failed', { step: r.step })
   }
