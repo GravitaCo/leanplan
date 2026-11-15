@@ -16,7 +16,6 @@ import { Icon } from '../../lib/ui/icons'
 import { font, num } from '../../lib/theme'
 import { Shade, geistLine } from './gp'
 
-const shadow = { textShadowColor: 'rgba(0,0,0,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }
 
 /** Where the clip was opened from, in window coordinates (the library's poster). */
 export interface Origin { x: number; y: number; width: number; height: number }
@@ -72,7 +71,7 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
   const perSide = exById(ex.id)?.perSide ?? /each side/.test(ex.t)
   const aim = holdTarget(ex.t)
   const W = { color: '#fff' }
-  const sub = [font(500), W, shadow, { fontSize: 13, opacity: 0.75, marginTop: 2 }]
+  const sub = [font(500), W, { fontSize: 13, opacity: 0.75, marginTop: 2 }]
 
   return (
     <Modal visible transparent={grows} animationType={grows ? 'none' : 'fade'} onRequestClose={onClose} statusBarTranslucent supportedOrientations={['portrait']}>
@@ -102,7 +101,7 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
             </Pressable>
           )}
           <View style={{ flexShrink: 1 }}>
-            <Text style={[font(600), W, shadow, { fontSize: 17, lineHeight: 22 }]}>{title}</Text>
+            <Text style={[font(600), W, { fontSize: 17, lineHeight: 22 }]}>{title}</Text>
             {!!kit && <Text style={sub}>{kit[0].toUpperCase() + kit.slice(1)}</Text>}
           </View>
           {!back && (
@@ -128,18 +127,18 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
             {m.hold ? (
               <>
                 {(m.hold !== 'move' || aim) && <Text style={[...sub, { marginTop: 0, marginBottom: 2 }]}>{m.hold === 'move' ? 'A timed move' : perSide ? 'A hold · one side shown, do both' : 'A hold'}</Text>}
-                <Text style={[font(700), W, shadow, { fontSize: 28, lineHeight: 32 }]}>{m.hold === 'move' ? 'Keep moving' : m.hold === 'position' ? 'Hold the position' : PHASE_LABEL.stretch}</Text>
+                <Text style={[font(700), W, { fontSize: 28, lineHeight: 32 }]}>{m.hold === 'move' ? 'Keep moving' : m.hold === 'position' ? 'Hold the position' : PHASE_LABEL.stretch}</Text>
                 <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.25)', marginVertical: 16 }} />
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {aim && (
                     <View style={{ flex: 1 }}>
-                      <Text style={[font(500), W, shadow, { fontSize: 13 }]}>Aim for</Text>
-                      <Text style={[font(600), num, W, shadow, { fontSize: 17, marginTop: 1 }]}>{aim.lo === aim.hi ? aim.lo : `${aim.lo}–${aim.hi}`} sec{perSide ? ' each side' : ''}</Text>
+                      <Text style={[font(500), W, { fontSize: 13 }]}>Aim for</Text>
+                      <Text style={[font(600), num, W, { fontSize: 17, marginTop: 1 }]}>{aim.lo === aim.hi ? aim.lo : `${aim.lo}–${aim.hi}`} sec{perSide ? ' each side' : ''}</Text>
                     </View>
                   )}
                   <View style={{ flex: 1 }}>
-                    <Text style={[font(500), W, shadow, { fontSize: 13 }]}>Breathe</Text>
-                    <Text style={[font(600), W, shadow, { fontSize: 17, marginTop: 1 }]}>Slow and steady</Text>
+                    <Text style={[font(500), W, { fontSize: 13 }]}>Breathe</Text>
+                    <Text style={[font(600), W, { fontSize: 17, marginTop: 1 }]}>Slow and steady</Text>
                   </View>
                 </View>
               </>
@@ -147,10 +146,10 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
               <>
                 <Text style={[...sub, { marginTop: 0, marginBottom: 2 }]}>{s.rep ? `Rep ${s.rep} of ${s.reps}` : s.reps === 1 ? '1 rep' : `${s.reps} reps`}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-                  <Text style={[font(700), W, shadow, { fontSize: 28, lineHeight: 32, flexShrink: 1 }]}>{PHASE_LABEL[s.kind]}</Text>
+                  <Text style={[font(700), W, { fontSize: 28, lineHeight: 32, flexShrink: 1 }]}>{PHASE_LABEL[s.kind]}</Text>
                   {/* the web's line-height 0.9 box (50.4): Geist's own line height so iOS centres the glyphs,
                       pulled back to that box with negative margins */}
-                  {s.kind !== 'ready' && <Text style={[font(700), num, W, shadow, { fontSize: 56, lineHeight: geistLine(56), marginVertical: -(geistLine(56) - 56 * 0.9) / 2 }]}>{s.count}</Text>}
+                  {s.kind !== 'ready' && <Text style={[font(700), num, W, { fontSize: 56, lineHeight: geistLine(56), marginVertical: -(geistLine(56) - 56 * 0.9) / 2 }]}>{s.count}</Text>}
                 </View>
                 <View style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden', marginTop: 14, marginBottom: 16 }}>
                   <View style={{ height: '100%', width: `${Math.round(s.progress * 1000) / 10}%`, backgroundColor: '#fff' }} />
@@ -158,8 +157,8 @@ export function DemoPlayer({ ex, onClose: done, back, origin }: {
                 <View accessibilityLabel="Pace to match" style={{ flexDirection: 'row', gap: 8 }}>
                   {pace.map((p) => (
                     <View key={p.kind} style={{ flex: 1, opacity: p.kind === s.kind ? 1 : 0.62 }}>
-                      <Text style={[font(500), W, shadow, { fontSize: 13 }]}>{PHASE_SHORT[p.kind]}</Text>
-                      <Text style={[font(600), num, W, shadow, { fontSize: 17, marginTop: 1 }]}>{p.sec} s</Text>
+                      <Text style={[font(500), W, { fontSize: 13 }]}>{PHASE_SHORT[p.kind]}</Text>
+                      <Text style={[font(600), num, W, { fontSize: 17, marginTop: 1 }]}>{p.sec} s</Text>
                     </View>
                   ))}
                   {/* the web's grid has four columns whatever the count */}
