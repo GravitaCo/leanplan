@@ -9,6 +9,7 @@
  */
 import type { ReactNode } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
+import Svg, { Path } from 'react-native-svg'
 import type { SupportRow } from '@/screens/profile/supportRows'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
@@ -168,13 +169,11 @@ export function Signposts({ list, support }: {
 }
 
 /**
- * `.li.consent-row` (ConsentScreen, PrivacySheets): a checkbox and its words (15 pt at 1.4), which
- * may hold inline links (TextLink). The box is Tilo's own square from the onboarding options
- * (`.wz-dot.sq`, Benn, 15 Nov 2026): a 22 pt rounded square with a 1.5 pt --dash ring, filled
- * --label with a 14 pt --card tick when on. It is the checkbox for VoiceOver, named by `label` (the
- * words as plain text), and starts as the caller's `on` (never pre-ticked by this component). The
- * words stay readable with their links; tapping them toggles it too, as the web's <label for>
- * does, while a link inside them opens the link.
+ * `.li.consent-row` (ConsentScreen, PrivacySheets): a 22 pt checkbox and its words (15 pt at 1.4),
+ * which may hold inline links (TextLink). The box is the checkbox for VoiceOver, named by `label`
+ * (the words as plain text); the words stay readable with their links; tapping them toggles it too, as the web's <label for> does, while a
+ * link inside them opens the link. The box draws the web's checkbox: tint-filled with a white tick
+ * when on, an outlined rounded square when off.
  */
 export function ConsentRow({ on, onChange, label, children }: { on: boolean; onChange: (on: boolean) => void; label: string; children: ReactNode }) {
   const t = useTokens()
@@ -182,9 +181,10 @@ export function ConsentRow({ on, onChange, label, children }: { on: boolean; onC
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={() => onChange(!on)} hitSlop={slop(22, 22)}
         // the browser's checkbox margins (3 3 3 4) stay, with the CSS's margin-top 1
-        style={[{ width: 22, height: 22, marginTop: 1, marginRight: 3, marginBottom: 3, marginLeft: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-          on ? { backgroundColor: t.label } : { borderWidth: 1.5, borderColor: t.dash }]}>
-        {on && <Icon name="check" size={14} stroke={2.6} color={t.card} />}
+        style={{ width: 22, height: 22, marginTop: 1, marginRight: 3, marginBottom: 3, marginLeft: 4, borderRadius: 4, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: on ? t.tint : t.elev, borderWidth: on ? 0 : 1, borderColor: t.label2 }}>
+        {/* the system checkbox's own tick, not one of Tilo's icons */}
+        {on && <Svg width={14} height={14} viewBox="0 0 14 14"><Path d="M2.5 7.3l3 3L11.5 4" fill="none" stroke={t.onTint} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></Svg>}
       </Pressable>
       {/* readable on its own, so VoiceOver reaches the links inside it */}
       <Text onPress={() => onChange(!on)} style={[tx(15, 400, 1.4), { color: t.label, flex: 1 }]}>{children}</Text>

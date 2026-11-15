@@ -61,10 +61,6 @@ async function measure(page, sel) {
     // icons: the 24-unit line icons only (charts and the mark have other viewBoxes)
     const icons = [...el.querySelectorAll('svg')].filter((s) => s.getAttribute('viewBox') === '0 0 24 24')
       .map((s) => { const b = s.getBoundingClientRect(); return `${Math.round(b.width)}x${Math.round(b.height)}` }).filter((x) => x !== '0x0')
-    // the web's consent tick is drawn by CSS (a mask on the checkbox's ::after), not an svg: count it
-    for (const c of el.querySelectorAll('.consent-row input:checked')) {
-      const a = getComputedStyle(c, '::after'); icons.push(`${Math.round(parseFloat(a.width))}x${Math.round(parseFloat(a.height))}`)
-    }
     return { h: Math.round(r.height), words, labels: [...new Set(labels)].sort(), icons: icons.sort() }
   })
 }
