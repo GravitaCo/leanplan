@@ -8,6 +8,7 @@
  */
 import { SB_URL, SB_KEY, getToken, hasSession, supabase } from './supabase'
 import { withTimeout } from './timeout'
+import { googleOAuth } from './platform'
 import { clearNotifyStore } from './deviceOnly'
 import { DELETE_CONFIRM, REAUTH_MAX_AGE_S, UNDER_AGE_REASON, jwtPayload, signedInRecently } from '../../supabase/functions/_shared/account'
 
@@ -16,8 +17,9 @@ export const DELETE_FUNCTION = 'delete-account'
 export const DELETE_TIMEOUT_MS = 20_000
 
 export type DeleteResult =
-  /** the account and its data are gone; this device is wiped and signed out */
-  | { status: 'ok' }
+  /** the account and its data are gone; this device is wiped and signed out. `appleKept`: the
+   *  account had Sign in with Apple and the server couldn't revoke it (supabase/functions/_shared/apple.ts) */
+  | { status: 'ok'; appleKept?: true }
   /** no connection: nothing was sent */
   | { status: 'offline' }
   /** no live session on this device (e.g. opened offline): sign in again first. `rejected`: the
@@ -95,16 +97,16 @@ export interface DeleteDeps {
   /** the session is the device data's owner, with no owner question pending (tokenMatchesOwner) */
   accountMatches: () => boolean
   /** POST to the function; resolves with the HTTP status and parsed body, or rejects on no connection */
-  call: (reason?: typeof UNDER_AGE_REASON) => Promise<{ status: number; body: unknown }>
+  call: (reason?: typeof UNDER_AGE_REASON, appleCode?: string) => Promise<{ status: number; body: unknown }>
   wipe: () => void
   signOut: () => Promise<void>
 }
 
-async function callFunction(reason?: typeof UNDER_AGE_REASON): Promise<{ status: number; body: unknown }> {
+async function callFunction(reason?: typeof UNDER_AGE_REASON, appleCode?: string): Promise<{ status: number; body: unknown }> {
   const res = await fetch(SB_URL + '/functions/v1/' + DELETE_FUNCTION, {
     method: 'POST',
     headers: { apikey: SB_KEY, Authorization: 'Bearer ' + getToken(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ confirm: DELETE_CONFIRM, ...(reason ? { reason } : {}) }),
+    body: JSON.stringify({ confirm: DELETE_CONFIRM, ...(reason ? { reason } : {}), ...(appleCode ? { apple_code: appleCode } : {}) }),
     signal: AbortSignal.timeout(DELETE_TIMEOUT_MS),
   })
   return { status: res.status, body: await res.json().catch(() => null) }
@@ -126,8 +128,9 @@ export const defaultDeleteDeps: DeleteDeps = {
  * Delete the signed-in account. The device is wiped and signed out only after the function
  * says the account is gone ({ ok: true }); on anything else it is left untouched. Safe to call
  * again after a lost reply: the function treats an account that's already gone as done.
+ * `appleCode`: the one-time code from a fresh Sign in with Apple (iOS), so the server can revoke it.
  */
-export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason?: typeof UNDER_AGE_REASON): Promise<DeleteResult> {
+export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason?: typeof UNDER_AGE_REASON, appleCode?: string): Promise<DeleteResult> {
   if (!deps.online()) return { status: 'offline' }
   if (!deps.hasSession()) return { status: 'no-session' }
   if (!deps.accountMatches()) return { status: 'wrong-account' }
@@ -135,7 +138,7 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   if (!reason && !deps.fresh()) return { status: 'reauth' }
   let res: { status: number; body: unknown }
   try {
-    res = await deps.call(reason)
+    res = await deps.call(reason, appleCode)
   } catch {
     // a timeout or dropped connection: the server may or may not have finished, so the device
     // keeps everything and the person can try again (a repeat is safe)
@@ -152,7 +155,7 @@ export async function deleteAccount(deps: DeleteDeps = defaultDeleteDeps, reason
   await deps.signOut()
   // a sign-out can re-save a session that was mid-refresh: wipe once more after it
   deps.wipe()
-  return { status: 'ok' }
+  return (res.body as { apple?: unknown }).apple === 'failed' ? { status: 'ok', appleKept: true } : { status: 'ok' }
 }
 
 /**
@@ -188,7 +191,8 @@ export function sessionSignedInRecently(token: string, nowS = Math.floor(Date.no
 
 /* ---------------- re-confirming identity before deletion ---------------- */
 
-export type ReauthResult = 'ok' | 'wrong-password' | 'offline' | 'redirecting' | 'error'
+/** `redirecting`: the page left for Google (web); `cancelled`: the app's Google sheet was closed */
+export type ReauthResult = 'ok' | 'wrong-password' | 'offline' | 'redirecting' | 'cancelled' | 'error'
 
 /** Marks a Google re-sign-in started for deletion, so the app can reopen the confirm step on return. */
 export const REAUTH_FLAG = 'tali.reauthForDelete'
@@ -217,19 +221,19 @@ export function markReauth(uid: string, storage: FlagStore | null = session(), n
 }
 
 /**
- * Google accounts: a fresh Google sign-in (the page leaves and comes back to this origin).
- * `select_account` makes Google show the account chooser (Google rejects `login`), hinted to this
- * account's email; the server still decides on the sign-in time.
+ * Google accounts: a fresh Google sign-in (on web the page leaves and comes back to this origin; in
+ * the app it happens in the system's sign-in sheet: platform googleOAuth). `select_account` makes
+ * Google show the account chooser (Google rejects `login`), hinted to this account's email; the
+ * server still decides on the sign-in time.
  */
 export async function reauthWithGoogle(email: string, uid: string): Promise<ReauthResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'offline'
   markReauth(uid)
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    // dynamic, as on the sign-in screen: the allow-list lives in the Supabase dashboard
-    options: { redirectTo: window.location.origin + window.location.pathname, queryParams: { prompt: 'select_account', login_hint: email } },
-  })
-  return error ? 'error' : 'redirecting'
+  try {
+    return await googleOAuth(supabase.auth, { prompt: 'select_account', login_hint: email })
+  } catch {
+    return 'error'
+  }
 }
 
 /**

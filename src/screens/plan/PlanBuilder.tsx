@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '@/store/store'
 import type { PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
-import { copyWeek, MAX_PHASE_WEEKS, newPhaseId, timeline, trainingDays, weekFromSchedule, withEasierStart } from '@/core/domain/plans'
+import { copyWeek, MAX_PHASE_WEEKS, timeline, trainingDays, weekFromSchedule } from '@/core/domain/plans'
 import { Toggle } from '@/ui/primitives'
 import { type WorkoutKey } from '@/core/domain/routines'
 import { WEEK_ORDER } from '@/core/domain/week'
@@ -10,8 +10,9 @@ import { Icon, Chevron } from '@/ui/icons'
 import { Timeline, WeekRows } from './PlanParts'
 import { DayEditor } from './PlanDayViews'
 import { StartChoice } from './PlanLibrary'
+import type { BuiltPlan } from './planModel'
 
-export interface BuiltPlan { name: string; weeks: number; week: PlanWeek; startedAt: string; easier: boolean }
+export type { BuiltPlan } from './planModel'
 
 /**
  * Build your own plan in three steps, one question each (design canvas, Plans 2): how long, what
@@ -142,8 +143,4 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
   )
 }
 
-/** The phases a built plan starts with: one build phase (easier or lighter weeks come later, in Plan details). */
-export const builtPhases = (p: BuiltPlan) => {
-  const phases = [{ id: newPhaseId(), name: 'Build', weeks: p.weeks, week: copyWeek(p.week) }]
-  return p.easier ? withEasierStart(phases) : phases
-}
+export { builtPhases } from './planModel'

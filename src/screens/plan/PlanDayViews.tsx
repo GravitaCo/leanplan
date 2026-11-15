@@ -3,14 +3,13 @@ import { useStore } from '@/store/store'
 import type { PlanPhase, PlanWeek } from '@/core/types'
 import { DAY_NAME } from '@/core/domain/date'
 import { WEEK_ORDER } from '@/core/domain/week'
-import { keyTitle, keyVideo, routineFor, isBuiltinKey, slotsOf as routineSlots, aboutLine, routineEstMins, type WorkoutKey } from '@/core/domain/routines'
+import { keyTitle, keyVideo, routineFor, isBuiltinKey, type WorkoutKey } from '@/core/domain/routines'
 import { copyWeek, planWeekNotes } from '@/core/domain/plans'
-import { MODALITY_LABEL } from '@/core/data/modalities'
 import { BackButton, Sheet, TitleRow } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { Thumb } from '../train/Thumb'
-import { AddWorkoutSheet, workoutSub } from './PlanViews'
-import type { WorkoutType } from '@/core/types'
+import { AddWorkoutSheet } from './PlanViews'
+import { keyLine, knownKeys, planWeekRows } from './planModel'
 import { ONBOARDING_ENABLED } from '../onboarding/Consent'
 
 /** Most workouts a day in a plan (the same cap cleanPhases applies). */
@@ -32,8 +31,7 @@ function usePlanWeek(planId: string, phaseIndex: number) {
   return { plan, week, change }
 }
 
-const known = (keys: WorkoutKey[] | undefined, routines: ReturnType<typeof useStore.getState>['data']['routines']) =>
-  (keys || []).filter((k) => isBuiltinKey(k) || !!routineFor(k, routines))
+const known = knownKeys
 
 /** Pick another weekday of the plan's week (copy from it, or swap with it). */
 function PlanDayPick({ week, idx, title, onPick, onClose }: { week: PlanWeek; idx: number; title: string; onPick: (d: number) => void; onClose: () => void }) {
@@ -100,12 +98,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
   const unknownOn = (d: number) => (week[d] || []).filter((k) => !isBuiltinKey(k) && !routineFor(k, routines))
   const setDay = (next: WorkoutKey[], msg: string) => change({ ...copyWeek(week), [idx]: [...next, ...unknownOn(idx)].slice(0, MAX_A_DAY) }, msg)
   const notes = planWeekNotes(week, routines).filter((n) => n.includes(day) || n.includes('no rest day'))
-  const subOf = (k: WorkoutKey) => {
-    const r = routineFor(k, routines)
-    if (!r) return `${k === 'Cardio' ? MODALITY_LABEL.cardio : MODALITY_LABEL.strength} · ${workoutSub(k as WorkoutType)}`
-    const n = routineSlots(r).length
-    return [MODALITY_LABEL[r.modality], `${n} ${n === 1 ? 'exercise' : 'exercises'}`, aboutLine(routineEstMins(r, routines, training, ONBOARDING_ENABLED))].filter(Boolean).join(' · ')
-  }
+  const subOf = (k: WorkoutKey) => keyLine(k, routines, training, ONBOARDING_ENABLED, true)
 
   return (
     <div className="screen">
@@ -177,12 +170,10 @@ export function PlanWeekView({ planId, phaseIndex, onBack, onDay }: { planId: st
       <TitleRow title={ph?.name ?? 'Week'} />
       <div className="sub" style={{ margin: '2px 0 16px' }}>{plan.name} · {ph?.weeks} {ph?.weeks === 1 ? 'week' : 'weeks'}</div>
       <div className="list wk">
-        {WEEK_ORDER.map((d) => {
-          const keys = known(week[d], routines)
-          const names = keys.map((k) => keyTitle(k, routines))
+        {planWeekRows(week, routines).map(({ d, keys, names, label, day }) => {
           return (
-            <button className="li wk-row" key={d} onClick={() => onDay(d)} aria-label={`${DAY_NAME[d]}: ${names.length ? names.join(' and ') : 'Rest'}`}>
-              <span className="dd">{DAY_NAME[d].slice(0, 3)}</span>
+            <button className="li wk-row" key={d} onClick={() => onDay(d)} aria-label={label}>
+              <span className="dd">{day}</span>
               {keys.length === 0
                 ? <div className="m"><div className="t muted">Rest · recovery counts too</div></div>
                 : <div className="m"><div className="t">{names.join(' + ')}</div></div>}

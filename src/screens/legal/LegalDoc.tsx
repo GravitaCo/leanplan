@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react'
 import { LEGAL_URLS, type LegalDocId } from '@/core/legal'
 
-export const LEGAL_LABEL: Record<LegalDocId, string> = {
-  privacy: 'Privacy policy',
-  terms: 'Terms and conditions',
-  cookies: 'Cookie policy',
-}
+import { LEGAL_LABEL } from '@/copy/legal'
+
+/** The documents' names, in src/copy/legal.ts. */
+export { LEGAL_LABEL }
 
 /**
  * Link to a legal document on the website (www.tilo.fit/legals/…). Opens outside the app,

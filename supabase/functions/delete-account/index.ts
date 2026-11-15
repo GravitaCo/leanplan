@@ -29,13 +29,22 @@
  * - Idempotent: deleting rows that are gone is a no-op, and a validly signed token whose user no
  *   longer exists means an earlier call already finished (rows are deleted before the login), so
  *   it answers { ok: true, already: true } and the app can finish wiping the device.
+ * - Sign in with Apple (increment (a), docs/plans/native-sign-in-with-apple.md): an account with an
+ *   Apple identity also revokes Tilo's Sign in with Apple, from the one-time code the app sends as
+ *   `apple_code` after its fresh Apple sign-in (../_shared/apple.ts: the code must be this account's
+ *   own Apple ID). It runs after the rows are gone and before the login; whatever Apple says, the
+ *   deletion goes ahead, and the answer carries `apple: 'revoked' | 'failed'` so the app can tell the
+ *   person to remove Tilo in their Apple Account settings. The code, Apple's tokens and the Apple
+ *   user id are never logged. A code sent for an account with no Apple identity is ignored.
  * - The service role key is read from the environment here and nowhere else; it never leaves the
  *   function. Logs hold the outcome and counts only: no user id, no email, no content.
  *
- * Secrets: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
+ * Secrets: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform; APPLE_TEAM_ID,
+ * APPLE_KEY_ID, APPLE_PRIVATE_KEY and APPLE_CLIENT_ID for the Apple revocation (missing: 'failed').
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.108.2'
 import { DELETE_CONFIRM as CONFIRM, UNDER_AGE_REASON, USER_TABLES as TABLES, jwtPayload, newAccount, signedInRecently } from '../_shared/account.ts'
+import { appleConfig, appleSub, isAppleCode, revokeApple, type AppleRevoke } from '../_shared/apple.ts'
 
 const ORIGINS = [
   /^https:\/\/app\.tilo\.fit$/,
@@ -87,7 +96,7 @@ Deno.serve(async (req) => {
   if (!m) return fail('unauthorized')
   const jwt = m[1]
 
-  let body: { confirm?: unknown; reason?: unknown }
+  let body: { confirm?: unknown; reason?: unknown; apple_code?: unknown }
   if (Number(req.headers.get('Content-Length') || 0) > 1000) return fail('bad_request')
   try {
     const raw = await req.text()
@@ -98,6 +107,7 @@ Deno.serve(async (req) => {
   }
   if (!body || typeof body !== 'object' || body.confirm !== CONFIRM) return fail('bad_request')
   if (body.reason !== undefined && body.reason !== UNDER_AGE_REASON) return fail('bad_request')
+  if (body.apple_code !== undefined && !isAppleCode(body.apple_code)) return fail('bad_request')
 
   const url = Deno.env.get('SUPABASE_URL'), service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !service) return fail('config')
@@ -132,9 +142,21 @@ Deno.serve(async (req) => {
     return fail('failed', { step: t })
   }
 
+  // Sign in with Apple: revoke before the login goes (its identity is read from Auth's answer above).
+  // Never blocks the deletion; no code (an older app, or the web) is 'failed' too.
+  const appleId = appleSub(who.data.user)
+  let apple: AppleRevoke | undefined
+  if (appleId) {
+    const r = isAppleCode(body.apple_code)
+      ? await revokeApple(body.apple_code, appleId, appleConfig((k) => Deno.env.get(k)), Math.floor(Date.now() / 1000), fetch)
+      : { result: 'failed' as const, step: 'no_code' as const }
+    apple = r.result
+    if (r.step) log('apple_failed', { step: r.step })
+  }
+
   const del = await admin.auth.admin.deleteUser(uid, false)
   if (del.error && del.error.status !== 404 && del.error.code !== 'user_not_found') return fail('failed', { step: 'auth' })
 
-  log('ok', { ms: Date.now() - started, tables: TABLES.length, skipped, ...(underAge ? { path: 'under-age' } : {}) })
-  return json({ ok: true }, 200, cors)
+  log('ok', { ms: Date.now() - started, tables: TABLES.length, skipped, ...(underAge ? { path: 'under-age' } : {}), ...(apple ? { apple } : {}) })
+  return json({ ok: true, ...(apple ? { apple } : {}) }, 200, cors)
 })

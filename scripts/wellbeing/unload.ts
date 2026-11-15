@@ -11,7 +11,8 @@ import { freshForAccount } from '@/data/persistence'
 import { LOCAL_USER } from '@/data/supabase'
 import { UNLOAD_MAX_NOTES, UNLOAD_MAX_PAIRS, UNLOAD_NOTE_MAX_CHARS } from '@/data/deviceOnly'
 import { SHARED, UNLOAD } from '@/screens/mind/copy'
-import { UnloadSheet, deleteUnload, noteDay, noteLines, saveUnload, unloadBlocked } from '@/screens/mind/UnloadSheet'
+import { UnloadSheet, noteDay, noteLines, unloadBlocked } from '@/screens/mind/UnloadSheet'
+import { deleteUnload, saveUnload } from '@/screens/mind/unloadNotes'
 
 function memoryStorage(): Storage {
   const m = new Map<string, string>()

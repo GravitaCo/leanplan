@@ -10,15 +10,18 @@
  * - `lowMoodShown`: the day the low-mood signpost last showed (once per 30 days). Health data by
  *   inference: cleared on withdrawal. Device only, so it can show once per phone (build plan C12).
  * - `notify`: the reminder delivery log the app reads from the service worker's IndexedDB
- *   (`tali-notify`, security-data H3). Not health data; cleared with the device's log.
+ *   (`tali-notify`, security-data H3; on the phone a store of that name). Not health data;
+ *   cleared with the device's log.
  * - `ui.sleepMore`: whether "More about sleep" was left open in the check-in. Not health data.
  *
- * Only this file, persistence.ts, backup.ts and screens/mind/UnloadSheet.tsx may use the notes
- * accessors (NOTE_ACCESSORS; scripts/wellbeing/data-device.ts checks the import graph). Everything
+ * Only this file, persistence.ts, backup.ts and screens/mind/unloadNotes.ts may use the notes
+ * accessors (NOTE_ACCESSORS), and only the Unload screens (web and native) may use unloadNotes.ts's
+ * read, add and delete (scripts/wellbeing/data-device.ts checks the import graph of src and apps/native). Everything
  * else uses the count, the clear and the non-note helpers. No React, no DOM beyond IndexedDB.
  */
 import type { PersistedState } from './persistence'
 import { nowIso, uuid } from './supabase'
+import { clearNativeNotifyLog } from './platform'
 
 export interface UnloadPair { mind: string; next?: string }
 /** One Unload note (B8): "On my mind" and "Next step" pairs, and the optional "went OK" line. */
@@ -310,7 +313,9 @@ export function recordNotifyEvents(s: PersistedState, events: unknown[]): void {
 }
 
 /** Delete the service worker's reminder log (wipe, sign out and remove, start fresh, keep for
- *  this account). Harmless when it doesn't exist or IndexedDB is unavailable. */
+ *  this account), and the phone's (its own store, through ./platform; nothing on web). Harmless when it
+ *  doesn't exist or IndexedDB is unavailable. */
 export function clearNotifyStore(idb: Pick<IDBFactory, 'deleteDatabase'> | null = typeof indexedDB === 'undefined' ? null : indexedDB): void {
   try { idb?.deleteDatabase(NOTIFY_DB) } catch { /* blocked */ }
+  try { clearNativeNotifyLog() } catch { /* unavailable */ }
 }

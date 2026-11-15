@@ -2,14 +2,9 @@ import { useState } from 'react'
 import type { Exercise, LogShape, SetEntry, SetFeel } from '@/core/types'
 import { fmtTarget, parseRx, type SetTarget } from '@/core/domain/guided'
 import { BareSheet, Seg, Toggle } from '@/ui/primitives'
-import { PAIN_HELP, RED_FLAG } from './HoldTimer'
+import { FEELS, PAIN_HELP, RED_FLAG } from '@/copy/train'
 
-export const FEELS: [SetFeel, string][] = [
-  ['spare', 'Could have done lots more'],
-  ['right', 'About right, two or three left'],
-  ['struggle', 'Last rep was a real struggle'],
-  ['stopped', 'Stopped early'],
-]
+export { FEELS } from '@/copy/train'
 
 const n = (v: string) => { const x = parseFloat(v); return Number.isFinite(x) ? x : 0 }
 const tidy = (x: number) => String(Math.round(x * 100) / 100)

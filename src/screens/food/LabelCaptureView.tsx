@@ -16,13 +16,14 @@ import { useStore } from '@/store/store'
 import { consentLetsSync, hasCurrentConsent } from '@/data/consent'
 import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
-import { draftFromLabel, emptyLabelDraft } from '@/core/domain/label'
+import { emptyLabelDraft } from '@/core/domain/label'
 import { measureFrame, qualityIssue, toGray, QUALITY_EDGE, QUALITY_PROMPT, type QualityIssue } from '@/core/domain/labelQuality'
-import { readLabel, type LabelReadResult } from '@/data/labelReader'
+import { readLabel } from '@/data/labelReader'
+import { readPhotos } from '@/data/labelRead'
 import { Sheet, BackButton } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { scaledCanvas, startRearCamera, stopCamera, type CameraFail } from './camera'
-import { SHARE_LABEL_NOTE } from './SharedProduct'
+import { CONSENT, GUIDANCE, LABEL, LABEL_CAMERA_NOTE, LABEL_TITLE, SHARE_LABEL_NOTE } from '@/copy/scan'
 
 /** Long edge of the photo that's sent: enough for small print, well under the 1.5 MB cap. */
 const PANEL_EDGE = 1600
@@ -31,28 +32,13 @@ const FRONT_EDGE = 1024
 const MAX_BYTES = 1_500_000
 const CHECK_EVERY_MS = 350
 
-/** Compliance's wording (register item 24, Oct 2026): Anthropic acts on Tilo's instructions under
- *  the DPA. Changing it bumps CONSENT_VERSIONS['label-photo'] (src/data/consent.ts). */
-export const CONSENT = 'Tilo doesn’t keep your photo. It’s sent to Anthropic, the AI service we use, only to read the numbers, and isn’t used to train its AI. You can check the numbers before anything is saved.'
-export const GUIDANCE = 'Find good light. Lay the pack flat. Fill the frame with the nutrition table. Avoid glare and creases.'
+/** Compliance's wording (register item 24, Oct 2026), now in src/copy/scan.ts. */
+export { CONSENT, GUIDANCE }
 
 type Shot = { blob: Blob; url: string; issue: QualityIssue | null }
 type Step = 'consent' | 'panel' | 'front' | 'review' | 'reading'
 
-const FAIL_NOTE: Record<Exclude<LabelReadResult['status'], 'ok'>, string> = {
-  offline: 'Couldn’t read the photo without a connection, or it took too long.',
-  unavailable: 'Photo reading isn’t available right now.',
-  'no-session': 'Sign in again to read photos.',
-  consent: 'Couldn’t confirm your OK to read photos yet. Try again in a moment.',
-  limit: 'You’ve used today’s photo reads. They reset tomorrow.',
-  unreadable: 'The photo couldn’t be read. A flatter, brighter shot often helps.',
-  error: 'Couldn’t read the photo right now.',
-}
-
-const CAMERA_NOTE: Record<CameraFail, string> = {
-  denied: 'Tilo can’t use the camera. That’s fine: choose a photo of the label instead.',
-  none: 'No camera is available here. Choose a photo of the label instead.',
-}
+const CAMERA_NOTE: Record<CameraFail, string> = LABEL_CAMERA_NOTE
 
 /** A JPEG of `src` at most `edge` px on its long edge and MAX_BYTES in size. */
 async function toJpeg(src: CanvasImageSource & { width?: number; height?: number; videoWidth?: number; videoHeight?: number }, edge: number): Promise<{ blob: Blob; issue: QualityIssue | null }> {
@@ -161,7 +147,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       const { blob, issue: q } = await toJpeg(v, step === 'front' ? FRONT_EDGE : PANEL_EDGE)
       if (aliveRef.current) keep(blob, q)
     } catch {
-      setMsg('That photo couldn’t be used. Try again.')
+      setMsg(LABEL.unusable)
     }
   }
 
@@ -174,7 +160,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
         if (aliveRef.current) keep(blob, q)
       } finally { bmp.close() }
     } catch {
-      setMsg('That photo couldn’t be opened. Try another.')
+      setMsg(LABEL.unopenable)
     }
   }
 
@@ -183,45 +169,35 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
     setStep('reading')
     const ctl = new AbortController()
     readRef.current = ctl
-    let res: LabelReadResult
-    try {
-      // a photo goes to the server: not before the health answer (its consent record can't sync yet)
-      if (!consentLetsSync(useStore.getState().data)) throw new Error('no consent answer yet')
-      // an under-18 age is on screen (Tilo is 18+): no photo leaves the phone
-      if (useStore.getState().underAge) throw new Error('under age')
-      // the server checks the label-photo consent itself: send a yes given moments ago first
-      await useStore.getState().flushConsents()
-      res = await readLabel({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}), ...(barcode ? { barcode } : {}) }, { signal: ctl.signal })
-    } catch {
-      res = { status: 'error' }
-    }
+    const st = useStore.getState
+    // src/data/labelRead.ts, shared with the native app. The photos live only in memory here
+    // (their object URLs are revoked when the view closes), so there's nothing more to discard.
+    const out = await readPhotos({
+      photos: async () => ({ panel: await base64(panel.blob), ...(front ? { front: await base64(front.blob) } : {}) }),
+      barcode, base, taken: taken(), forShare: !!(forShare && onFail),
+    }, {
+      consentLetsSync: () => consentLetsSync(st().data), underAge: () => !!st().underAge, flushConsents: () => st().flushConsents(),
+      readLabel, discard: () => {}, signal: ctl.signal,
+    })
     if (!aliveRef.current) return
-    if (res.status === 'ok') {
-      const draft = draftFromLabel(res.read, { barcode, base, taken: taken() })
-      onDone(res.share ? { ...draft, share: res.share } : draft)
-      return
-    }
-    if (forShare && onFail) { onFail(FAIL_NOTE[res.status]); return }
-    const then = base
-      ? ' The Open Food Facts figures are below: check them against your pack.'
-      : res.status === 'unavailable' ? ' Type it in instead.' : ' Type the numbers from the pack below.'
-    typeInstead(FAIL_NOTE[res.status] + then)
+    if (out.kind === 'share-failed') { onFail?.(out.note); return }
+    onDone(out.draft, out.notice)
   }
 
   const left = onBack ? <BackButton onClick={onBack} /> : undefined
-  const title = 'Scan the label'
+  const title = LABEL_TITLE
 
   if (step === 'consent') {
     return (
       <Sheet title={title} onClose={onClose} animate={animate} left={left}>
         <div className="card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}>Before your first photo</div>
+          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}>{LABEL.before}</div>
           <div className="sub">{CONSENT}</div>
-          <div className="foot" style={{ padding: '10px 0 0' }}>Nothing else about you is sent.</div>
+          <div className="foot" style={{ padding: '10px 0 0' }}>{LABEL.nothingElse}</div>
         </div>
         <div className="stack">
-          <button className="btn tinted" onClick={() => { grantConsent('label-photo'); setStep('panel') }}>OK, take a photo</button>
-          {!forShare && <button className="btn gray" onClick={() => typeInstead()}>Type it in instead</button>}
+          <button className="btn tinted" onClick={() => { grantConsent('label-photo'); setStep('panel') }}>{LABEL.ok}</button>
+          {!forShare && <button className="btn gray" onClick={() => typeInstead()}>{LABEL.typeInstead}</button>}
         </div>
       </Sheet>
     )
@@ -230,7 +206,7 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
   if (step === 'reading') {
     return (
       <Sheet title={title} onClose={onClose} animate={animate} left={left}>
-        <div className="empty" role="status">Reading the label…</div>
+        <div className="empty" role="status">{LABEL.reading}</div>
       </Sheet>
     )
   }
@@ -240,39 +216,39 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       <Sheet title={title} onClose={onClose} animate={animate} left={left}>
         <div className="list icons">
           <div className="li">
-            <img className="labelthumb" src={panel.url} alt="Your photo of the nutrition table" />
-            <div className="m"><div className="t">Nutrition table</div><div className="s">{panel.issue ? `May be hard to read: ${QUALITY_PROMPT[panel.issue].toLowerCase()}` : 'Ready to read'}</div></div>
-            <button className="navbtn" onClick={() => setStep('panel')}>Retake</button>
+            <img className="labelthumb" src={panel.url} alt={LABEL.tableAlt} />
+            <div className="m"><div className="t">{LABEL.table}</div><div className="s">{panel.issue ? LABEL.hardToRead + QUALITY_PROMPT[panel.issue].toLowerCase() : LABEL.ready}</div></div>
+            <button className="navbtn" onClick={() => setStep('panel')}>{LABEL.retake}</button>
           </div>
           {front ? (
             <div className="li">
-              <img className="labelthumb" src={front.url} alt="Your photo of the front of the pack" />
-              <div className="m"><div className="t">Front of the pack</div><div className="s">For the name</div></div>
-              <button className="navbtn" onClick={() => setFront(null)}>Remove</button>
+              <img className="labelthumb" src={front.url} alt={LABEL.frontAlt} />
+              <div className="m"><div className="t">{LABEL.front}</div><div className="s">{LABEL.forName}</div></div>
+              <button className="navbtn" onClick={() => setFront(null)}>{LABEL.remove}</button>
             </div>
           ) : (
             <button className="li" onClick={() => setStep('front')}>
               <span className="ico" style={{ background: 'var(--fill)', color: 'var(--label)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">Add the front of the pack</div><div className="s">Optional, for the name</div></div><Chevron />
+              <div className="m"><div className="t">{LABEL.addFront}</div><div className="s">{LABEL.addFrontSub}</div></div><Chevron />
             </button>
           )}
         </div>
         <div className="stack">
-          <button className="btn tinted" onClick={() => void read()}>Read the label</button>
+          <button className="btn tinted" onClick={() => void read()}>{LABEL.read}</button>
         </div>
-        <div className="foot">Your photo is read once, then Tilo doesn’t keep it.</div>
+        <div className="foot">{LABEL.readOnce}</div>
       </Sheet>
     )
   }
 
   const isFront = step === 'front'
   const showLive = camera === 'starting' || camera === 'on'
-  const prompt = camera === 'starting' ? 'Starting the camera…' : issue ? QUALITY_PROMPT[issue] : issue === null ? 'Looks good.' : 'Checking the picture…'
+  const prompt = camera === 'starting' ? LABEL.starting : issue ? QUALITY_PROMPT[issue] : issue === null ? LABEL.looksGood : LABEL.checking
   return (
     <Sheet title={title} onClose={onClose} animate={animate}
       left={isFront ? <BackButton onClick={() => setStep('review')} /> : left}>
       {forShare && !isFront && <div className="note" role="status" style={{ marginTop: 0 }}><Icon name="info" size={17} /><span>{SHARE_LABEL_NOTE}</span></div>}
-      <div className="foot" style={{ padding: forShare && !isFront ? '12px 4px 10px' : '0 4px 10px' }}>{isFront ? 'Fit the front of the pack in the frame, with the name clear.' : GUIDANCE}</div>
+      <div className="foot" style={{ padding: forShare && !isFront ? '12px 4px 10px' : '0 4px 10px' }}>{isFront ? LABEL.fitFront : GUIDANCE}</div>
       {/* always mounted, so the camera can attach as soon as it opens */}
       <div className="scanbox tall" hidden={!showLive}>
         <video ref={videoRef} playsInline muted autoPlay aria-label="Camera view" />
@@ -283,20 +259,20 @@ export default function LabelCaptureView({ onBack, onClose, animate, barcode, ba
       {msg && <div className="note" role="alert"><Icon name="info" size={17} /><span>{msg}</span></div>}
       {camera === 'on' && (
         <div className="stack">
-          <button className="btn tinted" disabled={issue !== null} onClick={() => void capture()}>Capture</button>
-          {issue !== null && <button className="btn gray" onClick={() => void capture()}>Capture anyway</button>}
+          <button className="btn tinted" disabled={issue !== null} onClick={() => void capture()}>{LABEL.capture}</button>
+          {issue !== null && <button className="btn gray" onClick={() => void capture()}>{LABEL.captureAnyway}</button>}
         </div>
       )}
       <div className="list icons" style={{ marginTop: 14 }}>
         <label className="li" style={{ cursor: 'pointer' }}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-          <div className="m"><div className="t">Choose a photo</div><div className="s">{isFront ? 'Of the front of the pack' : 'Of the nutrition table, from your photos'}</div></div>
-          <input type="file" accept="image/*" className="vh" aria-label={isFront ? 'Choose a photo of the front of the pack' : 'Choose a photo of the nutrition table'}
+          <div className="m"><div className="t">{LABEL.choose}</div><div className="s">{isFront ? LABEL.chooseFrontSub : LABEL.choosePanelSub}</div></div>
+          <input type="file" accept="image/*" className="vh" aria-label={isFront ? LABEL.chooseFrontAria : LABEL.choosePanelAria}
             onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = '' }} />
         </label>
         {!isFront && !forShare && (
           <button className="li" onClick={() => typeInstead()}>
-            <div className="m"><div className="t">Type it in instead</div></div><Chevron />
+            <div className="m"><div className="t">{LABEL.typeInstead}</div></div><Chevron />
           </button>
         )}
       </div>

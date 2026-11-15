@@ -1002,7 +1002,7 @@ const otherPlans = (page) => btn(page, 'See other plans').click()
   await run('health data off: a height saved on Profile says it isn’t kept', async ({ page }) => {
     await tab(page, 'Profile')
     await page.getByRole('button', { name: /Body and goal/ }).click()
-    await page.getByPlaceholder('178').fill('180')
+    await page.getByLabel('Height (cm)', { exact: true }).fill('180')
     await btn(page, 'Save metrics').click()
     await page.getByText('Height isn’t kept while health data is off. Turn it back on in Profile, then Privacy.').waitFor()
     expect((await stored(page)).profile.height == null, 'not kept')

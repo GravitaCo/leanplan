@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useConsent } from '@/store/hooks'
 import { Sheet } from '@/ui/primitives'
 import { LegalLink } from './LegalDoc'
+import { REGRANT } from '@/copy/account'
 
 /*
  * Withdrawing health consent and deleting the account are Profile's Health data sheet (download
@@ -17,17 +18,17 @@ export function RegrantHealthSheet({ onClose }: { onClose: () => void }) {
   const { grant } = useConsent('health')
   const [on, setOn] = useState(false)
   return (
-    <Sheet title="Health data" onClose={onClose}>
+    <Sheet title={REGRANT.title} onClose={onClose}>
       <div className="card prose">
-        <p style={{ margin: 0 }}>Turning this back on lets Tilo save your weigh-ins, check-ins and body details again, and uploads your whole log from this phone to your account.</p>
+        <p style={{ margin: 0 }}>{REGRANT.lead}</p>
       </div>
       <div className="list">
         <div className="li consent-row">
           <input id="c_regrant" type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} />
-          <label htmlFor="c_regrant">I agree to Tilo storing and using my health information to run the app for me, as the <LegalLink id="privacy">privacy policy</LegalLink> explains. I can withdraw this at any time.</label>
+          <label htmlFor="c_regrant">{REGRANT.box.before}<LegalLink id="privacy">{REGRANT.box.link}</LegalLink>{REGRANT.box.after}</label>
         </div>
       </div>
-      <button className="btn" disabled={!on} onClick={() => { grant(); onClose() }}>Turn health data back on</button>
+      <button className="btn" disabled={!on} onClick={() => { grant(); onClose() }}>{REGRANT.cta}</button>
     </Sheet>
   )
 }

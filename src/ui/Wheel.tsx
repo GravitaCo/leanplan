@@ -7,6 +7,7 @@
  * so an untouched wheel never answers for the person.
  */
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { UI } from '@/copy/ui'
 
 const SIZE = [44, 30, 26, 22]
 const FADE = [1, 0.55, 0.32, 0.18]
@@ -59,7 +60,7 @@ export function Wheel({ min, max, value, initial, onChange, label, unit, valueTe
   const to = Math.min(max, Math.ceil(pos) + half + 1)
   const items: number[] = []
   for (let i = from; i <= to; i++) items.push(i)
-  const text = value === undefined ? 'Not set' : valueText ? valueText(value) : `${value}${unit ? ' ' + unit : ''}`
+  const text = value === undefined ? UI.notSet : valueText ? valueText(value) : `${value}${unit ? ' ' + unit : ''}`
 
   return (
     <div className={'wheel' + (value === undefined ? ' unset' : '') + (drag != null ? ' drag' : '')} style={{ height: rows * rowH }}>

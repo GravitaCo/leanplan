@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": { "modules": ["TiloAiModule"] },
+  "android": { "modules": ["expo.modules.tiloai.TiloAiModule"] }
+}

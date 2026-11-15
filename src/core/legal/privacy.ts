@@ -24,7 +24,12 @@ const email = () => fact('contactEmail', 'privacy email')
  * its own passages. With onboarding on and Mind off, the text is main's as of 2026-10-09 (npm test
  * compares it with scripts/fixtures-legal-onboarding.json).
  */
-export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean } = {}): LegalDoc {
+export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false, native = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean; native?: boolean } = {}): LegalDoc {
+  // The iPhone app's reminders through Apple's push service (native-build-plan N12, compliance
+  // 13 Nov 2026): `native` stays off until the iPhone app reaches anyone outside Gravita's core team
+  // (an external TestFlight group, or the App Store). With it off the text is unchanged. It also
+  // carries Sign in with Apple (N2). Turning `native` on changes the text: bump `updated` below in the
+  // same change (compliance, 13 Nov 2026).
   // B11b's "Show supplement names in reminders" is built but hidden until DPIA 8.8 is signed
   // (SUPP_NAMES_ENABLED, register item 45): its sentences need Mind on as well.
   const names = mind && suppNames
@@ -66,7 +71,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
         h: 'What we collect in the app',
         p: [`Only what you enter, or what is needed to run your account:`],
         ul: [
-          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.`,
+          `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.` +
+            (native ? ` If you sign in with Apple, we receive your email address (or a private relay address, if you choose Hide My Email) and Apple's identifier for you. We don't receive your name.` : ''),
           onboarding
             ? `Profile: display name, sex (and, if you set Tilo up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tilo worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`
             : `Profile: display name, sex, age, height, weight, activity level, goal and diet pattern (such as vegetarian or vegan).`,
@@ -103,11 +109,16 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
                 `On your device only, while you set Tilo up: your answers so far, so you can pick up where you left off. This draft is never uploaded, and is deleted when you finish setup, withdraw consent for health data, remove this device's log or delete your account.`,
               ]
             : []),
-          `Reminders: if you turn them on, a push subscription (an address and keys issued by your browser) so we can send the reminders you chose: supplement reminders, and a weekly review reminder on the day you picked, at the time you picked in UK time. For the weekly one we use when you last opened your review, so it pauses after three in a row go unopened, and the date of any week your phone marked to skip.` +
+          `Reminders: if you turn them on, ` +
+            (native
+              ? `an address for this device's reminders (in a browser, a push subscription: an address and keys issued by your browser; in the iPhone app, a device token issued by Apple) `
+              : `a push subscription (an address and keys issued by your browser) `) +
+            `so we can send the reminders you chose: supplement reminders, and a weekly review reminder on the day you picked, at the time you picked in UK time. For the weekly one we use when you last opened your review, so it pauses after three in a row go unopened, and the date of any week your phone marked to skip.` +
             (mind
               ? ` In the Mind part of the app you can also turn on a check-in reminder (in the morning, after you're usually up), a wind-down reminder and a plan check-in reminder, each one separately, and only once you've agreed to Tilo keeping your health data. Tilo sends at most one check-in or plan check-in reminder a day, and the wind-down reminder at most once a day at the time you set. None of them comes after your wind-down time or before you're usually up, and each is sent half as often if the last two weren't opened. They follow your time zone, as do your supplement reminders once it's saved. To keep to these limits, our reminder service keeps the last day it sent you a check-in or plan check-in reminder, and the last day for each type. That record is deleted when you withdraw consent for health data or delete your account.` +
                 (names
-                  ? ` You can also choose whether supplement reminders name the supplement ("Show supplement names in reminders", off unless you turn it on). With it on, the names appear on your screen, even when it's locked. We keep that choice with your other reminder settings.`
+                  ? ` You can also choose whether supplement reminders name the supplement ("Show supplement names in reminders", off unless you turn it on). With it on, the names appear on your screen, even when it's locked. We keep that choice with your other reminder settings.` +
+                    (native ? ` In the iPhone app, supplement reminders don't name the supplement.` : '')
                   : ` Supplement reminders never name the supplement.`)
               : ''),
           `Your consent choices: each time you give or withdraw consent, we record which one, the version of the wording you saw, and when.`,
@@ -195,11 +206,15 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `GitHub Pages: hosts the app's files and sees technical request data.`,
           `Webflow: hosts the website and stores early access sign-ups. The site is delivered through Cloudflare, which also runs the bot check, and some of Webflow's page code loads from Amazon CloudFront.`,
           `Bunny.net: delivers the exercise demo videos and their preview images, and sees technical request data (such as your IP address and which video or image is requested) when the app shows or plays them.`,
-          `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. ` +
+          (native
+            ? `Push services: deliver reminders if you turn them on. In a browser, that's your browser's push service (Apple, Google or Mozilla, depending on your device). In the iPhone app, it's Apple's push service, which also receives your phone's device token. `
+            : `Your browser's push service (Apple, Google or Mozilla, depending on your device): delivers reminders if you turn them on. `) +
             (names
               ? `A supplement reminder says "Time for your supplements", or names the supplement if you turned on "Show supplement names in reminders". `
               : `A supplement reminder says "Time for your supplements". `) +
-            `It is encrypted so the push service can't read it. The weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you."), encrypted the same way.` +
+            (native
+              ? `In a browser, it is encrypted so the push service can't read it. In the iPhone app, it is protected on the way, but Apple can read it. The weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you.").`
+              : `It is encrypted so the push service can't read it. The weekly review reminder carries only a fixed message ("Your week is ready", "Take a look whenever suits you."), encrypted the same way.`) +
             (mind
               ? ` So do the check-in, wind-down and plan check-in reminders ("How are you today? A quick check-in, if you have a moment.", "Your wind-down starts now, if you'd like it." and "How are your plans going?"): never anything you logged.`
               : ''),
@@ -210,6 +225,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             : []),
           `Google Workspace: our email, which receives feedback and requests you send us.`,
           `Google: only if you choose "Continue with Google". Google handles that sign-in under its own privacy policy.`,
+          ...(native ? [`Apple: only if you choose "Continue with Apple" in the iPhone app. Apple handles that sign-in under its own privacy policy. When you delete your account, we also ask Apple to remove Tilo from your Sign in with Apple apps. If that doesn't work, Tilo tells you how to remove it yourself in your Apple Account settings.`] : []),
         ],
       },
       {

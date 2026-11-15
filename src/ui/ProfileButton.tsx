@@ -1,5 +1,6 @@
 import { useStore } from '@/store/store'
 import { Icon } from './icons'
+import { UI } from '@/copy/ui'
 
 /** "Sam Smith" → "SS": the avatar's letters (up to two). */
 export function initials(name: string) {
@@ -16,7 +17,7 @@ export function ProfileButton() {
   const name = useStore((s) => s.data.profile.name)
   const setTab = useStore((s) => s.setTab)
   return (
-    <button className="pfl" aria-label="Profile" onClick={() => setTab('profile')}>
+    <button className="pfl" aria-label={UI.profile} onClick={() => setTab('profile')}>
       <span className="avatar soft">{initials(name || '') || <Icon name="person" />}</span>
     </button>
   )

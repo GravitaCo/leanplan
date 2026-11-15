@@ -60,7 +60,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
     onClose()
   }
   const scale = (labels: string[], value: number, set: (v: number) => void) => (
-    <div className="scale">
+    <div className="scale ck-scale">
       {labels.map((l, i) => (
         <button key={l} className={value === i + 1 ? 'on' : ''} aria-pressed={value === i + 1} onClick={() => set(value === i + 1 ? 0 : i + 1)}>{l}</button>
       ))}

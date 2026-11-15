@@ -9,23 +9,19 @@
  * line is a pressable row that opens it, and a finished Reset ticks the thing done (ResetScreen).
  */
 import type { CheckIn, IfThenPlan, Pillar } from '@/core/types'
-import { skillById, thingByKey, thingText, type Thing } from '@/core/data/skills'
+import { thingByKey, thingText, type Thing } from '@/core/data/skills'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { MOODS } from '@/core/domain/insights'
-import { useStore, type MindView } from '@/store/store'
+import { useStore } from '@/store/store'
 import { pressable } from '@/ui/primitives'
 import { Chevron, Icon } from '@/ui/icons'
 import { SUMMARY_MIND } from './summaryCopy'
-import { checkedIn, checkinTime, makePlanOffered } from './summary'
+import { checkedIn, checkinTime, makePlanOffered, thingView } from './summary'
 
 const DOT: Record<Pillar, string> = { mind: 'var(--mind)', food: 'var(--food)', move: 'var(--move)' }
 
-/** The Mind view a picked thing's "Today:" line opens: its skill, when that skill has a reviewed
- *  screen; else none (the line is plain text). */
-export function thingView(t: Thing, reviewed: boolean): MindView | null {
-  const sk = t.skill ? skillById(t.skill) : undefined
-  return reviewed && sk?.screen && (sk.id === 'reset' || sk.id === 'unload') ? sk.id : null
-}
+/** thingView lives in summary.ts (shared with native); re-exported for existing imports. */
+export { thingView }
 
 export interface MindCardProps {
   checkin: CheckIn | null | undefined

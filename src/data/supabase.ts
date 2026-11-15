@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { AUTH_OPTIONS } from './platform'
 
 /**
  * Supabase config. The publishable (anon) key is public by design — it is safe to ship
@@ -14,7 +15,7 @@ export const SB_REST = SB_URL + '/rest/v1'
 /** Fallback user id when no session is set (requests with it match no rows under RLS). */
 export const LOCAL_USER = '00000000-0000-0000-0000-000000000001'
 
-export const supabase: SupabaseClient = createClient(SB_URL, SB_KEY)
+export const supabase: SupabaseClient = createClient(SB_URL, SB_KEY, AUTH_OPTIONS)
 
 let accessToken: string | null = null
 let userId: string | null = null

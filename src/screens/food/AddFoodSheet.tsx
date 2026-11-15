@@ -6,8 +6,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
 import type { Food, MealSlot } from '@/core/types'
-import { FOODS } from '@/core/data/foods'
-import { allFoods, browseFoods, isMine, searchFoods } from './foodModel'
+import { allFoods, browseFoods, isMine, mineIndex, searchFoods } from './foodModel'
 import { ADD_FOOD, FOOD } from '@/copy/food'
 import { fmt, r1 } from '@/core/domain/date'
 import { recipePerServing, headline } from '@/core/domain/nutrition'
@@ -16,7 +15,8 @@ import { MEAL_LABEL, mealNow, recipeServing, usualEntries } from '@/core/domain/
 import { Sheet, BackButton, focusOnMount, pressable } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
 import { MealSeg } from './common'
-import { ConnectionPill, NEEDS_NET } from '@/ui/ConnectionPill'
+import { ConnectionPill } from '@/ui/ConnectionPill'
+import { NEEDS_NET } from '@/copy/connection'
 import { PortionView } from './PortionView'
 import { RecipeLogView } from './RecipeLogView'
 import { QuickEstimateView } from './QuickEstimateView'
@@ -29,6 +29,7 @@ import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { offBeforeShare } from '@/data/sharedProducts'
 import { draftForShare } from '@/core/domain/sharedProduct'
 import { InOffSheet, SHARE_ROW } from './SharedProduct'
+import { LABEL_OFFLINE, LABEL_TITLE, MISSING_NOTE, SCAN_ENTRY } from '@/copy/scan'
 import { SameFoodView, SameFoodsRow } from './DuplicateViews'
 
 type LabelProps = {
@@ -40,8 +41,8 @@ type LabelProps = {
 /** Shown if the label camera's code can't load (offline before it was ever opened). */
 function LabelOffline({ onBack, onClose, animate, barcode, base, onDone, forShare }: LabelProps) {
   return (
-    <Sheet title="Scan the label" onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
-      <div className="note" role="status"><Icon name="info" size={17} /><span>Label photos need a connection the first time they open.</span></div>
+    <Sheet title={LABEL_TITLE} onClose={onClose} animate={animate} left={onBack ? <BackButton onClick={onBack} /> : undefined}>
+      <div className="note" role="status"><Icon name="info" size={17} /><span>{LABEL_OFFLINE}</span></div>
       {!forShare && <div className="stack"><button className="btn tinted" onClick={() => onDone(base ?? emptyLabelDraft({ barcode, taken: [] }))}>Type it in instead</button></div>}
     </Sheet>
   )
@@ -49,12 +50,6 @@ function LabelOffline({ onBack, onClose, animate, barcode, base, onDone, forShar
 
 // the capture view (camera, quality checks) loads only when opened, like the barcode decoder
 const LabelCaptureView = lazy(() => import('./LabelCaptureView').catch(() => ({ default: LabelOffline })))
-
-const MISSING_NOTE = {
-  'not-found': 'Not found. Enter it from the label: per 100 g column.',
-  offline: 'Couldn’t look it up without a connection. Enter it from the label: per 100 g column.',
-  error: 'Couldn’t look it up right now. Enter it from the label: per 100 g column.',
-} as const
 
 type View =
   | { kind: 'search' }
@@ -138,7 +133,7 @@ export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMea
       ...(sf ? { forShare: true, onFail: (note: string) => { go(view.back); showToast(note) } } : {}),
     }
     return (
-      <Suspense fallback={<Sheet title="Scan the label" onClose={onClose} animate={!moved}><div className="empty" role="status">Opening the camera…</div></Sheet>}>
+      <Suspense fallback={<Sheet title={LABEL_TITLE} onClose={onClose} animate={!moved}><div className="empty" role="status">{SCAN_ENTRY.opening}</div></Sheet>}>
         <LabelCaptureView {...lp} />
       </Suspense>
     )
@@ -229,7 +224,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
             <div className="lbl">{ADD_FOOD.myFoods}</div>
             {pair && <div className="list"><SameFoodsRow pair={pair} onOpen={() => go({ kind: 'same', ids: [pair[0].id!, pair[1].id!] })} /></div>}
             <div className="list">
-              {cf.map((f, ci) => foodRow(f, FOODS.length + ci,
+              {cf.map((f, ci) => foodRow(f, mineIndex(ci),
                 <button className="navbtn" style={{ color: 'var(--label3)' }} aria-label={ADD_FOOD.deleteFood(f.n)}
                   onClick={(e) => { e.stopPropagation(); if (window.confirm(ADD_FOOD.deleteFoodAsk(f.n))) removeCustomFood(ci) }}>
                   <Icon name="x" size={17} />
@@ -260,7 +255,7 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         <Icon name="search" size={17} />
         <input ref={focusOnMount} value={q} onChange={(e) => setQ(e.target.value)} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))}
           autoComplete="off" enterKeyHint="search" aria-label={ADD_FOOD.searchLabel} />
-        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label="Scan barcode"><Icon name="barcode" size={20} /></button>
+        <button className="navbtn scanbtn" onClick={() => go({ kind: 'scan' })} aria-label={SCAN_ENTRY.barcode}><Icon name="barcode" size={20} /></button>
       </div>
       <div style={{ margin: '10px 0 2px' }}><MealSeg value={meal} onChange={setMeal} /></div>
       {body}
@@ -271,19 +266,19 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
         </button>
         <button className="li" onClick={() => go({ kind: 'scan' })}>
           <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="barcode" size={18} /></span>
-          <div className="m"><div className="t">Scan barcode</div><div className="s">{online ? 'Packaged food, from the pack' : 'Works for products you’ve scanned before'}</div></div><Chevron />
+          <div className="m"><div className="t">{SCAN_ENTRY.barcode}</div><div className="s">{online ? SCAN_ENTRY.barcodeSub : SCAN_ENTRY.barcodeSubOffline}</div></div><Chevron />
         </button>
         {LABEL_SCAN_ENABLED && (
           online ? (
             <button className="li" onClick={() => go({ kind: 'label', back: { kind: 'search' } })}>
               <span className="ico" style={{ background: 'var(--tint)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">Scan the label</div><div className="s">A photo of the nutrition table</div></div><Chevron />
+              <div className="m"><div className="t">{SCAN_ENTRY.label}</div><div className="s">{SCAN_ENTRY.labelSub}</div></div><Chevron />
             </button>
           ) : (
             // online only (ob6-8): shown, off, with the note
             <div className="li needsnet" aria-disabled="true">
               <span className="ico" style={{ background: 'var(--fill2)' }}><Icon name="camera" size={18} /></span>
-              <div className="m"><div className="t">Scan the label</div><div className="s">{NEEDS_NET}</div></div>
+              <div className="m"><div className="t">{SCAN_ENTRY.label}</div><div className="s">{NEEDS_NET}</div></div>
             </div>
           )
         )}

@@ -1,0 +1,106 @@
+/**
+ * Tester feedback (src/screens/profile/FeedbackSheet.tsx): each key area (a rating and an optional
+ * note), what they'd like to see, then a review. Sending opens the email app with it all filled in
+ * (core/domain/feedback.ts); "Copy instead" copies it (expo-clipboard). Closing by accident keeps the
+ * answers while the app is open; they clear once it's sent.
+ */
+import { useEffect, useState } from 'react'
+import { Linking, Platform, Text, View } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
+import Constants from 'expo-constants'
+import { useStore } from '@/store/store'
+import { FEEDBACK_AREAS, FEEDBACK_RATINGS, FEEDBACK_TO, feedbackEmail, feedbackMailto, hasFeedback, type FeedbackAnswers, type FeedbackRating } from '@/core/domain/feedback'
+import { FEEDBACK as F } from '@/copy/profile'
+import { num, tx, useTokens } from '../../lib/theme'
+import { Foot, Lbl, Sub } from '../../lib/ui/text'
+import { Input } from '../../lib/ui/fields'
+import { Scale } from '../../lib/ui/controls'
+import { PROSE } from './text'
+import { Btn, Card } from '../../lib/ui/kit'
+import { BackButton, Sheet } from '../../lib/ui/primitives'
+
+const STEPS = FEEDBACK_AREAS.length + 3 // intro, the areas, open questions, review
+const EMPTY: FeedbackAnswers = { areas: {}, wishes: '', other: '' }
+// the unsent draft, kept while the app is open (a stray tap on the backdrop shouldn't lose it)
+let draft: { step: number; a: FeedbackAnswers } = { step: 0, a: EMPTY }
+
+/** The app version and build, where the web sends its service-worker cache name. */
+function appVersion(): string | undefined {
+  const c = Constants.expoConfig
+  const build = Platform.OS === 'ios' ? c?.ios?.buildNumber : c?.android?.versionCode
+  return c?.version ? `native ${c.version}${build ? ` (${build})` : ''}` : undefined
+}
+
+export function FeedbackSheet({ onClose }: { onClose: () => void }) {
+  const t = useTokens()
+  const showToast = useStore((s) => s.showToast)
+  const [step, setStep] = useState(draft.step)
+  const [a, setA] = useState<FeedbackAnswers>(draft.a)
+  useEffect(() => { draft = { step, a } }, [step, a])
+  const [opened, setOpened] = useState(false)
+
+  const email = feedbackEmail(a, { version: appVersion(), device: `${Platform.OS} ${Platform.Version}` })
+  const next = () => setStep((s) => Math.min(STEPS - 1, s + 1))
+  const back = () => { setOpened(false); setStep((s) => Math.max(0, s - 1)) }
+  const area = step >= 1 && step <= FEEDBACK_AREAS.length ? FEEDBACK_AREAS[step - 1] : null
+  const cur = area ? a.areas[area.id] ?? {} : {}
+  const setArea = (patch: { rating?: FeedbackRating; note?: string }) =>
+    area && setA((x) => ({ ...x, areas: { ...x.areas, [area.id]: { ...x.areas[area.id], ...patch } } }))
+  const copy = async () => {
+    try { await Clipboard.setStringAsync(email.body); showToast(F.copied(FEEDBACK_TO)) } catch { showToast(F.copyFailed) }
+  }
+  const ready = hasFeedback(a)
+  const q = [tx(22, 600, 28, -0.01), { color: t.label, marginTop: 4, marginBottom: 6 }]
+  const hint = { paddingTop: 0, paddingHorizontal: 0, paddingBottom: 12 }
+
+  return (
+    <Sheet title={F.title} tall onClose={onClose} left={step > 0 ? <BackButton onPress={back} /> : undefined}
+      right={step > 0 ? <Sub style={num}>{F.of(step, STEPS - 1)}</Sub> : undefined}>
+      {step === 0 && (
+        <View>
+          <Text style={q}>{F.introT}</Text>
+          <Sub style={[PROSE, { marginBottom: 10 }]}>{F.intro}</Sub>
+          <Sub style={[PROSE, { marginBottom: 10 }]}>{F.goesTo(FEEDBACK_TO)}</Sub>
+        </View>
+      )}
+
+      {area && (
+        <View>
+          <Text style={q}>{area.question}</Text>
+          <Foot style={hint}>{area.hint}</Foot>
+          <Scale tall role="radio" label={area.question} cols={4} items={FEEDBACK_RATINGS.map((r) => ({ key: r, text: r }))} value={cur.rating}
+            onPick={(r) => setArea({ rating: cur.rating === r ? undefined : r })} />
+          <Lbl style={{ paddingHorizontal: 4 }}>{F.note}</Lbl>
+          <Input label={F.note} multiline numberOfLines={4} value={cur.note ?? ''} placeholder={F.optional} onChangeText={(v) => setArea({ note: v })} style={{ minHeight: 110 }} />
+        </View>
+      )}
+
+      {step === FEEDBACK_AREAS.length + 1 && (
+        <View>
+          <Text style={q}>{F.wishesT}</Text>
+          <Foot style={hint}>{F.wishesHint}</Foot>
+          <Input label={F.wishesT} multiline numberOfLines={5} value={a.wishes} placeholder={F.optional} onChangeText={(v) => setA({ ...a, wishes: v })} style={{ minHeight: 132 }} />
+          <Lbl style={{ paddingHorizontal: 4 }}>{F.other}</Lbl>
+          <Input label={F.other} multiline numberOfLines={3} value={a.other} placeholder={F.optional} onChangeText={(v) => setA({ ...a, other: v })} style={{ minHeight: 88 }} />
+        </View>
+      )}
+
+      {step === STEPS - 1 && (
+        <View>
+          <Text style={q}>{F.readyT}</Text>
+          {/* `.card.fb-preview` */}
+          <Card style={{ marginBottom: 12 }}><Text style={[tx(13, 400, 1.4), { color: t.label2 }]}>{email.body}</Text></Card>
+          <Foot style={hint}>{opened ? F.opened(FEEDBACK_TO) : (ready ? F.opens(FEEDBACK_TO) : F.answerOne) + F.included}</Foot>
+          <View style={{ gap: 8, marginTop: 4 }}>
+            {opened
+              ? <Btn title={F.done} onPress={() => { draft = { step: 0, a: EMPTY }; onClose() }} />
+              : <Btn title={F.send} disabled={!ready} onPress={() => { void Linking.openURL(feedbackMailto(email)); setOpened(true); draft = { step: 0, a: EMPTY } }} />}
+            <Btn kind="gray" title={F.copy} disabled={!ready} onPress={() => void copy()} />
+          </View>
+        </View>
+      )}
+
+      {step < STEPS - 1 && <View style={{ marginTop: 16 }}><Btn title={step === 0 ? F.start : F.next} onPress={next} /></View>}
+    </Sheet>
+  )
+}

@@ -1,32 +1,12 @@
-import { useStore, selectAskCtx, type StoreState } from '@/store/store'
+import { useStore } from '@/store/store'
 import { todayStr } from '@/core/domain/date'
-import { weekOf } from '@/core/domain/insights'
-import { pickAsks } from '@/core/domain/asks'
-import { REFLECTION_LATER, reflectionLines, weekReflection, type WeekReflection } from '@/core/domain/mind'
+import { REFLECTION_LATER, reflectionLines, type WeekReflection } from '@/core/domain/mind'
 import { bandLabel } from '@/core/domain/sleep'
 import { SLEEP_BANDS } from '@/core/domain/checkin'
 import { MIND, REFLECTION } from './copy'
+import { reflectionFor, reflectionSpan } from './reflection'
 
-/** "21–27 Sept", or "28 Sept – 4 Oct" across a month end (as Summary's "This week" span). */
-export function reflectionSpan(a: string, b: string): string {
-  const d = (x: string, o: Intl.DateTimeFormatOptions) => new Date(x + 'T12:00').toLocaleDateString('en-GB', o)
-  return d(a, { month: 'short' }) === d(b, { month: 'short' })
-    ? `${d(a, { day: 'numeric' })}–${d(b, { day: 'numeric', month: 'short' })}`
-    : `${d(a, { day: 'numeric', month: 'short' })} – ${d(b, { day: 'numeric', month: 'short' })}`
-}
-
-/**
- * What the Mind page's "Your week" shows, from the store's state: this calendar week, Monday to
- * Sunday, counted up to today. Null with the Mind pillar off (weekReflection), and while the asks
- * rules hold the reflection back (the first two weeks, and a low-mood signpost day:
- * core/domain/asks). `link` is false with Food off (C1).
- */
-export function reflectionFor(st: Pick<StoreState, 'data'>, today: string): { r: WeekReflection; link: boolean } | null {
-  if (!pickAsks(['reflection'], selectAskCtx(st, today)).show.includes('reflection')) return null
-  const off = st.data.profile.mind?.off
-  const r = weekReflection(st.data.days, weekOf(today)[0], { today, off, plans: st.data.profile.plans })
-  return r ? { r, link: !off?.includes('food') } : null
-}
+export { reflectionFor, reflectionSpan }
 
 /**
  * "Your week" on the Mind page (boards B4 and B5.16, wp-b4-*). "See your whole week" goes to

@@ -53,9 +53,10 @@ import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAcc
 import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
 import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
 import { withTimeout } from '@/data/timeout'
+import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
-import { pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
+import { askPushPermission, pushPermission, pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
 import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
@@ -67,12 +68,13 @@ import { answerFoodOptInIn, type FoodOptInAnswer } from '@/core/domain/foodMode'
 import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
 import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
-import { isUnderAge, reminderAction } from '@/core/domain/age'
+import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
+import { DELETE } from '@/copy/account'
 
 enableMapSet()
 
@@ -209,7 +211,7 @@ export interface StoreState {
   /** remove today's one thing (B9.6 "Change" before a new pick) */
   clearThing: () => void
   /**
-   * Unload notes (device only, never synced). Only screens/mind/UnloadSheet imports the notes
+   * Unload notes (device only, never synced). Only screens/mind/unloadNotes.ts imports the notes
    * accessors (deviceOnly.ts NOTE_ACCESSORS), so it passes one in:
    * `writeNotes((s, ctx) => addUnloadNote(s, input, ctx))` or `deleteUnloadNote(s, id, ctx)`.
    * Runs it on the store's data with the session facts (selectNotesContext: signedIn, never
@@ -391,7 +393,7 @@ export interface StoreState {
   /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
   deletingAccount: boolean
   /** needs a connection; wipes this device and signs out only after the server confirms */
-  deleteAccount: (reason?: 'under-age') => Promise<DeleteResult>
+  deleteAccount: (reason?: 'under-age', appleCode?: string) => Promise<DeleteResult>
   /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
   authProvider: string | null
 
@@ -694,7 +696,7 @@ export const useStore = create<StoreState>()(
         if (!get().data.profile.notificationsEnabled) return
         const can = get().authed && navigator.onLine && consentLetsSync(get().data)
         const ok = can ? await withTimeout(resubscribePush(), 8000, false) : false
-        if (!ok && !get().underAge) {
+        if (restoreTurnsOff({ registered: ok, stopped: !!get().underAge, pushSupported: pushSupported(), keepWithoutPush: KEEP_REMINDERS_WITHOUT_PUSH })) {
           set((st) => { st.data.profile.notificationsEnabled = false; markSettingsDirty(st.data) })
           saved()
         }
@@ -1175,11 +1177,9 @@ export const useStore = create<StoreState>()(
           // reminders read the profile on the server: never before the health yes (B11 [C])
           if (!consentLetsSync(get().data)) return 'consent'
           if (!pushSupported()) return 'unsupported'
-          if (Notification.permission === 'denied') return 'denied'
-          if (Notification.permission !== 'granted') {
-            const perm = await Notification.requestPermission().catch(() => 'denied' as NotificationPermission)
-            if (perm !== 'granted') return 'denied'
-          }
+          const perm = pushPermission()
+          if (perm === 'denied') return 'denied'
+          if (perm !== 'granted' && (await askPushPermission()) !== 'granted') return 'denied'
         }
         if (!get().setMindPrefs({ notify: { [kind]: on } })) return 'unsaved'
         if (on) {
@@ -1747,7 +1747,7 @@ export const useStore = create<StoreState>()(
           }
           get().runSync()
         })
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) { get().syncPlanMirror(); get().runSync() } })
+        onForeground(() => { get().syncPlanMirror(); get().runSync() })
         get().syncPlanMirror()
       },
 
@@ -2305,7 +2305,7 @@ export const useStore = create<StoreState>()(
         return 'ok'
       },
 
-      deleteAccount: async (reason) => {
+      deleteAccount: async (reason, appleCode) => {
         if (deleting) return { status: 'busy' }
         // whose account this is, for the pending under-age record after it's gone
         const goneUid = getUid()
@@ -2332,7 +2332,7 @@ export const useStore = create<StoreState>()(
               await defaultDeleteDeps.signOut()
               clearSavedSession()
             },
-          }, reason)
+          }, reason, appleCode)
           if (res.status !== 'ok') { failed = true; return res }
           // the wipe keeps a pending under-age record (wipeStorage); this account's is done now.
           // Another account's stays, so that one still gets deleted
@@ -2340,7 +2340,9 @@ export const useStore = create<StoreState>()(
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
             st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null; st.redoOpen = false; st.setupOpen = false
-            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = null; st.sync = 'idle'
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            // the sign-in screen's banner: Apple couldn't be told, so the person can remove Tilo there
+            st.authNotice = res.appleKept ? DELETE.appleKept : null
           })
           return res
         } finally {

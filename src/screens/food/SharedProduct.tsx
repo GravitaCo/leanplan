@@ -14,6 +14,10 @@ import { reportShared, type ReportReason } from '@/data/sharedProducts'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { Chevron, Icon } from '@/ui/icons'
 import { LegalLink } from '../legal/LegalDoc'
+import { IN_OFF, ONE_SERVING, OPT_IN, REPORT, REPORT_TOAST, SHARE_CHECK, SHARE_LABEL_NOTE, SHARE_ROW } from '@/copy/scan'
+
+/** Words in src/copy/scan.ts; re-exported for the screens and tests that import them from here. */
+export { IN_OFF, OPT_IN, REPORT_TOAST, SHARE_CHECK, SHARE_LABEL_NOTE, SHARE_ROW }
 
 /** sp-2 / sp-3 / sp-3b: where the numbers came from, with Report this product under it. */
 export function SharedSourceCard({ info, barcode, onReport }: { info: SharedInfo; barcode: string; onReport: () => void }) {
@@ -26,7 +30,7 @@ export function SharedSourceCard({ info, barcode, onReport }: { info: SharedInfo
         <div className="t">{card.title}</div>
         {card.sub && <div className="s">{card.sub}</div>}
         <div className="bc num">Barcode {barcode}</div>
-        <button className="sp-report" onClick={onReport}><Icon name="flag" size={16} />Report this product</button>
+        <button className="sp-report" onClick={onReport}><Icon name="flag" size={16} />{REPORT.title}</button>
       </div>
     </div>
   )
@@ -39,7 +43,7 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
   return (
     <>
       <div className="sp-serv" data-margin={info.tier}>
-        <span>One serving</span>
+        <span>{ONE_SERVING}</span>
         <b className="num">{k} kcal <span>±{'\u00a0'}{Math.round(k * tierErr(info.tier))}</span></b>
       </div>
       <div className="foot">{marginNote(info.tier)}</div>
@@ -49,13 +53,6 @@ export function SharedServing({ info, kcal }: { info: SharedInfo; kcal: number }
 
 /** sp-1: compliance's copy, word for word, then a link to the terms (where the sharing licence
  *  lives). Either answer saves the food; no never blocks anything. */
-export const OPT_IN = {
-  title: 'Add new products you scan to Tilo’s shared list?',
-  body: 'We save the barcode, name and figures, never who added them. Because of that, we can’t remove one you added later. Turn this off any time in Profile, Privacy.',
-  yes: 'Yes, share new products',
-  no: 'Not now',
-} as const
-
 export function ShareOptInSheet({ onAnswer }: { onAnswer: (yes: boolean) => void }) {
   return (
     // closing it any other way counts as Not now: it's asked once
@@ -71,19 +68,7 @@ export function ShareOptInSheet({ onAnswer }: { onAnswer: (yes: boolean) => void
   )
 }
 
-const REASONS: [ReportReason, string][] = [
-  ['figures', 'Figures don’t match the pack'],
-  ['wrong', 'Wrong product'],
-  ['name', 'Offensive or personal details in the name'],
-  ['other', 'Something else'],
-]
-
-/** Sent and failed lines (not on the boards: kept short and neutral). */
-export const REPORT_TOAST = {
-  sent: 'Report sent. Thank you.',
-  offline: 'Reporting needs a connection. Try again when you’re online.',
-  error: 'Couldn’t send the report. Try again in a moment.',
-} as const
+const REASONS: readonly (readonly [ReportReason, string])[] = REPORT.reasons
 
 /** sp-6: anonymous. Send stays off until an option is picked (canvas note s-sp). */
 export function ReportProductSheet({ name, barcode, version, onClose }: { name: string; barcode: string; version: number; onClose: () => void }) {
@@ -99,13 +84,13 @@ export function ReportProductSheet({ name, barcode, version, onClose }: { name: 
     if (r === 'sent') onClose()
   }
   return (
-    <Sheet title="Report this product" onClose={onClose}>
+    <Sheet title={REPORT.title} onClose={onClose}>
       <div className="sp-rep-hd">
         <div className="t">{name}</div>
         <div className="bc num">Barcode {barcode}</div>
       </div>
       <fieldset className="sp-why">
-        <legend>What’s wrong?</legend>
+        <legend>{REPORT.what}</legend>
         <div className="list">
           {REASONS.map(([k, label]) => (
             <label key={k}>
@@ -116,17 +101,10 @@ export function ReportProductSheet({ name, barcode, version, onClose }: { name: 
           ))}
         </div>
       </fieldset>
-      <button className="btn sp-why-send" disabled={!why || busy} onClick={() => void send()}>Send</button>
+      <button className="btn sp-why-send" disabled={!why || busy} onClick={() => void send()}>{REPORT.send}</button>
     </Sheet>
   )
 }
-
-/** sp-7 / sp-7b: copy from the boards, word for word. */
-export const SHARE_ROW = {
-  title: 'Share this product',
-  sub: 'Helps others who scan this barcode',
-  offline: 'Needs a connection.',
-} as const
 
 /** sp-7: at the foot of a saved food's sheet, under Add. Offline it stays in view, off (sp-7b). */
 export function ShareProductRow({ state, busy, onShare }: { state: 'on' | 'offline'; busy?: boolean; onShare: () => void }) {
@@ -150,13 +128,6 @@ export function ShareProductRow({ state, busy, onShare }: { state: 'on' | 'offli
   )
 }
 
-/** sp-8a: copy from the board, word for word. */
-export const IN_OFF = {
-  title: 'Open Food Facts already has this product',
-  body: 'Anyone who scans it gets it, so there’s nothing to share.',
-  ok: 'OK',
-} as const
-
 /** sp-8a: Open Food Facts has the product, so nothing is shared. OK (or closing it) and the row goes. */
 export function InOffSheet({ onOk }: { onOk: () => void }) {
   return (
@@ -168,14 +139,3 @@ export function InOffSheet({ onOk }: { onOk: () => void }) {
     </BareSheet>
   )
 }
-
-/** sp-8b: the one line above the label camera, saying why it opened. */
-export const SHARE_LABEL_NOTE = 'Open Food Facts doesn’t have this product. To share it, take a photo of the label.'
-
-/** sp-9: under Share this product. */
-export const SHARE_CHECK = {
-  share: 'Share',
-  button: 'Share this product',
-  what: 'Barcode, name and figures only, never who added them.',
-  saved: (name: string) => `Your saved ${name} takes these figures too.`,
-} as const

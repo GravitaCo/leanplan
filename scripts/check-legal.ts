@@ -70,6 +70,18 @@ for (const onboarding of [false, true]) {
   if (!on.includes('Show supplement names in reminders')) fail(`Privacy policy: names setting missing with suppNames on ${tag}`)
   if (!same(privacyPolicy({ onboarding, mind: false }), privacyPolicy({ onboarding, mind: false, suppNames: true }))) fail(`Privacy policy: the supplement names gate changes the Mind-off text ${tag}`)
 }
+// the iPhone app's reminders (N12): off changes nothing (the default), on changes both texts, and
+// with it on the policy says Apple can read an iPhone reminder
+for (const onboarding of [false, true]) for (const mind of [false, true]) for (const products of [false, true]) {
+  const o = { onboarding, mind, products }, tag = JSON.stringify(o)
+  if (!same(privacyPolicy(o), privacyPolicy({ ...o, native: false }))) fail(`Privacy policy: native off isn't the default ${tag}`)
+  if (same(privacyPolicy(o), privacyPolicy({ ...o, native: true }))) fail(`Privacy policy: the native gate changes nothing ${tag}`)
+  if (same(cookiePolicy(o), cookiePolicy({ ...o, native: true }))) fail(`Cookie policy: the native gate changes nothing ${tag}`)
+  if (!JSON.stringify(privacyPolicy({ ...o, native: true })).includes('In the iPhone app, it is protected on the way, but Apple can read it.')) fail(`Privacy policy: native on doesn't say Apple can read iPhone reminders ${tag}`)
+  gated.push(privacyPolicy({ ...o, native: true }), cookiePolicy({ ...o, native: true }))
+  if (mind) gated.push(privacyPolicy({ ...o, native: true, suppNames: true }))
+}
+
 for (const doc of [...gated, sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)
   if (ph.length) fail(`${doc.title}: ${ph.length} placeholder(s): ${ph.join(', ')}`)

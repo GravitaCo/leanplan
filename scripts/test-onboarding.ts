@@ -4,7 +4,7 @@
 import type { OnboardingOutcomes, Profile } from '@/core/types'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { SIGNPOSTS, beatFor, signpostName, signpostsFor, urgentAdviceFor } from '@/core/data/signposts'
-import { isUnderAge, reminderAction } from '@/core/domain/age'
+import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
 import { MIN_AGE as LEGAL_MIN_AGE } from '@/core/legal'
 import { MIN_AGE, clearHealthAnswerIn, setHealthAnswerIn, legacySex, profileRouting, wellbeingOutcome, pregnancyReaskDue, routeSafety, safetyAnswersFrom, sexOf, type SafetyAnswers } from '@/core/domain/onboarding'
 import { ABSOLUTE_FLOOR, JOB_QUESTION, STEPS_QUESTION, JOB_MULT, KCAL_PER_KG_LOST, PROTEIN_RANGE_PER_KG, SEX_FLOOR, STEPS_MULT, activityLevelFor, movementMultiplier, startingTargets, trainingKcalPerDay, type TrainingLoad } from '@/core/domain/targets'
@@ -97,6 +97,10 @@ function routing(): void {
       const A = (stopped: boolean, enabled: boolean, held: boolean) => reminderAction({ stopped, enabled, held })
       return A(true, true, false) === 'hold' && A(true, false, false) === null && A(true, true, true) === 'retry' && A(true, false, true) === 'retry'
         && A(false, true, true) === 'restore' && A(false, false, true) === 'restore' && A(false, true, false) === null && A(false, false, false) === null })()],
+    ['restore that fails: the setting turns off (web, as before), but not where push is unsupported and the platform keeps it (native, N12), nor during the stop', (() => {
+      const T = (registered: boolean, stopped: boolean, pushSupported: boolean, keepWithoutPush: boolean) => restoreTurnsOff({ registered, stopped, pushSupported, keepWithoutPush })
+      return T(false, false, true, false) && T(false, false, false, false) && T(false, false, true, true)
+        && !T(false, false, false, true) && !T(true, false, true, false) && !T(true, false, false, true) && !T(false, true, true, false) && !T(false, true, false, true) })()],
     ['under 18 (15, 16, 17): kind stop, nothing shown', [u16, t16, t17, t17b].every((x) => x.stop === 'under16' && x.hideCalories && x.hiddenReason === 'under16' && x.noAI && x.hideWeight && x.reasons.join() === 'under16')],
     ['no 16–17 tier left: nothing under 18 gets past the stop', [t16, t17].every((x) => !x.signpost.length && x.maintenanceOnly)],
     ['18: adult rules', !a18.stop && !a18.noDeficit && !a18.hideWeight && !a18.noAI && !a18.reasons.length],

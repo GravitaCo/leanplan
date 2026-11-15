@@ -348,3 +348,19 @@ export function stintMins(prev: number | undefined, stintMs: number, isToday: bo
   if (!isToday) return prev
   return Math.max(1, Math.round((prev ?? 0) + stintMs / 60000))
 }
+
+/* ---------------- first session: find your weight (Onboarding 5) ---------------- */
+
+/**
+ * One tap of Lighter or Heavier while finding a weight: 1 kg steps up to 10 kg, 2.5 kg above
+ * (the plates people have), never below 0. Nothing picked yet counts as 0. Both players use this.
+ */
+export function findWeightStep(w: number | null, dir: 'lighter' | 'heavier'): number {
+  const x = w ?? 0
+  return dir === 'lighter' ? Math.max(0, x - (x > 10 ? 2.5 : 1)) : x + (x >= 10 ? 2.5 : 1)
+}
+
+/** What to aim for on the finding set ("Aim for 10 reps with 2 or 3 to spare"): the target's top reps (10 without one) and reps in reserve. */
+export function findWeightAim(t: { reps: Range | null; rir: Range }): { reps: number; rirLo: number; rirHi: number } {
+  return { reps: t.reps?.hi ?? 10, rirLo: t.rir.lo, rirHi: t.rir.hi }
+}

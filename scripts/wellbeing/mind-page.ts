@@ -90,9 +90,10 @@ export function mindPageSuite(): number {
   ok('S.1 and S.2 verbatim', SHARED.support === 'Need support now?' && SHARED.wellness === 'For everyday wellbeing. Not a treatment for any condition.')
 
   /* ---------- icons ---------- */
-  const icons = readFileSync('src/ui/icons.tsx', 'utf8')
-  ok('wind, moon, pen and sun exist, and every skill uses one that does', ['wind', 'moon', 'pen', 'sun'].every((n) => new RegExp(`^\\s+${n}: <`, 'm').test(icons))
-    && SKILLS.every((s) => new RegExp(`^\\s+${s.icon}: <`, 'm').test(icons)))
+  // the icon geometry lives in src/ui/iconData.ts, shared by the web and native icons
+  const icons = readFileSync('src/ui/iconData.ts', 'utf8')
+  ok('wind, moon, pen and sun exist, and every skill uses one that does', ['wind', 'moon', 'pen', 'sun'].every((n) => new RegExp(`^\\s+${n}: \\[`, 'm').test(icons))
+    && SKILLS.every((s) => new RegExp(`^\\s+${s.icon}: \\[`, 'm').test(icons)))
   ok('the Skills list has all four skills (B12, B13 approved)', skillsWithScreen().map((s) => s.id).join() === 'reset,wind-down,unload,outside')
 
   /* ---------- page helpers ---------- */

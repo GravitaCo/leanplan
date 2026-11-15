@@ -7,6 +7,7 @@ import { workoutsOf } from '@/core/domain/sessions'
 import { plannedKeys } from '@/core/domain/plans'
 import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 import { TALI_SHORT } from '@/core/data/taliWorkouts'
+import { UI } from '@/copy/ui'
 
 
 /** Monday–Sunday strip: each day shows a mini energy ring and its planned session. */
@@ -21,7 +22,7 @@ export function WeekStrip() {
         const st = dayStat(data, d)
         // what's planned that day: the plan's workouts (several, own and Tilo's too) or the schedule's one
         const keys = plannedKeys(data, d)
-        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : 'Rest'
+        const sched = keys.length ? (isBuiltinKey(keys[0]) ? keys[0] : TALI_SHORT[keys[0]] ?? keyTitle(keys[0], data.routines)) + (keys.length > 1 ? ' +' : '') : UI.rest
         const f = fmtDate(d)
         return (
           <button key={d} className={'wd' + (d === cur ? ' sel' : '') + (d === today ? ' today' : '') + (st.future ? ' future' : '')}
@@ -47,9 +48,9 @@ export function DayNav() {
   const short = f.full.split(' ').slice(0, 2).join(' ')
   return (
     <span className="daynav">
-      <button onClick={() => setDate(shiftDay(cur, -1))} aria-label="Previous day"><Icon name="chevL" size={16} stroke={2.6} /></button>
-      <span>{cur === todayStr() ? 'Today' : f.dow} · {short}</span>
-      <button onClick={() => setDate(shiftDay(cur, 1))} aria-label="Next day"><Icon name="chevR" size={16} stroke={2.6} /></button>
+      <button onClick={() => setDate(shiftDay(cur, -1))} aria-label={UI.previousDay}><Icon name="chevL" size={16} stroke={2.6} /></button>
+      <span>{cur === todayStr() ? UI.today : f.dow} · {short}</span>
+      <button onClick={() => setDate(shiftDay(cur, 1))} aria-label={UI.nextDay}><Icon name="chevR" size={16} stroke={2.6} /></button>
     </span>
   )
 }
@@ -64,7 +65,7 @@ export function MoveStrip() {
   const setDate = useStore((s) => s.setDate)
   const today = todayStr()
   return (
-    <div className="mstrip" role="list" aria-label="This week">
+    <div className="mstrip" role="list" aria-label={UI.thisWeek}>
       {weekOf(cur).map((d, i) => {
         const f = fmtDate(d)
         const moved = workoutsOf(days[d], d).length > 0

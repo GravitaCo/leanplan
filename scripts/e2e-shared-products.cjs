@@ -329,7 +329,7 @@ const consentsOf = (page, type) => page.evaluate((t) => JSON.parse(localStorage.
       await sheetShot(page, scheme, 'sp-3-found-counted')
       // the sheet layer covers the whole window (the page below it is never on screen)
       expect(await page.evaluate(() => Math.abs(document.querySelector('.sheet-root').getBoundingClientRect().height - innerHeight) < 1), 'the sheet layer fills the window')
-      await page.getByRole('button', { name: 'Back' }).first().click()
+      await page.getByRole('dialog').getByRole('button', { name: 'Back', exact: true }).click()
       state.lookup = [FLAPJACK(7, true)]
       await page.locator('#bc_num').fill(CODE)
       await page.getByRole('button', { name: 'Look up' }).click()

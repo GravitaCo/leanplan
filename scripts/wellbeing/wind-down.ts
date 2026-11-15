@@ -9,6 +9,7 @@ import { renderToString } from 'react-dom/server'
 import type { Profile } from '@/core/types'
 import { validMindPrefs, validRoutine, MAX_ROUTINE_ITEMS, MIND_HEALTH_KEYS } from '@/core/domain/checkin'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
+import { routineSave } from '@/screens/mind/routine'
 import { DEFAULT_ROUTINE, WIND_DOWN_ITEMS, routineChoices, routineItems, routineSub, routineToSave, skillsWithScreen } from '@/core/data/skills'
 import { mindCopyIssues } from '@/core/domain/engine/why'
 import { HEALTH_FIELDS, clearHealthData, healthDataSummary, withoutHealth } from '@/data/consent'
@@ -70,6 +71,9 @@ export function windDownSuite(): number {
   ok('a save keeps unknown keys and a stored step the sheet doesn\'t offer',
     JSON.stringify(routineToSave(['reset', 'dim-lights'], ['warm-bath', 'floor-stretches', 'unload'])) === '["dim-lights","reset","floor-stretches","warm-bath"]')
   ok('a save from the default adds nothing it wasn\'t given', JSON.stringify(routineToSave(['unload'], undefined)) === '["unload"]')
+  ok('routineSave (web and native): unchanged picks save nothing, from the default or a stored routine',
+    routineSave([...DEFAULT_ROUTINE], undefined) === null && routineSave(['unload', 'reset'], ['unload', 'reset']) === null
+    && JSON.stringify(routineSave(['unload'], undefined)) === '["unload"]' && JSON.stringify(routineSave(['unload'], ['unload', 'reset'])) === '["unload"]')
   ok('Unload and Reset rows borrow the skills\' own subs', routineSub(WIND_DOWN_ITEMS[2]) === "Write what's on your mind, and one next step for each"
     && routineSub(WIND_DOWN_ITEMS[3]) === 'A few slow breaths, with long breaths out · 1 to 5 min')
 
@@ -249,7 +253,7 @@ export function windDownSuite(): number {
   const prof = readFileSync('src/screens/ProfileScreen.tsx', 'utf8')
   ok('Profile mounts the names row and its foot only with SUPP_NAMES_ENABLED (DPIA 8.8), under Supplement reminders',
     /SUPP_NAMES_ENABLED && pr\.notificationsEnabled && <SuppNamesRow \/>/.test(prof) && /SUPP_NAMES_ENABLED && pr\.notificationsEnabled && <SuppNamesFoot \/>/.test(prof)
-    && prof.indexOf('<SuppNamesRow />') > prof.indexOf('label="Supplement reminders"') && prof.indexOf('<SuppNamesRow />') < prof.indexOf('label="Weekly review reminder"'))
+    && prof.indexOf('<SuppNamesRow />') > prof.indexOf('label={P.notify.supps}') && prof.indexOf('<SuppNamesRow />') < prof.indexOf('label={P.notify.weekly}'))
   const mp = readFileSync('src/screens/mind/MindPage.tsx', 'utf8')
   ok('the skill screens open only from the Skills list (MIND_REVIEWED) or a reviewed one-thing hand-off', /skillsOn=\{MIND_REVIEWED\}/.test(mp) && /if \(MIND_REVIEWED\) setViews\(\[mindOpen\]\)/.test(mp))
   return bad

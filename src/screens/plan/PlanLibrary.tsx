@@ -5,17 +5,14 @@ import type { Goal, PlanPhase, PlanWeek } from '@/core/types'
 import { shiftDay, shortDateOf, todayStr } from '@/core/domain/date'
 import {
   bestFit, catalogue, eatingLine, filterCatalogue, fitOf, fits, PLAN_TEMPLATES, phaseWeek, planStart, startOn, timeline, totalWeeks,
-  type CatalogueEntry, type PlanExperience, type PlanFilters, type PlanWhere,
+  type CatalogueEntry, type PlanFilters,
 } from '@/core/domain/plans'
 import { BackButton, Sheet, TitleRow } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
+import { MAINTENANCE_STEPS, PLAN_FILTER_DAYS, PLAN_FILTER_EXPERIENCE, PLAN_FILTER_LENGTH, PLAN_FILTER_MADE, PLAN_FILTER_WHERE } from '@/copy/plan'
 import { GOAL_CHIP, goalLabel, planArt, PlanTile, Timeline, TimelineKey, WeekRows } from './PlanParts'
 
-const DAYS: [NonNullable<PlanFilters['days']>[number], string][] = [['2-3', 'Up to 3'], ['4-5', '4–5'], ['6', '6 or more']]
-const EXPERIENCE: [PlanExperience, string][] = [['new', 'Just starting'], ['comfortable', 'Getting comfortable'], ['confident', 'Confident']]
-const WHERE: [PlanWhere, string][] = [['gym', 'Gym'], ['home', 'Home, some kit'], ['none', 'No equipment']]
-const LENGTH: [NonNullable<PlanFilters['length']>[number], string][] = [['6', 'Up to 6 weeks'], ['8', '7 to 9 weeks'], ['12', '10 weeks or more']]
-const MADE: [NonNullable<PlanFilters['madeBy']>[number], string][] = [['tali', 'Tilo'], ['me', 'Me']]
+const DAYS = PLAN_FILTER_DAYS, EXPERIENCE = PLAN_FILTER_EXPERIENCE, WHERE = PLAN_FILTER_WHERE, LENGTH = PLAN_FILTER_LENGTH, MADE = PLAN_FILTER_MADE
 
 const toggle = <T,>(list: T[] | undefined, v: T): T[] => (list?.includes(v) ? list.filter((x) => x !== v) : [...(list ?? []), v])
 
@@ -246,13 +243,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
 
 /** How maintenance works (Plans 1, full-screen card): reached from the preview, details and the end. */
 export function MaintenanceCard({ onClose }: { onClose: () => void }) {
-  const steps: [string, string][] = [
-    ['What maintenance is', "A lighter way to train once a plan ends. You keep doing the same workouts, just with fewer sets. It's for busy spells, a breather between plans, or whenever you'd like to hold steady."],
-    ['Why it works', 'People who had trained for a few months kept most of their strength and muscle for months on about a third of their usual sets, sometimes training just once a week. Older adults kept more when they did a bit more, so Stronger with age keeps about two thirds.'],
-    ['What changes in Tilo', 'Your workouts open on the shorter version, usually 2 sets instead of 3, on two or three days a week. Light cardio and balance sessions stay if you want them. You can do the full workout any day.'],
-    ['The one thing to keep: the weight', "Lift the same weights you finished the plan on, and stop a couple of reps before you couldn't do another. Fewer sets is fine. Much lighter weights is what lets progress slip."],
-    ["How long, and what's next", "As long as you need. We'll check in after about 8 weeks and suggest a new plan around 12, whenever you're ready. A week or two off along the way won't undo your work."],
-  ]
+  const steps = MAINTENANCE_STEPS
   return (
     <Sheet title="After your plan" onClose={onClose} tall left={null} right={<button className="navbtn" onClick={onClose}>Close</button>}>
       <h2 className="mc-h">Keeping what you've built</h2>
