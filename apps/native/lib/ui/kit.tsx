@@ -154,8 +154,9 @@ export function Note({ children, kind = 'info', icon, action, status, style }: {
 }
 
 /** `.chips`: chips in a wrapping row, 8 apart. */
-export function Chips({ children }: { children: ReactNode }) {
-  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{children}</View>
+export function Chips({ children, center }: { children: ReactNode; center?: boolean }) {
+  // `center`: every row centred (Edit entry's step chips, .chips with justify-content: center)
+  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: center ? 'center' : 'flex-start' }}>{children}</View>
 }
 
 /**
@@ -351,13 +352,14 @@ export function RoundBtn({ icon = 'plus', stroke = 2.4, onPress, label }: { icon
 
 /**
  * `.dash-add`: a 56 pt add row with a 1.5 pt dashed --dash edge (radius 18), a plus and tinted
- * words (16 pt, 600), 12 above (`after` 8: right after a pillar card). Pressed, it fills with --fill.
+ * words (16 pt, 600), 12 above (`after` 10: right after a pillar card, whose 10 below and the
+ * row's 8 above collapse on the web). Pressed, it fills with --fill.
  */
 export function DashAdd({ title, onPress, icon = 'plus', stroke = 2.4, label, after }: { title: string; onPress: () => void; icon?: IconName; stroke?: number; label?: string; after?: boolean }) {
   const t = useTokens()
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 56, marginTop: after ? 8 : 12,
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 56, marginTop: after ? 10 : 12,
         borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.dash, borderRadius: t.radiusSm, backgroundColor: pressed ? t.fill : 'transparent' })}>
       <Icon name={icon} stroke={stroke} color={t.tint} />
       <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{title}</Text>

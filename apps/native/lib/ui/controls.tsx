@@ -38,9 +38,10 @@ export function Slider({ min, max, step = 1, value, onChange, label, valueText, 
   const t = useTokens()
   if (Platform.OS === 'ios' && SliderNative) return (
     <View style={[{ height: THUMB, marginBottom: 5, justifyContent: 'center' }, style]}>
-      <SliderNative min={min} max={max} value={value} tint={t.tint} label={label} valueText={valueText}
+      {/* UISlider's own 31 pt, centred on the 28 pt line, so the thumb's shadow isn't clipped */}
+      <SliderNative min={min} max={max} step={step} value={value} tint={t.tint} label={label} valueText={valueText}
         onSlide={(e) => { const v = snap(e.nativeEvent.value, min, max, step); if (v !== value) onChange(v) }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        style={{ position: 'absolute', top: -1.5, left: 0, right: 0, height: 31 }} />
     </View>
   )
   return <DrawnSlider min={min} max={max} step={step} value={value} onChange={onChange} label={label} valueText={valueText} style={style} />

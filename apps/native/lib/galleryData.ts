@@ -32,6 +32,8 @@ export const G = {
   hands: Object.entries(HANDS).map(([k, h]) => [k, h.label, h.hint] as const),
   cardio: [['Brisk walk', 'Brisk walk'], ['Stationary bike', 'Stationary bike'], ['Rower', 'Rower']] as const,
   activity: Object.entries(ACTIVITY).map(([k, v]) => [k, v.label] as const),
+  /** Edit entry's step chips */
+  editSteps: [0.5, 0.75, 1, 1.25, 1.5, 2],
   spark: [80.4, 80.1, 80.3, 79.9, 79.8, 80.0, 79.6, 79.5],
 }
 

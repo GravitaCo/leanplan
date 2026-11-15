@@ -451,7 +451,7 @@ export function Gallery() {
         </div>
       </Sec>
 
-      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint">
+      <Sec id="n5" title="RoundBtn · icon navbtns · DashAdd · link Btn · Note, tinted button · Row key · Big · FRow hint · centred chips · Radio">
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <button className="roundbtn" aria-label="Add food"><Icon name="plus" size={22} stroke={2.4} /></button>
           <button className="navbtn scanbtn" aria-label="Scan barcode" style={{ padding: '4px 2px' }}><Icon name="barcode" size={20} /></button>
@@ -469,6 +469,13 @@ export function Gallery() {
         <div className="list" style={{ marginTop: 10 }}>
           <div className="frow"><label htmlFor="g-palm">Palm<div className="sub" style={{ fontSize: 13 }}>Meat, fish, tofu</div></label><input id="g-palm" type="number" inputMode="numeric" defaultValue="100" /><span className="u">g</span></div>
           <div className="frow"><label htmlFor="g-thumb">Thumb<div className="sub" style={{ fontSize: 13 }}>Oil, butter, nut butter</div></label><input id="g-thumb" type="number" inputMode="numeric" defaultValue="12" /><span className="u">g</span></div>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div className="chips" style={{ justifyContent: 'center' }}>{G.editSteps.map((v) => <button key={v} className={'chip' + (v === 1 ? ' on' : '')}>{v === 1 ? 'As logged' : '×' + v}</button>)}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <span className="dup-radio on" aria-hidden="true"><Icon name="check" size={13} stroke={3.2} /></span><span className="dup-radio" aria-hidden="true" />
+          <button className="navbtn" style={{ color: 'var(--red)' }} aria-label="Remove Oats"><Icon name="x" size={17} /></button>
         </div>
       </Sec>
 

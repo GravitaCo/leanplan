@@ -38,6 +38,7 @@ export interface MenuNativeProps extends ViewProps {
 export interface SliderNativeProps extends ViewProps {
   min: number
   max: number
+  step?: number
   value: number
   /** the accent colour, "#rrggbb" */
   tint: string

@@ -56,6 +56,8 @@ public class TiloPickersModule: Module {
 
       Prop("min", 0.0) { (view: TiloSliderView, v: Double) in view.slider.minimumValue = Float(v) }
       Prop("max", 1.0) { (view: TiloSliderView, v: Double) in view.slider.maximumValue = Float(v) }
+      /// the step the thumb snaps to, as Safari snaps a range input's (0: none)
+      Prop("step", 0.0) { (view: TiloSliderView, v: Double) in view.step = Float(v) }
       /// the value, set when it differs from the thumb's (never fights a drag)
       Prop("value", 0.0) { (view: TiloSliderView, v: Double) in view.value = Float(v) }
       /// the accent colour (the web's accent-color: var(--tint)), "#rrggbb"
@@ -224,6 +226,7 @@ final class TiloSliderView: ExpoView {
   let onSlide = EventDispatcher()
   let slider = UISlider()
   var value: Float = 0
+  var step: Float = 0
 
   required init(appContext: AppContext? = nil) {
     super.init(appContext: appContext)
@@ -242,6 +245,12 @@ final class TiloSliderView: ExpoView {
   }
 
   @objc private func changed() {
+    // the thumb sits on a step, as Safari's does, never between two
+    if step > 0 {
+      let lo = slider.minimumValue
+      let snapped = Swift.min(slider.maximumValue, lo + (((slider.value - lo) / step).rounded()) * step)
+      if snapped != slider.value { slider.setValue(snapped, animated: false) }
+    }
     onSlide(["value": Double(slider.value)])
   }
 }
