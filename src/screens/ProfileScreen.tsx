@@ -206,9 +206,9 @@ export function ProfileScreen() {
           <div className="grid2">
             {field(P.body.sex, <select value={metrics.sex} onChange={(e) => setMetrics({ ...metrics, sex: e.target.value as Sex })}>
               <option value="M">{P.body.male}</option><option value="F">{P.body.female}</option></select>)}
-            {field(P.body.age, <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder={P.body.agePh} onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
-            {field(P.body.height, <input type="number" value={metrics.height} placeholder={P.body.heightPh} onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
-            {field(P.body.weight, <input type="number" step="0.1" value={metrics.weight} placeholder={P.body.weightPh} onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
+            {field(P.body.age, <input type="number" inputMode="numeric" min={MIN_AGE} max={120} value={metrics.age} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, age: e.target.value })} />)}
+            {field(P.body.height, <input type="number" value={metrics.height} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, height: e.target.value })} />)}
+            {field(P.body.weight, <input type="number" step="0.1" value={metrics.weight} placeholder={P.body.add} onChange={(e) => setMetrics({ ...metrics, weight: e.target.value })} />)}
           </div>
           {field(P.body.activity, <select value={metrics.activityLevel} onChange={(e) => setMetrics({ ...metrics, activityLevel: e.target.value as ActivityLevel })}>
             {Object.entries(ACTIVITY).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>)}

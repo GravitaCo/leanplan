@@ -23,9 +23,9 @@ export const PROFILE = {
   body: {
     row: 'Body and goal',
     sex: 'Sex', male: 'Male', female: 'Female',
-    age: 'Age', agePh: '35',
-    height: 'Height (cm)', heightPh: '178',
-    weight: 'Weight (kg)', weightPh: '82.5',
+    age: 'Age', height: 'Height (cm)', weight: 'Weight (kg)',
+    /** the placeholder in Age, Height and Weight (Benn, 15 Nov 2026: no example numbers) */
+    add: 'Add',
     activity: 'Activity level',
     save: 'Save metrics',
     mainGoal: 'Main goal',
