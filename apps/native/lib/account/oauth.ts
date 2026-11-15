@@ -63,14 +63,15 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
     const res = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT)
     if (res.type !== 'success') return { status: 'cancelled' }
     // Supabase's own error comes back in the return (a provider not enabled, a redirect not allowed)
-    const { code, why } = codeFrom(res.url)
-    if (!code) return fail('google', 'return', { message: why || 'no code in the return' })
+    // only Supabase's short error code goes to the log: its description can hold Google's code
+    const { code, errCode } = codeFrom(res.url)
+    if (!code) return fail('google', 'return', { message: errCode || 'no code in the return' })
     // the one request: the code and this phone's verifier for a session, at Supabase's /auth/v1/token
     const { data: ex, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
     if (exErr || !ex.session) return fail('google', 'exchange', exErr ?? { message: 'no session' })
     return { status: 'ok', uid: ex.session.user.id }
   } catch (e) {
-    return fail('google', 'sheet', e)
+    return fail('google', 'unexpected', e)
   } finally {
     googleOpen = false
   }
@@ -107,7 +108,7 @@ export async function appleSignIn(): Promise<GoogleResult & { code?: string }> {
     // Apple's one-time authorization code: only the delete path uses it (the server revokes with it)
     return { status: 'ok', uid: data.session.user.id, ...(cred.authorizationCode ? { code: cred.authorizationCode } : {}) }
   } catch (e) {
-    return fail('apple', 'nonce', e)
+    return fail('apple', 'unexpected', e)
   }
 }
 
