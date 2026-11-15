@@ -6,15 +6,15 @@ import type { Food, MealSlot } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
 import { numIn } from '@/screens/food/foodModel'
 import { CREATE_FOOD } from '@/copy/food'
-import { NEEDS_NET } from '@/copy/connection'
-import { Btn, List, Note } from '../../lib/ui/kit'
+import { List, Note } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Seg, Sheet } from '../../lib/ui/primitives'
 import { FRow } from '../../lib/ui/fields'
-import { Foot, Lbl, Sub } from '../../lib/ui/text'
+import { Lbl, Sub } from '../../lib/ui/text'
 import { num, useTokens } from '../../lib/theme'
 import { Checks } from './common'
 import { DuplicateSheets } from './DuplicateSheets'
 import { useDuplicateSave } from './useDuplicateSave'
+import { LabelPhotoButton } from '../scan'
 
 export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, note, onLabelPhoto }: {
   meal: MealSlot; setMeal: (m: MealSlot) => void; onBack?: () => void; onClose: () => void; animate: boolean; onSaved: (f: Food) => void
@@ -29,7 +29,6 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
   // the same barcode, or a food that looks like a saved one, asks first (boards dup-1, dup-2)
   const dup = useDuplicateSave(onSaved, 'typed')
   const showToast = useStore((s) => s.showToast)
-  const online = useStore((s) => s.online)
   const [unit, setUnit] = useState<'g' | 'ml'>('g')
   const [f, setF] = useState({ n: '', g: '100', k: '', p: '', c: '', fat: '' })
   const [warned, setWarned] = useState(false)
@@ -56,8 +55,7 @@ export function CreateFoodView({ onBack, onClose, animate, onSaved, barcode, not
       )}
       {onLabelPhoto && (
         <View style={{ gap: 8, marginBottom: 12 }}>
-          <Btn kind="gray" icon="camera" title={CREATE_FOOD.labelPhoto} disabled={!online} onPress={onLabelPhoto} />
-          {!online && <Foot style={{ paddingHorizontal: 0 }}>{NEEDS_NET}</Foot>}
+          <LabelPhotoButton onPress={onLabelPhoto} />
         </View>
       )}
       <Sub style={{ paddingHorizontal: 4, paddingBottom: 12 }}>{CREATE_FOOD.intro(unit, !!barcode)}</Sub>

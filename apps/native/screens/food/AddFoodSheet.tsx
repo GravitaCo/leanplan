@@ -2,9 +2,9 @@
  * The add-food flow (src/screens/food/AddFoodSheet.tsx): search → portion, quick estimate and
  * create a food. Views swap inside the open sheet without replaying the slide-up. Search and the
  * browse lists are the shared foodModel, so results and their order equal the web's, offline too.
- * Scanning is the Scanning stream's (N6): it plugs its views in through `scan`.
+ * The scan, label photo and confirm views are the Scanning stream's (N6, screens/scan), opened as on the web.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Alert, Platform, View } from 'react-native'
 import { useStore } from '@/store/store'
 import { kcalHidden } from '@/data/consent'
@@ -16,7 +16,11 @@ import { MEAL_LABEL, mealNow, recipeServing, usualEntries } from '@/core/domain/
 import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
 import { allFoods, browseFoods, isMine, mineIndex, searchFoods } from '@/screens/food/foodModel'
 import { ADD_FOOD, DUP, FOOD } from '@/copy/food'
-import { SCAN_ENTRY } from '@/copy/scan'
+import { MISSING_NOTE, SCAN_ENTRY, SHARE_ROW } from '@/copy/scan'
+import type { ScanDraft } from '@/core/domain/barcode'
+import { draftForShare } from '@/core/domain/sharedProduct'
+import { offBeforeShare } from '@/data/sharedProducts'
+import { InOffSheet, LabelCaptureView, ScanConfirmView, ScanView } from '../scan'
 import { NEEDS_NET } from '@/copy/connection'
 import { List } from '../../lib/ui/kit'
 import { AddC, ConnectionPill, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
@@ -27,34 +31,42 @@ import { MealSeg } from './common'
 import { QuickEstimateView } from './QuickEstimateView'
 import { PortionView } from './PortionView'
 import { RecipeLogView } from './RecipeLogView'
-import { SameFoodView } from './DuplicateSheets'
+import { DuplicateSheets, SameFoodView } from './DuplicateSheets'
+import type { DuplicateAnswer, DuplicateAsk } from './useDuplicateSave'
 import { CreateFoodView } from './CreateFoodView'
-
-/** What a scan view gets inside the Add food sheet. */
-export type ScanApi = {
-  meal: MealSlot; setMeal: (m: MealSlot) => void; onBack?: () => void; onClose: () => void; animate: boolean
-  /** open a food's portion view (a local hit, or a food just saved from a scan) */
-  toPortion: (food: Food, custom: boolean) => void
-  /** nothing found: type it in, keeping the barcode */
-  toCreate: (o: { barcode?: string; note?: string; offMissing?: boolean }) => void
-}
-/** The Scanning stream's views (N6): a barcode scan, or a photo of the label. */
-export type ScanHooks = { render: (which: 'scan' | 'label', api: ScanApi) => ReactNode }
 
 type Step =
   | { kind: 'search' }
   | { kind: 'portion'; food: Food; custom: boolean }
   | { kind: 'recipe'; index: number }
   | { kind: 'quick' }
+  /** `offMissing`: Open Food Facts answered "not found" for the barcode (a label read may then join the shared list) */
   | { kind: 'create'; barcode?: string; note?: string; offMissing?: boolean }
-  | { kind: 'scan' | 'label' }
+  | { kind: 'scan' }
+  /** `share`: Check the label with Share, for this saved food (sp-9) */
+  | { kind: 'confirm'; draft: ScanDraft; notice?: string; back?: Step; id?: number; share?: Food }
+  /** a photo of the label: after a barcode scan it keeps the barcode (and OFF's name); `share`: from a saved food's Share this product (sp-8b) */
+  | { kind: 'label'; barcode?: string; base?: ScanDraft; back: Step; offMissing?: boolean; share?: Food }
+  /** two saved foods that look the same (board dup-4): pick the one to keep */
   | { kind: 'same'; ids: [string, string] }
 
-export function AddFoodSheet({ initialMeal, initialView, onClose, scan }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void; scan?: ScanHooks }) {
+/** the dup-1 / dup-2 question for N6's confirm view (the web's `dup.sheet`) */
+const duplicateSheet = (ask: DuplicateAsk, answer: (a: DuplicateAnswer) => void, dismiss: () => void) => <DuplicateSheets ask={ask} answer={answer} dismiss={dismiss} />
+
+export function AddFoodSheet({ initialMeal, initialView, onClose }: { initialMeal?: MealSlot; initialView?: 'quick' | 'create' | 'scan'; onClose: () => void }) {
   const [meal, setMeal] = useState<MealSlot>(initialMeal ?? mealNow())
   const [view, setView] = useState<Step>(initialView ? { kind: initialView } : { kind: 'search' })
   const [q, setQ] = useState('')
   const [moved, setMoved] = useState(false)
+  const showToast = useStore((s) => s.showToast)
+  const markFoodInOff = useStore((s) => s.markFoodInOff)
+  // "Share this product" (sp-7 to sp-9): the Open Food Facts lookup a tap starts, and its answer
+  const [shareBusy, setShareBusy] = useState(false)
+  const [inOff, setInOff] = useState<string | null>(null)
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const lookupRef = useRef<AbortController | null>(null)
+  useEffect(() => () => lookupRef.current?.abort(), [])
   const go = (v: Step) => { setMoved(true); setView(v) }
   const back = initialView ? undefined : () => go({ kind: 'search' })
   const common = { meal, setMeal, onBack: back, onClose, animate: !moved }
@@ -65,23 +77,68 @@ export function AddFoodSheet({ initialMeal, initialView, onClose, scan }: { init
     const pair = view.ids.map((id) => (customFoods || []).find((f) => f.id === id))
     if (pair[0] && pair[1]) return <SameFoodView pair={[pair[0], pair[1]]} cur={cur} onBack={() => go({ kind: 'search' })} onClose={onClose} animate={!moved} />
   }
-  if (view.kind === 'portion') return <PortionView {...common} food={view.food} custom={view.custom} />
+  if (view.kind === 'portion') {
+    const from = view
+    const food = view.food
+    const startShare = async () => {
+      if (!food.id || !food.barcode || shareBusy) return
+      setShareBusy(true)
+      const ctl = new AbortController()
+      lookupRef.current = ctl
+      const next = await offBeforeShare(food.barcode, { signal: ctl.signal })
+      setShareBusy(false)
+      // closed, or moved on, while it looked up
+      if (ctl.signal.aborted || viewRef.current !== from) return
+      if (next === 'in-off') setInOff(food.id)
+      else if (next === 'label') go({ kind: 'label', barcode: food.barcode, back: from, offMissing: true, share: food })
+      else showToast(SHARE_ROW.offline)
+    }
+    return (
+      <>
+        <PortionView {...common} food={food} custom={view.custom} share={{ onShare: () => void startShare(), busy: shareBusy }} />
+        {inOff && inOff === food.id && <InOffSheet onOk={() => { markFoodInOff(inOff); setInOff(null) }} />}
+      </>
+    )
+  }
   if (view.kind === 'recipe') return <RecipeLogView {...common} index={view.index} />
-
   if (view.kind === 'quick') return <QuickEstimateView {...common} />
   if (view.kind === 'create') {
     return <CreateFoodView {...common} barcode={view.barcode} note={view.note} onSaved={(food) => go({ kind: 'portion', food, custom: true })}
-      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode && scan ? () => go({ kind: 'label' }) : undefined} />
+      onLabelPhoto={LABEL_SCAN_ENABLED && view.barcode ? () => go({ kind: 'label', barcode: view.barcode, back: view, offMissing: view.offMissing }) : undefined} />
   }
-  if ((view.kind === 'scan' || view.kind === 'label') && scan) {
-    return <>{scan.render(view.kind, { ...common, toPortion: (food, custom) => go({ kind: 'portion', food, custom }), toCreate: (o) => go({ kind: 'create', ...o }) })}</>
+  if (view.kind === 'label') {
+    const sf = view.share
+    const toConfirm = sf
+      ? (draft: ScanDraft) => go({ kind: 'confirm', draft: draftForShare(draft, sf), back: view.back, id: Date.now(), share: sf })
+      : (draft: ScanDraft, notice?: string) => go({ kind: 'confirm', draft: view.offMissing ? { ...draft, offMissing: true } : draft, notice, back: view.back, id: Date.now() })
+    return (
+      <LabelCaptureView onBack={() => go(view.back)} onClose={onClose} animate={!moved} barcode={view.barcode} base={view.base} onDone={toConfirm}
+        // a failed read goes back to the food: nothing is shared (canvas note s-share)
+        {...(sf ? { forShare: true, onFail: (note: string) => { go(view.back); showToast(note) } } : {})} />
+    )
   }
-  return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} canScan={!!scan} />
+  if (view.kind === 'confirm') {
+    const d = view.draft
+    // OFF's figures, or a label that couldn't be read: offer reading the user's own pack
+    // offMissing carries over: from a shared product (never in Open Food Facts) or a typed label after a not-found
+    const photo = LABEL_SCAN_ENABLED && !view.share && (d.source !== 'label' || view.notice)
+      ? () => go({ kind: 'label', barcode: d.barcode || undefined, base: d.source !== 'label' ? d : undefined, back: view, offMissing: d.offMissing }) : undefined
+    return <ScanConfirmView key={view.id ?? 0} {...common} onBack={() => go(view.back ?? { kind: 'scan' })} draft={d} notice={view.notice} onLabelPhoto={photo}
+      shareFor={view.share} onSaved={(food) => go({ kind: 'portion', food, custom: true })} duplicateSheet={duplicateSheet} />
+  }
+  if (view.kind === 'scan') {
+    return <ScanView {...common} onResult={(r) => {
+      if (r.kind === 'local') go({ kind: 'portion', food: r.food, custom: r.custom })
+      else if (r.kind === 'found' || r.kind === 'shared') go({ kind: 'confirm', draft: r.draft })
+      else go({ kind: 'create', barcode: r.barcode, note: MISSING_NOTE[r.why], offMissing: r.why === 'not-found' })
+    }} />
+  }
+  return <SearchView meal={meal} setMeal={setMeal} q={q} setQ={setQ} go={go} onClose={onClose} animate={!moved} />
 }
 
-function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
+function SearchView({ meal, setMeal, q, setQ, go, onClose, animate }: {
   meal: MealSlot; setMeal: (m: MealSlot) => void; q: string; setQ: (q: string) => void
-  go: (v: Step) => void; onClose: () => void; animate: boolean; canScan: boolean
+  go: (v: Step) => void; onClose: () => void; animate: boolean
 }) {
   const t = useTokens()
   const data = useStore((s) => s.data)
@@ -93,7 +150,6 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
   const all = useMemo(() => allFoods(data.customFoods), [data.customFoods])
   const query = q.trim().toLowerCase()
   const gentle = kcalHidden(data)
-  const toScan = (kind: 'scan' | 'label') => () => { if (canScan) go({ kind }) }
 
   const foodRow = (f: Food, idx: number, trailing?: ReactNode) => (
     <Row key={f.n + idx} title={f.n} tag={isMine(idx) ? ADD_FOOD.mine : undefined} onPress={() => go({ kind: 'portion', food: f, custom: isMine(idx) })}
@@ -167,14 +223,14 @@ function SearchView({ meal, setMeal, q, setQ, go, onClose, animate, canScan }: {
   return (
     <Sheet title={ADD_FOOD.title} tall onClose={onClose} animate={animate} right={online ? undefined : <ConnectionPill />}>
       <SearchBar label={ADD_FOOD.searchLabel} value={q} onChangeText={setQ} placeholder={ADD_FOOD.searchPlaceholder(fmt(all.length))} autoFocus autoCorrect={false} autoCapitalize="none"
-        right={<NavBtn icon="barcode" label={SCAN_ENTRY.barcode} onPress={toScan('scan')} style={{ paddingVertical: 4, paddingHorizontal: 2 }} />} />
+        right={<NavBtn icon="barcode" label={SCAN_ENTRY.barcode} onPress={() => go({ kind: 'scan' })} style={{ paddingVertical: 4, paddingHorizontal: 2 }} />} />
       <View style={{ marginTop: 10, marginBottom: 2 }}><MealSeg value={meal} onChange={setMeal} /></View>
       {body}
       <List icons style={{ marginTop: endsWithList ? 10 : 18, marginBottom: 8 }}>
         <Row title={ADD_FOOD.quickEstimate} sub={ADD_FOOD.quickEstimateS} square={{ icon: 'bolt', fill: t.mind }} onPress={() => go({ kind: 'quick' })} />
-        <Row title={SCAN_ENTRY.barcode} sub={online ? SCAN_ENTRY.barcodeSub : SCAN_ENTRY.barcodeSubOffline} square={{ icon: 'barcode', fill: t.tint }} onPress={toScan('scan')} />
+        <Row title={SCAN_ENTRY.barcode} sub={online ? SCAN_ENTRY.barcodeSub : SCAN_ENTRY.barcodeSubOffline} square={{ icon: 'barcode', fill: t.tint }} onPress={() => go({ kind: 'scan' })} />
         {LABEL_SCAN_ENABLED && (online
-          ? <Row title={SCAN_ENTRY.label} sub={SCAN_ENTRY.labelSub} square={{ icon: 'camera', fill: t.tint }} onPress={toScan('label')} />
+          ? <Row title={SCAN_ENTRY.label} sub={SCAN_ENTRY.labelSub} square={{ icon: 'camera', fill: t.tint }} onPress={() => go({ kind: 'label', back: { kind: 'search' } })} />
           // online only (ob6-8): shown, off, with the note
           : <Row title={SCAN_ENTRY.label} sub={NEEDS_NET} square={{ icon: 'camera', fill: t.fill2 }} needsnet />)}
         <Row title={ADD_FOOD.createFood} sub={ADD_FOOD.createFoodS} square={{ icon: 'plus', fill: t.energy, ink: t.onFood }} onPress={() => go({ kind: 'create' })} />
