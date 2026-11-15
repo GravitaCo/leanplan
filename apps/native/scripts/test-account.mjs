@@ -122,7 +122,7 @@ check('sign-in screen: no raw error on screen (Google, Apple and server errors g
       const e = answers[seen.length - 1]
       return e ? { data: { session: null }, error: e } : { data: { session: { ok: true } }, error: null }
     }
-    const r = await exchangeOnceMore(exchange, store, KEY, async (ms) => { pauses.push(ms) })
+    const r = await exchangeOnceMore(exchange, store, KEY, async (ms) => { pauses.push(ms); if (opts.newFlow) mem.set(verifierKey(KEY), '"another-flow"') })
     return { r, seen, pauses, left: mem.get(verifierKey(KEY)) }
   }
   const ok1 = await run([null])
@@ -138,6 +138,8 @@ check('sign-in screen: no raw error on screen (Google, Apple and server errors g
   check('exchange: no verifier stored, nothing to retry with', none.seen.length === 1 && none.r.retried === false)
   const locked = await run([net], { setThrows: true })
   check('exchange: the verifier can\'t be put back: no retry, the first error', locked.seen.length === 1 && locked.r.error === net && locked.r.retried === false)
+  const raced = await run([net], { newFlow: true })
+  check('exchange: another sign-in started during the pause: its verifier is left alone, no retry', raced.seen.length === 1 && raced.r.retried === false && raced.left === '"another-flow"')
   check('exchange: the key supabase-js reads on a phone (no flow id)', verifierKey(KEY) === 'sb-test-auth-token-code-verifier')
 }
 

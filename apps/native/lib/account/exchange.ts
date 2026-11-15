@@ -14,7 +14,9 @@
  *
  * Which key: without a flow id in the exchange (Tilo passes none, and a phone has no callback URL to
  * read one from), supabase-js reads `<storageKey>-code-verifier` (auth-js lib/helpers.ts
- * retrievePKCEVerifier). Pure: no React Native, so scripts/test-account.mjs runs it in Node.
+ * retrievePKCEVerifier). Passing `{ flowId }` to exchangeCodeForSession later would make it read a
+ * per-flow slot instead, and this retry would then fail safe (no verifier) rather than help: change
+ * both together. Pure: no React Native, so scripts/test-account.mjs runs it in Node.
  */
 import { isNetworkError } from './rules.ts'
 
@@ -37,7 +39,11 @@ export async function exchangeOnceMore<T extends Result>(exchange: () => Promise
   const first = await exchange()
   if (!first.error || !isNetworkError(first.error) || saved == null) return { ...first, retried: false }
   await pause(RETRY_PAUSE_MS)
-  try { await store.setItem(key, saved) } catch { return { ...first, retried: false } }
+  // put it back only if nothing else started a sign-in meanwhile (an email link writes the same key)
+  try {
+    if ((await store.getItem(key)) != null) return { ...first, retried: false }
+    await store.setItem(key, saved)
+  } catch { return { ...first, retried: false } }
   const second = await exchange()
   return { ...second, retried: true }
 }
