@@ -1,73 +1,104 @@
-"""Import Popeyes UK's nutrition page (saved as PDF) into src/core/data/chains/popeyes.ts.
+"""Import Popeyes UK's nutrition feed into src/core/data/chains/popeyes.ts.
 
-Usage:  python3 scripts/import/popeyes.py "path/to/Nutrition - Popeyes.pdf"
-Needs:  pip install pdfplumber   (dev tool only; the app never runs this)
+Usage:  python3 -I scripts/import/popeyes.py feed.json 2026-11-15
+        (feed.json: the JSON popeyesuk.com/nutrition loads, saved; the date it was fetched)
 
-The page is a print of popeyesuk.com/nutrition: one table per category, per serving, with
-columns kcal, kJ, protein, carbs, sugar, fat, saturates. Names wrap over several lines around
-the numbers, so rows are read from the table's own cell boxes (the first number column's
-rectangles): a row is every word inside one cell's height. A cell cut by a page break carries
-on at the top of the next page. Popeyes gives no portion weights, so every food is per item
-(`each`), exactly as published. Deterministic: no AI, no guessing. Review the diff on each re-run.
+The page (an Angular app) loads FEED below: {data: [{id, name, recipe_category, nutrition:
+{kcal, kJ, fats, saturated_fats, carbohydrates, sugar, protein, salt, sodium, fibre}}], page,
+pages}. Figures are per item as sold; Popeyes gives no portion weights, so every food is per item
+(`each`). The page shows kcal whole and grams to 0.1 (rounded half up), and that is what we store,
+so one serving in the app equals the line a customer reads. Every count is its own food
+("Popeyes Boneless Plain (10 pieces)"), exactly as listed.
+
+Names are stable IDs (logs and usuals match by name), so the importer reads the current
+popeyes.ts first: a product that is still listed keeps its name; one Popeyes renamed with the same
+figures keeps ours and gets the new name as an alias (`aka`); one no longer listed is kept
+unchanged in a dated block, never deleted. Deterministic: no AI, no network, no guessing. It prints
+what was added, changed, renamed and dropped from the site: review that on every re-run.
 """
 import json, re, sys
-import pdfplumber
+from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 
-COLS = ['k', 'kj', 'p', 'c', 'su', 'f', 'sat']
-NUMW = re.compile(r'^\d{1,3}(?:,\d{3})*(?:\.\d+)?$')
-X_NUM = 160  # names sit left of the first number column (x 162)
-# counts of one item: kept at the smallest count Popeyes lists, bigger counts dropped as multiples
-COUNT = re.compile(r'^(\d+) (?:Piece )?(.+?)$')
-# the PDF's own wording where it isn't a clean item name (names are stable IDs: settle them before shipping)
+FEED = ('https://app-allergenplatform-prod-westeurope-001.azurewebsites.net/api/recipes/get-information'
+        '?pagination%5Bpage%5D=0&pagination%5BpageSize%5D=500&allergens=false&nutrition=true')
+OUT = 'src/core/data/chains/popeyes.ts'
+FIELDS = {'k': 'kcal', 'kj': 'kJ', 'p': 'protein', 'c': 'carbohydrates', 'su': 'sugar', 'f': 'fats', 'sat': 'saturated_fats'}
+COUNT = re.compile(r'^(\d+) (Piece )?(.+?)$')
+# the feed's own wording where it isn't a clean item name (names are stable IDs: settle them before shipping)
 RENAME = {
-    '4 Boneless Plain / Kids Nuggets': '4 Boneless Plain', '2 Classic Tenders / Kids Tenders': '2 Classic Tenders', 'Kids Sandwich ketchup': 'Kids Sandwich Ketchup',
-    'Chicken Sandwich Classic!': 'Chicken Sandwich Classic',
+    '4 Boneless Plain / Kids Nuggets': '4 Boneless Plain', '2 Classic Tenders / Kids Tenders': '2 Classic Tenders',
+    'Kids Sandwich ketchup': 'Kids Sandwich Ketchup', 'Chicken Sandwich Classic!': 'Chicken Sandwich Classic',
     'Cajun Fries (Reg)': 'Cajun Fries (regular)', 'Cajun Fries (Large)': 'Cajun Fries (large)',
     'Fries (Reg)': 'Fries (regular)', 'Fries (Large)': 'Fries (large)', 'Fries (Small)': 'Fries (small)',
     'Kids Shake - Chocolate': 'Kids Chocolate Shake', 'Kids Shake - Strawberry': 'Kids Strawberry Shake',
     'Kids Shake - Vanilla': 'Kids Vanilla Shake',
+    'Oasis Summer Fruits Regular': 'Oasis Summer Fruits', 'Oasis Summer Fruits Large': 'Large Oasis Summer Fruits',
 }
-# the same product listed twice under two names (identical figures)
+# a published name kept as an alias of the food it's folded into
+KIDS_AKA = {'4 Boneless Plain / Kids Nuggets': 'Kids Nuggets', '2 Classic Tenders / Kids Tenders': 'Kids Tenders'}
+# Popeyes renamed these with identical figures: our name stays (stable ID), theirs becomes an alias
+RENAMED = {'Classic Shatter Crunch Wrap': 'Classic Chicken Wrap', 'Spicy Shatter Crunch Wrap': 'Spicy Chicken Wrap'}
+# the same product listed twice under two names (identical figures): the second is an alias
 SAME = {'Superstack Hot Honey Sandwich': 'Hot Honey Superstack Sandwich'}
 # Popeyes' shake kcal run ~20% above what their own protein/carbs/fat explain (every shake, both
 # sizes, so it's how they're calculated, not a misread). The published kcal is what customers see
 # and what we keep; listed so any new gap still stops the import.
 MACRO_GAP = re.compile(r'Shake')
+# the sugar-free Red Bulls run the other way: kcal ~20-25% under 4 kcal/g of carbs, because part of
+# their carbs is sugar alcohol (polyols, 2.4 kcal/g; sugar is 8-13 g of 14-19 g). Kept as published.
+POLYOL = re.compile(r'^Red Bull Zero ')
 # kJ doesn't match kcal (2364 kJ = 565 kcal, published 545): kcal kept as published
 KJ_TYPO = {'Red Bean Creole Vegan Sandwich'}
 DRINK_CATS = {'Drinks'}
 SAUCE_CATS = {'Dips'}
+# file order (ties in search keep database order): the chicken first, breakfast last
+ORDER = ['Signature Louisiana Chicken', 'Tenders', 'Boneless', 'Hot Wings', 'Sandwiches', 'Signature Wraps', 'Sides', 'Dips', 'Drinks', 'Whipz', 'Breakfast']
+
+# Search aliases people type (never shown). Brand-prefixed, so an exact-alias match ("popeyes
+# chicken" ranks first) never takes over a plain query like "nuggets" or "fried chicken"; their
+# words still match those queries, after foods whose own name matches.
+# 'Popeyes chicken' and the 'fried chicken' aliases go on the plain chicken (every count) and the
+# chicken sandwiches and wraps only, so those all fit in the 50 results ahead of the flavoured counts
+CHICKEN = 'Popeyes chicken'
+def aliases(cat, base, flavour_plain, name):
+    a = []
+    if cat == 'Signature Louisiana Chicken':
+        a += [CHICKEN, 'Popeyes fried chicken', 'Popeyes chicken on the bone', 'Popeyes chicken pieces']
+    elif cat == 'Tenders':
+        a += [CHICKEN, 'Popeyes fried chicken strips'] if flavour_plain else []
+        a += ['Popeyes chicken tenders', 'Popeyes chicken strips', 'Popeyes strips']
+    elif cat == 'Boneless':
+        a += [CHICKEN, 'Popeyes fried chicken bites'] if flavour_plain else []
+        a += ['Popeyes nuggets', 'Popeyes bites', 'Popeyes chicken nuggets', 'Popeyes chicken bites', 'Popeyes boneless chicken']
+    elif cat == 'Hot Wings':
+        a += [CHICKEN, 'Popeyes fried chicken wings'] if flavour_plain else []
+        a += ['Popeyes wings', 'Popeyes chicken wings']
+    elif cat in ('Sandwiches', 'Signature Wraps') and 'Chicken' in name and 'Kids' not in name:
+        kind = 'wrap' if 'Wrap' in name else 'sandwich'
+        a += [CHICKEN, f'Popeyes fried chicken {kind}', f'Popeyes chicken {kind}'] + (['Popeyes chicken burger'] if kind == 'sandwich' else [])
+    return a
 
 
-def num(v):
-    return float(v.replace(',', ''))
+def r0(x): return float(Decimal(str(x)).quantize(Decimal('1'), ROUND_HALF_UP))
+def r1(x): return float(Decimal(str(x)).quantize(Decimal('0.1'), ROUND_HALF_UP))
 
 
-def parse(path):
-    rows, cat = [], None
-    with pdfplumber.open(path) as pdf:
-        for page in pdf.pages:
-            # table text only: the site's nav bar and the print header/footer use other sizes
-            ws = [w for w in page.extract_words(extra_attrs=['size']) if not 7.9 < w['size'] < 8.3]
-            bands = sorted({(r['top'], r['bottom']) for r in page.rects
-                            if 161 <= r['x0'] <= 164 and 221 <= r['x1'] <= 224 and r['bottom'] - r['top'] > 5})
-            for i, (top, bot) in enumerate(bands):
-                inside = [w for w in ws if top <= (w['top'] + w['bottom']) / 2 < bot]
-                if not inside: continue
-                names = sorted((w for w in inside if w['x0'] < X_NUM), key=lambda w: (round(w['top']), w['x0']))
-                name = ' '.join(w['text'] for w in names)
-                if any(w['text'] == 'Energy' for w in inside):  # a category header row
-                    cat = ' '.join(w['text'] for w in names if w['text'] not in ('Saturated', 'Acids')); continue
-                nums = sorted((w for w in inside if w['x0'] >= X_NUM), key=lambda w: w['x0'])
-                if not nums:
-                    # a cell cut by the page break: the rest of the previous row's name
-                    assert not any(b[0] < top for b in bands if any(b[0] <= (w['top'] + w['bottom']) / 2 < b[1] for w in ws)) and rows, f'empty cell mid-page {page.page_number}: {name!r}'
-                    rows[-1]['name'] += ' ' + name; continue
-                assert len(nums) == 7 and all(NUMW.match(w['text']) for w in nums), f'bad row {page.page_number}: {name} {[w["text"] for w in nums]}'
-                rows.append({'name': name, 'cat': cat, **dict(zip(COLS, (num(w['text']) for w in nums)))})
-    for r in rows:
-        n = re.sub(r'\s*\*\s*selected restaurants only', '', re.sub(r'\s+', ' ', r['name'])).strip()
-        r['name'] = RENAME.get(n, n)
+def read_feed(path):
+    d = json.load(open(path, encoding='utf-8'))
+    assert isinstance(d, dict) and isinstance(d.get('data'), list), 'not the nutrition feed'
+    assert d.get('pages') in (1, None), f"feed has {d.get('pages')} pages: fetch them all"
+    rows = []
+    for x in d['data']:
+        n = x['nutrition']
+        raw = re.sub(r'\s+', ' ', str(x['name'])).strip()
+        clean = re.sub(r'\s*\*\s*selected restaurants only', '', raw, flags=re.I).strip()
+        r = {'raw': clean, 'name': RENAME.get(clean, clean), 'cat': str(x['recipe_category']).strip()}
+        for k, src in FIELDS.items():
+            v = n[src]
+            assert isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0, f'bad {src} for {raw}: {v!r}'
+            r[k] = float(v)
+        rows.append(r)
     return rows
 
 
@@ -77,65 +108,136 @@ def sane(r):
     if n not in KJ_TYPO:
         assert abs(r['kj'] - 4.184 * r['k']) <= max(8, 0.03 * r['kj']), f'kJ/kcal disagree: {n}'
     if MACRO_GAP.search(n): return
+    if POLYOL.search(n):
+        assert r['su'] < r['c'] and r['k'] <= 4 * (r['p'] + r['c']) + 9 * r['f'], f'not explained by polyols: {n}'
+        return
     macro = 4 * r['p'] + 4 * r['c'] + 9 * r['f']
     assert abs(macro - r['k']) <= max(15, 0.15 * r['k']), f'kcal far from macros: {n} {r["k"]} vs {macro:.0f}'
 
 
-def main(path):
-    rows = parse(path)
+BLOCK = re.compile(r'^(?:/\*\* (?P<doc>.*?) \*/\n)?(?:export )?const (?P<v>\w+): Food\[\] = (?P<json>\[\n.*?^\])$', re.M | re.S)
+GONE_DOC = re.compile(r'No longer on popeyesuk\.com, (\d{4}-\d{2}-\d{2})')
+
+
+def read_current():
+    """The foods popeyes.ts holds now: (listed on the site, {date: foods no longer listed})."""
+    try: ts = open(OUT, encoding='utf-8').read()
+    except FileNotFoundError: return [], {}
+    listed, gone = [], {}
+    for m in BLOCK.finditer(ts):
+        foods = json.loads(m['json'])
+        g = GONE_DOC.search(m['doc'] or '')
+        if g: gone.setdefault(g[1], []).extend(foods)
+        else: listed.extend(foods)
+    assert listed, f'could not read {OUT}'
+    return listed, gone
+
+
+def build(rows):
     by = {r['name']: r for r in rows}
-    # counted items ('6 Hot Wings'): keep the smallest count Popeyes lists for each
-    counted = {}
+    out, dropped, extra_aka, seen = [], [], {}, set()
     for r in rows:
-        m = COUNT.match(r['name'])
-        if m: counted.setdefault(m[2].rstrip('s'), []).append((int(m[1]), r))
-    smallest = {b: min(v, key=lambda x: x[0]) for b, v in counted.items()}
-    out, dropped, seen = [], [], set()
-    for r in rows:
-        sane(r)
         n = r['name']
         if 'Ireland Only' in n:
             dropped.append(f'{n} (Republic of Ireland only)'); continue
+        sane(r)
         if n in SAME:
             t = by[SAME[n]]
-            assert all(t[c] == r[c] for c in COLS), f'{n} is not the same as {SAME[n]}'
-            dropped.append(f'{n} (same as {SAME[n]})'); continue
+            assert all(t[c] == r[c] for c in FIELDS), f'{n} is not the same as {SAME[n]}'
+            extra_aka.setdefault(SAME[n], []).append(f'Popeyes {n}')
+            dropped.append(f'{n} (same as {SAME[n]}: kept as an alias)'); continue
         m = COUNT.match(n)
+        plain = r['cat'] in ('Signature Louisiana Chicken', 'Tenders') or n.endswith(('Boneless Plain', ' Hot Wings')) and not re.search(r'Cajun|Garlic|Ghost|Honey', n)
         if m:
-            base, cnt = m[2].rstrip('s'), int(m[1])
-            low, one = smallest[base]
-            if cnt != low:
-                # really a multiple of the kept count, not a different recipe
-                assert abs(r['k'] - one['k'] * cnt / low) <= max(3, 0.03 * r['k']), f'{n} is not a multiple of {one["name"]}'
-                dropped.append(f'{n} (multiple of {one["name"]})'); continue
-            name = f'{base} piece' if cnt == 1 and 'Piece' in n else base if cnt == 1 else f'{m[2]} ({cnt} pieces)'
+            cnt, piece, base = int(m[1]), m[2], m[3]
+            single = re.sub(r's$', '', base)
+            # 1 of an item: '1 Piece Signature Louisiana Chicken' -> 'Signature Louisiana Chicken piece', '1 Classic Tender' -> 'Classic Tender'
+            name = f'{single} piece' if cnt == 1 and piece else single if cnt == 1 else f'{base} ({cnt} pieces)'
         else:
-            name = n
+            base, name = n, n
         # sizes: 'Large Oreo Shake' -> 'Oreo Shake (large)'
         s = re.match(r'^(Large|Small) (.+)$', name)
         if s: name = f'{s[2]} ({s[1].lower()})'
         if r['cat'] in SAUCE_CATS and 'Dip' not in name: name += ' Dip'
-        name = 'Popeyes ' + name
+        name = 'Popeyes ' + RENAMED.get(name, name)
         assert name not in seen, f'duplicate name: {name}'
         seen.add(name)
+        aka = aliases(r['cat'], base, plain, name)
+        if n in RENAMED: aka.append(f'Popeyes {n}')
+        if r['raw'] in KIDS_AKA: aka.append(f'Popeyes {KIDS_AKA[r["raw"]]}')
         cat = 'drinks' if r['cat'] in DRINK_CATS else 'sauces' if r['cat'] in SAUCE_CATS else 'fastfood'
-        ref = {'k': r['k'], 'p': r['p'], 'c': r['c'], 'f': r['f']}
-        # per item, exactly as published: one serving (1 item) is Popeyes' own line
+        ref = {'k': r0(r['k']), 'p': r1(r['p']), 'c': r1(r['c']), 'f': r1(r['f'])}
+        # per item, exactly as the page shows it: one serving (1 item) is Popeyes' own line
         f = {'n': name, **ref, 'g': 1, 'each': True, 'cat': cat, 'src': 'popeyes-uk', 'ref': {'g': 1, **ref}}
-        assert round(f['k'] * f['g']) == round(r['k']), f'serving kcal mismatch: {n}'
-        out.append(f)
-    body = json.dumps(out, indent=2, ensure_ascii=False)
+        if aka: f['aka'] = aka
+        assert round(f['k'] * f['g']) == round(ref['k']), f'serving kcal mismatch: {n}'
+        out.append((r['cat'], cnt if m else 0, r['name'], f))
+    for k, a in extra_aka.items():
+        f = next(x[3] for x in out if x[3]['n'] == 'Popeyes ' + k)
+        f['aka'] = f.get('aka', []) + a
+    unknown = {c for c, *_ in out} - set(ORDER)
+    assert not unknown, f'new categories, place them in ORDER: {unknown}'
+    # category order, then the feed's own order with counts ascending (4, 6, 8, 10, not 10, 12, 4)
+    idx = {id(x): i for i, x in enumerate(out)}
+    def key(x):
+        base = COUNT.match(x[2])[3] if COUNT.match(x[2]) else x[2]
+        first = min(idx[id(y)] for y in out if (COUNT.match(y[2])[3] if COUNT.match(y[2]) else y[2]).rstrip('s') == base.rstrip('s'))
+        return (ORDER.index(x[0]), first, x[1])
+    return [x[3] for x in sorted(out, key=key)], dropped
+
+
+def fmt_date(iso): return f'{date.fromisoformat(iso).day} {date.fromisoformat(iso):%b %Y}'
+
+
+def main(path, fetched):
+    date.fromisoformat(fetched)
+    rows = read_feed(path)
+    foods, dropped = build(rows)
+    old, gone = read_current()
+    old_by = {f['n']: f for f in old}
+    for fs in gone.values(): old_by.update({f['n']: f for f in fs})
+    new_names = {f['n'] for f in foods}
+    # anything listed before and missing now: kept unchanged, dated the first time it's missed
+    newly_gone = [f for f in old if f['n'] not in new_names]
+    if newly_gone: gone.setdefault(fetched, []).extend(newly_gone)
+    gone = {d: [f for f in fs if f['n'] not in new_names] for d, fs in gone.items()}
+    gone = {d: fs for d, fs in sorted(gone.items()) if fs}
+    back = [f['n'] for f in foods if f['n'] in old_by and f['n'] not in {x['n'] for x in old}]
+
+    added = [f['n'] for f in foods if f['n'] not in old_by]
+    changed = []
+    for f in foods:
+        o = old_by.get(f['n'])
+        if not o: continue
+        d = [f'{m} {o.get(m)} -> {f[m]}' for m in ('k', 'p', 'c', 'f') if o.get(m) != f[m]]
+        if d: changed.append(f"{f['n']}: {', '.join(d)}")
+
+    def dump(v, fs, doc=None, export=False):
+        head = f'/** {doc} */\n' if doc else ''
+        return f"{head}{'export ' if export else ''}const {v}: Food[] = {json.dumps(fs, indent=2, ensure_ascii=False)}\n"
+    blocks = [dump('LISTED', foods, f'On popeyesuk.com/nutrition, fetched {fetched}.')]
+    for d, fs in gone.items():
+        blocks.append(dump(f"GONE_{d.replace('-', '_')}", fs,
+                           f'No longer on popeyesuk.com, {d} ({fmt_date(d)}): kept unchanged, never deleted, because logs and '
+                           'usuals match foods by name. Figures as Popeyes last published them.'))
+    names = ['LISTED'] + [f"GONE_{d.replace('-', '_')}" for d in gone]
     ts = ("import type { Food } from '@/core/types'\n\n"
-          "/** Popeyes UK menu, per item as Popeyes publishes it (no portion weights given).\n"
-          " *  GENERATED by scripts/import/popeyes.py from popeyesuk.com/nutrition: don't edit by hand. */\n"
-          f"export const POPEYES: Food[] = {body}\n")
-    open('src/core/data/chains/popeyes.ts', 'w').write(ts)
-    print(f'{len(rows)} rows parsed, {len(out)} foods written, {len(dropped)} dropped:')
-    for d in dropped: print('  -', d)
+          "// Popeyes UK menu, per item as Popeyes publishes it (no portion weights given).\n"
+          "// GENERATED by scripts/import/popeyes.py from the popeyesuk.com/nutrition feed: don't edit by hand.\n\n"
+          + '\n'.join(blocks)
+          + f"\nexport const POPEYES: Food[] = [{', '.join('...' + n for n in names)}]\n")
+    open(OUT, 'w', encoding='utf-8').write(ts)
+
+    print(f'{len(rows)} feed rows, {len(foods)} foods listed, {sum(len(v) for v in gone.values())} kept as no longer listed, {len(dropped)} rows not imported')
+    print(f'\nadded ({len(added)}):'); [print('  +', n) for n in added]
+    print(f'\nchanged ({len(changed)}):'); [print('  ~', c) for c in changed]
+    print(f'\nrenamed by Popeyes, kept ours with their name as an alias ({len(RENAMED)}):')
+    for k, v in RENAMED.items(): print(f'  = Popeyes {v}  (aka Popeyes {k})')
+    print(f'\nremoved from the site, kept unchanged ({len(newly_gone)} new this run):'); [print('  -', f['n']) for f in newly_gone]
+    if back: print(f'\nback on the site ({len(back)}):'); [print('  ^', n) for n in back]
+    print(f'\nnot imported ({len(dropped)}):'); [print('  x', d) for d in dropped]
 
 
 if __name__ == '__main__':
-    if sys.argv[1:2] == ['--rows']:
-        for r in parse(sys.argv[2]): print(r['cat'], '|', r['name'], [r[c] for c in COLS])
-    else:
-        main(sys.argv[1])
+    if len(sys.argv) != 3: sys.exit(__doc__)
+    main(sys.argv[1], sys.argv[2])

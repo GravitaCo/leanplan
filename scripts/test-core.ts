@@ -180,6 +180,33 @@ for (const [q, want] of [
   console.log(ok2 ? 'PASS' : 'FAIL', 'search: aliases pin on an exact query, else rank after names', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
 }
 
+// Popeyes: the chicken itself (on the bone, tenders, boneless, wings, chicken sandwiches) shows
+// before the breakfast rolls that only mention a chicken patty, within the 50 results the app lists
+// (searchFoods). Done in the data (brand-prefixed `aka`), so plain "fried chicken" or "nuggets"
+// still find the generic dish first.
+{
+  const top = (q: string) => rankByName(FOODS, (f) => f.n, queryWords(q), (f) => f.aka).slice(0, 50).map((f) => f.n)
+  const breakfast = (n: string) => /Breakfast|Muffin|Hash Brown/.test(n)
+  const chicken = ['Popeyes Signature Louisiana Chicken piece', 'Popeyes Signature Louisiana Chicken (6 pieces)', 'Popeyes Classic Tender',
+    'Popeyes Boneless Plain (4 pieces)', 'Popeyes Hot Wings (2 pieces)', 'Popeyes Chicken Sandwich Classic', 'Popeyes Spicy Chicken Wrap']
+  for (const q of ['popeyes chicken', 'popeyes fried chicken']) {
+    const got = top(q)
+    const firstB = got.findIndex(breakfast)
+    const missing = chicken.filter((n) => !got.includes(n) || (firstB >= 0 && got.indexOf(n) > firstB))
+    const ok = got[0] === 'Popeyes Signature Louisiana Chicken piece' && !missing.length; if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: ${q}: the chicken before breakfast`, ok ? '' : JSON.stringify({ first: got[0], missing }))
+  }
+  const wings = top('popeyes wings')
+  const okW = wings[0] === 'Popeyes Hot Wings (2 pieces)' && wings.includes('Popeyes Hot Wings (20 pieces)') && !wings.some(breakfast); if (!okW) bad++
+  console.log(okW ? 'PASS' : 'FAIL', 'search popeyes: wings', JSON.stringify(wings.slice(0, 3)))
+  for (const [q, want] of [['10 boneless', 'Popeyes Boneless Plain (10 pieces)'], ['12 hot wings', 'Popeyes Hot Wings (12 pieces)'], ['popeyes nuggets', 'Popeyes Boneless Plain (4 pieces)'],
+    ['classic shatter crunch wrap', 'Popeyes Classic Chicken Wrap'], ['fried chicken', 'Fried chicken and chips (takeaway)'], ['nuggets', 'Chicken nuggets, cooked']] as const) {
+    const got = top(q)[0]
+    const ok = got === want; if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  }
+}
+
 // Common UK takeaway searches find a generic dish first, never a chain's, and the takeaway dish
 // itself in the top two (an older generic food can hold the top spot on a tie: ties keep db order).
 {
