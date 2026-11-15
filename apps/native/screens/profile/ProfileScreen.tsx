@@ -237,11 +237,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.sex}><Select<Sex> label={P.body.sex} value={metrics.sex} options={[['M', P.body.male], ['F', P.body.female]]} onChange={(v) => setMetrics({ ...metrics, sex: v })} /></Field></View>
-              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.agePh} keyboardType="number-pad" /></Field></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.age}><Input label={P.body.age} value={metrics.age} onChangeText={(v) => setMetrics({ ...metrics, age: v })} placeholder={P.body.add} keyboardType="number-pad" /></Field></View>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.heightPh} keyboardType="number-pad" /></Field></View>
-              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.weightPh} keyboardType="decimal-pad" /></Field></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.height}><Input label={P.body.height} value={metrics.height} onChangeText={(v) => setMetrics({ ...metrics, height: v })} placeholder={P.body.add} keyboardType="number-pad" /></Field></View>
+              <View style={{ flex: 1, minWidth: 0 }}><Field label={P.body.weight}><Input label={P.body.weight} value={metrics.weight} onChangeText={(v) => setMetrics({ ...metrics, weight: v })} placeholder={P.body.add} keyboardType="decimal-pad" /></Field></View>
             </View>
             </View>
             <Field label={P.body.activity}>

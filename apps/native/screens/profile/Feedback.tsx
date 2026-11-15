@@ -68,7 +68,7 @@ export function FeedbackSheet({ onClose }: { onClose: () => void }) {
         <View>
           <Text style={q}>{area.question}</Text>
           <Foot style={hint}>{area.hint}</Foot>
-          <Scale role="radio" label={area.question} cols={4} items={FEEDBACK_RATINGS.map((r) => ({ key: r, text: r }))} value={cur.rating}
+          <Scale tall role="radio" label={area.question} cols={4} items={FEEDBACK_RATINGS.map((r) => ({ key: r, text: r }))} value={cur.rating}
             onPick={(r) => setArea({ rating: cur.rating === r ? undefined : r })} />
           <Lbl style={{ paddingHorizontal: 4 }}>{F.note}</Lbl>
           <Input label={F.note} multiline numberOfLines={4} value={cur.note ?? ''} placeholder={F.optional} onChangeText={(v) => setArea({ note: v })} style={{ minHeight: 110 }} />
