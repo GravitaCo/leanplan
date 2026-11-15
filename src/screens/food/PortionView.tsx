@@ -84,7 +84,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <div style={{ marginTop: 14 }}>
         {mode === 'serv' && (
           <>
-            <div className="scale">
+            <div className="scale food-scale">
               {SERV_STEPS.map((v) => (
                 <button key={v} className={serv === v ? 'on' : ''} onClick={() => setServ(v)}>
                   <b className="num">{frac(v)}</b>{each ? (gentle ? `${r1(food.p * v)} g protein` : `${Math.round(food.k * v)} kcal`) : `${r1(food.g * v)} ${u}`}
