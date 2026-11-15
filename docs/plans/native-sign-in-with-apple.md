@@ -176,7 +176,9 @@ Supabase's `/auth/v1/token`. "fetch failed:" is Expo's own fetch (SDK 58 install
 "Could not connect to the server" is iOS's NSURLErrorCannotConnectToHost: the phone couldn't open a
 connection to Supabase just then. The path, supabase-js (2.119.0) and Expo's fetch are the same as in
 the spike that worked (e8df167); the registration rewrite only moved the same calls into
-`googleSignIn`. A retry isn't possible: supabase-js drops the PKCE verifier when the exchange fails,
-so the person signs in again, which the new words ask for. The likeliest cause is the phone's network
+`googleSignIn`. supabase-js drops the PKCE verifier when the exchange fails, so the app now saves it
+first and, only when the request got no answer, puts it back and exchanges once more after a second
+(`lib/account/exchange.ts`; lead, 15 Nov, since patchy phone networks are normal). An answer from
+Supabase is never retried. If the retry fails too, the person signs in again, which the words ask for. The likeliest cause is the phone's network
 at that moment (Wi-Fi, a VPN, iCloud Private Relay). The log line now says which step failed. The
 system prompt "Tilo wants to use …supabase.co to sign in" is iOS's normal notice for the sheet.

@@ -5,9 +5,11 @@
  *   (apps/native) npm run test:account
  */
 import { readFileSync } from 'node:fs'
+import { GoTrueClient } from '@supabase/auth-js'
 import { readBackup } from '../../../src/data/backup.native.ts'
 import { appleAlways, codeFrom, coverFrame, failureOf, isNetworkError, photoHeight, reauthMatches, reauthWays, typedOk } from '../lib/account/rules.ts'
 import { gateStep, pendingFor } from '../lib/account/gateModel.ts'
+import { exchangeOnceMore, verifierKey, RETRY_PAUSE_MS } from '../lib/account/exchange.ts'
 
 let failed = 0
 let passed = 0
@@ -102,6 +104,61 @@ check('failure kind', failureOf(net[1]) === 'network' && failureOf(notNet[2]) ==
 
 const authSrc = readFileSync(new URL('../lib/account/Auth.tsx', import.meta.url), 'utf8')
 check('sign-in screen: no raw error on screen (Google, Apple and server errors go through the words)', !/setErr\((r|error|e)\.message\)/.test(authSrc) && /AUTH\.errGoogle/.test(authSrc) && /AUTH\.errApple/.test(authSrc) && /AUTH\.errOffline/.test(authSrc))
+
+// Google's code exchange, once more on a dropped connection (lead, 15 Nov). The fake exchange does
+// what supabase-js does: reads the verifier, then removes it whatever happens.
+{
+  const KEY = 'sb-test-auth-token'
+  const VERIFIER = '"v3r1f13r-raw-json"'
+  const net = { name: 'AuthRetryableFetchError', message: 'fetch failed: Could not connect to the server.', status: 0 }
+  const api = { name: 'AuthApiError', message: 'invalid flow state, no valid flow state found', status: 404 }
+  const run = async (answers, opts = {}) => {
+    const mem = new Map(opts.noVerifier ? [] : [[verifierKey(KEY), VERIFIER]])
+    const store = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => { if (opts.setThrows) throw new Error('locked'); mem.set(k, v) } }
+    const seen = [], pauses = []
+    const exchange = async () => {
+      seen.push(mem.get(verifierKey(KEY)) ?? null)
+      mem.delete(verifierKey(KEY))
+      const e = answers[seen.length - 1]
+      return e ? { data: { session: null }, error: e } : { data: { session: { ok: true } }, error: null }
+    }
+    const r = await exchangeOnceMore(exchange, store, KEY, async (ms) => { pauses.push(ms); if (opts.newFlow) mem.set(verifierKey(KEY), '"another-flow"') })
+    return { r, seen, pauses, left: mem.get(verifierKey(KEY)) }
+  }
+  const ok1 = await run([null])
+  check('exchange: success, one request, no pause', ok1.seen.length === 1 && !ok1.r.error && ok1.r.retried === false && ok1.pauses.length === 0)
+  const retry = await run([net, null])
+  check('exchange: no answer, then the verifier put back exactly and one more request', retry.seen.length === 2 && retry.seen[1] === VERIFIER && !retry.r.error && retry.r.retried === true)
+  check('exchange: a pause before the retry', retry.pauses.length === 1 && retry.pauses[0] === RETRY_PAUSE_MS)
+  const twice = await run([net, net, null])
+  check('exchange: only once more (two requests at most), the second failure returned', twice.seen.length === 2 && twice.r.error === net && twice.r.retried === true)
+  const answered = await run([api])
+  check('exchange: an answer from Supabase (used or expired code) is never retried', answered.seen.length === 1 && answered.r.error === api && answered.r.retried === false)
+  const none = await run([net], { noVerifier: true })
+  check('exchange: no verifier stored, nothing to retry with', none.seen.length === 1 && none.r.retried === false)
+  const locked = await run([net], { setThrows: true })
+  check('exchange: the verifier can\'t be put back: no retry, the first error', locked.seen.length === 1 && locked.r.error === net && locked.r.retried === false)
+  const raced = await run([net], { newFlow: true })
+  check('exchange: another sign-in started during the pause: its verifier is left alone, no retry', raced.seen.length === 1 && raced.r.retried === false && raced.left === '"another-flow"')
+  check('exchange: the key supabase-js reads on a phone (no flow id)', verifierKey(KEY) === 'sb-test-auth-token-code-verifier')
+}
+
+// the same, through the real supabase-js on this app (its PKCE storage, its exchange), with a stand-in
+// network whose first request never connects: the retry sends the very same verifier and signs in
+{
+  const mem = new Map()
+  const storage = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => { mem.set(k, v) }, removeItem: (k) => { mem.delete(k) } }
+  const bodies = []
+  const fetchFn = async (_url, init) => {
+    bodies.push(JSON.parse(init.body))
+    if (bodies.length === 1) throw new TypeError('fetch failed: Could not connect to the server.')
+    return new Response(JSON.stringify({ access_token: 'a.b.c', token_type: 'bearer', expires_in: 3600, refresh_token: 'r', user: { id: 'u1', aud: 'authenticated' } }), { status: 200, headers: { 'content-type': 'application/json' } })
+  }
+  const client = new GoTrueClient({ url: 'https://stand-in.invalid/auth/v1', storageKey: 'sb-stand-in-auth-token', storage, flowType: 'pkce', persistSession: true, autoRefreshToken: false, detectSessionInUrl: false, fetch: fetchFn })
+  await client.signInWithOAuth({ provider: 'google', options: { redirectTo: 'tilo://auth-callback', skipBrowserRedirect: true } })
+  const r = await exchangeOnceMore(() => client.exchangeCodeForSession('stand-in-code'), storage, 'sb-stand-in-auth-token', async () => {})
+  check('exchange (real supabase-js): retried once with the same verifier, and signed in', r.retried && !r.error && !!r.data?.session && bodies.length === 2 && !!bodies[0].code_verifier && bodies[0].code_verifier === bodies[1].code_verifier && bodies[1].auth_code === 'stand-in-code')
+}
 
 console.log(failed ? `${failed} failed, ${passed} passed` : `all ${passed} passed`)
 process.exit(failed ? 1 : 0)
