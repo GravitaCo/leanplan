@@ -45,7 +45,7 @@ Status key: ☑ built on lib/ui and matched by a parity case (words and figures,
 | # | What | Check |
 |---|---|---|
 | 3.1 | Tapping a day edits the phase's build week (`weekSource`) | ☑ `[active · a plan day]` |
-| 3.2 | Day editor: several workouts (up to 4), each with View and Remove; Add another; rest, copy, swap; notes for that day; the foot ("…and the lighter weeks after it" when they follow) | ☑ `[active · a plan day]` (Remove: VoiceOver fix pending N1 Row actions) |
+| 3.2 | Day editor: several workouts (up to 4), each with View and Remove; Add another; rest, copy, swap; notes for that day; the foot ("…and the lighter weeks after it" when they follow) | ☑ `[active · a plan day]` (Remove: VoiceOver custom action) |
 | 3.3 | Add-workout sheet with My workouts first and Tilo's plan workouts (strength, mobility) | ☑ `[active · plan day add sheet]` |
 | 3.4 | A phase's week from Plan details: name, "plan · n weeks", the rows, notes, the foot | ☑ `[active · phase week]` |
 
@@ -89,7 +89,7 @@ Status key: ☑ built on lib/ui and matched by a parity case (words and figures,
 
 ## Known behaviour notes
 
-- Remove on a plan day: VoiceOver can't reach it inside the pressable row on iOS until lib/ui's `Row` takes accessibility actions (asked N1); blocks SHIP.
+- Remove on a plan day: also offered as the row's VoiceOver custom action (lib/ui `Row` `actions`), since the pressable row groups its children on iOS. Device check with VoiceOver.
 - The add-workout rows don't announce a checked state (the web's radio role); needs a `checked` option on lib/ui's `Row` (N1).
 - Not covered by any case: swap, `planOpen` from Train, flag-off wellbeing, Android back.
 
@@ -105,5 +105,4 @@ screen is rebuilt on N1, in the same commit, so both apps read one copy.
 - Builder steps 1 and 2: the title and everything below sit 4 pt low; an empty day's "+ Add" sits 3 pt below its day label.
 - Plan home tiles (Workouts, Exercise library): 2 pt short; number and label 2 to 3 pt high.
 - Week rows: the day label and a two-line title sit 2 pt high inside the row (single-line rows match).
-- Library goal chips: 15 pt on native against the web's 14 (`.pl-goals .chip`); needs a size option on N1's `Chip` (asked).
 - The big plan tile's caption is bold on the web because `.ptile.big` also matches the global `.big` (theme.css:194). Native matches it; whether the web means it is Benn's or Sara's call.

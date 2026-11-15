@@ -84,6 +84,7 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
   const unknownOn = (d: number) => (week[d] || []).filter((k) => !isBuiltinKey(k) && !routineFor(k, routines))
   const setDay = (next: WorkoutKey[], msg: string) => change({ ...copyWeek(week), [idx]: [...next, ...unknownOn(idx)].slice(0, MAX_A_DAY) }, msg)
   const notes = planWeekNotes(week, routines).filter((n) => n.includes(day) || n.includes('no rest day'))
+  const remove = (i: number) => setDay(keys.filter((_, j) => j !== i), `${keyTitle(keys[i], routines)} removed from ${day}`)
 
   return (
     <PlanPage>
@@ -96,8 +97,9 @@ export function DayEditor({ week, change, idx, phaseName, lighterAfter, backLabe
           {keys.map((k, i) => (
             <Row key={k + i} pv title={keyTitle(k, routines)} sub={<Text style={num}>{keyLine(k, routines, training, ONBOARDING_ENABLED, true)}</Text>} label={`View ${keyTitle(k, routines)}`}
               onPress={() => onOpenWorkout(k)} lead={<Thumb video={keyVideo(k, routines)} shape={k === 'Cardio' ? 'duration' : undefined} />}
-              right={<LinkBtn title="Remove" label={`Remove ${keyTitle(k, routines)} from ${day}`}
-                onPress={() => setDay(keys.filter((_, j) => j !== i), `${keyTitle(k, routines)} removed from ${day}`)} />} />
+              // Remove sits inside the row's own button, so VoiceOver gets it as the row's custom action too
+              actions={[{ label: `Remove ${keyTitle(k, routines)} from ${day}`, onPress: () => remove(i) }]}
+              right={<LinkBtn title="Remove" label={`Remove ${keyTitle(k, routines)} from ${day}`} onPress={() => remove(i)} />} />
           ))}
         </List>
       )}
