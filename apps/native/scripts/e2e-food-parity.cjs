@@ -306,10 +306,13 @@ async function run() {
     const chain = chainFoods()
     // FOOD_ALL=1 logs every chain food; FOOD_SHARD=i/n takes every n-th of them from i, so n runs share the work
     const [si, sn] = (process.env.FOOD_SHARD || '0/1').split('/').map(Number)
-    const all = process.env.FOOD_ALL ? chain.filter((_, i) => i % sn === si) : null
+    let all = process.env.FOOD_ALL ? chain.filter((_, i) => i % sn === si) : null
+    // FOOD_FROM=<name> resumes a shard at that food; FOOD_ONLY=<regex> logs just the foods it matches
+    if (all && process.env.FOOD_FROM) all = all.slice(Math.max(0, all.findIndex((f) => f.n === process.env.FOOD_FROM)))
+    if (process.env.FOOD_ONLY) { const re = new RegExp(process.env.FOOD_ONLY); all = chain.filter((f) => re.test(f.n)) }
     const pick = all ?? chain.filter((_, i) => i % Math.max(1, Math.floor(chain.length / 24)) === 0)
       .concat(chain.filter((f) => f.n === 'Greggs Bacon Breakfast Roll' || f.n === 'Burger King Whopper'))
-    const generic = si === 0 ? ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black'] : []
+    const generic = si === 0 && !process.env.FOOD_ONLY && !process.env.FOOD_FROM ? ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black'] : []
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')
     let logged = 0
     for (const food of [...pick.map((f) => f.n), ...generic]) {
