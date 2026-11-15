@@ -70,13 +70,10 @@ async function open(browser, url, state, scheme) {
   const page = await ctx.newPage()
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
-  // native opens on its Plan route, so the other tabs (kept mounted by the navigator) stay unrendered
-  const native = url === NATIVE && !process.env.BOTH_WEB
-  await page.goto(native ? url + 'plan' : url)
-  if (!native) {
-    await page.getByText('This week', { exact: true }).first().waitFor({ timeout: 30000 })
-    await page.getByText('Plan', { exact: true }).last().click()
-  }
+  // both apps open on Summary and tap the Plan tab (native's shell follows the store's tab, as the web does)
+  await page.goto(url)
+  await page.getByText('This week', { exact: true }).first().waitFor({ timeout: 30000 })
+  await page.getByText('Plan', { exact: true }).last().click()
   await page.getByText('If–then plans', { exact: true }).first().waitFor({ timeout: 15000 })
   await page.waitForTimeout(400)
   return { ctx, page, errors }
@@ -85,6 +82,15 @@ async function open(browser, url, state, scheme) {
 // the tab bar's labels and the avatar's initials are the shell's (N0), not Plan's
 const CHROME = new Set(['Summary', 'Mind', 'Food', 'Train', 'Plan', 'ST', 'Up to date', 'Synced', 'Saved on this phone', 'Offline'])
 const lines = (text) => text.replace(/ /g, ' ').split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).filter((l) => l && !CHROME.has(l))
+
+/** The page's words, leaving out what the screen reader can't reach (native keeps inactive tabs mounted, aria-hidden). */
+const shown = (page) => page.evaluate(() => {
+  const hid = [...document.querySelectorAll('[aria-hidden="true"]')].map((e) => [e, e.style.display])
+  hid.forEach(([e]) => { e.style.display = 'none' })
+  const text = document.body.innerText
+  hid.forEach(([e, d]) => { e.style.display = d })
+  return text
+})
 
 /** Words and figures in one app and not the other (order-free; a line counts as often as it shows). */
 function diff(a, b) {
@@ -95,8 +101,12 @@ function diff(a, b) {
 }
 
 /** Steps to reach a view: each is a function (page) => Promise. */
-const tap = (label) => async (p) => { await p.getByLabel(label).first().click(); await p.waitForTimeout(500) }
-const tapText = (text) => async (p) => { await p.getByText(text, { exact: true }).first().click(); await p.waitForTimeout(500) }
+const tap = (label) => async (p) => { await p.getByLabel(label).locator('visible=true').first().click(); await p.waitForTimeout(500) }
+// an element whose own text is `text`, outside anything aria-hidden (native's inactive tabs stay mounted)
+const tapText = (text) => async (p) => {
+  await p.locator(`xpath=//*[not(ancestor-or-self::*[@aria-hidden='true'])][text()[normalize-space(.)=${JSON.stringify(text)}]]`).first().click()
+  await p.waitForTimeout(500)
+}
 
 const CASES = [
   ['none · the week', 'none', []],
@@ -114,6 +124,15 @@ const CASES = [
   ['preview · maintenance card', 'none', [tapText('Full body system'), tapText('After the plan: maintenance')]],
   ['build · step 1', 'none', [tapText('Browse all plans'), tapText('New plan')]],
   ['build · step 2', 'none', [tapText('Browse all plans'), tapText('New plan'), tapText('Next: your week')]],
+  ['none · add-workout sheet', 'none', [tap(/^Monday: /), tapText('Change workout')]],
+  ['none · add-workout category', 'none', [tap(/^Monday: /), tapText('Change workout'), async (p) => { await p.getByRole('button', { name: /^Weights/ }).locator('visible=true').last().click(); await p.waitForTimeout(500) }]],
+  ['none · copy from sheet', 'none', [tap(/^Monday: /), tapText('Copy another day')]],
+  ['choosing · a goal chosen', 'none', [tapText('Browse all plans'), tapText('Get stronger')]],
+  ['build · step 3', 'none', [tapText('Browse all plans'), tapText('New plan'), tapText('Next: your week'), tapText('Copy it'), tapText('Next: when to start')]],
+  ['active · rename sheet', 'active', [tapText('Your plan'), tapText('Rename')]],
+  ['active · add a week sheet', 'active', [tapText('Your plan'), tapText('Add an easier or lighter week')]],
+  ['active · stop sheet', 'active', [tapText('Your plan'), tapText('Stop plan')]],
+  ['active · plan day add sheet', 'active', [tap(/^Monday: /), tapText('Add another')]],
   ['active · the week', 'active', []],
   ['active · details', 'active', [tapText('Your plan')]],
   ['active · a plan day', 'active', [tap(/^Monday: /)]],
@@ -151,13 +170,14 @@ async function run() {
       for (const p of [w.page, n.page]) {
         const h = await p.evaluate(() => Math.max(document.documentElement.scrollHeight, ...[...document.querySelectorAll('*')].map((e) => (e.scrollHeight > e.clientHeight + 4 && getComputedStyle(e).overflowY !== 'visible' ? e.scrollHeight + 120 : 0))))
         await p.setViewportSize({ width: 390, height: Math.min(Math.max(844, h), 6000) })
-        await p.waitForTimeout(300)
+        // photos framed after their size is known (CoverImage on react-native-web asks for it)
+        await p.waitForTimeout(1500)
       }
       await w.page.screenshot({ path: path.join(OUT, `plan-${file}-${scheme}-web.png`), fullPage: true })
       await n.page.screenshot({ path: path.join(OUT, `plan-${file}-${scheme}-native.png`), fullPage: true })
       if (scheme === 'light') {
         check(`${name}: reached`, !stepErr, stepErr)
-        const tw = await w.page.innerText('body'), tn = await n.page.innerText('body')
+        const tw = await shown(w.page), tn = await shown(n.page)
         if (process.env.DUMP) console.log(JSON.stringify({ web: tw, native: tn }))
         const d = diff(lines(tw), lines(tn))
         check(`${name}: words and figures match`, !d.webOnly.length && !d.nativeOnly.length, d)

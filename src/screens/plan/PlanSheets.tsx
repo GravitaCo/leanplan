@@ -4,7 +4,7 @@ import type { IfThenPlan } from '@/core/types'
 import { plansDue } from '@/core/domain/insights'
 import { BareSheet, Sheet } from '@/ui/primitives'
 import { IF_THEN } from '../onboarding/copyApp'
-import { MIND_PLAN, PLAN_OUTCOME } from '@/copy/plan'
+import { FIRST_PLAN_CUES, MIND_PLAN, PLAN_OUTCOME } from '@/copy/plan'
 import { whenLine } from './planModel'
 
 export { whenLine, planGroups } from './planModel'
@@ -101,8 +101,8 @@ export function FirstPlanSheet({ onDone }: { onDone: () => void }) {
           <label htmlFor="ift_then" className="l2">{IF_THEN.then}</label>
           <input id="ift_then" value={then} maxLength={80} onChange={(e) => setThen(e.target.value)} />
         </div>
-        <div className="ift-cues" role="group" aria-label="Cues">
-          {IF_THEN.cues.map((c) => <button key={c} className={after === c ? 'on' : ''} aria-pressed={after === c} onClick={() => setAfter(c)}>After {c}</button>)}
+        <div className="ift-cues" role="group" aria-label={FIRST_PLAN_CUES.label}>
+          {IF_THEN.cues.map((c) => <button key={c} className={after === c ? 'on' : ''} aria-pressed={after === c} onClick={() => setAfter(c)}>{FIRST_PLAN_CUES.chip(c)}</button>)}
         </div>
         <button className="btn ob-btn" disabled={!ok} onClick={save}>{IF_THEN.save}</button>
         <button className="linkbtn ob-alt" onClick={onDone}>{IF_THEN.later}</button>
