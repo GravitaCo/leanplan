@@ -304,9 +304,12 @@ async function run() {
   // 4. the logging path: one serving through each app's screens
   if (want('log')) {
     const chain = chainFoods()
-    const pick = process.env.FOOD_ALL ? chain : chain.filter((_, i) => i % Math.max(1, Math.floor(chain.length / 24)) === 0)
+    // FOOD_ALL=1 logs every chain food; FOOD_SHARD=i/n takes every n-th of them from i, so n runs share the work
+    const [si, sn] = (process.env.FOOD_SHARD || '0/1').split('/').map(Number)
+    const all = process.env.FOOD_ALL ? chain.filter((_, i) => i % sn === si) : null
+    const pick = all ?? chain.filter((_, i) => i % Math.max(1, Math.floor(chain.length / 24)) === 0)
       .concat(chain.filter((f) => f.n === 'Greggs Bacon Breakfast Roll' || f.n === 'Burger King Whopper'))
-    const generic = ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black']
+    const generic = si === 0 ? ['Chicken breast, raw, skinless', 'Milk, semi-skimmed', 'Banana (1 ~118g)', 'Oats, dry', 'Egg, fried', 'Coffee, black'] : []
     const [w, n] = await pair(state({ ...VIEWS.numbers, empty: true }), 'light')
     let logged = 0
     for (const food of [...pick.map((f) => f.n), ...generic]) {
