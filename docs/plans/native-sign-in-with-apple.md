@@ -119,9 +119,8 @@ Built in `supabase/functions/_shared/apple.ts` and `delete-account`, tested in
 `main` after review, and needs the four secrets from step 3 first (without them every Apple account's
 deletion says Apple couldn't be told). The app keeps the code in memory only, for the one delete it
 was fetched for; a server error or timeout asks for Sign in with Apple again, since a code works once.
-When Apple can't be told, the sign-in screen's banner says (`DELETE.appleKept`, new words: Benn's or
-Sara's OK needed): "Your account is deleted. Tilo couldn’t remove Sign in with Apple, so you can remove
-Tilo yourself in your Apple Account settings, under Sign in with Apple."
+When Apple can't be told, the sign-in screen's banner says (`DELETE.appleKept`, compliance's wording,
+Benn approved 15 Nov): "Your account is deleted. Tilo couldn’t tell Apple, so Tilo may still be listed under Sign in with Apple in your Apple Account settings. You can remove it there."
 
 The design, as agreed:
 
