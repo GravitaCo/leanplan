@@ -7,7 +7,8 @@
 import { useState } from 'react'
 import { useStore } from '@/store/store'
 import { useAccountDeletion, useConsent, useHealthWithdrawal } from '@/store/hooks'
-import { healthDataSummary, healthSyncPaused, latestConsent, unconsentedCopyLine } from '@/data/consent'
+import { healthDataSummary, unconsentedCopyLine } from '@/data/consent'
+import { HEALTH_STATUS_LABEL, healthStatusOf, type HealthStatus } from './profileModel'
 import { DELETE_MESSAGES } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { BackButton, BareSheet, Sheet } from '@/ui/primitives'
@@ -26,14 +27,11 @@ import { DELETE, HEALTH_DATA } from '@/copy/account'
 export const DELETE_WORD = 'DELETE'
 export const typedOk = (x: string) => x.trim().toUpperCase() === DELETE_WORD
 
-export type HealthStatus = 'on' | 'paused' | 'off' | 'unasked'
+export type { HealthStatus }
+export { HEALTH_STATUS_LABEL }
 export function useHealthStatus(): HealthStatus {
-  return useStore((s) => {
-    const r = latestConsent(s.data, 'health')
-    return r ? (r.granted ? 'on' : 'off') : healthSyncPaused(s.data) ? 'paused' : 'unasked'
-  })
+  return useStore((s) => healthStatusOf(s.data))
 }
-export const HEALTH_STATUS_LABEL: Record<HealthStatus, string> = HEALTH_DATA.status
 
 /* ---------------- health data ---------------- */
 
@@ -62,7 +60,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   if (step) {
     const onPhone = HEALTH_DATA.onPhone(step.summary)
     return (
-      <Sheet title="Health data" onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
+      <Sheet title={HEALTH_DATA.title} onClose={onClose} left={<BackButton onClick={() => setStep(null)} />}>
         <div className="prose sub" style={{ padding: '0 4px' }}>
           <p>{step.prompt}</p>
           {onPhone && <p style={{ margin: 0 }} className="num">{onPhone}</p>}
@@ -76,7 +74,7 @@ export function HealthDataSheet({ onClose, onAgree, onAnswers, onRedo, start = '
   }
 
   return (
-    <Sheet title="Health data" onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
+    <Sheet title={HEALTH_DATA.title} onClose={onClose} left={null} right={<button className="navbtn b" onClick={onClose}>Done</button>}>
       <div className="sub" style={{ padding: '0 4px 12px', lineHeight: 1.45 }}>
         {status === 'on' ? HEALTH_DATA.on : status === 'paused' ? HEALTH_DATA.paused + unconsentedCopyLine() : status === 'off' ? HEALTH_DATA.off : HEALTH_DATA.unasked}
       </div>
