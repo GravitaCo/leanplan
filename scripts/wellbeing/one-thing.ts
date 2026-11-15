@@ -48,7 +48,7 @@ export function oneThingSuite(): number {
     const src = readFileSync('src/screens/mind/ResetScreen.tsx', 'utf8')
     const stages = readFileSync('src/screens/mind/resetStages.ts', 'utf8')
     const fin = (stages.match(/export function onPacerDone[\s\S]*?\n\}/) || [])[0] ?? ''
-    ok('only the finish path calls doneThing (a stop changes nothing)', /if \(cur\.stage !== 'running'\) return cur/.test(fin) && /resetTicksThing\([\s\S]*?checkin\?\.thing\)\) st\.doneThing\(\)/.test(fin)
+    ok('only the finish path calls doneThing (a stop changes nothing)', /cur\.stage !== 'running'\)\s*return cur/.test(fin) && /resetTicksThing\([\s\S]*?checkin\?\.thing\)\) st\.doneThing\(\)/.test(fin)
       && (stages.match(/doneThing\(\)/g) || []).length === 1 && !/doneThing\(/.test(src), fin)
   }
 

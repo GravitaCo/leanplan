@@ -10,7 +10,6 @@ import { onPacerDone, resetInitial, resetReducer, type ResetLength } from './res
 import { SupportSheet } from './SupportSheet'
 import './reset.css'
 
-
 const REDUCE = '(prefers-reduced-motion: reduce)'
 
 /** The device's reduced-motion setting, following changes. */
@@ -56,7 +55,7 @@ export function ResetScreen({ onBack, backLabel = MIND.title }: { onBack: () => 
     window.scrollTo?.(0, 0)
   }
   // only a run still running finishes and is logged (onPacerDone reads the store now)
-  const finish = () => { if (onPacerDone(cur.current) !== cur.current) dispatch({ type: 'finish' }) }
+  const finish = () => { const next = onPacerDone(cur.current); if (next !== cur.current) { cur.current = next; dispatch({ type: 'finish' }) } }
   const stop = () => { cur.current = resetReducer(cur.current, { type: 'stop' }); dispatch({ type: 'stop' }) }
   const pickLength = (v: string) => dispatch({ type: 'length', len: Number(v) as ResetLength })
 

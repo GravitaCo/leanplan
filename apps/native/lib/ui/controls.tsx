@@ -4,11 +4,11 @@
  *   portion's grams. Drawn here (no outside library): a 4 pt track, tinted up to the thumb.
  * - Stepper (`.stepper`): − value + on --fill (Portion's "How many").
  * - Scale (`.scale`): a grid of equal buttons (servings, the check-in's answers, feedback).
- * - Select (`select`): the chosen option's words; a tap lists the options to pick from.
+ * - Select (`select`): the chosen option's words; a tap opens the options as Safari does.
  */
 import { useRef, useState, type ReactNode } from 'react'
-import { ActionSheetIOS, PanResponder, Platform, Pressable, Text, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native'
-import { UI } from '@/copy/ui'
+import { PanResponder, Platform, Pressable, Text, View, type AccessibilityActionEvent, type LayoutChangeEvent } from 'react-native'
+import { MenuNative } from '../../modules/tilo-pickers'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
 import { Sheet } from './primitives'
@@ -150,10 +150,10 @@ export function Scale<T extends string | number>({ items, value, onPick, cols = 
 /**
  * `select` (the web's, with `appearance: none`, so no arrow): the chosen option's words. `row` is
  * `.frow select` (no fill, right-aligned, padding 11 0: put it in an FRow's `right`); otherwise the
- * filled field (--fill, radius 10, padding 11 12). A tap offers the options as the system does: on
- * iOS its action sheet (titled with the label, a Cancel last); elsewhere a sheet listing them, the
- * chosen one ticked. The label is the field's, as the web's `<label for>` names it, and the chosen
- * option is its value.
+ * filled field (--fill, radius 10, padding 11 12). On iOS a tap opens the system menu anchored to
+ * the field, the chosen option ticked, as Safari opens a select (modules/tilo-pickers' TiloMenu,
+ * lying invisibly over the words). Elsewhere (Android for now, the web gallery) a sheet lists the
+ * options. The label is the field's, as the web's `<label for>` names it; the option is its value.
  */
 export function Select<T extends string>({ value, options, onChange, label, row }: {
   value: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void; label: string; row?: boolean
@@ -161,17 +161,23 @@ export function Select<T extends string>({ value, options, onChange, label, row 
   const t = useTokens()
   const [open, setOpen] = useState(false)
   const shown = options.find(([k]) => k === value)?.[1] ?? value
+  const box = row
+    ? { flex: 1, minWidth: 0, paddingVertical: 11 }
+    : { backgroundColor: t.fill, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12 }
+  const words = <Text numberOfLines={1} style={[tx(17, 400, 1.3, BTN), { color: t.label, textAlign: row ? 'right' : 'left' }]}>{shown}</Text>
+  if (Platform.OS === 'ios' && MenuNative) return (
+    <View style={box}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{words}</View>
+      <MenuNative label={label} options={options.map(([, l]) => l)} selected={options.findIndex(([k]) => k === value)}
+        onPick={(e) => { const o = options[e.nativeEvent.index]; if (o && o[0] !== value) onChange(o[0]) }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+    </View>
+  )
   return (
     <>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: shown }} onPress={() => {
-        if (Platform.OS !== 'ios') { setOpen(true); return }
-        ActionSheetIOS.showActionSheetWithOptions({ title: label, options: [...options.map(([, l]) => l), UI.cancel], cancelButtonIndex: options.length },
-          (i) => { if (i < options.length && options[i][0] !== value) onChange(options[i][0]) })
-      }}
-        style={({ pressed }) => [row
-          ? { flex: 1, minWidth: 0, paddingVertical: 11 }
-          : { backgroundColor: t.fill, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12 }, { opacity: pressed ? 0.6 : 1 }]}>
-        <Text numberOfLines={1} style={[tx(17, 400, 1.3, BTN), { color: t.label, textAlign: row ? 'right' : 'left' }]}>{shown}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: shown }} onPress={() => setOpen(true)}
+        style={({ pressed }) => [box, { opacity: pressed ? 0.6 : 1 }]}>
+        {words}
       </Pressable>
       {open && (
         <Sheet title={label} onClose={() => setOpen(false)}>

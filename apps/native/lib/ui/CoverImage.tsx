@@ -10,7 +10,23 @@ import { Image, View, type ImageSourcePropType, type ImageStyle, type StyleProp,
 
 type Size = { w: number; h: number }
 
-export function CoverImage({ source, x = 0.5, y = 0.5, style, label }: {
+type Props = {
+  source: ImageSourcePropType
+  /** object-position as fractions (50% 40% is x 0.5, y 0.4) */
+  x?: number; y?: number
+  style?: StyleProp<ViewStyle>
+  /** the web's alt text; none for a decorative photo (alt="") */
+  label?: string
+}
+
+/** A new photo starts afresh: its size is measured again, never the last photo's. */
+export function CoverImage(props: Props) {
+  const s = props.source
+  const key = typeof s === 'number' ? String(s) : typeof s === 'object' && s != null && 'uri' in s ? String(s.uri) : 'img'
+  return <Cover key={key} {...props} />
+}
+
+function Cover({ source, x = 0.5, y = 0.5, style, label }: {
   source: ImageSourcePropType
   /** object-position as fractions (50% 40% is x 0.5, y 0.4) */
   x?: number; y?: number

@@ -30,7 +30,6 @@ import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { font, num, tx, useTokens } from '../../lib/theme'
 import { Foot, TextLink as InlineLink } from '../../lib/ui/text'
-import { TextLink } from './ui'
 import { TrainNav } from './nav'
 
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven']
@@ -317,7 +316,7 @@ function Train() {
                     ? <Pressable accessibilityRole="button" accessibilityLabel={`Open ${x.title}`} onPress={() => openWorkout(r)} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, minHeight: 44 }}>{body}</Pressable>
                     : <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 16, minHeight: 44 }}>{body}</View>}
                   {confirmId === x.id
-                    ? <TextLink title="Remove" color={t.red} label={`Remove ${x.title}`} onPress={() => { removeSession(x.id); setConfirmId(null) }} />
+                    ? <LinkBtn title="Remove" color={t.red} label={`Remove ${x.title}`} onPress={() => { removeSession(x.id); setConfirmId(null) }} />
                     : <XBtn label={`Remove ${x.title}`} onPress={() => setConfirmId(x.id)} />}
                 </View>
               )

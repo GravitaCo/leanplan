@@ -42,6 +42,7 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 | Sheet | Check |
 |---|---|
 | Check-in, More about sleep, wake prefill, save | Auto `wp10-checkin-sheet` |
+| Support from the low-mood banner and from the check-in's "support is here" (N9's sheet; over the check-in) | Auto `wp15-signpost`, `wp10-checkin-sheet` |
 | Check-in scale buttons 44 pt tall at least, web and native (approved by Benn in this session, 13 Nov 2026; web commit 0835b5a) | Auto `wp10-scale-44` |
 | Wake time | **Open:** a 24-hour text field until N1's TimePicker (the web's time field is iOS's own wheel, so the native picker is parity). Typed times read as the web's field holds them ("730" 07:30, "123" 01:23): `npm run test:today` |
 | Weight sheet | Auto `weight-sheet` |
@@ -59,7 +60,6 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 
 | What | Owner | Now |
 |---|---|---|
-| Support and helplines | N9 | A system alert with the sheet's words and a call or text button per service (`supportStandIn.ts`); internal builds only |
 | Add food, Adjust entry, About this estimate | N5 | "Not in the native app yet" note |
 | Plans banner sheet, Make it a plan, Your plan's Change it | N8 | Same note |
 | If-then offer (ob5-4) | N8 | Not due on native until FirstPlanSheet lands (never shown or marked by a stand-in) |
@@ -69,4 +69,4 @@ ONBOARDING_ENABLED (`WEB_OB_URL`, `NATIVE_OB_URL`).
 ## Still to check on a device
 
 Fonts and Intl output on Hermes ("1,840", "Sept"), the keyboard over the check-in note and the
-weight field, VoiceOver labels, Dynamic Type at the largest size, the Support alert's call buttons.
+weight field, VoiceOver labels, Dynamic Type at the largest size, Support opened over the check-in (a Modal inside a Modal).

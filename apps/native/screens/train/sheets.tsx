@@ -17,11 +17,11 @@ import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { RED_FLAG, SUPPORT_LINES } from '@/copy/train'
 import { Chip, Chips, List } from '../../lib/ui/kit'
 import { NavBtn, Row, SettingRow, Sheet, Toggle } from '../../lib/ui/primitives'
+import { Select } from '../../lib/ui/controls'
 import { tx, useTokens } from '../../lib/theme'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
 import { toPoint } from './nav'
-import { FSelect } from './ui'
 
 /** "Add something": a quick log of any movement, a different workout for today only, or the library. Nothing here changes the plan. */
 export function AddSomethingSheet({ planned, onLog, onWorkout, onLibrary, onClose }: {
@@ -97,7 +97,7 @@ export function LogSessionSheet({ onClose, preset }: { onClose: () => void; pres
         {MODALITIES.map((k) => <Chip key={k} title={MODALITY_LABEL[k]} on={modality === k} onPress={() => setModality(k)} />)}
       </Chips></View>
       <List style={{ marginBottom: 8 }}>
-        {modality === 'cardio' && <FRow label="Type" right={<FSelect title="Type" value={cardioKey} options={CARDIO_OPTIONS} onChange={setCardioKey} />} />}
+        {modality === 'cardio' && <FRow label="Type" right={<Select row label="Type" value={cardioKey} options={CARDIO_OPTIONS.map((o) => [o, o] as const)} onChange={setCardioKey} />} />}
         <FRow label="Name" value={name} placeholder={modality === 'cardio' ? cardioKey : MODALITY_LABEL[modality]} onChangeText={setName} />
         <FRow label="Minutes" keyboardType="number-pad" value={mins} placeholder={String(DEFAULT_MINS[modality])} onChangeText={setMins} />
         {modality === 'cardio' && <FRow label="Distance (km)" keyboardType="decimal-pad" value={km} placeholder="Optional" onChangeText={(v) => setKm(toPoint(v))} />}

@@ -8,12 +8,11 @@ import { Text, TextInput, View } from 'react-native'
 import type { Effort } from '@/core/types'
 import { EFFORTS } from '@/core/data/modalities'
 import { ChoiceGrid } from './AdjustSheet'
-import { Btn, List } from '../../lib/ui/kit'
+import { Btn, List, Stack } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Row } from '../../lib/ui/primitives'
 import { font, tx, useTokens } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
-import { Stack } from './ui'
 
 export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinish, onBack, overlay }: {
   title: string

@@ -9,11 +9,10 @@ import type { Exercise } from '@/core/types'
 import { alternativesFor, exById } from '@/core/domain/library'
 import { EQUIPMENT_LABEL, careList, LEVEL_LABEL } from '@/core/data/libraryLabels'
 import { CARE_DISCLAIMER } from '@/copy/train'
-import { Btn, List } from '../../lib/ui/kit'
+import { Btn, List, Stack } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
 import { font, tx, BTN, useTokens } from '../../lib/theme'
 import { Foot, GrpH, Sub } from '../../lib/ui/text'
-import { Stack } from './ui'
 
 function Row({ x, tag, onPick }: { x: Exercise; tag?: string; onPick: () => void }) {
   const kit = x.equipment.length ? x.equipment.map((q) => EQUIPMENT_LABEL[q]).join(' or ') : 'No equipment'

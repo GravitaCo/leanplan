@@ -34,7 +34,7 @@ pattern two screens need that isn't here comes to N1 (through the lead), not int
 | `kit.tsx` | `Card` (`.card` with `plain`, `.pcard`), `Tile`, `Btn` (ink, tinted, gray, danger, signout, link, small), `LinkBtn` (padded or `flat`), `Stack`, `RoundBtn`, `DashAdd`, `Big`, `Chip`/`Chips`, `List`, `Note`, `Banner`, `ToastView`, `ToastHost` (mounted once in the tab shell), `slop`, `initials` |
 | `primitives.tsx` | `PageHeader`, `TitleRow`, `ProfileButton`, `ConnectionPill`/`ConnectionLine` (+ `View` forms), `CatHead`, `BackButton`, `NavBtn` (words or an icon), `Seg`, `Toggle`, `Row`, `Tag`, `AddC`, `XBtn`, `Swatch`, `SettingRow`, `Disclosure`, `Sheet`, `BareSheet` |
 | `controls.tsx` | `Slider`, `Stepper`, `Scale`, `Select` |
-| `pickers.tsx` | `TimeField`, `PickerSheet` (the UIDatePicker wheels from `modules/tilo-pickers`) |
+| `pickers.tsx` | `TimeField`, `DateInput` (iOS: the compact UIDatePicker from `modules/tilo-pickers` over the drawn field; elsewhere `PickerSheet`) |
 | `CoverImage.tsx` | `CoverImage`: `object-fit: cover` with the web's `object-position` |
 | `fields.tsx`, `text.tsx`, `choices.tsx` | `Input`, `Field`, `FRow` (with `hint`), `NameField`, `SearchBar`; `Lbl`, `GrpH`, `Foot`, `Sub`, `Prose`, `Empty`, `TextLink`; `Opts`, `Ticks`, `Check`, `Signposts`, `ConsentRow` |
 | `charts.tsx` | `Rings`, `Meter`, `KcalBar`, `MacroTrio`, `Sparkline`, `WeekBars` |

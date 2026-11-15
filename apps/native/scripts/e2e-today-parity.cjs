@@ -454,6 +454,12 @@ async function run() {
     await click(page, 'More about sleep')
     await page.waitForTimeout(300)
     const opened = await sheetText(page, web)
+    // "support is here" opens Support over the check-in; closing it returns to the check-in, answers kept
+    await page.getByText('support is here', { exact: false }).last().click()
+    await page.getByText('Samaritans', { exact: true }).first().waitFor()
+    await page.getByText('Done', { exact: true }).last().click()
+    await page.waitForTimeout(600)
+    rule(l, 'back on the check-in after Support', (await sheetText(page, web)).includes('More about sleep'))
     rule(l, 'the wake time is prefilled from yesterday once opened', web ? (await page.locator('input[type=time]').inputValue()) === '07:10' : (await page.locator('input').filter({ hasNot: page.locator('textarea') }).first().inputValue()) === '07:10')
     // answer: mood Good, sleep OK, a band; Done saves, and the Mind card says so
     await page.getByText('Good', { exact: true }).first().click()
@@ -495,11 +501,18 @@ async function run() {
   await scenario(browser, 'wp15-signpost', lowMoodFortnight(), async (page, web, l) => {
     const s = await pillarsText(page, web)
     rule(l, 'the signpost line, no NHS, no chips', s.includes('Things seem to have been hard for a while. Talking to your GP can help, and Samaritans are there any time on 116 123.') && !/NHS/.test(s) && !s.includes("One thing for today"), s)
+    // See support opens the Support sheet (N9's on native), and Done closes it with the banner still up
+    await page.getByText('See support', { exact: true }).first().click()
+    await page.getByText('Samaritans', { exact: true }).first().waitFor()
+    const support = await sheetText(page, web)
+    await page.getByText('Done', { exact: true }).last().click()
+    await page.waitForTimeout(600)
+    rule(l, 'banner still up after Support closes', (await pillarsText(page, web)).includes('Things seem to have been hard'))
     await page.getByRole('button', { name: 'Dismiss', exact: true }).first().click()
     await page.waitForTimeout(400)
     const after = await pillarsText(page, web)
     rule(l, 'dismissed, still the only ask (no chips)', !after.includes('Things seem to have been hard') && !after.includes('One thing for today'), after)
-    return { summary: s, dismissed: after }
+    return { summary: s, support, dismissed: after }
   })
   await scenario(browser, 'wp15-signpost-29-days', (() => { const s = lowMoodFortnight(shift(HARD_DAY, 29)); s.state.deviceOnly = { lowMoodShown: HARD_DAY }; return s })(), async (page, web, l) => {
     const s = await pillarsText(page, web)

@@ -11,12 +11,11 @@ import { EXERCISE_BY_ID } from '@/core/data/exercises'
 import { aboutMins, builderNotes, estMins, normaliseRx, slotsOf, warmupMinsForKey } from '@/core/domain/routines'
 import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { LibrarySheet } from './LibrarySheet'
-import { Btn, List } from '../../lib/ui/kit'
-import { NavBtn, SettingRow, Sheet, XBtn as RemoveBtn } from '../../lib/ui/primitives'
+import { Btn, List, Stack } from '../../lib/ui/kit'
+import { NavBtn, SettingRow, Sheet, XBtn } from '../../lib/ui/primitives'
 import { font, tx, useTokens } from '../../lib/theme'
 import { Foot, GrpH } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
-import { Stack, XBtn } from './ui'
 
 export interface BuilderStart {
   /** editing a saved workout */
@@ -76,7 +75,7 @@ export function RoutineBuilderSheet({ start, onSaved, onClose }: { start: Builde
                 <View style={{ flexDirection: 'row', gap: 6, marginLeft: 8 }}>
                   <XBtn icon="chevL" rotate={90} label={`Move ${nm} up`} disabled={i === 0} onPress={() => move(i, -1)} />
                   <XBtn icon="chevR" rotate={90} label={`Move ${nm} down`} disabled={i === slots.length - 1} onPress={() => move(i, 1)} />
-                  <RemoveBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
+                  <XBtn label={`Remove ${nm}`} onPress={() => setSlots((p) => p.filter((_, j) => j !== i))} />
                 </View>
               </View>
             )
