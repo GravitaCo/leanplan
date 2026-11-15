@@ -19,6 +19,7 @@ import { bandLabel } from '@/core/domain/sleep'
 import { CHECKIN_SLEEP, nightPatch, nightShown, wakePrefill } from '@/screens/today/checkinNight'
 import { BTN, num, tx, useTokens } from '../../lib/theme'
 import { normTime } from './wakeTime'
+import { SupportSheet } from '../mind/SupportSheet'
 import { List } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Foot, Lbl } from '../../lib/ui/text'
@@ -51,7 +52,9 @@ function Scale({ labels, value, onChange, renderLabel, onStyle }: {
   )
 }
 
-export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSupport: () => void }) {
+/** Opened from Today's Mind card and from the Mind tab (N9's renderCheckin slot). Like the web's,
+ *  it opens the Support sheet over itself; while Support is open, closing reaches Support only. */
+export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
   const existing = useStore((s) => s.data.days[s.cur]?.checkin)
   const liftDay = useStore((s) => {
@@ -74,6 +77,7 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
   const [wakeAt, setWakeAt] = useState(() => shown.wakeAt || (more ? prefill : ''))
   const [filled, setFilled] = useState(more)
   const [touched, setTouched] = useState(false)
+  const [support, setSupport] = useState(false)
   const toggleMore = () => {
     const open = !more
     setMore(open)
@@ -91,7 +95,7 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
   }
   const f = CHECKIN_SLEEP.noteFoot
   return (
-    <Sheet title="Check-in" onClose={onClose} right={<NavBtn title="Done" bold onPress={save} />}>
+    <Sheet title="Check-in" onClose={support ? noop : onClose} right={<NavBtn title="Done" bold onPress={save} />}>
       <Lbl>How are you feeling?</Lbl>
       <Scale labels={MOODS} value={mood} onChange={setMood} />
       <Lbl>Sleep last night</Lbl>
@@ -146,12 +150,16 @@ export function CheckinSheet({ onClose, onSupport }: { onClose: () => void; onSu
       {WELLBEING_ENABLED
         ? (
           <>
-            <Foot>{f.before}<Text accessibilityRole="link" onPress={onSupport} style={{ color: t.tint }}>{f.link.replace(/ /g, '\u00a0')}</Text>{f.after}</Foot>
+            <Foot>{f.before}<Text accessibilityRole="link" onPress={() => setSupport(true)} style={{ color: t.tint }}>{f.link.replace(/ /g, '\u00a0')}</Text>{f.after}</Foot>
             <Foot>{CHECKIN_SLEEP.sheetFoot}</Foot>
           </>
         )
         : <Foot>Skip anything you like. There's no right answer. Sleep and stress often show up in hunger and energy, so these
         help you spot patterns. On a tough day, Tilo can offer a lighter option for training.</Foot>}
+      {/* presented from the check-in's own sheet, so it opens over it (a Modal inside a Modal) */}
+      {support && <SupportSheet onClose={() => setSupport(false)} />}
     </Sheet>
   )
 }
+
+const noop = () => {}

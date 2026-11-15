@@ -20,7 +20,7 @@ Dynamic Type at the largest size.
 | 1.1 | Eyebrow "Thursday 8 October" (`mindEyebrow`), title "Mind", Profile avatar beside it, no Back | MindPage, wp6-mind | logic, e2e |
 | 1.2 | Before a check-in: "How are you today?", "Mood, sleep, stress and energy · 20 seconds", ink "Check in" | wp6-mind-empty | logic, e2e |
 | 1.3 | After: Mood, Sleep, Stress, Energy pairs only (no hunger or soreness), 2 by 2, gray "Update" | wp6-mind | logic, e2e |
-| 1.4 | Check in / Update open N4's check-in sheet on today (moves the selected day first); with health declined they open Profile › Health | MindPage openCheckin | logic; sheet when N4 lands |
+| 1.4 | Check in / Update open N4's check-in sheet on today (moves the selected day first); with health declined they open Profile › Health. Until N4's sheet merges, an internal-only "not here yet" alert: must be replaced (the `renderCheckin` slot) before any TestFlight or external build (mental-performance) | MindPage openCheckin | logic; sheet when N4 lands |
 | 1.5 | "Need support now?" directly under the Today card, above the fold at 390×844, never red or tinted | wp6-mind | e2e |
 | 1.6 | Skills (MIND_REVIEWED on only): Reset, Wind down, Unload, Get outside, with icon squares in their pillar fill and ink, subs wrapping | wp6-mind-reviewed | logic, e2e |
 | 1.7 | MIND_REVIEWED off: no Skills section | wp6-mind | logic, e2e (EXPO_PUBLIC_MIND_REVIEWED=0 build) |
@@ -56,7 +56,7 @@ Dynamic Type at the largest size.
 | 3.3 | Running: intro hidden; count 112/200 tabular in --label, word 17/500 in --mind-ink; "m:ss left"; Stop (gray). Screen readers hear the word only (web: word `aria-live="polite"`, count `aria-hidden`): `accessibilityLiveRegion="polite"` on Android, an announcement or live label for the word on iOS, the count hidden | wp12-reset | logic, e2e, phone (VoiceOver, TalkBack) |
 | 3.4 | Words Breathe in → And in again → Breathe out; counts start at 1 and go up within each phase; timings from `RESET_PATTERN` only | wp12-reset | logic, e2e |
 | 3.5 | Sphere grows on the breath in, more on the second, settles on the breath out; rings spread and thin (shared `glow.ts` keyframes), on the UI thread | Pacer | logic (ease equals pacerAt), phone (smoothness) |
-| 3.6 | Reduce Motion: B7.10 line above the card; sphere and rings hold the middle frame (0.9, `pacerGlow`) and pacer segments are ignored; words and count still step; follows a change while open (`useReduceMotion`: AccessibilityInfo's reduceMotionChanged, not Reanimated's launch-time value) | wp12-reset-reduced | logic, e2e, phone |
+| 3.6 | Reduce Motion: B7.10 line above the card; sphere and rings hold the middle frame (0.9, `pacerGlow`) and pacer segments are ignored; words and count still step; follows a change while open (`useReduceMotion`: AccessibilityInfo's reduceMotionChanged, not Reanimated's launch-time value); switched off mid-run, the sphere moves at once from the current breath (`segmentNow`) | wp12-reset-reduced | logic, e2e, phone |
 | 3.7 | Stop early: B7.15 only, never a time done; nothing logged | wp12-reset | logic, e2e |
 | 3.8 | Finish: "That's 1 minute." (straight apostrophe) and B7.15; logged once (`logSkill`); today's thing ticked only when it's a Reset thing; check-in answers untouched. Stop in the run's last second never logs: `onPacerDone` finishes only a run still running (the screen keeps the stage in a ref, set before Stop dispatches) and reads the store at that moment | wp12-reset-finish | logic, e2e |
 | 3.9 | Picking a length after a run goes back to ready | ResetScreen | logic |

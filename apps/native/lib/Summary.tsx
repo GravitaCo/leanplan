@@ -54,12 +54,12 @@ import { WeightSheet } from '../screens/today/WeightSheet'
 import { FoodAskSheet, MedicalSheet, PregnancyCheckSheet } from '../screens/today/AskSheets'
 import { WeeklyReviewScreen } from '../screens/today/WeeklyReview'
 import { notYet } from '../screens/today/links'
-import { openSupportStandIn } from '../screens/today/supportStandIn'
+import { SupportSheet } from '../screens/mind/SupportSheet'
 
 /** Plan's FirstPlanSheet (N8) is in the native app: flips with its swap. */
 const FIRST_PLAN_SHEET = false
 
-type SheetKind = { k: 'weight' } | { k: 'checkin' } | null
+type SheetKind = { k: 'weight' } | { k: 'checkin' } | { k: 'support' } | null
 
 const kgOf = (s: { days: Record<string, { weight: number | null }> }, d: string | undefined) => (d ? s.days[d]?.weight ?? null : null)
 
@@ -76,7 +76,6 @@ const openAddFood = () => notYet('Add food', 'Food')
 const openEditEntry = () => notYet('Adjust this entry', 'Food')
 const openMargin = () => notYet('About this estimate', 'Food')
 const openPlanReview = () => notYet('How are your plans going?', 'Plan')
-const openSupport = openSupportStandIn
 
 export function Summary() {
   const reviewOpen = useStore((s) => s.reviewOpen)
@@ -299,7 +298,7 @@ function SummaryPage() {
           </Tile>
         )}
 
-        {signpost.show && <LowMoodBanner today={cur} markShown={markLowMoodShown} onSupport={openSupport} onDismiss={signpost.dismiss} />}
+        {signpost.show && <LowMoodBanner today={cur} markShown={markLowMoodShown} onSupport={() => setSheet({ k: 'support' })} onDismiss={signpost.dismiss} />}
 
         {reviewDue && shown('review') && (
           // .card.rv-due
@@ -545,7 +544,8 @@ function SummaryPage() {
       {medReask && <MedicalSheet onClose={() => { markMedicalReasked(); setMedReask(false) }} />}
       {reask && <PregnancyCheckSheet onClose={() => setReask(false)} onAnswers={() => { setReask(false); openProfile('health-answers') }} />}
       {foodAsk && <FoodAskSheet ask={foodAsk} onClose={() => setFoodAsk(null)} />}
-      {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} onSupport={openSupport} />}
+      {sheet?.k === 'checkin' && <CheckinSheet onClose={() => setSheet(null)} />}
+      {sheet?.k === 'support' && <SupportSheet onClose={() => setSheet(null)} />}
     </View>
   )
 }
