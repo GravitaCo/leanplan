@@ -14,7 +14,8 @@ import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
 import { codeFrom, failureOf, reauthMatches, type SignInFailure } from './rules'
-import { setGoogleOAuth } from '@/data/platform'
+import { AUTH_OPTIONS, setGoogleOAuth } from '@/data/platform'
+import { exchangeOnceMore } from './exchange'
 import { CryptoDigestAlgorithm, digestStringAsync, getRandomBytes } from 'expo-crypto'
 import { appleSignInNative } from '../../modules/tilo-auth'
 
@@ -66,9 +67,14 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
     // only Supabase's short error code goes to the log: its description can hold Google's code
     const { code, errCode } = codeFrom(res.url)
     if (!code) return fail('google', 'return', { message: errCode || 'no code in the return' })
-    // the one request: the code and this phone's verifier for a session, at Supabase's /auth/v1/token
-    const { data: ex, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
-    if (exErr || !ex.session) return fail('google', 'exchange', exErr ?? { message: 'no session' })
+    // the one request: the code and this phone's verifier for a session, at Supabase's /auth/v1/token;
+    // once more if it never got an answer (lib/account/exchange.ts)
+    const store = AUTH_OPTIONS?.auth.storage
+    const storageKey = (supabase.auth as unknown as { storageKey: string }).storageKey
+    const { data: ex, error: exErr, retried } = store
+      ? await exchangeOnceMore(() => supabase.auth.exchangeCodeForSession(code), store, storageKey)
+      : { ...(await supabase.auth.exchangeCodeForSession(code)), retried: false }
+    if (exErr || !ex.session) return fail('google', retried ? 'exchange (after a retry)' : 'exchange', exErr ?? { message: 'no session' })
     return { status: 'ok', uid: ex.session.user.id }
   } catch (e) {
     return fail('google', 'unexpected', e)
