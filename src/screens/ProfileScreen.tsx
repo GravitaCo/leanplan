@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { cloneElement, useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { useStore } from '@/store/store'
 import type { AccuracyMode, ActivityLevel, DietPattern, HandPortion, Sex } from '@/core/types'
 import { DIETS } from '@/core/domain/diet'
@@ -156,7 +156,7 @@ export function ProfileScreen() {
     : pr.notificationsEnabled ? P.notify.on : P.notify.off
   const initials = (pr.name || '').trim().split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
-  const field = (label: string, input: ReactNode) => <div className="field"><label>{label}</label>{input}</div>
+  const field = (label: string, input: ReactElement<{ id?: string }>) => <Field label={label}>{input}</Field>
 
   // the everyday range (workout days can add to it; Summary and Food show the day's own). Sometimes:
   // Food's maintenance range, nothing to edit; Yes (and pregnant Sometimes): no kcal at all
@@ -547,4 +547,10 @@ function HandsSheet({ onClose }: { onClose: () => void }) {
       </div>
     </Sheet>
   )
+}
+
+/** `.field`: the label linked to its input (htmlFor/id), so each field is named by its label, not its placeholder. */
+function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
+  const id = useId()
+  return <div className="field"><label htmlFor={id}>{label}</label>{cloneElement(children, { id })}</div>
 }
