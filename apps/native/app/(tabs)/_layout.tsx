@@ -1,11 +1,10 @@
 // The tab shell (native-build-plan N0): Summary, Mind, Food, Train, Plan, drawn by lib/ui/TabBar to
 // match the web's bar. store.tab decides the tab (lib/navBridge.ts); Profile is the avatar beside
-// each title, opening the avatar sheet until N10's Profile lands. Nothing renders behind the gate.
+// each title (a tab route the bar doesn't list). Nothing renders behind the gate.
 import { Tabs } from 'expo-router'
 import { useStore } from '@/store/store'
 import { useGate } from '../../lib/gate'
 import { TabBar } from '../../lib/ui/TabBar'
-import { LabSheet } from '../../lib/labSheet'
 import { useNavBridge } from '../../lib/navBridge'
 
 export default function TabsLayout() {
@@ -25,8 +24,8 @@ function Shell() {
         <Tabs.Screen name="food" />
         <Tabs.Screen name="train" />
         <Tabs.Screen name="plan" />
+        <Tabs.Screen name="profile" />
       </Tabs>
-      <LabSheet />
     </>
   )
 }
