@@ -439,6 +439,27 @@ async function main() {
     await p.getByText('Sign out', { exact: true }).last().click(); await p.waitForTimeout(300)
   }, async (p) => { const t = norm(await p.innerText('body')); const i = t.lastIndexOf('What you log now'); const e = t.indexOf('Sign out and remove this device’s log', i); return t.slice(i, e + 37).replace(/\n/g, ' | ') })))
 
+  // N2's account flows, reached from Profile: withdraw (Privacy's button opens Health data at its
+  // withdraw step), regrant after a withdrawal, and the delete view
+  await run('withdraw from Privacy', async () => same('withdraw: the same step words, then the same stored consent', await both(SCENARIOS.standard, async (p) => {
+    await press(p, 'Privacy'); await p.getByText('Withdraw consent for health data', { exact: true }).click(); await p.waitForTimeout(400)
+    await p.getByText('Remove my health data', { exact: true }).last().click(); await p.waitForTimeout(400)
+  }, async (p) => { const r = (await stored(p)).consents.records.filter((x) => x.type === 'health'); return { last: r[r.length - 1]?.granted, n: r.length, row: await row(p, 'Health data') } })))
+  await run('withdraw step words', async () => same('withdraw step: the same prompt and buttons', await both(SCENARIOS.standard, async (p) => {
+    await press(p, 'Privacy'); await p.getByText('Withdraw consent for health data', { exact: true }).click(); await p.waitForTimeout(500)
+  }, async (p) => { const t = norm(await p.innerText('body')); return ['Download a copy', 'Remove my health data'].filter((x) => t.includes(x)).concat([/On this phone: [^\n]+/.exec(t)?.[0] ?? '']) })))
+  await run('regrant after withdrawal', async () => same('regrant: Turn health data back on opens the one-box sheet, its button off until ticked', await both(SCENARIOS['health data withdrawn'], async (p) => {
+    await press(p, 'Privacy'); await p.getByText('Turn health data back on', { exact: true }).click(); await p.waitForTimeout(500)
+  }, async (p) => {
+    const t = norm(await p.innerText('body'))
+    const btn = p.getByRole('button', { name: 'Turn health data back on', exact: true }).last()
+    const off = (await btn.getAttribute('aria-disabled')) === 'true' || (await btn.isDisabled().catch(() => false))
+    return { sheet: t.includes('I agree to Tilo storing and using my health information'), buttons: await p.getByRole('button', { name: 'Turn health data back on', exact: true }).count(), off }
+  })))
+  await run('delete view', async () => same('Delete account: the same view words', await both(SCENARIOS.standard, async (p) => {
+    await p.getByText('Delete account', { exact: true }).first().click(); await p.waitForTimeout(400)
+  }, async (p) => { const t = norm(await p.innerText('body')); const i = t.indexOf('Delete your account'); return i < 0 ? '' : t.slice(i, t.indexOf('Download a copy first', i) + 21).replace(/\n/g, ' | ') })))
+
   await browser.close()
   console.log(bad ? `${bad} failed` : 'all passed', '· screenshots in', OUT)
   process.exit(bad ? 1 : 0)

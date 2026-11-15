@@ -3,7 +3,8 @@
  * words (src/copy/profile.ts), on N1's kit (lib/ui). Groups in the web's order: the identity card;
  * You and your goal; the pillars and asks (WELLBEING_ENABLED); Tracking; Weekly review;
  * Notifications (the screen only: push is N12); Account and data; Testing; About and Privacy;
- * Sign out. N2's flows (consent, withdraw, delete, export, import) sit behind ./n2.
+ * Sign out. The account flows are N2's (lib/account): the Health data sheet with its withdraw step,
+ * the consent screen and regrant sheet, the delete view, export and import, sign out.
  *
  * `onOpenTab` takes Training's row to Plan; without it the store's tab is set, as on the web.
  */
@@ -28,6 +29,7 @@ import { SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
 import { PROFILE as P } from '@/copy/profile'
 import { ACCOUNT_ROW, BACKUP, PRIVACY_ROW, SIGN_OUT } from '@/copy/account'
 import { LEGAL_LABEL } from '@/copy/legal'
+import type { LegalDocId } from '@/core/legal'
 import { NOTIFY_COPY } from '@/copy/notify'
 import { profileKcal, suggestionWeight, weightPatch } from '@/screens/profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, HEALTH_STATUS_LABEL, directionLabel, healthStatusOf } from '@/screens/profile/profileModel'
@@ -43,12 +45,16 @@ import { TimeField } from '../../lib/ui/pickers'
 import { FLAT_FOOT, NOTE, PROSE } from './text'
 import { BackoffNotices, MindReminderRows, PillarsSettings, SuppNamesRow, YourTimes } from './Settings'
 import { HealthAnswersScreen } from './HealthAnswers'
-import { HealthDataSheet } from './HealthData'
-import { SupportSheet } from './Support'
+import { MindSupportSheet } from './Support'
 import { FeedbackSheet } from './Feedback'
-import { HandsSheet, ImportSheet, SignOutSheet } from './Sheets'
+import { HandsSheet } from './Sheets'
 import { ReviewDaySheet } from '../today/WeeklyReview'
-import { LEGAL_DOCS, agreeHealth, exportBackup, openDeleteAccount, openLegal, pickBackup, withdrawHealth } from './n2'
+import { exportBackup } from '@/data/backup'
+import { HealthDataSheet, ImportSheet, SignOutSheet } from '../../lib/account/AccountData'
+import { RegrantHealthSheet } from '../../lib/account/Consent'
+import { DeleteAccountView } from '../../lib/account/Delete'
+import { pickBackup } from '../../lib/account/backupFile'
+import { openLegal } from '../../lib/account/legal'
 import { pushReady } from './n12'
 
 /** `.list`'s 8 pt below, which N1's List leaves to the screen */
@@ -104,9 +110,13 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const clearProfileOpen = useStore((s) => s.clearProfileOpen)
   const arrival = profileOpen
   const [open, setOpen] = useState<Section | null>(() => (arrival && arrival !== 'health' && arrival !== 'delete-confirm' && arrival !== 'health-answers' ? arrival as Section : null))
-  const [view, setView] = useState<'main' | 'answers'>(() => (arrival === 'health-answers' ? 'answers' : 'main'))
-  const [healthOpen, setHealthOpen] = useState(arrival === 'health')
-  const [supportOpen, setSupportOpen] = useState<false | 'profile' | 'mind'>(false)
+  // 'delete-confirm' (back from a Google re-sign-in) opens the delete view at its confirm step
+  const [view, setView] = useState<'main' | 'delete' | 'answers'>(() => (arrival === 'delete-confirm' ? 'delete' : arrival === 'health-answers' ? 'answers' : 'main'))
+  const [confirmOpen, setConfirmOpen] = useState(arrival === 'delete-confirm')
+  // the health data sheet (N2's), opened at its start or straight at the withdraw step (Privacy's button)
+  const [healthOpen, setHealthOpen] = useState<false | 'main' | 'withdraw'>(arrival === 'health' ? 'main' : false)
+  const [regrantOpen, setRegrantOpen] = useState(false)
+  const [mindSupport, setMindSupport] = useState(false)
 
   // where to scroll on arrival: the suggested targets or Notifications; Display for B1.16's link
   const scroll = useRef<ScrollViewInstance>(null)
@@ -120,7 +130,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
     if (!profileOpen) return
     clearProfileOpen()
     if (profileOpen === 'health-answers' || profileOpen === 'health') return
-    if (profileOpen === 'delete-confirm') { openDeleteAccount(); return }
+    if (profileOpen === 'delete-confirm') return
     want.current = profileOpen === 'notifications' ? 'nf' : 'sug'
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -130,7 +140,12 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   // agreeing from Profile: the full consent screen for someone who never agreed; after a withdrawal, the one-box sheet (N2)
-  const agree = () => agreeHealth((data.consents?.records || []).some((r) => r.type === 'health' && r.granted))
+  // agreeing from Profile: someone who never agreed gets the full consent screen (its three boxes, so
+  // the record covers the terms and age too); after a withdrawal, the one-box regrant sheet (N2's)
+  const agree = () => {
+    if ((data.consents?.records || []).some((r) => r.type === 'health' && r.granted)) setRegrantOpen(true)
+    else useStore.getState().setConsentOpen(true)
+  }
   const health = useConsent('health')
   const healthStatus = healthStatusOf(data)
   const healthRec = latestConsent(data, 'health')
@@ -175,7 +190,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const muted = { color: t.label2 }
 
   // ob7-1: back goes to the Health data sheet it came from
-  if (view === 'answers') return <HealthAnswersScreen onBack={() => { setView('main'); setHealthOpen(true) }} />
+  if (view === 'answers') return <HealthAnswersScreen onBack={() => { setView('main'); setHealthOpen('main') }} />
+  if (view === 'delete') return <DeleteAccountView onBack={() => { setView('main'); setConfirmOpen(false) }} confirmOpen={confirmOpen} setConfirmOpen={setConfirmOpen} />
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -301,7 +317,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <Foot>{P.training.foot}</Foot>
 
         {/* WP9, board B1: pillars and how often Tilo asks (flag on only) */}
-        {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} onSupport={() => setSupportOpen('mind')} />}
+        {WELLBEING_ENABLED && <PillarsSettings onDisplay={openDisplay} onSupport={() => setMindSupport(true)} />}
 
         <Lbl>{P.groups.tracking}</Lbl>
         <List icons style={LIST}>
@@ -379,7 +395,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             <Text style={[tx(17), { color: t.label }]}>{syncPaused ? ACCOUNT_ROW.notSyncing : email}</Text>
             {authed && <Foot style={{ paddingHorizontal: 0, paddingTop: 8 }}>{ACCOUNT_ROW.changeFoot}</Foot>}
           </Disclosure>
-          <SettingRow soft icon="heart" color={MINDF} label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen(true)} />
+          <SettingRow soft icon="heart" color={MINDF} label={P.healthRow} value={HEALTH_STATUS_LABEL[healthStatus]} onPress={() => setHealthOpen('main')} />
           {AI_FEATURES_LIVE && <SettingRow soft icon="bulb" color={GRAY} label={P.aiRow} value={hasConsent(data, 'ai') ? P.notify.on : P.notify.off} onPress={() => undefined} />}
           <Disclosure soft icon="cloud" color={GRAY} label={BACKUP.row} value={BACKUP.value} open={open === 'backup'} onToggle={() => toggle('backup')}>
             <Sub style={{ marginBottom: 10 }}>{!consentLetsSync(data) ? BACKUP.phoneOnly : BACKUP.stored(authed ? BACKUP.storedSyncing : syncPaused ? BACKUP.storedPaused : '')}</Sub>
@@ -396,7 +412,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               </View>
             )}
           </Disclosure>
-          <SettingRow soft icon="x" color={GRAY} label={ACCOUNT_ROW.deleteRow} onPress={openDeleteAccount} />
+          <SettingRow soft icon="x" color={GRAY} label={ACCOUNT_ROW.deleteRow} onPress={() => setView('delete')} />
         </List>
 
         <Lbl>{P.groups.testing}</Lbl>
@@ -425,12 +441,12 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               </>
             )}
             <List style={{ marginBottom: 8 }}>
-              {LEGAL_DOCS.map((id) => <Row key={id} title={LEGAL_LABEL[id]} onPress={() => openLegal(id)} />)}
+              {(['privacy', 'terms', 'cookies'] as LegalDocId[]).map((id) => <Row key={id} title={LEGAL_LABEL[id]} onPress={() => openLegal(id)} />)}
             </List>
             {health.granted
-              ? <Btn kind="gray" title={PRIVACY_ROW.withdraw} onPress={withdrawHealth} />
+              ? <Btn kind="gray" title={PRIVACY_ROW.withdraw} onPress={() => setHealthOpen('withdraw')} />
               : <Btn kind="gray" title={PRIVACY_ROW.turnBackOn} onPress={agree} />}
-            <Btn kind="danger" title={ACCOUNT_ROW.deleteRow} style={{ marginTop: 6 }} onPress={openDeleteAccount} />
+            <Btn kind="danger" title={ACCOUNT_ROW.deleteRow} style={{ marginTop: 6 }} onPress={() => setView('delete')} />
           </Disclosure>
         </List>
 
@@ -442,10 +458,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
-      {healthOpen && <HealthDataSheet onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }}
-        onAnswers={() => { setHealthOpen(false); setView('answers') }} onRedo={() => { setHealthOpen(false); openRedo(true) }}
-        onSupport={() => setSupportOpen('profile')} />}
-      {supportOpen && <SupportSheet context={supportOpen} onClose={() => setSupportOpen(false)} />}
+      {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }}
+        onAnswers={() => { setHealthOpen(false); setView('answers') }} onRedo={() => { setHealthOpen(false); openRedo(true) }} />}
+      {regrantOpen && <RegrantHealthSheet onClose={() => setRegrantOpen(false)} />}
+      {mindSupport && <MindSupportSheet onClose={() => setMindSupport(false)} />}
       {pendingBackup && <ImportSheet backup={pendingBackup} onClose={() => setPendingBackup(null)} onImport={() => { importBackup(pendingBackup); setPendingBackup(null) }} />}
     </View>
   )

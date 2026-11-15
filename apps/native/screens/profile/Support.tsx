@@ -1,8 +1,10 @@
 /**
- * Support and helplines (board ob9-7, note s-ob10), from src/screens/profile/AccountData.tsx
- * SupportSheet; `context="mind"` is mind/SupportSheet.tsx (board B6 frame 1). Pure UI: no store
- * action, no persisted field, no network (its foot says opening it is private). The nation is this
- * sheet's own state, forgotten on close; the list is supportRows.ts's, bundled with the app.
+ * Support and helplines in the Mind context (mind/SupportSheet.tsx, wellbeing board B6 frame 1),
+ * opened from Profile's pillars hint ("support is here", B1.16): Samaritans and Shout first, the
+ * not-a-crisis line and the Mind foot. Profile's own Support sheet (the Health data sheet's row) is
+ * N2's (lib/account/AccountData.tsx). Pure UI: no store action, no persisted field, no network; the
+ * nation is this sheet's own state, forgotten on close.
+ * The two could be one sheet with a `context` option; that's for the lead to place (N2's file or N1).
  */
 import { useState } from 'react'
 import { Text, View } from 'react-native'
@@ -15,12 +17,12 @@ import { LinkBtn } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Opts, Signposts } from '../../lib/ui/choices'
 
-export function SupportSheet({ onClose, context = 'profile' }: { onClose: () => void; context?: 'profile' | 'mind' }) {
+export function MindSupportSheet({ onClose }: { onClose: () => void }) {
   const t = useTokens()
   const [nation, setNation] = useState<UkNation | null>(null)
   const [picking, setPicking] = useState(false)
   const name = nation ? NATIONS.find(([k]) => k === nation)![1] : SUPPORT_MIND.anyNation
-  const list = supportList(nation, { context })
+  const list = supportList(nation, { context: 'mind' })
   const small = [tx(12, 400, 1.4), { color: t.label2, paddingHorizontal: 4 }]
   return (
     <Sheet title={SUPPORT.title} onClose={onClose} left={null} right={<NavBtn title="Done" bold onPress={onClose} />}>
@@ -36,8 +38,8 @@ export function SupportSheet({ onClose, context = 'profile' }: { onClose: () => 
           )}
         <Signposts support list={list} />
         {!nation && <Text style={small}>{SUPPORT.chooseNation}</Text>}
-        {context === 'mind' && <Text style={small}>{SUPPORT_MIND.notCrisis}</Text>}
-        <Text style={small}>{context === 'mind' ? SUPPORT_MIND.foot : SUPPORT.foot}</Text>
+        <Text style={small}>{SUPPORT_MIND.notCrisis}</Text>
+        <Text style={small}>{SUPPORT_MIND.foot}</Text>
       </View>
     </Sheet>
   )

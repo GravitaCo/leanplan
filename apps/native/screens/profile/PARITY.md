@@ -51,6 +51,6 @@ and Delete account (N2's flows; rows checked).
 
 - Push is N12: until then every reminder switch shows the web's no-push state ("Not supported in this
   browser", disabled) and never changes the account. The words stay the web's for now.
-- Behind N2 stubs: consent, withdraw, delete, export, import, the privacy notice.
-- Waiting on N1: text fields, the select and time pickers (iOS-style, as Safari presents the web's),
-  option rows, ticks, helpline rows, plain rows, the sign-out button, text presets.
+- The account flows are N2's (lib/account): Health data (withdraw), consent and regrant, delete, export, import, sign out.
+- Waiting on N1: the Privacy legal rows' neutral `act` style and the back-off notice variant (design carry-overs).
+- For Benn or Sara: Supplements' Edit/Delete placement and the dark-mode ticks card (the web looks wrong; native as intended).
