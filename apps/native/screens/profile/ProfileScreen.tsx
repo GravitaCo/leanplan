@@ -322,8 +322,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
         <Lbl>{P.groups.tracking}</Lbl>
         <List icons style={LIST}>
           <Disclosure soft icon="pill" color={MINDF} label={P.supps.row} value={(pr.supplements || []).length || undefined} open={open === 'supplements'} onToggle={() => toggle('supplements')}>
-            {(pr.supplements || []).map((s) => (
+            {(pr.supplements || []).map((s, i) => (
               <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+                {/* the web's hairline between rows (`.list.icons .li + .li::before`, 58 in) */}
+                {i > 0 && <View style={{ position: 'absolute', top: 0, left: 58, right: 0, height: 1, backgroundColor: t.sep }} />}
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={[tx(17), { color: t.label }]}>{s.name}</Text>
                   <Text style={[tx(13), num, { color: t.label2, marginTop: 2 }]}>{s.time}</Text>
