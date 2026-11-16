@@ -539,6 +539,8 @@ Open before TestFlight and the App Store:
   the Expo install page, which fails on Benn's Wi-Fi (install builds by the direct manifest link meanwhile).
 - The provisioning profile carries HealthKit `health-records` access, which the app never asks for:
   drop it at the next profile regeneration (the app's own entitlement is empty, so nothing is signed with it).
+- Cycle (N14, native only): Benn applies `docs/migrations/2026-11-16-cycle-consent.sql` before any build sets
+  `VITE_CYCLE=1`. Groundwork merged at 14d248a (flag off, no UI, nothing user-visible).
 - Known: the wrong "Photo reading isn't available" message on one failed read (N6 diagnostics in build 17).
 
 How builds reach Benn: every EAS build comes with a direct install line for Safari
