@@ -446,8 +446,28 @@ const SCENARIOS = [
 let bad = 0
 const check = (name, ok, detail) => { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'mind parity:', name, !ok && detail !== undefined ? JSON.stringify(detail).slice(0, 900) : '') }
 
+/** The native web build must be made with EXPO_PUBLIC_E2E=1 (window.__tiloStore) for the native-only checks. */
+async function nativeHasStoreHook(browser) {
+  const ctx = await browser.newContext()
+  const page = await ctx.newPage()
+  await page.goto(NATIVE).catch(() => {})
+  const ok = await page.waitForFunction(() => !!window.__tiloStore, null, { timeout: 15000 }).then(() => true, () => false)
+  await ctx.close()
+  return ok
+}
+
 async function run() {
   const browser = await chromium.launch()
+  // a setup error, said as one: without the hook the native-only checks can't run, which is not a
+  // difference between the apps (lead, 16 Nov 2026: two such failures were read as one)
+  const needsHook = !SELF && SCENARIOS.some(([n, , o]) => o.nativeOnly && (!ONLY || n.startsWith(ONLY)))
+  if (needsHook && !(await nativeHasStoreHook(browser))) {
+    console.log('SETUP ERROR: the native web build at ' + NATIVE + ' has no window.__tiloStore. Build it with')
+    console.log('  EXPO_PUBLIC_E2E=1 npx expo export --platform web --output-dir dist-web')
+    console.log('(the native-only scenarios need it; see the header). Nothing was compared.')
+    await browser.close()
+    process.exit(2)
+  }
   for (const [name, seedFn, opts, fn] of SCENARIOS) {
     if (ONLY && !name.startsWith(ONLY)) continue
     const out = {}
@@ -458,6 +478,7 @@ async function run() {
       try { got = await fn(app) } catch (e) { got = { error: String(e.message || e).split('\n')[0] } }
       check(`${name}: no page errors on native`, !app.errors.length, app.errors)
       await app.ctx.close()
+      if (got.error) { check(`${name}: ran on native`, false, got.error); continue }
       for (const k of Object.keys(opts.nativeOnly)) check(`${name}: ${k} as on the web`, JSON.stringify(got[k]) === JSON.stringify(opts.nativeOnly[k]), { web: opts.nativeOnly[k], native: got[k] })
       continue
     }
