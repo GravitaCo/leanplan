@@ -7,6 +7,7 @@ import { skillById, thingPlan, type Thing } from '@/core/data/skills'
 import type { MindView } from '@/store/store'
 import type { AskId } from '@/core/domain/asks'
 import { parseYmd } from '@/core/domain/date'
+import { ownNight } from '@/core/domain/checkin'
 import { WEIGH_IN } from './summaryCopy'
 
 /** The pillars that are on (C1: a switched-off pillar disappears from Summary). */
@@ -16,12 +17,13 @@ export function pillarsOn(off: readonly Pillar[] | undefined): Record<Pillar, bo
 }
 
 /**
- * Today's check-in has answers (a score or a night). A check-in that holds only a one thing or a
+ * Today's check-in has answers (a score or the person's own night). A check-in that holds only a one thing or a
  * skill isn't a check-in yet, so the card still asks "How are you today?".
  */
 export function checkedIn(c: CheckIn | null | undefined): boolean {
   if (!c) return false
-  return !!(c.mood || c.hunger || c.sleep || c.stress || c.energy || c.sore || c.night)
+  // the person's own night only: a watch's night is never a check-in (native-app-plan §3.4 fix A)
+  return !!(c.mood || c.hunger || c.sleep || c.stress || c.energy || c.sore || ownNight(c))
 }
 
 /** "08:10" from the check-in's saved time (the device's clock, 24-hour as the app shows times). */

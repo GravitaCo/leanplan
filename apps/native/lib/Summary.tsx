@@ -12,6 +12,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { selectAskCtx, useStore } from '@/store/store'
 import { canSaveHealthAnswers, healthDeclined, healthLoggingAllowed, quietNumbers } from '@/data/consent'
+import { hasCheckinContent } from '@/core/domain/checkin'
 import { plannedKeys } from '@/core/domain/plans'
 import { keyTitle, templateFor } from '@/core/domain/routines'
 import { dayMonthOf, fmt, fmtDate, r1, shiftDay, todayStr } from '@/core/domain/date'
@@ -289,9 +290,9 @@ function SummaryPage() {
             {psq(t.mindFill, <Icon name="smile" size={20} color={t.label} />)}
             <View style={{ flex: 1, minWidth: 0 }}>
               {pk(t.mindInk, 'Mind')}
-              <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</Text>
-              <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{day.checkin
-                ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
+              <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : hasCheckinContent(day.checkin) ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</Text>
+              <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{hasCheckinContent(day.checkin)
+                ? day.checkin!.hunger ? `Hunger: ${HUNGER[day.checkin!.hunger - 1]} · tap to update` : 'Tap to update your check-in'
                 : 'Mood, sleep, stress and energy · 20 seconds'}</Text>
             </View>
             <Chevron color={t.label3} />

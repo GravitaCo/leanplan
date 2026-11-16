@@ -3,7 +3,7 @@ import type { UkNation } from '@/core/data/signposts'
 import { SKILLS, THINGS, type Thing } from '@/core/data/skills'
 import { lowSignals } from './dayOptions'
 import { shiftDay, ymd } from './date'
-import { SKILL_IDS, SLEEP_BANDS } from './checkin'
+import { SKILL_IDS, SLEEP_BANDS, countedCheckin, ownNight } from './checkin'
 import { bandWords, isLongBand, nightFor } from './sleep'
 
 /**
@@ -13,7 +13,10 @@ import { bandWords, isLongBand, nightFor } from './sleep'
  */
 
 type Days = Record<string, DayLog | undefined>
-const checkinOn = (days: Days, d: string): CheckIn | null => days[d]?.checkin || null
+/** The day's check-in when it counts as one: an imported night alone is not a check-in (§3.4 fix A). */
+const checkinOn = (days: Days, d: string): CheckIn | null => countedCheckin(days[d]?.checkin)
+/** The person's own night only: patterns and the week's sleep line never read a watch (§3.4). */
+const ownNightView = (c: CheckIn | null | undefined) => nightFor(c ? { ...c, night: ownNight(c) } : c)
 /** `n` days ending on `end` (inclusive), newest first */
 const lastDays = (end: string, n: number): string[] => Array.from({ length: n }, (_, i) => shiftDay(end, -i))
 
@@ -66,7 +69,7 @@ export function observation(days: Days, today: string): Observation | null {
   let longN = 0, longOk = 0, shortN = 0, shortOk = 0
   for (const d of lastDays(today, OBS_DAYS)) {
     const c = checkinOn(days, d)
-    const n = nightFor(c)
+    const n = ownNightView(c)
     if (!n || !c?.energy) continue
     const ok = c.energy >= 2
     if (isLongBand(n.band)) { longN++; if (ok) longOk++ } else { shortN++; if (ok) shortOk++ }
@@ -110,7 +113,7 @@ export function weekReflection(days: Days, weekStart: string, opts: { today: str
   // most common band; a tie goes to the band of the most recent of the tied nights (judgement call)
   const tally = new Map<SleepBand, { n: number; last: number }>()
   cs.forEach((c, i) => {
-    const n = nightFor(c)
+    const n = ownNightView(c)
     if (!n) return
     const t = tally.get(n.band) || { n: 0, last: -1 }
     tally.set(n.band, { n: t.n + 1, last: i })

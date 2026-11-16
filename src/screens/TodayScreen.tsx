@@ -44,6 +44,7 @@ import { SetupCard, setupCardDue } from './onboarding/Consent'
 import { pickAsks, type AskId } from '@/core/domain/asks'
 import { thingOptions } from '@/core/domain/mind'
 import { offerLighter } from '@/core/domain/dayOptions'
+import { hasCheckinContent } from '@/core/domain/checkin'
 import { thingByKey, type Thing } from '@/core/data/skills'
 import { MindCard } from './today/MindCard'
 import { ThingPlanSheet } from './today/ThingPlanSheet'
@@ -267,9 +268,9 @@ export function TodayScreen() {
           <span className="psq" style={{ background: 'var(--mind-fill)' }}><Icon name="smile" size={20} /></span>
           <span className="m">
             <span className="pk" style={{ color: 'var(--mind-ink)' }}>Mind</span>
-            <span className="pt">{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</span>
-            <span className="ps">{day.checkin
-              ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
+            <span className="pt">{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : hasCheckinContent(day.checkin) ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</span>
+            <span className="ps">{hasCheckinContent(day.checkin)
+              ? day.checkin!.hunger ? `Hunger: ${HUNGER[day.checkin!.hunger - 1]} · tap to update` : 'Tap to update your check-in'
               : 'Mood, sleep, stress and energy · 20 seconds'}</span>
           </span>
           <Chevron />

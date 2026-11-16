@@ -8,6 +8,7 @@ import { profileRouting, sexOf } from './onboarding'
 import { dayPictures, GENTLE_PATTERNS, patternLine, weekPicture, type MindContext, type PatternCode, type PatternResult, type WeekPicture } from './weekPicture'
 import { daysBetween, levelWord, pctWeek, weighIns, weightTrend, type LevelWord, type WeightTrend } from './weightTrend'
 import { LOOP_THRESHOLDS, type LoopThresholds } from './loopThresholds'
+import { hasCheckinContent } from './checkin'
 
 /**
  * The maintenance loop (docs/plans/maintenance-loop.md; boards ml-a1 to ml-d2, approved by Benn on
@@ -585,7 +586,7 @@ export function reviewWaiting(s: AppState, today: string, healthConsent: boolean
   if ((p.lastReviewAt && p.lastReviewAt >= day) || p.reviewHidden === day) return false
   // a week to look back on: something logged at least 7 days before the review day (a new person
   // waits for their first full week: ship-critic, 8 Oct), and something in the 7 days before it
-  const used = (d: string) => { const x = s.days[d]; return !!x && !!(x.foods?.length || x.checkin || x.weight || x.sessions?.length || x.workout) }
+  const used = (d: string) => { const x = s.days[d]; return !!x && !!(x.foods?.length || hasCheckinContent(x.checkin) || x.weight || x.sessions?.length || x.workout) }
   if (!Object.keys(s.days).some((d) => d <= shiftDay(day, -7) && used(d))) return false
   for (let i = 1; i <= 7; i++) if (used(shiftDay(day, -i))) return true
   return false

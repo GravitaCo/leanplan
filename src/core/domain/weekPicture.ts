@@ -5,6 +5,7 @@ import { avg, plansDue, rangeFor } from './insights'
 import { plannedKeys } from './plans'
 import { workoutsOf } from './sessions'
 import { offerLighter } from './dayOptions'
+import { countedCheckin } from './checkin'
 import { lastLogged } from './library'
 import { PROTEIN_MEAL_G } from './foodMode'
 import { LOOP_THRESHOLDS, type LoopThresholds } from './loopThresholds'
@@ -69,7 +70,8 @@ export interface DayPicture {
 const answered = (v: number | undefined) => (v ? v : undefined)
 
 function mindOf(s: AppState, d: string): DayMind | null {
-  const c = s.days[d]?.checkin
+  // an imported night alone is not a check-in (native-app-plan §3.4 fix A)
+  const c = countedCheckin(s.days[d]?.checkin)
   if (!c) return null
   const recent: (CheckIn | null | undefined)[] = []
   for (let i = 1; i <= LOW_HISTORY; i++) recent.push(s.days[shiftDay(d, -i)]?.checkin)
