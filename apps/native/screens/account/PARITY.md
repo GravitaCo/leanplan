@@ -31,6 +31,9 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 
 ## Sign-in (AuthScreen)
 
+**Benn approved the sign-in screens on the phone, 16 Nov ("Login screens approved").** The approval covers the screens as built.
+The three sign-in error messages (AUTH.errOffline, errGoogle, errApple) are with Benn separately, through the lead.
+
 | Item | Native | Check |
 |---|---|---|
 | Sign in, Create account, Reset password, Check your email: words | ✓ | E2E words, S (light, dark) |
@@ -39,7 +42,7 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 | Sign-up and reset emails, "send it again" repeats the right one, rate-limit message | ✓ | E2E (rate limit by reading) |
 | Email links come back to the app (tilo://auth-callback, PKCE) | ✓ | U (code parsing), Phone |
 | Continue with Google (system sign-in sheet) | ✓ | Phone (worked in the spike) |
-| Continue with Apple (iOS only, not on the web: Benn approved 13 Nov; Apple's own button above Google's, same size) | ✓ built | U (re-confirm rules), Phone: needs a dev build with modules/tilo-auth; `design` reviews the screen from a phone screenshot |
+| Continue with Apple (iOS only, not on the web: Benn approved 13 Nov; Apple's own button above Google's, same size) | ✓ built | U (re-confirm rules), Phone: Benn approved the screen on the phone, 16 Nov. Sign-in itself still failed with error 1000 on build 3dcc7038; retry pending |
 | Reset link signs in with no "set a new password" step | as web (web gap, separate task) | |
 | Banner (signed out elsewhere, guest gone) | ✓ | by reading |
 | Sign in with Apple revocation on deletion | ✓ built (increment (a), docs/plans/native-sign-in-with-apple.md); not deployed until the APPLE_* secrets are set | U (scripts/wellbeing/apple.ts, stand-in Apple), Phone after deploy |
