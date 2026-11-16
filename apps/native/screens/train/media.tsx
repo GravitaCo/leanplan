@@ -14,7 +14,7 @@ import type { ExerciseMedia, LogShape } from '@/core/types'
 import { mediaUrl, previewUrls } from '@/core/data/media'
 import { Icon } from '../../lib/ui/icons'
 import { InSheet } from '../../lib/ui/kit'
-import { tx, useTokens } from '../../lib/theme'
+import { tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 
 /** The Referer the web app sends (app.tilo.fit is its origin). security-data owns this choice. */
 export const BUNNY_REFERER = 'https://app.tilo.fit/'
@@ -94,7 +94,7 @@ export function Thumb({ video, shape, play, big, size }: {
   }
   return (
     <View aria-hidden style={[box, { backgroundColor: phBg, alignItems: 'center', justifyContent: 'center' }]}>
-      {shape ? <Text style={[tx(12, 600), { color: t.label2 }]}>{shape === 'hold' ? 'Hold' : shape === 'duration' ? 'Time' : 'Cue'}</Text> : <Icon name="dumbbell" size={20} color={t.label2} />}
+      {shape ? <Text style={[tx(12, 600), GLYPH_ROOM, { color: t.label2 }]}>{shape === 'hold' ? 'Hold' : shape === 'duration' ? 'Time' : 'Cue'}</Text> : <Icon name="dumbbell" size={20} color={t.label2} />}
     </View>
   )
 }

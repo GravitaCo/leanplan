@@ -32,7 +32,7 @@ import {
   COPY, DAYS_SPREAD, MINUTES_WARMUP, MINUTES_WARMUP_S, PARTS, partLabel, MEDICAL_ITEMS, NOTES, ONE_DAY_NOTE, TAP, TAP_GOAL, WHY_LINK,
   PREGNANCY_FOLLOWUP, PREGNANCY_OPTIONS, READINESS_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT, WIZ,
 } from '@/copy/onboarding'
-import { BTN, num, tx, useTokens } from '../../lib/theme'
+import { BTN, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, LinkBtn, slop } from '../../lib/ui/kit'
 import { BareSheet } from '../../lib/ui/primitives'
 import { CheckTiles, ChoiceTiles, type TileOpt } from '../../lib/ui/Tiles'
@@ -135,7 +135,7 @@ function Frame({ step, back, onSkip, cta, children, title, lead }: { step: StepI
             </View>
           : <View style={{ flex: 1 }} />}
         {skip
-          ? <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={slop(34, 22)} style={{ minWidth: 34 }}><Text style={[tx(16, 500, 1.3, BTN), { color: t.tint, textAlign: 'right' }]}>{WIZ.skip}</Text></Pressable>
+          ? <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={slop(34, 22)} style={{ minWidth: 34 }}><Text style={[tx(16, 500, 1.3, BTN), GLYPH_ROOM, { color: t.tint, textAlign: 'right' }]}>{WIZ.skip}</Text></Pressable>
           : <View style={{ minWidth: 34 }} />}
       </View>
       {c && <ScreenH>{c.title}</ScreenH>}
@@ -192,7 +192,7 @@ function PartIntro({ step, photo, onGo, onAlt }: { step: 'intro' | 'handoff' | '
             {[1, 2, 3].map((i) => <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= p.n ? t.label : t.sep }} />)}
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text style={[tx(13, 600), { color: t.tint }]}>{partLabel(p.n, p.k)}</Text>
+            <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{partLabel(p.n, p.k)}</Text>
             {p.time ? <Text style={[tx(13), { color: t.label2 }]}>{p.time}</Text> : null}
           </View>
           <ScreenH style={{ marginTop: -4 }}>{c.title}</ScreenH>
@@ -288,7 +288,7 @@ function WzSeg<T extends string | boolean>({ label, opts, value, onChange }: { l
         return (
           <Pressable key={String(k)} accessibilityRole="radio" aria-checked={on} onPress={() => onChange(k)} hitSlop={slop(0, 38)}
             style={{ flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
-            <Text style={[tx(15, 500, 1.25, BTN), { color: on ? t.label : t.label2, textAlign: 'center' }]}>{x}</Text>
+            <Text style={[tx(15, 500, 1.25, BTN), GLYPH_ROOM, { color: on ? t.label : t.label2, textAlign: 'center' }]}>{x}</Text>
           </Pressable>
         )
       })}
@@ -356,14 +356,14 @@ function Three<T extends string>({ k, opts, value, onPick }: { k: string; opts: 
   const t = useTokens()
   return (
     <View style={{ gap: 10 }}>
-      <Text style={[tx(17, 600), { color: t.label }]}>{k}</Text>
+      <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{k}</Text>
       <View accessibilityRole="radiogroup" accessibilityLabel={k} style={{ flexDirection: 'row', gap: 6 }}>
         {opts.map(([v, x]) => {
           const on = value === v
           return (
             <Pressable key={v} accessibilityRole="radio" aria-checked={on} onPress={() => onPick(on ? undefined : v)}
               style={{ flex: 1, minHeight: 52, paddingVertical: 8, paddingHorizontal: 4, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.bg }}>
-              <Text style={[tx(15, 500, 1.25, BTN), { textAlign: 'center', color: on ? t.btnInk : t.label }]}>{x}</Text>
+              <Text style={[tx(15, 500, 1.25, BTN), GLYPH_ROOM, { textAlign: 'center', color: on ? t.btnInk : t.label }]}>{x}</Text>
             </Pressable>
           )
         })}
@@ -399,7 +399,7 @@ function Wellbeing({ f }: P) {
   return (
     <Frame step="wellbeing" back={back} onSkip={() => go(withoutOutcome(d, 'wellbeing'))} cta={<TapFoot />}>
       {/* `.wz-state`'s 18 loses to `.wz-card`'s 14 on web */}
-      <WzCard><Text style={[tx(19, 500, 1.4), { color: t.label }]}>{WELLBEING_STATEMENT}</Text></WzCard>
+      <WzCard><Text style={[tx(19, 500, 1.4), GLYPH_ROOM, { color: t.label }]}>{WELLBEING_STATEMENT}</Text></WzCard>
       <ChoiceTiles label={WIZ.foodAndWeight} opts={tiles(WELLBEING_OPTIONS)} value={a} onPick={pick} />
     </Frame>
   )
@@ -415,7 +415,7 @@ function UnitSeg<T extends string>({ label, opts, value, onChange }: { label: st
         return (
           <Pressable key={k} accessibilityRole="radio" aria-checked={on} onPress={() => onChange(k)} hitSlop={slop(0, 28)}
             style={{ flex: 1, borderRadius: 9, paddingVertical: 6, paddingHorizontal: 12, alignItems: 'center', backgroundColor: on ? t.segon : 'transparent', boxShadow: on ? '0 1px 3px rgba(0, 0, 0, 0.12)' : undefined }}>
-            <Text style={[tx(13, 500, 1.3, BTN), { color: on ? t.label : t.label2 }]}>{x}</Text>
+            <Text style={[tx(13, 500, 1.3, BTN), GLYPH_ROOM, { color: on ? t.label : t.label2 }]}>{x}</Text>
           </Pressable>
         )
       })}
@@ -586,7 +586,7 @@ function Days({ f }: P) {
       {one && <WzCard quiet ink>{ONE_DAY_NOTE}</WzCard>}
       <View style={{ backgroundColor: t.card, borderRadius: 22, paddingVertical: 18, paddingHorizontal: 16, gap: 14, marginTop: 6 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-          <Text style={[tx(17, 600), { color: t.label }]}>{one ? WIZ.days.which1 : WIZ.days.which}</Text>
+          <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{one ? WIZ.days.which1 : WIZ.days.which}</Text>
           {chosen ? <Text style={[tx(14, 400, 1.4), { color: t.label2, flexShrink: 1, textAlign: 'right' }]}>{chosen}</Text> : null}
         </View>
         <View role="group" accessibilityLabel={WIZ.days.whichLabel} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -595,7 +595,7 @@ function Days({ f }: P) {
             return (
               <Pressable key={k} accessibilityRole="checkbox" aria-checked={on} accessibilityLabel={name} onPress={() => setP(daysToggle(p, k))}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
-                <Text style={[tx(16, 600, 1.3, BTN), { color: on ? t.btnInk : t.label }]}>{l}</Text>
+                <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: on ? t.btnInk : t.label }]}>{l}</Text>
               </Pressable>
             )
           })}
@@ -651,7 +651,7 @@ function Note({ kind, onGo }: { kind: 'wellbeing' | 'readiness' | 'pregnancy' | 
   const c = NOTES[kind]
   return (
     <Page top={64} cta={<Cta onClick={onGo} />}>
-      <Text style={[tx(13, 600), { color: t.tint }]}>{c.eyebrow}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{c.eyebrow}</Text>
       <ScreenH style={{ marginTop: -8 }}>{c.title}</ScreenH>
       <Lead body ink>{c.lead}</Lead>
       <Text style={[tx(13), { color: t.label2, paddingHorizontal: 4, marginBottom: -8 }]}>{c.h}</Text>

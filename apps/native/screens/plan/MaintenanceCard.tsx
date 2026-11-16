@@ -6,7 +6,7 @@ import { Text, View } from 'react-native'
 import { MAINTENANCE_STEPS } from '@/copy/plan'
 import { Btn } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 
 export function MaintenanceCard({ onClose }: { onClose: () => void }) {
   const t = useTokens()
@@ -27,10 +27,10 @@ export function MaintenanceCard({ onClose }: { onClose: () => void }) {
         {MAINTENANCE_STEPS.map(([h, p], i) => (
           <View key={h} style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={[tx(14, 600), num, { color: t.tint }]}>{i + 1}</Text>
+              <Text style={[tx(14, 600), GLYPH_ROOM, num, { color: t.tint }]}>{i + 1}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[tx(17, 600), { color: t.label, marginBottom: 4 }]}>{h}</Text>
+              <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label, marginBottom: 4 }]}>{h}</Text>
               <Text style={[tx(15, 400, 1.45), { color: t.label2 }]}>{p}</Text>
             </View>
           </View>

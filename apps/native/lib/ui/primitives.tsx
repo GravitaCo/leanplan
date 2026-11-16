@@ -5,10 +5,11 @@
  * swipe-back are an improvement candidate that needs a board first (native-build-brief §4).
  *
  * Scroll lock: a sheet is a Modal, which already stops the screen behind it from scrolling, so
- * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
+ * native needs no `useScrollLock`; with the keyboard up a sheet sits above it, its top edge never
+ * moving off screen, and the focused field scrolls into view (`useKeyboard`).
  */
-import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
+import { useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react'
+import { AccessibilityInfo, Alert, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type KeyboardEvent, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { create } from 'zustand'
@@ -18,8 +19,9 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
+import { DIAG, diagLines } from '../platform/diag'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
-import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
 import { UI } from '@/copy/ui'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
@@ -33,16 +35,16 @@ const CONN_ICON: Record<ConnectionKind, IconName> = {
 }
 
 /** `.cpill`: the pill's look for one state (the gallery draws every state). */
-export function ConnectionPillView({ kind, label, open, onPress }: { kind: ConnectionKind; label: string; open?: boolean; onPress?: () => void }) {
+export function ConnectionPillView({ kind, label, open, onPress, onLongPress }: { kind: ConnectionKind; label: string; open?: boolean; onPress?: () => void; onLongPress?: () => void }) {
   const t = useTokens()
   const bg = useSurface(t)
   const color = kind === 'up-to-date' ? t.label2 : t.label
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={onPress ? { expanded: !!open } : undefined}
-      onPress={onPress} hitSlop={slop(0, 25)}
+      onPress={onPress} onLongPress={onLongPress} hitSlop={slop(0, 25)}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 13, backgroundColor: bg, flexShrink: 1, minWidth: 0 }}>
       <Icon name={CONN_ICON[kind]} size={15} color={color} />
-      <Text numberOfLines={1} style={[tx(12, 500, 15), num, { color, flexShrink: 1 }]}>{label}</Text>
+      <Text numberOfLines={1} style={[tx(12, 500, 15), GLYPH_ROOM, num, { color, flexShrink: 1 }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -51,7 +53,9 @@ export function ConnectionPillView({ kind, label, open, onPress }: { kind: Conne
 export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: () => void }) {
   const c = useConnection()
   const runSync = useStore((s) => s.runSync)
-  return <ConnectionPillView kind={c.kind} label={c.label} open={open} onPress={() => { if (c.kind === 'problem') runSync(); onToggle?.() }} />
+  // internal test builds: a long press shows the last sync warnings (lib/platform/diag.ts)
+  const onLongPress = DIAG ? () => { const l = diagLines(); Alert.alert('Sync details', l.length ? l.join('\n\n') : 'No sync warnings since the app opened.') } : undefined
+  return <ConnectionPillView kind={c.kind} label={c.label} open={open} onLongPress={onLongPress} onPress={() => { if (c.kind === 'problem') runSync(); onToggle?.() }} />
 }
 
 /** `.cline`: the line under the pill, the state's name in bold, then what it means. */
@@ -83,13 +87,13 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
     <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-        {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
+        {ini ? <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
       </View>
     </Pressable>
   )
 }
 
-const ltitle = (t: Tokens) => [tx(34, 600, 40, -0.025), { color: t.label, marginTop: 2 }]
+const ltitle = (t: Tokens) => [tx(34, 600, 40, -0.025), GLYPH_ROOM, { color: t.label, marginTop: 2 }]
 
 /**
  * A tab's large-title header (`.hdr`): the eyebrow with the connection pill across from it (tap for
@@ -108,11 +112,12 @@ export function PageHeader({ eyebrow, title, right, pill = true, profile = true,
     <View style={{ paddingTop: top ?? insets.top + 18, paddingBottom: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20, minWidth: 0, flexShrink: 1 }}>
-          {typeof eyebrow === 'string' ? <Text style={[tx(13, 500, 1.3, 0), { color: t.label2 }]}>{eyebrow}</Text> : eyebrow}
+          {typeof eyebrow === 'string' ? <Text style={[tx(13, 500, 1.3, 0), GLYPH_ROOM, { color: t.label2 }]}>{eyebrow}</Text> : eyebrow}
         </View>
         {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: av ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+      {/* .hdr .hdr-row: 8 pt below the pill's row, so the 44 pt header control never touches the pill */}
+      <View style={{ flexDirection: 'row', alignItems: av ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
         <Text accessibilityRole="header" style={[ltitle(t), { flexShrink: 1, minWidth: 0 }]}>{title}</Text>
         {av
           ? right ? <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>{right}<ProfileButton onPress={onProfile} /></View> : <ProfileButton onPress={onProfile} />
@@ -139,7 +144,7 @@ export function CatHead({ color, icon, label }: { color: Category; icon: IconNam
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name={icon} color={ink} />
-        <Text style={[tx(15, 600), { color: ink }]}>{label}</Text>
+        <Text style={[tx(15, 600), GLYPH_ROOM, { color: ink }]}>{label}</Text>
       </View>
     </View>
   )
@@ -152,7 +157,7 @@ export function BackButton({ onPress, label = UI.back, small }: { onPress: () =>
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', marginLeft: small ? -6 : 0, opacity: pressed ? 0.7 : 1 })}>
       <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
-      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
+      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -178,7 +183,7 @@ export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, col
       hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
       style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
       {icon && <Icon name={icon} color={fg} />}
-      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: fg }]}>{title}</Text>}
+      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), GLYPH_ROOM, { color: fg }]}>{title}</Text>}
     </Pressable>
   )
 }
@@ -201,7 +206,7 @@ export function Seg<T extends string>({ options, value, onChange, label, minHeig
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, h)}
             style={{ flex: 1, minHeight: minHeight, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
-            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
+            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{l}</Text>
           </Pressable>
         )
       })}
@@ -334,7 +339,7 @@ export function Row({ k, title, bold, expanded, actions, tag, sub, sub2, value, 
       <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
         {k != null && <Text style={[tx(13, 400, 1.3, tr), { color: t.label2 }]}>{k}</Text>}
         {/* .li.act: 16 pt medium */}
-        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
+        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), GLYPH_ROOM, { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
         {(sub != null || tag != null) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
             {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
@@ -368,7 +373,7 @@ export function Tag({ children }: { children: ReactNode }) {
   return (
     // `vertical-align: 1px` on the web: sits 1 pt above the line's centre
     <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
-      <Text style={[tx(11, 700, 1.3, 0.3 / 11), { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
+      <Text style={[tx(11, 700, 1.3, 0.3 / 11), GLYPH_ROOM, { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
     </View>
   )
 }
@@ -449,16 +454,33 @@ export function Disclosure({ icon, color, soft, label, value, open, onToggle, ch
 const SHEET_IN = SlideInDown.duration(340).easing(Easing.bezier(0.2, 0.9, 0.25, 1).factory())
 const FADE_IN = FadeIn.duration(250)
 
-function useKeyboardUp() {
-  const [up, setUp] = useState(false)
+/**
+ * The keyboard's overlap with the window's foot, in pt (iOS; 0 elsewhere: Android resizes the
+ * window itself), animated as the keyboard moves, plus `up` (any keyboard showing, on both).
+ * `onShown` runs once the keyboard has settled (to scroll the focused field into view).
+ */
+function useKeyboard(windowHeight: number, onShown: () => void) {
+  const [state, setState] = useState({ up: false, h: 0 })
+  const shown = useRef(onShown)
+  shown.current = onShown
   useEffect(() => {
-    const a = Keyboard.addListener('keyboardWillShow', () => setUp(true))
-    const b = Keyboard.addListener('keyboardWillHide', () => setUp(false))
-    const c = Keyboard.addListener('keyboardDidShow', () => setUp(true))
-    const d = Keyboard.addListener('keyboardDidHide', () => setUp(false))
-    return () => { a.remove(); b.remove(); c.remove(); d.remove() }
-  }, [])
-  return up
+    const ios = Platform.OS === 'ios'
+    const move = (e: KeyboardEvent | null, up: boolean) => {
+      // a zero-height or floating frame (a hardware keyboard, an undocked one) overlaps nothing
+      const h = ios && up && e && e.endCoordinates.height > 0 ? Math.max(0, windowHeight - e.endCoordinates.screenY) : 0
+      if (ios && e?.duration) LayoutAnimation.configureNext({ duration: e.duration, update: { type: LayoutAnimation.Types.keyboard } })
+      setState((s) => (s.up === up && s.h === h ? s : { up, h }))
+    }
+    const subs = [
+      Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (e) => move(e, true)),
+      Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', (e) => move(e, false)),
+      // the decimal pad and the text keyboard differ in height; a switch between them changes the frame
+      ...(ios ? [Keyboard.addListener('keyboardWillChangeFrame', (e) => { if (e.endCoordinates.screenY < windowHeight) move(e, true) })] : []),
+      Keyboard.addListener('keyboardDidShow', () => requestAnimationFrame(() => shown.current())),
+    ]
+    return () => subs.forEach((x) => x.remove())
+  }, [windowHeight])
+  return state
 }
 
 /** Open overlay sheets' close functions, oldest first. */
@@ -497,8 +519,23 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const reduce = useReducedMotion()
-  const kb = useKeyboardUp()
-  const max = height - insets.top - 12
+  // the focused field, scrolled into view inside the sheet once the keyboard is up (as Safari does)
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
+  const view = useRef({ y: 0, h: 0 })
+  const reveal = () => {
+    const input = TextInput.State.currentlyFocusedInput() as unknown as { measureLayout?: (rel: unknown, ok: (x: number, y: number, w: number, h: number) => void, fail?: () => void) => void } | null
+    const inner = (scroll.current as unknown as { getInnerViewRef?: () => unknown } | null)?.getInnerViewRef?.()
+    if (!input?.measureLayout || !inner || !scroll.current) return
+    input.measureLayout(inner, (_x, y, _w, h) => {
+      const { y: top, h: vh } = view.current
+      if (y < top + 8) scroll.current?.scrollTo({ y: Math.max(0, y - 16), animated: true })
+      else if (y + h > top + vh - 8) scroll.current?.scrollTo({ y: y + h - vh + 16, animated: true })
+    }, () => {})
+  }
+  const kb = useKeyboard(height, reveal)
+  // the sheet sits above the keyboard and never grows past the top: its top edge (grabber, title,
+  // Done, close) stays on screen, and what doesn't fit scrolls
+  const max = Math.max(240, height - insets.top - 12 - kb.h)
   const anim = animate && !reduce
   // overlay: Android's back closes it. Outside a Modal, BackHandler hears it; inside one (the guided
   // player), the holder's onRequestClose must call overlayBack() first, which closes the topmost
@@ -514,23 +551,25 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
   }, [overlay])
   const body = (
     <>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <View style={{ flex: 1, paddingBottom: kb.h }}>
         <Animated.View entering={anim ? FADE_IN : undefined} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
           <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
         </Animated.View>
         <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
           <Animated.View testID="sheet" role="dialog" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
-            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb ? 0 : insets.bottom }}>
+            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb.h > 0 || (kb.up && Platform.OS !== 'ios') ? 0 : insets.bottom }}>
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
             <InSheet.Provider value>
-              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
+              <ScrollView ref={scroll} onLayout={(e) => { view.current.h = e.nativeEvent.layout.height }}
+                onScroll={(e) => { view.current.y = e.nativeEvent.contentOffset.y }} scrollEventThrottle={32}
+                style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
             </InSheet.Provider>
           </Animated.View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
       <ToastHost sheet={sheetId} />
     </>
   )

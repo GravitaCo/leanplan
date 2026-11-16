@@ -9,7 +9,7 @@ import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react'
 import { AccessibilityInfo, findNodeHandle, Platform, ScrollView, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { WIZ } from '@/copy/onboarding'
-import { tx, useTokens } from '../../lib/theme'
+import { tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { NavBtn } from '../../lib/ui/primitives'
 
 /** Set by the wizard: false only for the first screen it shows, which keeps the system's own start. */
@@ -27,7 +27,7 @@ export function ScreenH({ children, style }: { children: ReactNode; style?: Styl
   }, [])
   return (
     <Text ref={ref} accessibilityRole="header" aria-level={1} {...(Platform.OS === 'web' ? { tabIndex: -1 } : {})}
-      style={[tx(34, 700, 40, -0.03), { color: t.label, marginTop: 28 }, style]}>{children}</Text>
+      style={[tx(34, 700, 40, -0.03), GLYPH_ROOM, { color: t.label, marginTop: 28 }, style]}>{children}</Text>
   )
 }
 
@@ -85,7 +85,7 @@ export function SheetHead({ title, onDone, done = WIZ.done }: { title: string; o
   const t = useTokens()
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-      <Text accessibilityRole="header" style={[tx(22, 600), { color: t.label, flex: 1 }]}>{title}</Text>
+      <Text accessibilityRole="header" style={[tx(22, 600), GLYPH_ROOM, { color: t.label, flex: 1 }]}>{title}</Text>
       <NavBtn title={done} bold onPress={onDone} />
     </View>
   )

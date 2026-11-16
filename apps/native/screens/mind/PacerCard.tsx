@@ -14,7 +14,7 @@ import type { PacerPattern } from '@/core/domain/pacer'
 import type { PacerSegment } from './pacerClock'
 import { BORDER, DIAM, KNOTS, OPAC, S_MIN } from '@/screens/mind/glow'
 import { Card } from '../../lib/ui/kit'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { pacerGlow } from './model'
 import { usePacerClock } from './usePacerClock'
 
@@ -108,7 +108,7 @@ export function PacerCard({ pattern, minutes, run, reduced, onLeft, onDone }: {
               which hear the word only (web: count aria-hidden, word aria-live polite) */}
           <Text testID="reset-count" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
             style={[tx(112, 200, 1, -0.05), num, { letterSpacing: -5.6, color: t.label }]}>{st.count}</Text>
-          <Text testID="reset-word" accessibilityLiveRegion="polite" style={[tx(17, 500), { marginTop: 4, color: t.mindInk }]}>{st.word}</Text>
+          <Text testID="reset-word" accessibilityLiveRegion="polite" style={[tx(17, 500), GLYPH_ROOM, { marginTop: 4, color: t.mindInk }]}>{st.word}</Text>
         </View>
       )}
     </Card>

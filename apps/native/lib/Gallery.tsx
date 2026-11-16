@@ -18,6 +18,7 @@ import { Banner, Big, Btn, Card, Chip, Chips, DashAdd, LinkBtn, List, Note, Roun
 import { Scale, Select, Slider, Stepper } from './ui/controls'
 import { DateInput, TimeField } from './ui/pickers'
 import { CoverImage } from './ui/CoverImage'
+import { TextFit } from './TextFit'
 import { frac } from '@/core/domain/estimate'
 import { AddC, Row, Swatch, XBtn, BackButton, BareSheet, overlayBack, useOverlayOpen, CatHead, ConnectionLineView, ConnectionPillView, Disclosure, NavBtn, PageHeader, Seg, SettingRow, Sheet, Toggle } from './ui/primitives'
 import { KcalBar, MacroTrio, Meter, Rings, Sparkline, WeekBars } from './ui/charts'
@@ -482,6 +483,11 @@ export function Gallery({ top, standalone = false }: { top?: number; standalone?
         <CoverImage source={require('../assets/auth-hero.jpg')} x={0.5} y={0.3} style={{ height: 160, borderRadius: 16 }} />
         <GrpH h2>This week</GrpH>
         <List><Row title="Monday" value="Push" /></List>
+      </Sec>
+
+      {/* a device check, native only (not in the parity run): see lib/TextFit.tsx */}
+      <Sec id="textfit" title="Text fit (device check: box width vs laid-out line, three ways of naming Geist SemiBold)">
+        <TextFit />
       </Sec>
 
       <Sec id="banner" title="Banner">

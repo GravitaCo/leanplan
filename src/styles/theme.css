@@ -39,6 +39,7 @@
   --placeholder: #646469;
   --sep: #e5e1db;
   --dash: #cfc9c1;      /* dashed "add" outlines */
+  --ring: #8e8a85;      /* an empty checkbox's edge (consent, onboarding's squares; Benn, 16 Nov 2026): 3:1 or more on --card, --elev and --bg in both modes */
 
   /* interactive */
   --tint: #9a4a7a;      /* mauve */
@@ -82,7 +83,7 @@
     --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
     --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
     --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
-    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a;
+    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a; --ring: #7c7c80;
     --tint: #cd7fae; --tint-soft: #3a2733; --on-tint: #000000;
     --btn: #ffffff; --btn-ink: #000000;
     --red: #ff8a80;
@@ -142,6 +143,8 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .hdr-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
 .hdr-top .eyebrow { min-width: 0; }
 .hdr-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+/* 8 px between the sync pill's row and the title row, so the 44 px header control never touches the pill (Benn, 16 Nov 2026) */
+.hdr .hdr-row { margin-top: 8px; }
 /* the connection indicator (ob6-7): one neutral pill, never red or amber */
 .cpill {
   display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 13px; border: 0; flex: 0 1 auto; min-width: 0;
@@ -415,7 +418,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .navbtn { background: none; border: 0; color: var(--tint); font-size: 17px; padding: 4px 0; display: inline-flex; align-items: center; }
 .navbtn.b { font-weight: 600; }
 .sheet-bd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 16px 24px; flex: 1; }
-.sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
+.sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input, .sheet .ticks { background: var(--elev); }
 .sheet .scale button.on { background: var(--tint); }
 
 /* duplicate foods (boards dup-1 to dup-4) */
@@ -696,7 +699,6 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .demo-bot { bottom: 0; padding-top: 96px; padding-bottom: calc(env(safe-area-inset-bottom) + 24px);
   background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.78) 50%); }
 .demo-top button, .demo-play { pointer-events: auto; }
-.demo-top, .demo-bot { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
 .demo-t { font-size: 17px; font-weight: 600; line-height: 1.3; }
 .demo-sub { font-size: 13px; font-weight: 500; opacity: 0.75; margin-top: 2px; }
 .demo-top.has-back { justify-content: flex-start; gap: 4px; flex-direction: column; align-items: flex-start; }
@@ -738,6 +740,8 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .list.icons .li .tr { flex: 1 1 0; min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 /* rows with no value: the label fills the row */
 .list.icons .li .m:nth-last-child(2), .list.icons .li .m:last-child { flex: 1 1 auto; min-width: 0; max-width: none; }
+/* a row inside an open section (Supplements' name, time, Edit, Delete) isn't a settings row: its label fills, so the actions sit at the end */
+.list.icons .acc-bd .li .m { flex: 1 1 auto; min-width: 0; max-width: none; }
 
 /* ===================== STUDIO: TRAIN AND PLAN (stage 4) ===================== */
 :root { --hero: #1d1d1f; --hero-ink: #ffffff; --hero-ink2: rgba(255, 255, 255, 0.72); }
@@ -781,7 +785,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .ex-media::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4)); pointer-events: none; }
 .ex-media-play { position: absolute; inset: 0; margin: auto; width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center; z-index: 1; }
 .ex-media-play svg.i { width: 26px; height: 26px; fill: currentColor; margin-left: 3px; }
-.ex-media-cap { position: absolute; left: 16px; bottom: 14px; z-index: 1; font-size: 15px; font-weight: 600; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35); }
+.ex-media-cap { position: absolute; left: 16px; bottom: 14px; z-index: 1; font-size: 15px; font-weight: 600; }
 .ex-media:active { opacity: 0.9; }
 
 /* Today list */
@@ -974,7 +978,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .tl-key span { display: flex; align-items: center; gap: 6px; }
 .tl-key .tl-c { width: 14px; height: 8px; border-radius: 2px; }
 .ptile { position: relative; display: block; width: 100%; height: 196px; border: 0; padding: 0; border-radius: 22px; overflow: hidden; background: var(--sep); color: #fff; text-align: left; }
-.ptile.big { height: 230px; }
+.ptile.big { height: 230px; font-weight: 400; } /* not the global .big's 600: only the name is bold (Benn, 16 Nov 2026) */
 .ptile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
 .ptile .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.72) 100%); }
 .ptile .fits { position: absolute; left: 12px; top: 12px; padding: 5px 10px; border-radius: 12px; background: var(--tint); color: #fff; font-size: 12px; font-weight: 600; }
@@ -1111,7 +1115,23 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .consent-screen .list { margin: 0; }
 .consent-screen .foot { text-align: center; }
 .consent-row { align-items: flex-start; gap: 12px; padding: 12px 16px; }
-.consent-row input { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 1px; padding: 0; accent-color: var(--tint); -webkit-appearance: checkbox; appearance: auto; }
+.consent-row input { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 1px; padding: 0; }
+/* Tilo's own square (the onboarding options' .wz-dot.sq; Benn, 15 Nov 2026, its --ring edge 16 Nov), drawn on the real
+   checkbox, which stays a checkbox for screen readers and starts unticked */
+.consent-row input[type='checkbox'] {
+  -webkit-appearance: none; appearance: none; border-radius: 6px; background: none; box-shadow: inset 0 0 0 1.5px var(--ring);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.consent-row input[type='checkbox']:checked { background: var(--label); box-shadow: none; }
+.consent-row input[type='checkbox']:checked::after {
+  content: ''; width: 14px; height: 14px; background: var(--card);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.consent-row input[type='checkbox']:focus { outline: none; }
+.consent-row input[type='checkbox']:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+/* Windows high contrast drops box-shadow and backgrounds: the browser's own checkbox there */
+@media (forced-colors: active) { .consent-row input[type='checkbox'] { -webkit-appearance: checkbox; appearance: auto; } .consent-row input[type='checkbox']:checked::after { content: none; } }
 .consent-row label { flex: 1; font-size: 15px; line-height: 1.4; }
 label a, .prose a { color: var(--tint); text-decoration: none; }
 .legal-rows a.li { color: inherit; text-decoration: none; }

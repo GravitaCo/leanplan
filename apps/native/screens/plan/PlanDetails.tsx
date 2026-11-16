@@ -18,7 +18,7 @@ import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Input, NameField } from '../../lib/ui/fields'
 import { Foot, Sub } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Cell, Photo, PlanHero, PlanTile, Timeline } from './PlanParts'
 import { PlanPage, PvBack, RowLink } from './PlanViews'
 
@@ -62,7 +62,7 @@ export function PlanDetails({ plan, onBack, onEditWeek, onMaintenance, onChoose 
   return (
     <PlanPage>
       <PlanHero art={planArt(plan.baseTemplateId)} height={220} onBack={onBack}>
-        <Text accessibilityRole="header" style={[tx(28, 600, 34, -0.02), { color: '#fff' }]}>{plan.name}</Text>
+        <Text accessibilityRole="header" style={[tx(28, 600, 34, -0.02), GLYPH_ROOM, { color: '#fff' }]}>{plan.name}</Text>
         <Text style={[tx(15), num, { color: 'rgba(255,255,255,0.92)' }]}>{sub}</Text>
       </PlanHero>
       <WeeksCard>
@@ -172,7 +172,9 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
 
   if (step === 1) {
     return (
-      <PlanPage footer={
+      // the web's .pe pads 170 under its fixed bar: scrolled to the end, the last line sits 105 above
+      // Skip (measured); the footer's own 12 pt top padding (and Skip's line box) make up the rest here
+      <PlanPage end={94} footer={
         <>
           <View style={{ alignSelf: 'center' }}><LinkBtn title="Skip" onPress={() => { setGood(''); setChange(''); setStep(2) }} /></View>
           <Btn title="Continue" onPress={() => setStep(2)} style={{ minHeight: 54, borderRadius: 27 }} />
@@ -183,8 +185,8 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
           <Fade color={t.bg} />
         </View>
         <View style={{ alignItems: 'center', gap: 8, marginTop: -40, marginBottom: 16 }}>
-          <Text style={[tx(13, 600), { color: t.tint }]}>{plan.name}</Text>
-          <Text accessibilityRole="header" style={[tx(36, 600, 42, -0.025), { color: t.label, textAlign: 'center' }]}>{n} {n === 1 ? 'week' : 'weeks'}, done.</Text>
+          <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{plan.name}</Text>
+          <Text accessibilityRole="header" style={[tx(36, 600, 42, -0.025), GLYPH_ROOM, { color: t.label, textAlign: 'center' }]}>{n} {n === 1 ? 'week' : 'weeks'}, done.</Text>
           <Text style={[tx(15), num, { color: t.label2 }]}>{plan.startedAt ? `${dayMonthOf(plan.startedAt)} to ${dayMonthOf(last)}` : ''}{done ? ` · ${done} ${done === 1 ? 'workout' : 'workouts'}` : ''}</Text>
         </View>
         <WeeksCard><Timeline cells={timeline(plan).filter((c) => c.kind !== 'after').map((c) => ({ ...c, state: 'done' as const }))} labels={false} /></WeeksCard>
@@ -199,18 +201,18 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
   return (
     <PlanPage>
       <PvBack><BackButton onPress={() => (step0 === 2 ? onClose() : setStep(1))} /></PvBack>
-      <Text accessibilityRole="header" style={[tx(32, 600, 38, -0.02), { color: t.label, marginTop: 8, marginBottom: 10 }]}>What's next?</Text>
+      <Text accessibilityRole="header" style={[tx(32, 600, 38, -0.02), GLYPH_ROOM, { color: t.label, marginTop: 8, marginBottom: 10 }]}>What's next?</Text>
       <Sub style={{ marginTop: -4, marginBottom: 16 }}>No rush. Until you choose, your last week carries on as it was.</Sub>
       {!afterPhase(plan) && (
         // .pe-rec: a card ringed in the tint
         // the web's 2 pt ring is an inset shadow inside the padding: the border takes 2 off the padding
         <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 14, gap: 12, marginBottom: 16, borderWidth: 2, borderColor: t.tint }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text style={[tx(13, 600), { color: t.tint }]}>Recommended</Text>
+            <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>Recommended</Text>
             <LinkBtn title="How it works" onPress={onMaintenance} style={{ paddingVertical: 0, paddingHorizontal: 0 }} />
           </View>
           <View>
-            <Text style={[tx(20, 600), { color: t.label }]}>Switch to maintenance</Text>
+            <Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }]}>Switch to maintenance</Text>
             <Text style={[tx(14, 400, 1.45), { color: t.label2, marginTop: 2 }]}>{maintenanceLine(mweek, data.routines)}</Text>
           </View>
           <Btn title="Start maintenance" onPress={() => { notePlan(plan.id, reflection); startMaintenance(plan.id, mweek); onClose() }} style={{ minHeight: 54, borderRadius: 27 }} />

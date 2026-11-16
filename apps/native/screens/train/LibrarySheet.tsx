@@ -50,7 +50,7 @@ function Detail({ x, onOpen }: { x: Exercise; onOpen: (id: string) => void }) {
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', paddingLeft: 3 }}><Icon name="play" size={26} color="#fff" fill /></View>
           </View>
-          <Text aria-hidden style={[font(600), { position: 'absolute', left: 16, bottom: 14, fontSize: 15, color: '#fff', textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } }]}>
+          <Text aria-hidden style={[font(600), { position: 'absolute', left: 16, bottom: 14, fontSize: 15, color: '#fff' }]}>
             Watch the demo{x.video.durationSec ? ` · ${Math.round(x.video.durationSec)} s` : ''}
           </Text>
         </Pressable>

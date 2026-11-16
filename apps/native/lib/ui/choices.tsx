@@ -9,11 +9,10 @@
  */
 import type { ReactNode } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
 import type { SupportRow } from '@/screens/profile/supportRows'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
-import { num, tx, BTN, useTokens } from '../theme'
+import { num, tx, BTN, useTokens, GLYPH_ROOM } from '../theme'
 
 /** One option: [key, title, optional sub], as the web's Opts takes it. */
 export type Opt<T extends string> = readonly [T, string, string?]
@@ -21,6 +20,7 @@ export type Opt<T extends string> = readonly [T, string, string?]
 /**
  * `.wz-opts`: one answer (radio rows) or, with `multi`, any number (tick rows with a square dot).
  * A row is 14 16 padded with a 1 pt rule under it; the chosen one is --tint-soft, its title 500.
+ * An empty tick square's edge is --ring; an empty radio dot's is --dash.
  */
 export function Opts<T extends string>({ opts, value, onPick, label, multi }: {
   opts: readonly Opt<T>[]; value: T | T[] | undefined; onPick: (v: T) => void; label: string; multi?: boolean
@@ -43,7 +43,8 @@ export function Opts<T extends string>({ opts, value, onPick, label, multi }: {
             </View>
             {/* .wz-dot: a 24 ring (a 22 rounded square for ticks), ink with a card-coloured tick when chosen */}
             <View style={[{ alignItems: 'center', justifyContent: 'center' }, multi ? { width: 22, height: 22, borderRadius: 6 } : { width: 24, height: 24, borderRadius: 12 },
-              sel ? { backgroundColor: t.label } : { borderWidth: 1.5, borderColor: t.dash }]}>
+              // an empty square's edge is --ring (3:1, Benn 16 Nov); the round dot keeps --dash, as the web
+              sel ? { backgroundColor: t.label } : { borderWidth: 1.5, borderColor: multi ? t.ring : t.dash }]}>
               {sel && <Icon name="check" size={14} stroke={2.6} color={t.card} />}
             </View>
           </Pressable>
@@ -118,10 +119,10 @@ export function Signposts({ list, support }: {
   const row = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingVertical: 13, paddingHorizontal: 16 }
   const name = (s: SupportRow) => <Text style={[tx(16), { color: t.label }]}>{s.name}</Text>
   const desc = (s: SupportRow) => <Text style={[tx(13, 400, 1.35), { color: t.label2 }]}>{s.desc}</Text>
-  const n = (s: string) => <Text style={[tx(16, 600), num, { color: t.tint }]}>{s}</Text>
+  const n = (s: string) => <Text style={[tx(16, 600), GLYPH_ROOM, num, { color: t.tint }]}>{s}</Text>
   const webLink = (s: SupportRow) => s.web ? (
     <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 14, bottom: 14 }} style={{ alignSelf: 'flex-start', marginTop: 2 }}>
-      <Text style={[tx(13, 500), { color: t.tint }]}>{s.webLabel ?? 'Webchat and email'}</Text>
+      <Text style={[tx(13, 500), GLYPH_ROOM, { color: t.tint }]}>{s.webLabel ?? 'Webchat and email'}</Text>
     </Pressable>
   ) : null
   return (
@@ -142,7 +143,7 @@ export function Signposts({ list, support }: {
               {s.web && (
                 <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 8, bottom: 8 }} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }}>
                   <Text style={[tx(15), { color: t.label }]}>Webchat and email</Text>
-                  <Text style={[tx(16, 600), { color: t.tint }]}>Open</Text>
+                  <Text style={[tx(16, 600), GLYPH_ROOM, { color: t.tint }]}>Open</Text>
                 </Pressable>
               )}
             </View>
@@ -169,11 +170,13 @@ export function Signposts({ list, support }: {
 }
 
 /**
- * `.li.consent-row` (ConsentScreen, PrivacySheets): a 22 pt checkbox and its words (15 pt at 1.4),
- * which may hold inline links (TextLink). The box is the checkbox for VoiceOver, named by `label`
- * (the words as plain text); the words stay readable with their links; tapping them toggles it too, as the web's <label for> does, while a
- * link inside them opens the link. The box draws the web's checkbox: tint-filled with a white tick
- * when on, an outlined rounded square when off.
+ * `.li.consent-row` (ConsentScreen, PrivacySheets): a checkbox and its words (15 pt at 1.4), which
+ * may hold inline links (TextLink). The box is Tilo's own square from the onboarding options
+ * (`.wz-dot.sq`, Benn, 15 Nov 2026): a 22 pt rounded square with a 1.5 pt --ring edge, filled
+ * --label with a 14 pt --card tick when on. It is the checkbox for VoiceOver, named by `label` (the
+ * words as plain text), and starts as the caller's `on` (never pre-ticked by this component). The
+ * words stay readable with their links; tapping them toggles it too, as the web's <label for>
+ * does, while a link inside them opens the link.
  */
 export function ConsentRow({ on, onChange, label, children }: { on: boolean; onChange: (on: boolean) => void; label: string; children: ReactNode }) {
   const t = useTokens()
@@ -181,10 +184,9 @@ export function ConsentRow({ on, onChange, label, children }: { on: boolean; onC
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12, paddingHorizontal: 16 }}>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={() => onChange(!on)} hitSlop={slop(22, 22)}
         // the browser's checkbox margins (3 3 3 4) stay, with the CSS's margin-top 1
-        style={{ width: 22, height: 22, marginTop: 1, marginRight: 3, marginBottom: 3, marginLeft: 4, borderRadius: 4, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: on ? t.tint : t.elev, borderWidth: on ? 0 : 1, borderColor: t.label2 }}>
-        {/* the system checkbox's own tick, not one of Tilo's icons */}
-        {on && <Svg width={14} height={14} viewBox="0 0 14 14"><Path d="M2.5 7.3l3 3L11.5 4" fill="none" stroke={t.onTint} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></Svg>}
+        style={[{ width: 22, height: 22, marginTop: 1, marginRight: 3, marginBottom: 3, marginLeft: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+          on ? { backgroundColor: t.label } : { borderWidth: 1.5, borderColor: t.ring }]}>
+        {on && <Icon name="check" size={14} stroke={2.6} color={t.card} />}
       </Pressable>
       {/* readable on its own, so VoiceOver reaches the links inside it */}
       <Text onPress={() => onChange(!on)} style={[tx(15, 400, 1.4), { color: t.label, flex: 1 }]}>{children}</Text>

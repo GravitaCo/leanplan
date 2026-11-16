@@ -18,6 +18,7 @@ import { getRandomValues, digest, CryptoDigestAlgorithm } from 'expo-crypto'
 import { isOnline, onNetworkChange } from '../../modules/tilo-network'
 import { memoryStorage, nativeLocalStorage } from './storage'
 import { connectionEvents, onlineFrom } from './connection'
+import { installDiag } from './diag'
 
 const g = globalThis as unknown as Record<string, any>
 const native = Platform.OS !== 'web'
@@ -83,3 +84,6 @@ if (native) {
   ev.setOnline(onlineFrom({ isConnected: isOnline() }))
   onNetworkChange((online) => ev.setOnline(onlineFrom({ isConnected: online })))
 }
+
+// internal test builds: keep the store's sync warnings for the connection pill's long press
+installDiag()

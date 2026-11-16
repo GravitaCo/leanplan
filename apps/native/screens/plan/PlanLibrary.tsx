@@ -18,7 +18,7 @@ import { SearchBar } from '../../lib/ui/fields'
 import { DateInput } from '../../lib/ui/pickers'
 import { Empty, Foot } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { FitsBadge, PlanHero, PlanNote, PlanTile, Timeline, TimelineKey, WeekRows } from './PlanParts'
 import { PlanPage, PvBack } from './PlanViews'
 
@@ -179,7 +179,8 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
   const fitsHere = !!tp && fits(tp, fitOf(profile))
   const fact = [tx(14), { color: t.label }]
   return (
-    <PlanPage footer={
+    // the web pads .pp 200 under its fixed bar: scrolled to the end, the last line sits 124 above the bar (measured)
+    <PlanPage end={124} footer={
       // .pp-cta: fixed at the bottom on --bg with a top rule
       <View style={{ borderTopWidth: 1, borderTopColor: t.sep, marginHorizontal: -16, marginTop: -12, paddingHorizontal: 16, paddingTop: 12, gap: 10, backgroundColor: t.bg }}>
         <StartChoice value={start} onChange={setStart} />
@@ -188,13 +189,13 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
     }>
       <PlanHero art={art} artAt={tp?.artAt} onBack={onBack}>
         {fitsHere && <FitsBadge text={`Fits your goal: ${goalLabel(profile.goal)}`} style={{ marginBottom: 8 }} />}
-        <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.02), { color: '#fff' }]}>{entry.name}</Text>
+        <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.02), GLYPH_ROOM, { color: '#fff' }]}>{entry.name}</Text>
         <Text style={[tx(15), num, { color: 'rgba(255,255,255,0.92)' }]}>{entry.line}</Text>
       </PlanHero>
       {note && <PlanNote>{`From your last plan: “${note}”`}</PlanNote>}
       {tp && <Text style={[tx(16, 400, 1.5), { color: t.label, marginBottom: 16 }]}>{tp.about}</Text>}
       <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 12, marginBottom: 16 }}>
-        <Text style={[tx(13, 600), { color: t.label2 }]}>How the {n} weeks go</Text>
+        <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>How the {n} weeks go</Text>
         <Timeline cells={timeline({ phases: phases as PlanPhase[] })} endLabel={`Week ${n}`} />
         <TimelineKey />
         {tp && <Text style={[tx(14, 400, 1.5), { color: t.label }]}>{tp.weeksText}</Text>}
@@ -202,7 +203,7 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
       {weeks.length > 0 && (
         <>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4, marginBottom: 8 }}>
-            <Text accessibilityRole="header" style={[tx(17, 600), { color: t.label }]}>{weeks.length > 1 ? `A ${weeks[shown].name.toLowerCase()} week` : 'The week'}</Text>
+            <Text accessibilityRole="header" style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{weeks.length > 1 ? `A ${weeks[shown].name.toLowerCase()} week` : 'The week'}</Text>
             {weeks.length > 1 && <View style={{ flexDirection: 'row', gap: 6 }}>{weeks.map((w, i) => <Chip key={w.name} size="sm" on={i === shown} title={w.name} onPress={() => setShown(i)} />)}</View>}
           </View>
           <WeekRows week={weeks[shown].week} routines={routines} />

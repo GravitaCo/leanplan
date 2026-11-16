@@ -30,7 +30,7 @@ import { Btn, Card, LinkBtn, List, Stack } from '../../lib/ui/kit'
 import { BackButton, Row, TitleRow } from '../../lib/ui/primitives'
 import { Select } from '../../lib/ui/controls'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
 import { TrainNav } from './nav'
@@ -42,7 +42,7 @@ export function ExCard({ n, tg, cue, children }: { n: string; tg?: string; cue?:
     <Card plain style={{ marginBottom: 10 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <Text style={[font(600), { flex: 1, fontSize: 17, color: t.label }]}>{n}</Text>
-        {!!tg && <View style={{ borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, backgroundColor: tagBg(t.activity) }}><Text style={[tx(13, 600), { color: t.activityInk }]}>{tg}</Text></View>}
+        {!!tg && <View style={{ borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, backgroundColor: tagBg(t.activity) }}><Text style={[tx(13, 600), GLYPH_ROOM, { color: t.activityInk }]}>{tg}</Text></View>}
       </View>
       {!!cue && <Text style={[tx(15, 400), { lineHeight: 21, color: t.label2, marginTop: 6, marginBottom: 8 }]}>{cue}</Text>}
       {children}
@@ -171,7 +171,7 @@ export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session,
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.tintSoft, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 12 }}>
               <Text aria-hidden style={[tx(20, 400), { lineHeight: 22, color: t.label }]}>↻</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[tx(16, 500), { color: t.label }]}>Warm up first</Text>
+                <Text style={[tx(16, 500), GLYPH_ROOM, { color: t.label }]}>Warm up first</Text>
                 <Text style={[tx(13, 400), { lineHeight: 18, color: t.label2, marginTop: 2 }]}>{warmupCopy(bareName(slots[wSlot].shown.n))}</Text>
               </View>
             </View>

@@ -25,7 +25,7 @@ import { BackButton, NavBtn, Row, Sheet, Swatch, TitleRow } from '../../lib/ui/p
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
 import { Check } from '../../lib/ui/choices'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { LibrarySheet, Poster, Thumb } from '../train'
 import { PlanNote, Shade } from './PlanParts'
 
@@ -49,12 +49,15 @@ export function PvBack({ children }: { children: ReactNode }) {
 }
 
 /** A pushed Plan view: the scrolling `.screen` with the page colour. */
-export function PlanPage({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+export function PlanPage({ children, footer, end = 24 }: { children: ReactNode; footer?: ReactNode
+  /** space under the last line when scrolled to the end, i.e. the gap above a fixed bar (the web pads its page so the last line clears the bar) */
+  end?: number }) {
   const t = useTokens()
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>{children}</ScrollView>
-      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10 }}>{footer}</View>}
+      {/* the scroller takes the space above the fixed bar (the web pads its page by the bar's height), so the last line scrolls clear of it */}
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: end }}>{children}</ScrollView>
+      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10, flexShrink: 0 }}>{footer}</View>}
     </View>
   )
 }
@@ -268,7 +271,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: { type: WorkoutKey
           <Icon name="chevL" size={18} stroke={2.6} color="#1d1d1f" />
         </Pressable>
         <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>
-          <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.025), { color: '#fff' }]}>{keyTitle(type, routines)}</Text>
+          <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.025), GLYPH_ROOM, { color: '#fff' }]}>{keyTitle(type, routines)}</Text>
           <Text style={[tx(15), num, { color: 'rgba(255,255,255,0.85)' }]}>{own ? `Your workout · ${sub}` : r ? `Tilo workout · ${sub}` : `${when} · ${sub}`}</Text>
         </View>
       </View>

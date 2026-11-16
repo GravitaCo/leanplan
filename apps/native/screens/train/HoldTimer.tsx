@@ -9,7 +9,7 @@ import { holdAt, holdLabel, holdTarget } from '@/core/domain/library'
 import { RED_FLAG } from '@/copy/train'
 import { Btn, Stack } from '../../lib/ui/kit'
 import { Sheet } from '../../lib/ui/primitives'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot } from '../../lib/ui/text'
 
 export function HoldTimer({ name, rx, perSide, onDone, onClose, overlay }: {
@@ -42,8 +42,8 @@ export function HoldTimer({ name, rx, perSide, onDone, onClose, overlay }: {
   return (
     <Sheet title={name} onClose={onClose} overlay={overlay}>
       <View style={{ alignItems: 'center', paddingTop: 18, paddingBottom: 22 }}>
-        <Text accessibilityLiveRegion="polite" style={[tx(17, 600), { minHeight: 22, color: t.label2 }]}>{start == null ? 'Ready when you are' : holdLabel(h, target, perSide)}</Text>
-        <Text accessibilityRole="timer" accessibilityLabel={`${h.sec} seconds`} style={[tx(72, 600), num, { lineHeight: 80, marginVertical: 6, color: t.label }]}>
+        <Text accessibilityLiveRegion="polite" style={[tx(17, 600), GLYPH_ROOM, { minHeight: 22, color: t.label2 }]}>{start == null ? 'Ready when you are' : holdLabel(h, target, perSide)}</Text>
+        <Text accessibilityRole="timer" accessibilityLabel={`${h.sec} seconds`} style={[tx(72, 600), GLYPH_ROOM, num, { lineHeight: 80, marginVertical: 6, color: t.label }]}>
           {h.sec}<Text style={[tx(22, 600), { color: t.label2 }]}> sec</Text>
         </Text>
         {goal && <Text style={[tx(15, 400), { lineHeight: 20, color: t.label2, textAlign: 'center' }]}>Aim for {goal}{perSide ? ' each side' : ''}. Stop sooner if your form slips or anything hurts.</Text>}

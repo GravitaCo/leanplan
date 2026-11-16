@@ -16,7 +16,7 @@ import { onPacerDone, resetInitial, resetReducer, type ResetLength } from '@/scr
 import { Row, Seg } from '../../lib/ui/primitives'
 import { Btn, Card, List } from '../../lib/ui/kit'
 import { Foot } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { resetView } from './model'
 import { PacerCard } from './PacerCard'
 import { PushedTop } from './PushedTop'
@@ -60,7 +60,7 @@ export function ResetScreen({ onBack, backLabel }: { onBack: () => void; backLab
           {v.end && (
             <Card plain style={{ alignItems: 'center', gap: 12, paddingVertical: 40, paddingHorizontal: 16 }}>
               {v.end.title
-                ? <><Text accessibilityLiveRegion="polite" style={[tx(22, 600), { color: t.label, textAlign: 'center' }]}>{v.end.title}</Text><Text style={[tx(15), { color: t.label2, textAlign: 'center' }]}>{v.end.line}</Text></>
+                ? <><Text accessibilityLiveRegion="polite" style={[tx(22, 600), GLYPH_ROOM, { color: t.label, textAlign: 'center' }]}>{v.end.title}</Text><Text style={[tx(15), { color: t.label2, textAlign: 'center' }]}>{v.end.line}</Text></>
                 : <Text accessibilityLiveRegion="polite" style={[tx(17), { color: t.label, textAlign: 'center' }]}>{v.end.line}</Text>}
             </Card>
           )}

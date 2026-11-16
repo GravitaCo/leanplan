@@ -23,7 +23,7 @@ import { FOODS } from '@/core/data/foods'
 import type { ScanDraft } from '@/core/domain/barcode'
 import { QUALITY_PROMPT } from '@/core/domain/labelQuality'
 import { CONSENT, GUIDANCE, LABEL, LABEL_CAMERA_NOTE, LABEL_TITLE, SHARE_LABEL_NOTE } from '@/copy/scan'
-import { tx, useTokens } from '../../lib/theme'
+import { tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { BackButton, NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Btn, Card, List, Note } from '../../lib/ui/kit'
 import { Empty, Foot, Sub } from '../../lib/ui/text'
@@ -89,7 +89,10 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
       barcode, base, taken: taken(), forShare: !!(forShare && onFail),
     }, {
       consentLetsSync: () => consentLetsSync(st().data), underAge: () => !!st().underAge, flushConsents: () => st().flushConsents(),
-      readLabel, discard: discardAll, signal: ctl.signal,
+      // why a read failed, for internal test builds' diagnostics (lib/platform/diag.ts): the outcome,
+      // the HTTP status and the error's name only, never the photo, a figure or who
+      readLabel: (b, o) => readLabel(b, { ...o, report: (f) => console.warn('label read failed:', f.kind, f.status ?? '-', f.name ?? '-') }),
+      discard: discardAll, signal: ctl.signal,
     })
     if (!aliveRef.current) return
     if (out.kind === 'share-failed') { onFail?.(out.note); return }
@@ -102,7 +105,7 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
     return (
       <Sheet title={LABEL_TITLE} onClose={onClose} animate={animate} left={left}>
         <Card plain style={{ padding: 16 }}>
-          <Text accessibilityRole="header" style={[tx(17, 600), { color: t.label, marginBottom: 6 }]}>{LABEL.before}</Text>
+          <Text accessibilityRole="header" style={[tx(17, 600), GLYPH_ROOM, { color: t.label, marginBottom: 6 }]}>{LABEL.before}</Text>
           <Sub>{CONSENT}</Sub>
           <Foot style={{ paddingTop: 10, paddingHorizontal: 0 }}>{LABEL.nothingElse}</Foot>
         </Card>
