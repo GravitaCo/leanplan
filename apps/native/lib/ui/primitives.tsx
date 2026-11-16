@@ -9,7 +9,7 @@
  * moving off screen, and the focused field scrolls into view (`useKeyboard`).
  */
 import { useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type KeyboardEvent, type StyleProp, type ViewStyle } from 'react-native'
+import { AccessibilityInfo, Alert, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type KeyboardEvent, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { create } from 'zustand'
@@ -19,6 +19,7 @@ import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
 import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
+import { DIAG, diagLines } from '../platform/diag'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
 import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
 import { UI } from '@/copy/ui'
@@ -34,13 +35,13 @@ const CONN_ICON: Record<ConnectionKind, IconName> = {
 }
 
 /** `.cpill`: the pill's look for one state (the gallery draws every state). */
-export function ConnectionPillView({ kind, label, open, onPress }: { kind: ConnectionKind; label: string; open?: boolean; onPress?: () => void }) {
+export function ConnectionPillView({ kind, label, open, onPress, onLongPress }: { kind: ConnectionKind; label: string; open?: boolean; onPress?: () => void; onLongPress?: () => void }) {
   const t = useTokens()
   const bg = useSurface(t)
   const color = kind === 'up-to-date' ? t.label2 : t.label
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={onPress ? { expanded: !!open } : undefined}
-      onPress={onPress} hitSlop={slop(0, 25)}
+      onPress={onPress} onLongPress={onLongPress} hitSlop={slop(0, 25)}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 13, backgroundColor: bg, flexShrink: 1, minWidth: 0 }}>
       <Icon name={CONN_ICON[kind]} size={15} color={color} />
       <Text numberOfLines={1} style={[tx(12, 500, 15), num, { color, flexShrink: 1 }]}>{label}</Text>
@@ -52,7 +53,9 @@ export function ConnectionPillView({ kind, label, open, onPress }: { kind: Conne
 export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: () => void }) {
   const c = useConnection()
   const runSync = useStore((s) => s.runSync)
-  return <ConnectionPillView kind={c.kind} label={c.label} open={open} onPress={() => { if (c.kind === 'problem') runSync(); onToggle?.() }} />
+  // internal test builds: a long press shows the last sync warnings (lib/platform/diag.ts)
+  const onLongPress = DIAG ? () => { const l = diagLines(); Alert.alert('Sync details', l.length ? l.join('\n\n') : 'No sync warnings since the app opened.') } : undefined
+  return <ConnectionPillView kind={c.kind} label={c.label} open={open} onLongPress={onLongPress} onPress={() => { if (c.kind === 'problem') runSync(); onToggle?.() }} />
 }
 
 /** `.cline`: the line under the pill, the state's name in bold, then what it means. */

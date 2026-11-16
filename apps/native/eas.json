@@ -17,7 +17,10 @@
       "ios": {
         "resourceClass": "m-medium"
       },
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_DIAG": "1"
+      }
     },
     "production": {
       "autoIncrement": true
