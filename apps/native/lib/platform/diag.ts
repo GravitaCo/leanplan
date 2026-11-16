@@ -11,7 +11,10 @@ const MAX = 5
 const lines: string[] = []
 
 function text(a: unknown): string {
-  if (a instanceof Error) return `${a.name}: ${a.message}`
+  if (a instanceof Error) {
+    const where = (a.stack ?? '').split('\n').slice(1, 5).map((l) => l.trim()).join(' | ')
+    return `${a.name}: ${a.message}${where ? ` [${where}]` : ''}`
+  }
   if (typeof a === 'string') return a
   try { return JSON.stringify(a)?.slice(0, 300) ?? String(a) } catch { return String(a) }
 }
@@ -24,7 +27,7 @@ export function installDiag(): void {
     const first = typeof args[0] === 'string' ? args[0] : ''
     if (first.startsWith('sync')) {
       const at = new Date().toTimeString().slice(0, 8)
-      lines.push(`${at} ${args.map(text).join(' ')}`.slice(0, 600))
+      lines.push(`${at} ${args.map(text).join(' ')}`.slice(0, 900))
       if (lines.length > MAX) lines.shift()
     }
     warn(...args)
