@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_WELLBEING?: string
   readonly VITE_MIND_REVIEWED?: string
   readonly VITE_SUPP_NAMES?: string
+  readonly VITE_CYCLE?: string
   readonly PROD?: boolean
   readonly BASE_URL?: string
 }

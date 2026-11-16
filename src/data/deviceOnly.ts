@@ -13,6 +13,10 @@
  *   (`tali-notify`, security-data H3; on the phone a store of that name). Not health data;
  *   cleared with the device's log.
  * - `ui.sleepMore`: whether "More about sleep" was left open in the check-in. Not health data.
+ * - `cycle`: the Cycle log (docs/plans/cycle.md §6), stamped with the owning account like the
+ *   notes. Special-category health data (possibly sex-life data too): needs a current `cycle`
+ *   consent to write or import, cleared on a health or cycle withdrawal and by "Delete all cycle
+ *   data", never carried to another account or out of the old guest log, never sent anywhere.
  *
  * Only this file, persistence.ts, backup.ts and screens/mind/unloadNotes.ts may use the notes
  * accessors (NOTE_ACCESSORS), and only the Unload screens (web and native) may use unloadNotes.ts's
@@ -20,6 +24,7 @@
  * else uses the count, the clear and the non-note helpers. No React, no DOM beyond IndexedDB.
  */
 import type { PersistedState } from './persistence'
+import { cleanCycle, type CycleStore } from '@/core/domain/cycle'
 import { nowIso, uuid } from './supabase'
 import { clearNativeNotifyLog } from './platform'
 
@@ -38,6 +43,8 @@ export interface DeviceOnly {
   /** `backoffSeen`: per reminder type, the back-off (profile.mind.halved) whose notice was closed */
   /** `medicalReasked`: the one-time re-ask of a 'flagged' answer from before the split was shown here */
   ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string>; medicalReasked?: boolean }
+  /** `owner`: the `_meta.owner` the log was written under; any other owner's log is dropped */
+  cycle?: { owner: string; log: CycleStore }
 }
 
 /** A note's text, all its pairs and the "went OK" line together, in characters. */
@@ -143,6 +150,11 @@ export function cleanDeviceOnly(x: unknown, owner: string | undefined): DeviceOn
     const notes = cleanNotes(u.notes).sort(newestFirst).slice(0, UNLOAD_MAX_NOTES)
     if (notes.length) out.unload = { owner, notes }
   }
+  const c = d.cycle as Record<string, unknown> | undefined
+  if (owner && c && typeof c === 'object' && c.owner === owner) {
+    const log = cleanCycle(c.log)
+    if (log) out.cycle = { owner, log }
+  }
   if (isDay(d.lowMoodShown)) out.lowMoodShown = d.lowMoodShown
   const notify = cleanNotify(d.notify)
   if (notify.length) out.notify = notify
@@ -231,13 +243,14 @@ export function unloadCount(s: Pick<PersistedState, 'deviceOnly'>): number {
   return Array.isArray(n) ? n.length : 0
 }
 
-/** Health withdrawal (consent.clearHealthData): the notes, the low-mood marker and the medical
+/** Health withdrawal (consent.clearHealthData): the notes, the Cycle log, the low-mood marker and the medical
  *  re-ask marker (it implies a past medical yes) go. Returns whether anything changed. "Not now"
  *  never calls this. */
 export function clearDeviceHealth(s: PersistedState): boolean {
   const d = s.deviceOnly
-  if (!d || (!d.unload && d.lowMoodShown === undefined && !d.ui?.medicalReasked)) return false
+  if (!d || (!d.unload && !d.cycle && d.lowMoodShown === undefined && !d.ui?.medicalReasked)) return false
   delete d.unload
+  delete d.cycle
   delete d.lowMoodShown
   if (d.ui?.medicalReasked) { delete d.ui.medicalReasked; if (!Object.keys(d.ui).length) delete d.ui }
   if (!Object.keys(d).length) delete s.deviceOnly
@@ -248,6 +261,65 @@ export function clearDeviceHealth(s: PersistedState): boolean {
  *  low-mood marker and the reminder log were another account's, so only UI state stays. */
 export function deviceOnlyForKeep(d: DeviceOnly | undefined): DeviceOnly | undefined {
   return d?.ui?.sleepMore ? { ui: { sleepMore: true } } : undefined
+}
+
+/* ---------------- Cycle (docs/plans/cycle.md §6) ---------------- */
+
+/** Who's asking, as for the notes, plus a current `cycle` consent yes (consent.ts cycleAllowed). */
+export interface CycleContext {
+  signedIn: boolean
+  ownerAsk: boolean
+  cycleYes: boolean
+}
+
+/** This device's Cycle log: none while signed out, while an owner question is pending, without a
+ *  current cycle yes, or under another owner. Returns a copy's reference: edit it with saveCycle. */
+export function cycleLog(s: PersistedState, ctx: CycleContext): CycleStore | undefined {
+  if (!ctx.signedIn || ctx.ownerAsk || !ctx.cycleYes) return undefined
+  const c = s.deviceOnly?.cycle
+  if (!c || !s._meta?.owner || c.owner !== s._meta.owner) return undefined
+  return c.log
+}
+
+/** Save the Cycle log under this device's owner. Refuses ('not-now') as cycleLog does. */
+export function saveCycle(s: PersistedState, log: CycleStore, ctx: CycleContext): boolean {
+  if (!ctx.signedIn || ctx.ownerAsk || !ctx.cycleYes || !s._meta?.owner) return false
+  const clean = cleanCycle(log)
+  const d = (s.deviceOnly ??= {})
+  if (clean) d.cycle = { owner: s._meta.owner, log: clean }
+  else { delete d.cycle; if (!Object.keys(d).length) delete s.deviceOnly }
+  return true
+}
+
+/** "Delete all cycle data" (§6 must-have 4), a cycle withdrawal, or turning Cycle off. Works
+ *  offline and with no consent (anyone can delete). Returns whether anything was there. */
+export function deleteCycle(s: PersistedState): boolean {
+  const d = s.deviceOnly
+  if (!d?.cycle) return false
+  delete d.cycle
+  if (!Object.keys(d).length) delete s.deviceOnly
+  return true
+}
+
+/** How many days the Cycle log holds (confirm steps). No contents. */
+export function cycleDayCount(s: Pick<PersistedState, 'deviceOnly'>): number {
+  const days = s.deviceOnly?.cycle?.log?.days
+  return days && typeof days === 'object' ? Object.keys(days).length : 0
+}
+
+/**
+ * The Cycle log a backup restore leaves (persistence.stateFromBackup): this device's own when it
+ * has one (a restore never overwrites it), else the backup's, re-stamped with `owner`, only with a
+ * current cycle yes (§6: "import never loads cycle data without a current cycle yes"). `skipped`
+ * says when the backup's log was left out, so the import can say so.
+ */
+export function mergeCycleForImport(incoming: unknown, current: PersistedState | undefined, owner: string | undefined, cycleYes: boolean): { cycle?: DeviceOnly['cycle']; skipped: boolean } {
+  const theirs = cleanCycle((incoming as DeviceOnly | undefined)?.cycle?.log)
+  const mine = current && owner ? cleanDeviceOnly(current.deviceOnly, current._meta?.owner)?.cycle : undefined
+  if (mine && mine.owner === owner) return { cycle: mine, skipped: !!theirs }
+  if (!theirs) return { skipped: false }
+  if (!owner || !cycleYes) return { skipped: true }
+  return { cycle: { owner, log: theirs }, skipped: false }
 }
 
 /* ---------------- low-mood marker, sleep disclosure, reminder log ---------------- */

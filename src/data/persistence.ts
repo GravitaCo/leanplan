@@ -7,8 +7,8 @@ import { ensureBurnSwitch } from '@/core/domain/insights'
 import { NOT_SAME_MAX, cleanAlias, fitMeta } from '@/core/domain/duplicates'
 import { checkinOrNull, cleanProfileMind, validCheckin } from '@/core/domain/checkin'
 import { nowIso, uuid, UUID_RE } from './supabase'
-import { cleanConsents, healthLoggingAllowed, unsyncedConsents, type ConsentLog } from './consent'
-import { cleanDeviceOnly, deviceOnlyForKeep, mergeUnloadForImport, unloadCount, type DeviceOnly, type UnloadImport } from './deviceOnly'
+import { cleanConsents, cycleAllowed, healthLoggingAllowed, unsyncedConsents, type ConsentLog } from './consent'
+import { cleanDeviceOnly, deviceOnlyForKeep, mergeCycleForImport, mergeUnloadForImport, unloadCount, type DeviceOnly, type UnloadImport } from './deviceOnly'
 
 const KEY = 'leanplan.v1'
 const ROUTINE_KINDS: Modality[] = ['strength', 'calisthenics', 'cardio', 'yoga', 'pilates', 'mobility']
@@ -282,6 +282,11 @@ export function stateFromBackup(incoming: PersistedState, current?: PersistedSta
   delete device.unload
   const { unload } = mergeUnloadForImport(theirDevice, current, meta.owner, healthLoggingAllowed(s))
   if (unload) device.unload = unload
+  // the Cycle log (cycle.md §6): this device's own stays; the backup's loads only into an empty
+  // slot, under this device's owner, with a current cycle yes here (cycleImportSkipped says so)
+  delete device.cycle
+  const { cycle } = mergeCycleForImport(theirDevice, current, meta.owner, cycleAllowed(s))
+  if (cycle) device.cycle = cycle
   if (Object.keys(device).length) s.deviceOnly = device
   if (current) {
     for (const d of Object.keys(current.days || {})) {
@@ -319,6 +324,12 @@ export function unloadImportResult(incoming: PersistedState, current: PersistedS
   const allowed = healthLoggingAllowed({ ...current, consents: cleanConsents(current.consents) })
   const { skipped, reason } = mergeUnloadForImport(incoming.deviceOnly, current, current._meta?.owner, allowed)
   return reason ? { skipped, reason } : { skipped }
+}
+
+/** Whether a restore on this device leaves the backup's Cycle log out (no current cycle yes, no
+ *  owner, or this device already has one), for the import to say so. */
+export function cycleImportSkipped(incoming: PersistedState, current: PersistedState): boolean {
+  return mergeCycleForImport(incoming.deviceOnly, current, current._meta?.owner, cycleAllowed({ ...current, consents: cleanConsents(current.consents) })).skipped
 }
 
 /** How many of a backup's Unload notes didn't fit under the cap (reason 'full' only). The import

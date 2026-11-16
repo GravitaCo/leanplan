@@ -36,9 +36,14 @@ export function lowSignals(today: CheckIn | null | undefined, recent: (CheckIn |
   })
 }
 
-/** Offer the lighter choices when two or more signals are low (mental-performance's threshold, a judgement call). */
-export function offerLighter(today: CheckIn | null | undefined, recent: (CheckIn | null | undefined)[]): boolean {
-  return lowSignals(today, recent).length >= 2
+/**
+ * Offer the lighter choices when two or more signals are low (mental-performance's threshold, a
+ * judgement call). `cycle` (cycle.md §5): pain "A lot" today from the device-only Cycle log
+ * (cycle.ts cycleSignal) adds one absolute signal. Only Train and Today pass it; weekPicture and
+ * hardDay never do, so cycle data can't reach the synced weekly picture.
+ */
+export function offerLighter(today: CheckIn | null | undefined, recent: (CheckIn | null | undefined)[], cycle?: boolean): boolean {
+  return lowSignals(today, recent).length + (cycle ? 1 : 0) >= 2
 }
 
 const SETS = /^(\d+)(?:–(\d+))? × (.+)$/

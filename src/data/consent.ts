@@ -17,9 +17,9 @@ import { foodModeOf } from '@/core/domain/foodMode'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
-import { clearDeviceHealth, unloadCount } from './deviceOnly'
+import { clearDeviceHealth, cycleDayCount, deleteCycle, unloadCount } from './deviceOnly'
 
-export const CONSENT_TYPES = ['health', 'ai', 'label-photo', 'shared-products'] as const
+export const CONSENT_TYPES = ['health', 'ai', 'label-photo', 'shared-products', 'cycle'] as const
 export type ConsentType = (typeof CONSENT_TYPES)[number]
 
 /**
@@ -43,6 +43,11 @@ export const CONSENT_VERSIONS: Record<ConsentType, string> = {
   // the opt-in to add new label-read products to Tilo's shared list (sp-1; Profile › Privacy sp-5).
   // Checked by the server too (shared_products_allowed, docs/migrations/2026-10-10-shared-products.sql)
   'shared-products': '2026-10-v1',
+  // Cycle (docs/plans/cycle.md §6): its own explicit consent (Art. 9(2)(a)), separate from health
+  // so the health wording and version don't change. Needs a current health yes. The server allows
+  // the type once docs/migrations/2026-11-16-cycle-consent.sql is applied (Benn); until then a
+  // cycle record stays unsynced on the device (pushConsents sends the others one by one).
+  cycle: '2026-11-v1',
 }
 /** The version given to a label-photo consent carried over from the old device-only flag. */
 export const LEGACY_LABEL_VERSION = 'device-v0'
@@ -332,7 +337,8 @@ export function unsyncedConsents(s: PersistedState): number {
  *   other Mind settings (pillars, asks, reminder types and back-off, time zone, and whether
  *   supplement reminders show names, B11b) are preferences and stay.
  * - device only, never synced (src/data/deviceOnly.ts, security-data H1 and M5): the Unload notes
- *   (`unload`) and the day the low-mood signpost last showed (`lowMoodShown`).
+ *   (`unload`), the day the low-mood signpost last showed (`lowMoodShown`), and the Cycle log
+ *   (`cycle`, cycle.md §6: a health withdrawal also records a cycle withdrawal).
  *   A "Not now" keeps them.
  * Age is a plan input and the one answer onboarding requires; it's kept (PENDING Benn / legal
  * review), as is the legacy `sex` field the older screens read ('M' | 'F').
@@ -341,7 +347,7 @@ export const HEALTH_FIELDS = [
   'day.weight', 'day.checkin', 'profile.weight', 'profile.bodyFat', 'profile.height', 'profile.sexAnswer', 'profile.movement',
   'profile.activityMult', 'profile.activityLevel', 'profile.outcomes', 'profile.pregnancy', 'profile.motivations', 'profile.deficitChosen', 'profile.foodOptIn', 'profile.training',
   'profile.mind.wakeAt', 'profile.mind.windDownAt', 'profile.mind.routine', 'profile.plans(kind)',
-  'device.unload', 'device.lowMoodShown',
+  'device.unload', 'device.lowMoodShown', 'device.cycle',
   // the maintenance loop (compliance, 8 Oct 2026): a reference body weight, and lines derived from the log
   'profile.steadyRef', 'profile.patternShown', 'profile.loopChoice', 'profile.reviewPushSkip',
 ] as const
@@ -361,6 +367,8 @@ export interface HealthDataSummary {
   mindRoutine: number
   /** Unload notes on this device (device only, never synced: deviceOnly.ts) */
   unloadNotes: number
+  /** days in the Cycle log on this device (device only, never synced: deviceOnly.ts) */
+  cycleDays: number
 }
 
 /** The profile's health fields (HEALTH_FIELDS), cleared on withdrawal. `height` is set to null (it's required). */
@@ -407,6 +415,7 @@ export function healthDataSummary(s: PersistedState): HealthDataSummary {
     mindTimes: MIND_TIME_KEYS.filter((k) => s.profile?.mind?.[k] != null).length,
     mindRoutine: s.profile?.mind?.routine != null ? 1 : 0,
     unloadNotes: unloadCount(s),
+    cycleDays: cycleDayCount(s),
   }
 }
 
@@ -485,6 +494,8 @@ export function applyHealthWithdrawal(s: PersistedState, meta: SyncMeta): boolea
   const log = consentLog(s)
   if (!r || r.granted || log.healthCleared === r.id) return false
   clearHealthData(s, meta)
+  // a cycle yes on this device ends with it (cycle.md §6); the log went with clearHealthData
+  if (hasConsent(s, 'cycle')) recordConsent(s, 'cycle', false)
   // an unfinished onboarding draft on this phone holds health answers too (register item 35)
   clearDraft()
   stripResumeCopy(log)
@@ -601,7 +612,12 @@ export function markReupload(s: PersistedState, meta: SyncMeta, yes: ConsentReco
  */
 export function withdraw(s: PersistedState, meta: SyncMeta, type: ConsentType): ConsentRecord {
   const rec = recordConsent(s, type, false)
+  // Cycle (cycle.md §6): turning it off records this withdrawal and deletes the log (the screen
+  // offers the export first)
+  if (type === 'cycle') deleteCycle(s)
   if (type === 'health') {
+    // the cycle consent needs a current health yes: a health withdrawal ends it too, on the record
+    if (hasConsent(s, 'cycle')) recordConsent(s, 'cycle', false)
     clearHealthData(s, meta)
     // an unfinished onboarding draft on this phone holds health answers too (register item 35)
     clearDraft()
@@ -646,6 +662,20 @@ const OWN_CLOCK_MS = 5 * 60_000
 export function resumeAfterYes(s: PersistedState): void {
   const log = consentLog(s)
   if (log.healthPause?.at) setResumeFrom(s, log.healthPause.at)
+}
+
+/**
+ * Cycle may run and its log may be read, written or imported: a current cycle yes and a current
+ * health yes (cycle.md §6: the cycle consent requires one). Local only, so it works offline.
+ */
+export function cycleAllowed(s: PersistedState): boolean {
+  return hasCurrentConsent(s, 'health') && hasCurrentConsent(s, 'cycle')
+}
+
+/** Agree to Cycle. Refused (null) without a current health yes. */
+export function grantCycle(s: PersistedState): ConsentRecord | null {
+  if (!hasCurrentConsent(s, 'health')) return null
+  return recordConsent(s, 'cycle', true)
 }
 
 /**

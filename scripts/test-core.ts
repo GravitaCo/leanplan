@@ -76,6 +76,7 @@ import { loopSuite } from './test-loop'
 import { planSuite } from './test-plan'
 import { duplicatesSuite } from './test-duplicates'
 import { foodModelSuite } from './test-food-model'
+import { cycleSuite } from './test-cycle'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -2172,4 +2173,4 @@ function legalOnboardingGate(): void {
   for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
 }
 
-backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += wizardAnswersSuite() }).then(() => { bad += summaryModelSuite() }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => { bad += planSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => { bad += foodModelSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += wizardAnswersSuite() }).then(() => { bad += summaryModelSuite() }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => { bad += planSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => { bad += foodModelSuite() }).then(async () => { bad += await cycleSuite(fakeServer) }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })
