@@ -169,7 +169,10 @@ agree, this section replaces §3.1's data table and the matching §3.4 rules.
   Fix: exclude nights whose source isn't `'self'` from those three functions; keep them in
   `nightFor` and the weekly sleep line.
 
-**OPEN: where the specialists differ from Benn's answer**
+**Settled 16 Nov: Benn agreed with all the specialists' assessments below** (they now replace his
+original answers on these points). Still open: whether to exclude the whole phone store from
+iPhone backups (item 9), and the `STEPS_MULT` review (item 7). Wearables get a callout on Summary
+(`summary-callouts.md`).
 
 1. **The minimum (Benn: aim for 6 to 7 hours).** `mental-performance`: the evidence says 7. NHS:
    most adults need around 7 to 9 hours; AASM/SRS consensus (Watson 2015): 7 or more for 18 to 60,
