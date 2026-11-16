@@ -49,12 +49,15 @@ export function PvBack({ children }: { children: ReactNode }) {
 }
 
 /** A pushed Plan view: the scrolling `.screen` with the page colour. */
-export function PlanPage({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+export function PlanPage({ children, footer, end = 24 }: { children: ReactNode; footer?: ReactNode
+  /** space under the last line when scrolled to the end, i.e. the gap above a fixed bar (the web pads its page so the last line clears the bar) */
+  end?: number }) {
   const t = useTokens()
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>{children}</ScrollView>
-      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10 }}>{footer}</View>}
+      {/* the scroller takes the space above the fixed bar (the web pads its page by the bar's height), so the last line scrolls clear of it */}
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: end }}>{children}</ScrollView>
+      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10, flexShrink: 0 }}>{footer}</View>}
     </View>
   )
 }

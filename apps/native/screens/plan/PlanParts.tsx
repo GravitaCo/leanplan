@@ -132,7 +132,7 @@ export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: 
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.tint }} />
         <View>
           <Text style={[nameText, { color: t.label }]}>{name}</Text>
-          <Text style={[tx(12), num, { color: t.label2, marginTop: 2 }]}>{line}</Text>
+          <Text style={[big ? tx(12, 400, 1.1) : tx(12), num, { color: t.label2, marginTop: 2 }]}>{line}</Text>
         </View>
       </Pressable>
     )
@@ -145,8 +145,8 @@ export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: 
       {fits && <FitsBadge btn big={big} text="Fits your goal" style={{ position: 'absolute', left: 12, top: 12 }} />}
       <View style={{ position: 'absolute', left: 12, right: 12, bottom: 11 }}>
         <Text style={[nameText, { color: '#fff' }]}>{name}</Text>
-        {/* `.ptile.big` also matches the global `.big` (600, line-height 1.1) on the web, so a big tile's line is bold */}
-        <Text style={[big ? tx(12, 600, 1.1) : tx(12), num, { color: 'rgba(255,255,255,0.85)', marginTop: 2 }]}>{line}</Text>
+        {/* `.ptile.big` also matches the global `.big`: its line height (1.1) carries over, its weight is reset to 400 */}
+        <Text style={[big ? tx(12, 400, 1.1) : tx(12), num, { color: 'rgba(255,255,255,0.85)', marginTop: 2 }]}>{line}</Text>
       </View>
     </Pressable>
   )
