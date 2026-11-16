@@ -53,8 +53,9 @@ export function PlanPage({ children, footer }: { children: ReactNode; footer?: R
   const t = useTokens()
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>{children}</ScrollView>
-      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10 }}>{footer}</View>}
+      {/* the scroller takes the space above the fixed bar (the web pads its page by the bar's height), so the last line scrolls clear of it */}
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}>{children}</ScrollView>
+      {footer != null && <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10, flexShrink: 0 }}>{footer}</View>}
     </View>
   )
 }
