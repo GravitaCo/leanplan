@@ -25,7 +25,7 @@ import { BackButton, NavBtn, Row, Sheet, Swatch, TitleRow } from '../../lib/ui/p
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Icon } from '../../lib/ui/icons'
 import { Check } from '../../lib/ui/choices'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { LibrarySheet, Poster, Thumb } from '../train'
 import { PlanNote, Shade } from './PlanParts'
 
@@ -271,7 +271,7 @@ export function WorkoutView({ type, onBack, onCopy, onEdit }: { type: WorkoutKey
           <Icon name="chevL" size={18} stroke={2.6} color="#1d1d1f" />
         </Pressable>
         <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 }}>
-          <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.025), { color: '#fff' }]}>{keyTitle(type, routines)}</Text>
+          <Text accessibilityRole="header" style={[tx(34, 600, 40, -0.025), GLYPH_ROOM, { color: '#fff' }]}>{keyTitle(type, routines)}</Text>
           <Text style={[tx(15), num, { color: 'rgba(255,255,255,0.85)' }]}>{own ? `Your workout · ${sub}` : r ? `Tilo workout · ${sub}` : `${when} · ${sub}`}</Text>
         </View>
       </View>

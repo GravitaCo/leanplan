@@ -10,7 +10,7 @@ import { useStore } from '@/store/store'
 import { fmtDate, r1 } from '@/core/domain/date'
 import { weightWeekDelta } from '@/core/domain/insights'
 import { foodView } from '@/core/domain/foodMode'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Card, List } from '../../lib/ui/kit'
 import { NavBtn, Row, Sheet } from '../../lib/ui/primitives'
 import { Foot } from '../../lib/ui/text'
@@ -58,7 +58,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
           <TextInput autoFocus keyboardType="decimal-pad" placeholder="0.0" placeholderTextColor={t.label3} value={bw} onChangeText={setBw}
             accessibilityLabel={`Weight for ${fmtDate(cur).dow} in kg`} onSubmitEditing={save}
             style={[tx(40, 600), num, { color: t.label, textAlign: 'right', width: 112, padding: 0 }]} />
-          <Text style={[tx(20, 600), { color: t.label2 }]}>kg</Text>
+          <Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label2 }]}>kg</Text>
         </View>
       </Card>
       {back && (
@@ -67,7 +67,7 @@ export function WeightSheet({ onClose }: { onClose: () => void }) {
           {points.length >= 2 && (
             <Card plain style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                <Text style={[tx(15, 600), { color: t.bodyInk }]}>Last {points.length} entries</Text>
+                <Text style={[tx(15, 600), GLYPH_ROOM, { color: t.bodyInk }]}>Last {points.length} entries</Text>
                 {delta != null && <Text style={[tx(15, 400), { color: t.label2 }, num]}>{delta > 0 ? '+' : delta < 0 ? '−' : ''}{Math.abs(delta)} kg vs last week</Text>}
               </View>
               <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" accessibilityLabel="Weight trend">

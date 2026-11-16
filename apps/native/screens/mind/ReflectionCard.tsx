@@ -8,7 +8,7 @@ import Svg, { Path } from 'react-native-svg'
 import { useStore } from '@/store/store'
 import { Card, LinkBtn } from '../../lib/ui/kit'
 import { Lbl } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { openWholeWeek, useReflection, type ReflectionView } from './model'
 
 export function ReflectionCard() {
@@ -36,13 +36,13 @@ export function ReflectionCardView({ v, onWeek }: { v: ReflectionView; onWeek: (
   const t = useTokens()
   return (
     <>
-      <Lbl right={<Text style={[tx(13, 500), num, { color: t.label2 }]}>{v.span}</Text>}>{v.title}</Lbl>
+      <Lbl right={<Text style={[tx(13, 500), GLYPH_ROOM, num, { color: t.label2 }]}>{v.span}</Text>}>{v.title}</Lbl>
       <Card plain style={{ padding: 16, paddingVertical: 16, paddingHorizontal: 16, gap: 12 }}>
         <View testID="mind-week" accessibilityLabel={v.title} style={{ gap: 12 }}>
-          {v.count && <Text style={[tx(17, 600), num, { color: t.label }]}>{v.count}</Text>}
+          {v.count && <Text style={[tx(17, 600), GLYPH_ROOM, num, { color: t.label }]}>{v.count}</Text>}
           {v.lines.map((l) => (
             <View key={l.label}>
-              <Text style={[tx(13, 600), { color: t.label2 }]}>{l.label}</Text>
+              <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>{l.label}</Text>
               <Text style={[tx(17), { color: t.label, marginTop: 1 }]}>{l.value}</Text>
               {l.bands && (
                 <View testID="mind-bands" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ marginTop: 8, gap: 4 }}>
@@ -62,7 +62,7 @@ export function ReflectionCardView({ v, onWeek }: { v: ReflectionView; onWeek: (
             <View style={{ flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: t.sep, paddingTop: 14 }}>
               <TrendSquare />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text accessibilityRole="header" style={[tx(13, 600), { color: t.mindInk }]}>{v.observation.heading}</Text>
+                <Text accessibilityRole="header" style={[tx(13, 600), GLYPH_ROOM, { color: t.mindInk }]}>{v.observation.heading}</Text>
                 <Text style={[tx(15, 400, 1.45), { color: t.label, marginTop: 2 }]}>{v.observation.text}</Text>
                 <Text style={[tx(13), { color: t.label2, marginTop: 4 }]}>{v.observation.sub}</Text>
               </View>

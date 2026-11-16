@@ -34,7 +34,7 @@ import { NOTIFY_COPY } from '@/copy/notify'
 import { profileKcal, suggestionWeight, weightPatch } from '@/screens/profile/profileTargets'
 import { GOALS, GOAL_TARGET_LABEL, HEALTH_STATUS_LABEL, directionLabel, healthStatusOf } from '@/screens/profile/profileModel'
 import { dayName } from '@/screens/review/reviewModel'
-import { GEIST, num, tx, useTokens } from '../../lib/theme'
+import { GEIST, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
 import { Btn, Card, Chip, Chips, LinkBtn, List, initials as initialsOf } from '../../lib/ui/kit'
 import { Disclosure, PageHeader, Row, Seg, SettingRow, Toggle } from '../../lib/ui/primitives'
@@ -186,7 +186,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const FOODF = t.foodFill, MINDF = t.mindFill, MOVEF = t.moveFill, GRAY = t.fill2
 
   const body = [tx(15, 400, 1.45), { color: t.label }]
-  const b = (x: string) => <Text style={[tx(15, 700, 1.45), num, { color: t.label }]}>{x}</Text>
+  const b = (x: string) => <Text style={[tx(15, 700, 1.45), GLYPH_ROOM, num, { color: t.label }]}>{x}</Text>
   const muted = { color: t.label2 }
 
   // ob7-1: back goes to the Health data sheet it came from
@@ -204,10 +204,10 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             <Pressable accessibilityRole="button" accessibilityState={{ expanded: open === 'profile' }} onPress={() => toggle('profile')}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, backgroundColor: pressed ? t.fill : 'transparent' })}>
               <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: WELLBEING_ENABLED ? t.tintSoft : t.tint, alignItems: 'center', justifyContent: 'center' }}>
-                {ini ? <Text style={[tx(24, 600), { color: WELLBEING_ENABLED ? t.tint : t.onTint }]}>{ini}</Text> : <Icon name="person" size={28} color={WELLBEING_ENABLED ? t.tint : t.onTint} />}
+                {ini ? <Text style={[tx(24, 600), GLYPH_ROOM, { color: WELLBEING_ENABLED ? t.tint : t.onTint }]}>{ini}</Text> : <Icon name="person" size={28} color={WELLBEING_ENABLED ? t.tint : t.onTint} />}
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={[tx(20, 600), { color: t.label }]}>{pr.name || P.id.addName}</Text>
+                <Text numberOfLines={1} style={[tx(20, 600), GLYPH_ROOM, { color: t.label }]}>{pr.name || P.id.addName}</Text>
                 {(goalLabel || kcalText) ? <Text numberOfLines={1} style={[tx(14), num, { color: t.label2, marginTop: 2 }]}>{[goalLabel, kcalText && kcalText + P.id.perDay].filter(Boolean).join(' · ')}</Text> : null}
                 <Text numberOfLines={1} style={[tx(14), { color: t.label2, marginTop: 2 }]}>{syncPaused ? P.id.notSyncing : email}</Text>
               </View>

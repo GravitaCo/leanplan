@@ -13,7 +13,7 @@ import { medicalOutcome, wellbeingOutcome, type WellbeingAnswer } from '@/core/d
 import { CHECKIN, COPY, HEALTH_ANSWERS as H, MEDICAL_ITEMS, WELLBEING_OPTIONS, WELLBEING_STATEMENT } from '@/copy/onboarding'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { answerRows, clearConfirmLine, foodShows, optInRows, type AnswerRow } from '@/screens/profile/healthAnswerRows'
-import { GEIST, tx, useTokens } from '../../lib/theme'
+import { GEIST, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, LinkBtn } from '../../lib/ui/kit'
 import { BackButton, BareSheet, Seg } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
@@ -55,7 +55,7 @@ export function HealthAnswersScreen({ onBack }: { onBack: () => void }) {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 18, paddingHorizontal: 16, paddingBottom: insets.bottom + 40, gap: 16 }}>
         <View style={{ marginLeft: -6 }}><BackButton label="Health data" onPress={onBack} /></View>
-        <Text accessibilityRole="header" style={[tx(32, 600, 38, -0.02), { color: t.label }]}>{H.title}</Text>
+        <Text accessibilityRole="header" style={[tx(32, 600, 38, -0.02), GLYPH_ROOM, { color: t.label }]}>{H.title}</Text>
         <Text style={[tx(16, 400, 1.45), { color: t.label2, marginTop: -8 }]}>{H.lead}</Text>
         {rows.length ? (
           <View style={{ backgroundColor: t.card, borderRadius: t.radius, overflow: 'hidden' }}>

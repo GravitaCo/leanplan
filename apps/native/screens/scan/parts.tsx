@@ -14,7 +14,7 @@
  */
 import type { ReactNode } from 'react'
 import { Image, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native'
-import { num, tx, useTokens, BTN } from '../../lib/theme'
+import { num, tx, useTokens, BTN, GLYPH_ROOM } from '../../lib/theme'
 import { Icon, type IconName } from '../../lib/ui/icons'
 import { slop, useSurface } from '../../lib/ui/kit'
 
@@ -116,7 +116,7 @@ export function SourceCard({ icon, stroke, title, sub, barcode, report, onReport
         <Pressable accessibilityRole="button" onPress={onReport} hitSlop={slop(0, 44)}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, marginTop: 2, marginBottom: -10, alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}>
           <Icon name="flag" size={16} color={t.tint} />
-          <Text style={[tx(15, 500, 1.3, BTN), { color: t.tint }]}>{report}</Text>
+          <Text style={[tx(15, 500, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{report}</Text>
         </Pressable>
       </View>
     </View>
@@ -129,7 +129,7 @@ export function ServingMargin({ label, kcal, margin }: { label: string; kcal: nu
   return (
     <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, marginTop: 12 }}>
       <Text style={[tx(17), { color: t.label }]}>{label}</Text>
-      <Text style={[tx(17, 600), num, { color: t.label }]}>{kcal} kcal <Text style={[tx(17, 400), { color: t.label2 }]}>±{' '}{margin}</Text></Text>
+      <Text style={[tx(17, 600), GLYPH_ROOM, num, { color: t.label }]}>{kcal} kcal <Text style={[tx(17, 400), { color: t.label2 }]}>±{' '}{margin}</Text></Text>
     </View>
   )
 }
@@ -162,7 +162,7 @@ export function ReportHead({ name, barcode }: { name: string; barcode: string })
   const t = useTokens()
   return (
     <View style={{ paddingHorizontal: 4 }}>
-      <Text style={[tx(17, 600), { color: t.label }]}>{name}</Text>
+      <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{name}</Text>
       <Text style={[tx(13), num, { color: t.label2, marginTop: 2 }]}>{barcode}</Text>
     </View>
   )
@@ -184,7 +184,7 @@ export function ReasonList<T extends string>({ options, value, onChange, label }
               {on && <Icon name="check" size={13} stroke={3.2} color={t.onTint} />}
             </View>
             {/* 600: the web's global `.w { font-weight: 600 }` reaches `.sp-why .w` (theme.css), and it ships */}
-            <Text style={[tx(17, 600), { flex: 1, color: t.label }]}>{l}</Text>
+            <Text style={[tx(17, 600), GLYPH_ROOM, { flex: 1, color: t.label }]}>{l}</Text>
           </Pressable>
         )
       })}

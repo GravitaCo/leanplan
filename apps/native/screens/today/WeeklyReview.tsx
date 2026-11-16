@@ -26,7 +26,7 @@ import { weekPicture, type MindContext, type WeekPicture } from '@/core/domain/w
 import type { IfThenPlan } from '@/core/types'
 import { LOOP, PLAN_CARD, REVIEW, spanText } from '@/copy/review'
 import { pushSupported } from '@/data/push'
-import { BTN, font, num, tx, useTokens, type Tokens } from '../../lib/theme'
+import { BTN, font, num, tx, useTokens, type Tokens, GLYPH_ROOM } from '../../lib/theme'
 import { BareSheet } from '../../lib/ui/primitives'
 import { Icon, type IconName } from '../../lib/ui/icons'
 
@@ -128,13 +128,13 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
         <View style={{ paddingTop: 18, gap: 14 }}>
           {(rows.length > 0 || !rv.welcomeBack) && (
             <View accessibilityLabel={REVIEW.did} style={[card, { paddingBottom: 6 }]}>
-              <Text style={[tx(17, 600), { color: t.label }]}>{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</Text>
+              <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{rv.welcomeBack && rv.since ? REVIEW.didSince(rv.since) : REVIEW.did}</Text>
               <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22, marginTop: 4, marginBottom: 6 }]}>{ENCOURAGE[rv.encouragement]}</Text>
               {rows.map((r) => (
                 <View key={r.pillar} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 12, borderTopWidth: 1, borderTopColor: t.sep }}>
                   <Sq t={t} pillar={r.pillar}><Icon name={ICON[r.pillar]} size={20} color={sqInk(t, r.pillar)} /></Sq>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[tx(17, 600), { color: t.label }, [num, { lineHeight: 22 }]]}>{r.title}</Text>
+                    <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }, [num, { lineHeight: 22 }]]}>{r.title}</Text>
                     {r.sub && <Text style={[tx(14, 400), { color: t.label2 }, [num, { lineHeight: 20, marginTop: 2 }]]}>{r.sub}</Text>}
                   </View>
                 </View>
@@ -147,7 +147,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
             <View accessibilityLabel={REVIEW.pattern} style={[card, { flexDirection: 'row', gap: 14 }]}>
               <Sq t={t} pillar="mind"><Icon name="trend" size={20} color={t.mind} /></Sq>
               <View style={{ flex: 1 }}>
-                <Text style={[tx(13, 600), { color: t.mindInk }]}>{REVIEW.pattern}</Text>
+                <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.mindInk }]}>{REVIEW.pattern}</Text>
                 <Text style={[tx(15, 400), { color: t.label }, { lineHeight: 22, marginTop: 2 }]}>{patternText(patternLine.code, rv.gentle)}</Text>
                 <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 4 }]}>{PATTERN_FOOT}</Text>
               </View>
@@ -156,7 +156,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
 
           {rv.why.length > 0 && !rv.welcomeBack && !hard && (
             <View accessibilityLabel={REVIEW.why} style={[card, { gap: 8 }]}>
-              <Text style={[tx(13, 600), { color: t.label2 }]}>{REVIEW.why}</Text>
+              <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>{REVIEW.why}</Text>
               {rv.why.map((w) => <Text key={w} style={[tx(17, 400), { color: t.label }, { lineHeight: 24 }]}>“{w}”</Text>)}
             </View>
           )}
@@ -174,7 +174,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
                     style={{ gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderTopWidth: i ? 1 : 0, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={[tx(17, 600), { color: t.label }]}>{c.title}</Text>
+                        <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{c.title}</Text>
                         <Text style={[tx(13, 400), { color: t.label2 }, { lineHeight: 18, marginTop: 2 }]}>{c.sub}</Text>
                       </View>
                       <Dot on={on} />
@@ -189,7 +189,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
                           ))}
                         </View>
                       : <Pressable accessibilityRole="button" onPress={() => setChangeOpen(true)} style={{ alignSelf: 'flex-start' }}>
-                          <Text style={[tx(15, 500), { color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</Text>
+                          <Text style={[tx(15, 500), GLYPH_ROOM, { color: t.tint }]}>{option ? optionText(option, rv.changeOne.range).title : REVIEW.seeOptions}</Text>
                         </Pressable>)}
                   </Pressable>
                 )
@@ -240,7 +240,7 @@ function PillBtn({ kind, title, onPress, sm, disabled }: { kind: 'done' | 'keep'
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [{ height: h, borderRadius: h / 2, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
         kind === 'done' ? { backgroundColor: t.btn, marginTop: 4 } : { backgroundColor: keepBg, borderWidth: 1, borderColor: t.sep }]}>
-      <Text style={[tx(17, 600), { color: kind === 'done' ? t.btnInk : t.label }]}>{title}</Text>
+      <Text style={[tx(17, 600), GLYPH_ROOM, { color: kind === 'done' ? t.btnInk : t.label }]}>{title}</Text>
     </Pressable>
   )
 }
@@ -250,7 +250,7 @@ function Pill({ title, on, onPress, bg }: { title: string; on?: boolean; onPress
   const t = useTokens()
   // the web's on state is an inset 1.5 ring that changes no size: a border always drawn, clear when off
   const s = { height: 36, paddingHorizontal: 12.5, borderRadius: 18, justifyContent: 'center' as const, backgroundColor: bg, borderWidth: 1.5, borderColor: on ? t.label : 'transparent' }
-  const label = <Text style={[tx(14, 600, 1.3, BTN), { color: t.label }]}>{title}</Text>
+  const label = <Text style={[tx(14, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{title}</Text>
   return onPress
     ? <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress} hitSlop={{ top: 4, bottom: 4 }} style={s}>{label}</Pressable>
     : <View accessibilityLiveRegion="polite" style={s}>{label}</View>
@@ -263,7 +263,7 @@ function PlanCard({ plan, onAnswer, onChange }: { plan: IfThenPlan; onAnswer: (r
   const answer = (r: 'worked' | 'no') => { setSaid(r); onAnswer(r) }
   return (
     <View accessibilityLabel={PLAN_CARD.label} style={{ backgroundColor: t.card, borderRadius: 22, padding: 16, gap: 10 }}>
-      <Text style={[tx(13, 600), { color: t.mindInk }]}>{PLAN_CARD.label}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.mindInk }]}>{PLAN_CARD.label}</Text>
       <Text style={[tx(15, 400), { color: t.label }, { lineHeight: 22 }]}>{PLAN_CARD.line(plan.when, plan.then)}</Text>
       <Text style={[tx(13, 400), { color: t.label2 }]}>{PLAN_CARD.ask}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -286,7 +286,7 @@ function SheetHead({ title, close, onClose }: { title: string; close?: string; o
   const t = useTokens()
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-      <Text accessibilityRole="header" style={[tx(22, 600), { color: t.label, flex: 1 }]}>{title}</Text>
+      <Text accessibilityRole="header" style={[tx(22, 600), GLYPH_ROOM, { color: t.label, flex: 1 }]}>{title}</Text>
       {close && onClose && <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10}><Text style={[tx(16, 400), { color: t.tint }]}>{close}</Text></Pressable>}
     </View>
   )
@@ -311,8 +311,8 @@ function OptionRow({ o, range, on, onPick, long, drift, first }: { o: LoopOption
     <Pressable accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={onPick}
       style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 13, paddingHorizontal: 16, borderTopWidth: first ? 0 : 1, borderTopColor: t.sep, backgroundColor: on ? t.tintSoft : undefined }}>
       <View style={{ flex: 1 }}>
-        <Text style={[tx(12, 600), { color: tone }]}>{x.tag}</Text>
-        <Text style={[tx(17, 600), { color: t.label }]}>{x.title}</Text>
+        <Text style={[tx(12, 600), GLYPH_ROOM, { color: tone }]}>{x.tag}</Text>
+        <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{x.title}</Text>
         {x.sub && <Text style={[tx(13, 400), { color: t.label2 }, [num, { lineHeight: 18, marginTop: 2 }]]}>{x.sub}</Text>}
       </View>
       <Dot on={on} />
@@ -473,7 +473,7 @@ function LearnedSheet({ r, onClose }: { r: Extract<AdaptiveMaintenance, { kind: 
       <SheetHead title={LOOP.learnedTitle} close={LOOP.close} onClose={onClose} />
       <View style={{ backgroundColor: sheetCard, borderRadius: 22, padding: 16 }}>
         <Text style={[tx(13, 400), { color: t.label2 }]}>{LOOP.learnedKey}</Text>
-        <Text style={[tx(34, 600), num, { letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<Text style={[tx(17, 500), { color: t.label2 }]}>{LOOP.kcalADay}</Text></Text>
+        <Text style={[tx(34, 600), GLYPH_ROOM, num, { letterSpacing: -0.7, color: t.label, marginTop: 2 }]}>{LOOP.learnedRange(fmt(r.lo), fmt(r.hi))}<Text style={[tx(17, 500), { color: t.label2 }]}>{LOOP.kcalADay}</Text></Text>
         <View importantForAccessibility="no-hide-descendants" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: 34, marginTop: 14, marginBottom: 8 }}>
           {w > 0 && <>
             <View style={{ position: 'absolute', top: 6, height: 10, borderRadius: 5, left: x(r.start.lo), width: x(r.start.hi) - x(r.start.lo), backgroundColor: dark ? t.fill : t.fill2 }} />
@@ -546,14 +546,14 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
       <Lead>{LOOP.dayLead}</Lead>
       <ChipsRow />
       <View style={sec}>
-        <Text style={[tx(17, 600), { color: t.label }]}>{LOOP.whichDay}</Text>
+        <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{LOOP.whichDay}</Text>
         <View accessibilityRole="radiogroup" accessibilityLabel={LOOP.whichDay} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
           {DAYS.map(([n, s, full]) => {
             const on = day === n
             return (
               <Pressable key={n} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={full} onPress={() => setPrefs({ reviewDay: n })}
                 style={{ width: 44, flexShrink: 1, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.tint : dark ? t.fill2 : t.card }}>
-                <Text style={[tx(15, 600, 1.3, BTN), { color: on ? t.onTint : t.label }]}>{s}</Text>
+                <Text style={[tx(15, 600, 1.3, BTN), GLYPH_ROOM, { color: on ? t.onTint : t.label }]}>{s}</Text>
               </Pressable>
             )
           })}
@@ -562,7 +562,7 @@ export function ReviewDaySheet({ onClose }: { onClose: () => void }) {
       </View>
       {/* the reminder needs N12's native push: until a phone has it, this part isn't offered */}
       {pushSupported() && <View style={sec}>
-        <Text style={[tx(17, 600), { color: t.label }]}>{LOOP.wantReminder}</Text>
+        <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{LOOP.wantReminder}</Text>
         {d(LOOP.oneNote(dayName(day)))}
         {push
           ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><Pill title={LOOP.reminderOn} on bg={dark ? t.elev : t.bg} /><Pill title={LOOP.turnOff} onPress={() => setReviewPush(false)} bg={dark ? t.elev : t.bg} /></View>

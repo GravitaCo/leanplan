@@ -15,7 +15,7 @@ import { Btn, Card, Chip, Chips, useSurface } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Input } from '../../lib/ui/fields'
 import { Foot, Lbl, Sub } from '../../lib/ui/text'
-import { tx, useTokens } from '../../lib/theme'
+import { tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 
 /**
  * Create or edit an if–then plan (implementation intention + optional coping plan). `prefill` and
@@ -69,7 +69,7 @@ export function PlanReviewSheet({ onClose }: { onClose: () => void }) {
       </Sub>
       {due.map((pl) => (
         <Card plain key={pl.id} style={{ marginBottom: 10 }}>
-          <Text style={[tx(17, 600), { color: t.label }]}>{whenLine(pl.when)}</Text>
+          <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{whenLine(pl.when)}</Text>
           <Sub style={{ marginTop: 2, marginBottom: 10 }}>I'll {pl.then}{pl.cope ? `. If something gets in the way: ${pl.cope}` : ''}</Sub>
           <Chips>
             {(Object.keys(PLAN_OUTCOME) as (keyof typeof PLAN_OUTCOME)[]).map((k) => (
@@ -109,8 +109,8 @@ function FirstPlanBody({ after, setAfter, then, setThen, ok, save, onDone }: {
   // TODO(N1-followup): `.ift-card` and `.ift-cues` are onboarding.css classes shared with N11; move to lib/ui if N11 needs them too
   return (
     <View style={{ gap: 14 }}>
-      <Text style={[tx(13, 600), { color: t.tint }]}>{IF_THEN.k}</Text>
-      <Text accessibilityRole="header" style={[tx(24, 600, 30), { color: t.label, marginTop: -6 }]}>{IF_THEN.title}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{IF_THEN.k}</Text>
+      <Text accessibilityRole="header" style={[tx(24, 600, 30), GLYPH_ROOM, { color: t.label, marginTop: -6 }]}>{IF_THEN.title}</Text>
       <Text style={[tx(15, 400, 1.5), { color: t.label2 }]}>{IF_THEN.lead}</Text>
       <View style={{ backgroundColor: surface, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 6 }}>
         <Text style={[tx(13), { color: t.label2 }]} importantForAccessibility="no" accessibilityElementsHidden>{IF_THEN.after}</Text>
@@ -131,7 +131,7 @@ function FirstPlanBody({ after, setAfter, then, setThen, ok, save, onDone }: {
       </View>
       <Btn title={IF_THEN.save} disabled={!ok} onPress={save} style={{ minHeight: 54, borderRadius: 27 }} />
       <Pressable accessibilityRole="button" onPress={onDone} style={({ pressed }) => ({ padding: 4, alignSelf: 'center', opacity: pressed ? 0.7 : 1 })}>
-        <Text style={[tx(16, 500, 1.3, 0), { color: t.tint, textAlign: 'center' }]}>{IF_THEN.later}</Text>
+        <Text style={[tx(16, 500, 1.3, 0), GLYPH_ROOM, { color: t.tint, textAlign: 'center' }]}>{IF_THEN.later}</Text>
       </Pressable>
     </View>
   )

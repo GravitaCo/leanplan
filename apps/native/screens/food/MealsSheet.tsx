@@ -15,7 +15,7 @@ import { Btn, Card, List } from '../../lib/ui/kit'
 import { AddC, BackButton, NavBtn, Row, Sheet, XBtn } from '../../lib/ui/primitives'
 import { FRow, Input, SearchBar } from '../../lib/ui/fields'
 import { Empty, Lbl, Sub } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Checks } from './common'
 import { RecipeLogView } from './RecipeLogView'
 
@@ -55,7 +55,7 @@ export function MealsSheet({ onClose, initialDraft }: { onClose: () => void; ini
       else setDraft(null)
     }
     const line = (children: React.ReactNode) => <Text style={[tx(15, 400, 1.5), { color: t.label }]}>{children}</Text>
-    const b = (s0: string) => <Text style={[tx(15, 700, 1.5), num]}>{s0}</Text>
+    const b = (s0: string) => <Text style={[tx(15, 700, 1.5), GLYPH_ROOM, num]}>{s0}</Text>
     return (
       <Sheet title={draft.id ? RECIPES.editTitle : RECIPES.new} tall animate={false} onClose={onClose}
         left={initialDraft ? undefined : <BackButton onPress={() => setDraft(null)} label={RECIPES.back} />}

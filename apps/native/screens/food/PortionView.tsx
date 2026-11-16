@@ -25,7 +25,7 @@ import { BackButton, NavBtn, Seg, Sheet } from '../../lib/ui/primitives'
 import { Scale, Slider, Stepper } from '../../lib/ui/controls'
 import { Input } from '../../lib/ui/fields'
 import { Foot, Lbl, Sub, TextLink } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { MealSeg } from './common'
 
 type Mode = Portion['mode']
@@ -128,7 +128,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
                 value={gText ?? (grams ? String(Math.round(grams * 100) / 100) : '')}
                 onChangeText={(v) => { setGText(v); setGrams(numIn(v)) }} onBlur={() => setGText(null)}
                 style={[tx(40, 600, 1.1, 0), num, { width: 112, textAlign: 'right', backgroundColor: 'transparent', padding: 0 }]} />
-              <Text style={[tx(20, 600), { color: t.label2 }]}>{u}</Text>
+              <Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label2 }]}>{u}</Text>
             </View>
             <Slider min={0} max={maxG} step={maxG > 400 ? 5 : 1} value={Math.min(maxG, grams)} onChange={setG} label={PORTION.amountSlider} />
             {learned != null && (
@@ -152,7 +152,7 @@ export function PortionView({ food, custom, meal, setMeal, onBack, onClose, anim
       <Card plain style={{ marginTop: 14, marginBottom: 10 }}>
         {!gentle && <Big value={fmt(kcal)} unit="kcal" pm={`± ${margin}`} />}
         {gentle
-          ? <Text style={[tx(22, 600, 1.1, 0), num, { color: t.label }]}>{macros}</Text>
+          ? <Text style={[tx(22, 600, 1.1, 0), GLYPH_ROOM, num, { color: t.label }]}>{macros}</Text>
           : <Sub style={[num, { marginTop: 4 }]}>{macros}</Sub>}
         <Text style={[tx(13), { color: t.label2, marginTop: 4 }]}>
           {CAPTURE_LABEL[entry.how!]}{fatEntry ? ` + ${fatEntry.n.replace(' · cooking', '').toLowerCase()}${gentle ? '' : ` (${fatEntry.k} kcal)`}` : ''}

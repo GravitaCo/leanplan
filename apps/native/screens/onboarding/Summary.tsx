@@ -23,7 +23,7 @@ import { MAINT_SHEET, OTHERS, REDO, SUMMARY, SUMMARY_UI } from '@/copy/onboardin
 import {
   chosenPlan, dayNote, exerciseName, foodCardKind, heroPlan as heroOf, mineLine, reasonChips, shapeLine, slotLine, startPayload, weekStrip, whyLines,
 } from '@/screens/onboarding/summaryModel'
-import { BTN, num, tx, useTokens, type Tokens } from '../../lib/theme'
+import { BTN, num, tx, useTokens, type Tokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, LinkBtn } from '../../lib/ui/kit'
 import { BareSheet } from '../../lib/ui/primitives'
 import { Chevron, Icon } from '../../lib/ui/icons'
@@ -83,7 +83,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
           {art != null && <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}><CoverImage source={art} posY={posYOf(hero?.artAt, 0.35)} /></View>}
           <Shade />
           <View style={{ position: 'absolute', left: 20, right: 20, bottom: 44 }}>
-            <Text style={[tx(13, 600), { color: '#fff', opacity: 0.9 }]}>{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</Text>
+            <Text style={[tx(13, 600), GLYPH_ROOM, { color: '#fff', opacity: 0.9 }]}>{chosen ? chosen.name : r.starter ? SUMMARY.starter : SUMMARY.built}</Text>
             <ScreenH style={{ marginTop: 4, lineHeight: 38, color: '#fff' }}>{r.starter && !chosen ? SUMMARY.starterHeroT : SUMMARY.heroT}</ScreenH>
             <Text style={[tx(15), num, { color: '#fff', opacity: 0.9, marginTop: 4 }]}>{chosen ? chosen.tagline : shapeLine(d, m)}</Text>
           </View>
@@ -91,7 +91,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
         <View style={{ marginTop: -24, backgroundColor: t.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 22, paddingHorizontal: 16, paddingBottom: 30, gap: 14 }}>
           {r.starter && !chosen && (
             <View style={[card, { gap: 8 }]}>
-              <Text style={[tx(17, 600), { color: t.label }]}>{SUMMARY.starterCardT}</Text>
+              <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{SUMMARY.starterCardT}</Text>
               <Text style={[tx(14, 400, 1.45), { color: t.label2 }]}>{SUMMARY.starterCardS}</Text>
               <Btn title={SUMMARY_UI.personalise} kind="gray" onPress={onPersonalise} style={[BP, { backgroundColor: t.bg }]} textStyle={{ fontSize: 16 }} />
             </View>
@@ -103,7 +103,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
                 const circle = { width: 36, height: 36, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: on ? t.btn : t.bg }
                 return (
                   <View key={wd} style={{ alignItems: 'center', gap: 6 }}>
-                    <Text accessibilityElementsHidden importantForAccessibility="no" style={[tx(12, 600), { color: t.label2 }]}>{DAY_LETTER[wd]}</Text>
+                    <Text accessibilityElementsHidden importantForAccessibility="no" style={[tx(12, 600), GLYPH_ROOM, { color: t.label2 }]}>{DAY_LETTER[wd]}</Text>
                     {ss.length
                       ? <Pressable accessibilityRole="button" accessibilityLabel={SUMMARY_UI.dayOpen(DAY_NAME[wd], name)} onPress={() => setDay(ss[0])} style={circle}><Icon name="dumbbell" size={20} stroke={2} color={t.btnInk} /></Pressable>
                       : <View accessibilityRole="image" accessibilityLabel={SUMMARY_UI.day(DAY_NAME[wd], on ? name : restLine(d))} style={circle}>{on && <Icon name="dumbbell" size={20} stroke={2} color={t.btnInk} />}</View>}
@@ -112,20 +112,20 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
               })}
             </View>
             {/* `.sm-strip .w`: theme.css's global `.w` makes it 600 on web */}
-            <Text style={[tx(14, 600), { color: t.label2, textAlign: 'center' }]}>{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</Text>
+            <Text style={[tx(14, 600), GLYPH_ROOM, { color: t.label2, textAlign: 'center' }]}>{SUMMARY.warmLine(chosen ? PLAN_WARMUP_MINUTES : warmupFor(d))}</Text>
           </View>
 
           {/* the reasons are the generated week's: a chosen Tilo plan has its own (Plan tab) */}
           {!chosen && chips.length > 0 && (
             <View style={[card, { gap: 12 }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Text style={[tx(17, 600), { color: t.label }]}>{SUMMARY.whyH}</Text>
+                <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{SUMMARY.whyH}</Text>
                 <LinkBtn title={SUMMARY.allReasons} onPress={() => setAll(true)} style={{ fontSize: 14, paddingVertical: 0, paddingHorizontal: 0 }} />
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {chips.map((x) => (
                   <Pressable key={x.key} accessibilityRole="button" onPress={() => setRow(x)} style={{ paddingVertical: 9, paddingHorizontal: 12, borderRadius: 16, backgroundColor: t.bg }}>
-                    <Text style={[tx(14, 500, 18, BTN), { color: t.label }]}>{x.title}</Text>
+                    <Text style={[tx(14, 500, 18, BTN), GLYPH_ROOM, { color: t.label }]}>{x.title}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -167,7 +167,7 @@ export function Summary({ d, onEdit, onPersonalise, onAddWeight, onAddHeight, on
       {offer && (
         <BareSheet label={REDO.offerT} onClose={() => setOffer(false)}>
           <View style={{ gap: 14 }}>
-            <Text accessibilityRole="header" style={[tx(24, 600, 30), { color: t.label, marginTop: 4 }]}>{REDO.offerT}</Text>
+            <Text accessibilityRole="header" style={[tx(24, 600, 30), GLYPH_ROOM, { color: t.label, marginTop: 4 }]}>{REDO.offerT}</Text>
             <Text style={[tx(16, 400, 1.5), { color: t.label2 }]}>{REDO.offer}</Text>
             <Btn title={REDO.rebuild} onPress={() => start(true)} style={OB_BTN} />
             <LinkBtn title={REDO.keep} onPress={() => start(false)} style={{ fontSize: 16, textAlign: 'center', paddingVertical: 4 }} />
@@ -210,7 +210,7 @@ function FoodBox({ label, children }: { label?: string; children: ReactNode }) {
   const t = useTokens()
   return (
     <View accessibilityLabel={label} style={{ backgroundColor: t.card, borderRadius: 22, padding: 16, gap: 8 }}>
-      <Text style={[tx(13, 600), { color: t.foodInk }]}>{SUMMARY_UI.food}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.foodInk }]}>{SUMMARY_UI.food}</Text>
       {children}
     </View>
   )
@@ -238,7 +238,7 @@ function FoodCard({ m, onHow, onAddWeight, onAddHeight, onAddAge, onMaint, onHea
   // ob4-7 and ob4-9: no number, and the card says logging works in full, why, and how to change it
   if (kind === 'pregnancy') {
     return <FoodBox><Big size={18}>{SUMMARY.maint}</Big><S ink>{SUMMARY.maintP}</S>
-      <S><Text style={[tx(15, 600, 1.5), { color: t.label }]}>{SUMMARY.maintLongK}</Text> {SUMMARY.maintLong}</S>
+      <S><Text style={[tx(15, 600, 1.5), GLYPH_ROOM, { color: t.label }]}>{SUMMARY.maintLongK}</Text> {SUMMARY.maintLong}</S>
       <FoodLink title={SUMMARY.maintMore} onPress={onMaint} /></FoodBox>
   }
   if (kind === 'no-consent') return <FoodBox><Big size={18}>{SUMMARY.noConsentT}</Big><S>{SUMMARY.noConsentS}</S>{go(SUMMARY.noConsentGo, onHealth)}</FoodBox>
@@ -267,7 +267,7 @@ function MaintRows({ rows }: { rows: [string, string][] }) {
     <View style={{ backgroundColor: t.elev, borderRadius: t.radius, padding: 16, gap: 16, marginTop: 12 }}>
       {rows.map(([h, x]) => (
         <View key={h}>
-          <Text style={[tx(17, 600), { color: t.label }]}>{h}</Text>
+          <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{h}</Text>
           <Text style={[tx(15, 400, 1.5), num, { color: t.label2, marginTop: 4 }]}>{x}</Text>
         </View>
       ))}
@@ -356,8 +356,8 @@ function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: Sum
       <Pressable accessibilityRole="button" aria-pressed={!chosen} onPress={() => onPick(undefined)}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16 }}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[tx(13, 600, 1.3, BTN), { color: t.tint }]}>{chosen ? OTHERS.mineOff : OTHERS.mineK}</Text>
-          <Text style={[tx(16, 600, 1.3, BTN), { color: t.label }]}>{OTHERS.mine}</Text>
+          <Text style={[tx(13, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{chosen ? OTHERS.mineOff : OTHERS.mineK}</Text>
+          <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{OTHERS.mine}</Text>
           <Text style={[tx(13, 400, 1.3, BTN), num, { color: t.label2 }]}>{mine}</Text>
         </View>
         {!chosen && <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.label, alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={20} stroke={2.6} color={t.card} /></View>}
@@ -374,7 +374,7 @@ function OthersSheet({ d, m, chosen, onPick, onClose }: { d: WizardDraft; m: Sum
               style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 }, i < PLAN_TEMPLATES.length - 1 && { borderBottomWidth: 1, borderBottomColor: t.sep }]}>
               <View style={{ width: 72, height: 88, borderRadius: 12, overflow: 'hidden', backgroundColor: t.fill2 }}>{img != null && <CoverImage source={img} height={88} posY={posYOf(p.artAt)} />}</View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[tx(16, 600, 1.3, BTN), { color: t.label }]}>{p.name}</Text>
+                <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{p.name}</Text>
                 <Text style={[tx(13, 400, 1.3, BTN), num, { color: t.label2 }]}>{p.tagline}</Text>
                 <Text style={[tx(13, on ? 500 : 400, 1.3, BTN), { color: on ? t.tint : t.label2, marginTop: 2 }]}>{on ? OTHERS.inUse + ' · ' : ''}{planFitLine(p, d, n)}</Text>
               </View>
