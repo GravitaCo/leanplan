@@ -11,7 +11,7 @@ import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTimin
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useStore } from '@/store/store'
 import { Icon, type IconName } from './icons'
-import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
 
 /** Inside a sheet, lists, cards and the pill sit on --elev (`.sheet .list, .sheet .card…`). */
 export const InSheet = createContext(false)
@@ -87,7 +87,7 @@ export function Btn({ title, onPress, kind = 'ink', small, icon, iconAfter, disa
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
       }, kind === 'link' && { marginTop: -4 }, style]}>
       {typeof icon === 'string' ? <Icon name={icon as IconName} color={fg} /> : icon}
-      <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), { color: fg }, textStyle]}>{title}</Text>
+      <Text style={[tx(small ? 15 : so ? 16 : 17, kind === 'danger' ? 400 : so ? 500 : 600, 1.3, BTN), GLYPH_ROOM, { color: fg }, textStyle]}>{title}</Text>
       {typeof iconAfter === 'string' ? <Icon name={iconAfter as IconName} color={fg} /> : iconAfter}
     </Pressable>
   )
@@ -121,8 +121,8 @@ export function Chip({ title, sub, on, onPress, size, radius, tone, role = 'butt
   return (
     <Pressable accessibilityRole={role} accessibilityLabel={label} accessibilityState={state} onPress={onPress} hitSlop={slop(0, sm ? 24 : md ? 32.8 : 32)}
       style={({ pressed }) => ({ backgroundColor: bg, borderRadius: radius ?? (sm ? 12 : 18), justifyContent: 'center', paddingVertical: sm ? 5 : md ? 8 : 7, paddingHorizontal: sm ? 10 : md ? 14 : 13, opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(sm ? 12 : md ? 14 : 15, tone === 'ink' ? 600 : sm ? 500 : 400, 1.2, BTN), { color: fg }]}>{title}</Text>
-      {sub != null && <Text style={[tx(12, 400, 1.2, BTN), { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
+      <Text style={[tx(sm ? 12 : md ? 14 : 15, tone === 'ink' ? 600 : sm ? 500 : 400, 1.2, BTN), GLYPH_ROOM, { color: fg }]}>{title}</Text>
+      {sub != null && <Text style={[tx(12, 400, 1.2, BTN), GLYPH_ROOM, { color: on ? t.onTint : t.label2, opacity: on ? 0.8 : 1 }]}>{sub}</Text>}
     </Pressable>
   )
 }
@@ -176,7 +176,7 @@ export function LinkBtn({ title, onPress, style, muted, color, label, flat, size
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
       hitSlop={flat ? { top: 13, bottom: 13, left: 6, right: 6 } : { top: 8, bottom: 8, left: 4, right: 4 }} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Text style={[tx(size, 400, 1.3, BTN), { color: color ?? (muted ? t.label2 : t.tint) }, !flat && { paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
+      <Text style={[tx(size, 400, 1.3, BTN), { color: color ?? (muted ? t.label2 : t.tint) }, flat ? GLYPH_ROOM : { paddingVertical: 6, paddingHorizontal: 4 }, style]}>{title}</Text>
     </Pressable>
   )
 }
@@ -273,7 +273,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
       <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
       <Pressable accessibilityRole="button" onPress={action.run} hitSlop={{ ...slop(0, 26), left: 8, right: 8 }}>
-        <Text style={[tx(16, 600, 21, BTN), { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
+        <Text style={[tx(16, 600, 21, BTN), GLYPH_ROOM, { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
     </View>
   )
@@ -362,7 +362,7 @@ export function DashAdd({ title, onPress, icon = 'plus', stroke = 2.4, label, af
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 56, marginTop: after ? 10 : 12,
         borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.dash, borderRadius: t.radiusSm, backgroundColor: pressed ? t.fill : 'transparent' })}>
       <Icon name={icon} stroke={stroke} color={t.tint} />
-      <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{title}</Text>
+      <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{title}</Text>
     </Pressable>
   )
 }
