@@ -625,7 +625,9 @@ APPROVED after a render check, copy by `mental-performance`; each D number is ma
 | D7 | Gentle mode says reading has stopped; care versions and safety weeks pause without saying so | Yes (mental-performance) | |
 | D16 | After accepting a steps band, the toast says the daily range changed ("Daily movement updated, so your daily range has changed too. You can see it in Body and goal.") | Yes; nutrition-accuracy confirms the range changes at once | |
 | D22 | A day walked is a walk of 10+ minutes, from the watch or logged by hand; the line is left out at 0 days | Yes; nutrition-accuracy confirms | |
-| W4 | The steps-band suggestion, redesigned: direction A (a "Your daily movement" sheet after the weekly review, with a Profile row to find the setting again), B (a quiet card on Today) or C (inside the review) | A: it asks at most once a week, never on Today; new copy with mental-performance | |
+| W4 | The steps-band suggestion, reworked as a choice (Benn, 16 Nov: the grid was cluttered and hard to read): after the weekly review, "Your daily movement" lists onboarding's four bands as rows, current one selected, the watch's band captioned "From your watch", one sentence of evidence, one button; a Profile row to find it again. Alternatives B (a card on Today) and C (inside the review) | A | |
+| W4-2 | One sheet per review: if the 4-week check or the learned range is due the same week, steps waits a week | Yes | |
+| W4-3 | The build moves the choice tiles' caption (14) and the toast (15) to the Studio sizes (13 and 17), app-wide | Yes | |
 | D3, D5, D8, D10, D11, D13 to D15, D18, D19, D21, D23 | Smaller layout and wording calls, each listed on its board | A quick yes or change per board | |
 
 Approved by mental-performance (no answer needed): D9 (the watch line goes once any sleep answer is
