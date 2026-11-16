@@ -58,6 +58,8 @@ export interface CycleStore {
   shown?: Partial<Record<CyclePrompt, string>>
   /** the day of the last setup-answer change or pregnancy pause: re-arms every "usual" mark */
   rearmedAt?: string
+  /** the day a pregnancy pause ended: the long-gap count starts again from it */
+  resumedAt?: string
   /** alpha review only (§5.1, "log answer changes on the device"): setup answers with the day */
   setupLog?: { at: string; setup: CycleSetup }[]
 }
@@ -84,8 +86,13 @@ export const CYCLE_THRESHOLDS = {
   promptGapDays: 91,
   /** no logged period for this long fires 'no-period' (proposed 90; clinician to set) */
   noPeriodDays: 90,
-  /** …and only if the person checked in at least once in every block of this many days of it */
+  /** the same for 'irregular' (mental-performance, 16 Nov: gaps run longer; clinician to set) */
+  noPeriodDaysIrregular: 180,
+  /** …and only if the person checked in at least this many times in every block of this many days */
   noPeriodCheckinBlockDays: 30,
+  noPeriodCheckinsPerBlock: 2,
+  /** 'heavy' and 'pain' look at this many most recent periods */
+  recentPeriods: 6,
   /** 12 months after a "usual" tap, the mark lapses */
   usualLapseDays: 365,
   /** setups that get 'no-period'. Not 'stop-skip' or 'perimenopause' (no bleeding is often
@@ -162,13 +169,16 @@ function sortedDays(days: Record<string, CycleDay>): string[] {
  * The periods in the log, oldest first (§4). Flow on a day starts or carries on a period; the
  * next flow day carries on the same period when it comes within SILENT_END_DAYS of the last flow
  * day with nothing logged between, or within STOPPED_CARRY_DAYS of a Stopped (a dry day in the
- * middle). Spotting carries on a period but doesn't start one (a spotting day on its own isn't a
- * period start: PROVISIONAL, a product call for Benn or Sara).
+ * middle). Spotting carries on a period but doesn't start one; spotting followed by flow within
+ * STOPPED_CARRY_DAYS backdates the start to the first spotting day (mental-performance, 16 Nov).
+ * PROVISIONAL, a product call for Benn or Sara.
  */
 export function periodsOf(days: Record<string, CycleDay>): Period[] {
   const out: Period[] = []
   let cur: Period | null = null
   let stoppedAt: string | null = null
+  /** spotting not carrying a period: flow within STOPPED_CARRY_DAYS backdates the start to it */
+  let spotFrom: string | null = null
   for (const d of sortedDays(days)) {
     const v = days[d]
     if (v.flow === 'stopped') { if (cur) stoppedAt = d; continue }
@@ -179,11 +189,16 @@ export function periodsOf(days: Record<string, CycleDay>): Period[] {
     if (cur && carries) {
       cur.last = d
     } else {
-      if (v.flow === 'spotting') { if (cur) { /* spotting after an ended period: not a start */ } continue }
-      cur = { start: d, last: d, length: 1, heavyDays: 0, lotDays: 0 }
+      if (v.flow === 'spotting') {
+        if (!spotFrom || daysFrom(spotFrom, d) > STOPPED_CARRY_DAYS) spotFrom = d
+        continue
+      }
+      const start = spotFrom && daysFrom(spotFrom, d) <= STOPPED_CARRY_DAYS ? spotFrom : d
+      cur = { start, last: d, length: 1, heavyDays: 0, lotDays: 0 }
       out.push(cur)
     }
     stoppedAt = null
+    spotFrom = null
   }
   // counts over each period's span
   for (const p of out) {
@@ -286,10 +301,14 @@ function usualHolds(store: CycleStore, prompt: CyclePrompt, ps: Period[], today:
   if (!u) return false
   if (daysFrom(u.at, today) >= T.usualLapseDays) return false
   if (store.rearmedAt && store.rearmedAt >= u.at) return false
-  const since = ps.filter((p) => p.last > u.at)
-  if (prompt === 'long-bleed') return !since.some((p) => p.length >= u.base + T.longBleedRearmExtra || p.length >= T.longBleedRearmDays)
-  if (prompt === 'heavy') return !since.some((p) => p.heavyDays > u.base)
-  if (prompt === 'pain') return !since.some((p) => p.lotDays > u.base)
+  // only periods that start after the tap count against it; the one running at the tap (a tap
+  // mid-period) lifts the baseline to its final count instead (mental-performance, 16 Nov)
+  const metric = (p: Period) => prompt === 'long-bleed' ? p.length : prompt === 'heavy' ? p.heavyDays : p.lotDays
+  const running = ps.find((p) => p.start <= u.at && daysFrom(p.last, u.at) <= SILENT_END_DAYS)
+  const base = Math.max(u.base, running ? metric(running) : 0)
+  const since = ps.filter((p) => p.start > u.at)
+  if (prompt === 'long-bleed') return !since.some((p) => p.length >= base + T.longBleedRearmExtra || p.length >= T.longBleedRearmDays)
+  if (prompt === 'heavy' || prompt === 'pain') return !since.some((p) => metric(p) > base)
   return true
 }
 
@@ -308,15 +327,32 @@ function recentlyShown(store: CycleStore, prompt: CyclePrompt, today: string): b
   return !!s && daysFrom(s, today) < T.promptGapDays
 }
 
-/** Checked in at least once in every T.noPeriodCheckinBlockDays block from `from` to `today`. */
+/** Checked in at least T.noPeriodCheckinsPerBlock times in every T.noPeriodCheckinBlockDays block from `from` to `today`. */
 function keptCheckingIn(checkins: string[], from: string, today: string): boolean {
   const set = new Set(checkins)
   for (let end = today; daysFrom(from, end) > 0; end = shiftDay(end, -T.noPeriodCheckinBlockDays)) {
-    let any = false
-    for (let i = 0; i < T.noPeriodCheckinBlockDays && daysFrom(from, shiftDay(end, -i)) >= 0; i++) if (set.has(shiftDay(end, -i))) { any = true; break }
-    if (!any) return false
+    let n = 0
+    for (let i = 0; i < T.noPeriodCheckinBlockDays && daysFrom(from, shiftDay(end, -i)) >= 0; i++) if (set.has(shiftDay(end, -i))) n++
+    if (n < T.noPeriodCheckinsPerBlock) return false
   }
   return true
+}
+
+/**
+ * The long gap with no logged period, if it has run its length on `today` while they kept
+ * checking in: the day it counts from, else null. Counts from the latest of the last logged flow
+ * (spotting included: someone logging spotting isn't asked whether a period came), the end of a
+ * pregnancy pause, and a setup change, so neither a pause nor a new answer fires it at once.
+ */
+function longGapFrom(store: CycleStore, today: string, f: PromptFacts): string | null {
+  if (!store.setup || !(T.noPeriodSetups as readonly CycleSetup[]).includes(store.setup)) return null
+  const flows = sortedDays(store.days).filter((d) => d <= today && bleeds(store.days[d]))
+  const lastFlow = flows[flows.length - 1]
+  if (!lastFlow) return null
+  const from = [lastFlow, store.resumedAt, store.rearmedAt].filter((x): x is string => !!x && x <= today).sort().pop()!
+  const need = store.setup === 'irregular' ? T.noPeriodDaysIrregular : T.noPeriodDays
+  if (daysFrom(from, today) < need) return null
+  return keptCheckingIn(f.checkinDays ?? [], shiftDay(today, -need + 1), today) ? lastFlow : null
 }
 
 /**
@@ -332,14 +368,17 @@ export function promptsDue(store: CycleStore, today: string, f: PromptFacts = {}
   // long bleeding: the current (or just ended) period has run more than T.longBleedDays
   const last = ps[ps.length - 1]
   if (last && last.length > T.longBleedDays && daysFrom(last.last, today) <= SILENT_END_DAYS && ok('long-bleed')) out.push('long-bleed')
-  // heavy, pain: in at least T.acrossPeriods periods (a single heavy cycle doesn't fire it)
-  if (ps.filter((p) => p.heavyDays > 0).length >= T.acrossPeriods && last && last.heavyDays > 0 && ok('heavy')) out.push('heavy')
-  if (ps.filter((p) => p.lotDays > 0).length >= T.acrossPeriods && last && last.lotDays > 0 && ok('pain')) out.push('pain')
-  // no logged period for a long stretch, only while they kept checking in
-  if ((T.noPeriodSetups as readonly CycleSetup[]).includes(store.setup) && ok('no-period')) {
-    const since = last ? last.last : null
-    if (since && daysFrom(since, today) >= T.noPeriodDays && keptCheckingIn(f.checkinDays ?? [], shiftDay(today, -T.noPeriodDays + 1), today)) out.push('no-period')
-  }
+  // heavy, pain: in at least T.acrossPeriods of the recent periods (a single heavy cycle doesn't
+  // fire it), shown only during the period or just after it, never weeks later out of context
+  const recent = ps.slice(-T.recentPeriods)
+  const inContext = !!last && daysFrom(last.last, today) <= SILENT_END_DAYS
+  if (inContext && last.heavyDays > 0 && recent.filter((p) => p.heavyDays > 0).length >= T.acrossPeriods && ok('heavy')) out.push('heavy')
+  if (inContext && last.lotDays > 0 && recent.filter((p) => p.lotDays > 0).length >= T.acrossPeriods && ok('pain')) out.push('pain')
+  // no logged period for a long stretch, only while they kept checking in; once per gap (the
+  // next logged period clears it), not every T.promptGapDays
+  const gap = longGapFrom(store, today, f)
+  const shownThisGap = !!gap && !!store.shown?.['no-period'] && store.shown['no-period']! > gap
+  if (gap && !shownThisGap) out.push('no-period')
   return out
 }
 
@@ -351,10 +390,7 @@ export function promptsDue(store: CycleStore, today: string, f: PromptFacts = {}
  */
 export function holdsDeficit(store: CycleStore | undefined, today: string, f: PromptFacts = {}): boolean {
   if (!store?.setup || f.paused) return false
-  if (!(T.noPeriodSetups as readonly CycleSetup[]).includes(store.setup)) return false
-  const ps = periodsOf(Object.fromEntries(Object.entries(store.days).filter(([k]) => k <= today)))
-  const last = ps[ps.length - 1]
-  return !!last && daysFrom(last.last, today) >= T.noPeriodDays && keptCheckingIn(f.checkinDays ?? [], shiftDay(today, -T.noPeriodDays + 1), today)
+  return longGapFrom(store, today, f) !== null
 }
 
 /* ---------------- store edits (pure: callers own persistence) ---------------- */
@@ -383,8 +419,11 @@ export function setSetup(store: CycleStore, setup: CycleSetup, today: string): v
   store.setupLog = [...(store.setupLog ?? []), { at: today, setup }].slice(-50)
 }
 
-/** A pregnancy pause re-arms every "usual" mark (§5.1). */
+/** A pregnancy pause starts: re-arms every "usual" mark (§5.1). */
 export function pregnancyRearm(store: CycleStore, today: string): void { store.rearmedAt = today }
+
+/** A pregnancy pause ended: the long-gap count starts again from today. */
+export function pregnancyEnded(store: CycleStore, today: string): void { store.resumedAt = today }
 
 /** "This is usual for me" on a prompt (never on "When to get help"). */
 export function markUsual(store: CycleStore, prompt: Exclude<CyclePrompt, 'no-period'>, today: string): void {
@@ -438,6 +477,7 @@ export function cleanCycle(x: unknown): CycleStore | undefined {
   const shown = marks(c.shown, isDay)
   if (shown) out.shown = shown as CycleStore['shown']
   if (isDay(c.rearmedAt)) out.rearmedAt = c.rearmedAt
+  if (isDay(c.resumedAt)) out.resumedAt = c.resumedAt
   if (Array.isArray(c.setupLog)) {
     const log = c.setupLog.filter((e): e is { at: string; setup: CycleSetup } => !!e && typeof e === 'object' && isDay((e as { at: unknown }).at) && CYCLE_SETUPS.includes((e as { setup: CycleSetup }).setup)).map((e) => ({ at: e.at, setup: e.setup })).slice(-50)
     if (log.length) out.setupLog = log

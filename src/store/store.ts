@@ -57,7 +57,7 @@ import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { askPushPermission, pushPermission, pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
-import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, applyCycleWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -1800,6 +1800,8 @@ export const useStore = create<StoreState>()(
             const m = ensureMeta(d, false)
             // a withdrawal made on another device: this device's health data is cleared too (once)
             applyHealthWithdrawal(d, m)
+            // a Cycle "no" from another device deletes this device's Cycle log too (cycle.md §6)
+            applyCycleWithdrawal(d)
             // the latest answer is a no that's on the server, and this device hasn't seen its clear
             // done: ask the server to delete the account's copy (it re-checks the latest answer
             // itself, in one transaction, so a yes given on another phone meanwhile is kept)
@@ -1894,6 +1896,7 @@ export const useStore = create<StoreState>()(
           if (!consentLetsSync(d)) { set((st) => { st.sync = 'idle' }); rerun = true; return }
           // a health withdrawal made on another device clears this one's health data too (once)
           if (applyHealthWithdrawal(d, m)) rerun = true
+          applyCycleWithdrawal(d)
           // an answer given on another device ends a "Not now" pause here (a yes uploads what was held)
           if (settleHealthPause(d, m)) rerun = true
           // the plan's week moved on (a new phase) while settings were current: upload the mirror next run

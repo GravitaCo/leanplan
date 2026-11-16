@@ -15,7 +15,7 @@ import { offerLighter } from '@/core/domain/dayOptions'
 import { CYCLE_ENABLED } from '@/data/cycleFlag'
 import type { PersistedState } from '@/data/persistence'
 import { cycleImportSkipped, ensureMeta, freshForAccount, freshForDevice, keepForAccount, loadStateFrom, stateFromBackup } from '@/data/persistence'
-import { applyHealthWithdrawal, CONSENT_TYPES, CONSENT_VERSIONS, cycleAllowed, grantCycle, hasConsent, HEALTH_FIELDS, healthDataSummary, recordConsent, withdraw } from '@/data/consent'
+import { applyCycleWithdrawal, applyHealthWithdrawal, pushConsents, CONSENT_TYPES, CONSENT_VERSIONS, cycleAllowed, grantCycle, hasConsent, HEALTH_FIELDS, healthDataSummary, recordConsent, withdraw } from '@/data/consent'
 import { cycleDayCount, cycleLog, deleteCycle, saveCycle, type CycleContext } from '@/data/deviceOnly'
 import { pushDirty, toServerDay } from '@/data/sync'
 import { LOCAL_USER } from '@/data/supabase'
@@ -149,6 +149,25 @@ function coreChecks() {
     const more = JSON.parse(JSON.stringify(usual)) as CycleStore; bleed(more.days, shiftDay(later, -5), 6, {}, 'heavy')
     const rearmed = JSON.parse(JSON.stringify(same)) as CycleStore; setSetup(rearmed, 'irregular', shiftDay(TODAY, 1))
     const lapsed = JSON.parse(JSON.stringify(same)) as CycleStore; bleed(lapsed.days, shiftDay(TODAY, T.usualLapseDays), 4, {}, 'heavy')
+    // mental-performance fixes (16 Nov)
+    const midTap = store('regular'); bleed(midTap.days, ago(31), 4, {}, 'heavy'); bleed(midTap.days, ago(1), 2, {}, 'heavy')
+    markUsual(midTap, 'heavy', ago(1)); bleed(midTap.days, TODAY, 1, {}, 'heavy') // one more Heavy day in the same period
+    const stale = store('regular'); bleed(stale.days, ago(60), 4, {}, 'heavy'); bleed(stale.days, ago(30), 4, {}, 'heavy')
+    const paused = gap('regular'); paused.resumedAt = ago(10)
+    const switched = gap('stop-skip'); setSetup(switched, 'regular', ago(5))
+    const irr = gap('irregular')
+    const spotStart: Record<string, CycleDay> = { [ago(3)]: { flow: 'spotting' }, [ago(2)]: { flow: 'medium' }, [ago(1)]: { flow: 'medium' } }
+    const spotOnly = gap('regular'); spotOnly.days[ago(5)] = { flow: 'spotting' }
+    const onceGap = gap('regular'); markShown(onceGap, ['no-period'], ago(T.promptGapDays))
+    report('prompts: mental-performance fixes', [
+      ['a mid-period "usual" tap is not undone by the same period', !promptsDue(midTap, TODAY).includes('heavy')],
+      ['heavy and pain never show weeks after the period', !promptsDue(stale, TODAY).includes('heavy')],
+      ['no-period never fires the day a pause ends or a setup changes', !promptsDue(paused, TODAY, { checkinDays: checkins }).includes('no-period') && !promptsDue(switched, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['"irregular" waits longer (provisional)', !promptsDue(irr, TODAY, { checkinDays: checkins }).includes('no-period') && T.noPeriodDaysIrregular > T.noPeriodDays],
+      ['spotting then flow backdates the start; spotting counts as not a gap', periodsOf(spotStart)[0]?.start === ago(3) && !promptsDue(spotOnly, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['no-period shows once per gap, not every 3 months', !promptsDue(onceGap, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['one check-in per block is not enough', !promptsDue(gap('regular'), TODAY, { checkinDays: Array.from({ length: 4 }, (_, i) => ago(i * 30)) }).includes('no-period')],
+    ])
     report('prompts: once and usual', [
       ['once shown, not again within the gap', !promptsDue(shown, shiftDay(TODAY, 1)).includes('heavy')],
       ['"usual" stops it for a period like the usual', !promptsDue(same, later).includes('heavy')],
@@ -259,6 +278,23 @@ async function dataChecks(fakeServer: FakeServer) {
       ['a round trip with a current cycle yes keeps it', cycleDayCount(into) === 3 && into.deviceOnly?.cycle?.owner === LOCAL_USER],
       ['import needs a current cycle yes, and says so', cycleDayCount(refused) === 0 && cycleImportSkipped(file, no)],
       ['a restore never overwrites this device\'s own log', cycleDayCount(keepsMine) === 1],
+    ])
+  }
+  /* before the migration: a refused cycle row stays unsynced but never fails the sync (security-data) */
+  {
+    const s = withCycle(); withdraw(s, ensureMeta(s, false), 'ai')
+    const stub = (async (_url: string, o: RequestInit = {}) => {
+      const body = String(o.body ?? '')
+      return body.includes('"cycle"') ? new Response(JSON.stringify({ code: '23514' }), { status: 400 }) : new Response(null, { status: 201 })
+    }) as typeof fetch
+    let threw = false
+    await withFetch(stub, () => pushConsents(s)).catch(() => { threw = true })
+    const left = s.consents!.records.filter((r) => r._dirty)
+    const other = withCycle(); recordConsent(other, 'cycle', false)
+    report('sync before the migration', [
+      ['the refused cycle row does not throw', !threw],
+      ['the other rows upload; only cycle rows stay unsynced', left.length > 0 && left.every((r) => r.type === 'cycle')],
+      ['a cycle "no" from another device deletes the log here', applyCycleWithdrawal(other) && cycleDayCount(other) === 0],
     ])
   }
   /* sentinel: no cycle field in any sync payload */

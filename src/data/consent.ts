@@ -672,6 +672,16 @@ export function cycleAllowed(s: PersistedState): boolean {
   return hasCurrentConsent(s, 'health') && hasCurrentConsent(s, 'cycle')
 }
 
+/**
+ * After a pull: a cycle "no" (from any device) deletes this device's Cycle log, as turning Cycle
+ * off does here (cycle.md §6). Returns whether anything was deleted.
+ */
+export function applyCycleWithdrawal(s: PersistedState): boolean {
+  const r = latestConsent(s, 'cycle')
+  if (!r || r.granted) return false
+  return deleteCycle(s)
+}
+
 /** Agree to Cycle. Refused (null) without a current health yes. */
 export function grantCycle(s: PersistedState): ConsentRecord | null {
   if (!hasCurrentConsent(s, 'health')) return null
@@ -854,7 +864,11 @@ export async function pushConsents(s: PersistedState): Promise<void> {
   for (const x of dirty) {
     const one = await send([x])
     if (one.ok) delete x._dirty
-    else if (await isRowRejection(one)) last = new HttpError('INSERT consents -> ' + one.status, one.status)
+    // a cycle row refused before docs/migrations/2026-11-16-cycle-consent.sql is applied stays
+    // unsynced without failing the sync (security-data, 16 Nov): the rest of the log, a health
+    // withdrawal's cloud clear and the pull must still run. Release gate: Benn applies the
+    // migration before any build has VITE_CYCLE=1.
+    else if (await isRowRejection(one)) { if (x.type !== 'cycle') last = new HttpError('INSERT consents -> ' + one.status, one.status) }
     else throw new HttpError('INSERT consents -> ' + one.status, one.status)
   }
   if (last) throw last
