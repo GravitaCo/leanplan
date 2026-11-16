@@ -116,7 +116,8 @@ export function PageHeader({ eyebrow, title, right, pill = true, profile = true,
         </View>
         {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
       </View>
-      <View style={{ flexDirection: 'row', alignItems: av ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+      {/* .hdr .hdr-row: 8 pt below the pill's row, so the 44 pt header control never touches the pill */}
+      <View style={{ flexDirection: 'row', alignItems: av ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
         <Text accessibilityRole="header" style={[ltitle(t), { flexShrink: 1, minWidth: 0 }]}>{title}</Text>
         {av
           ? right ? <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>{right}<ProfileButton onPress={onProfile} /></View> : <ProfileButton onPress={onProfile} />
