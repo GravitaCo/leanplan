@@ -52,7 +52,8 @@ export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, 
  * nothing moves. On Benn's iPhone such labels lost the end of their last letter ("Add fooc",
  * "Star|t", "This weel", "Check ir"): 2 to 4 pt of a semibold word drawn past the width iOS gave its
  * box. The cause isn't confirmed yet (the gallery's "Text fit" section measures it on a device); this
- * keeps every such label whole meanwhile. Not for text that wraps (it would wrap 4 pt sooner).
+ * keeps every such label whole meanwhile. The words keep their width whether the box hugs, stretches
+ * or wraps; not for a box with its own width or maxWidth (it would lose 4 pt) or text nested in text.
  */
 export const GLYPH_ROOM: TextStyle = { paddingRight: 4, marginRight: -4 }
 /** body's -0.01em at 17 px, inherited as a length */
