@@ -39,7 +39,7 @@
   --placeholder: #646469;
   --sep: #e5e1db;
   --dash: #cfc9c1;      /* dashed "add" outlines */
-  --ring: #8e8a85;      /* an empty checkbox's edge (consent, onboarding's squares; Benn, 16 Nov 2026): 3:1 or more on --card and --bg */
+  --ring: #8e8a85;      /* an empty checkbox's edge (consent, onboarding's squares; Benn, 16 Nov 2026): 3:1 or more on --card, --elev and --bg in both modes */
 
   /* interactive */
   --tint: #9a4a7a;      /* mauve */
@@ -83,7 +83,7 @@
     --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
     --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
     --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
-    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a; --ring: #6e6e73;
+    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a; --ring: #7c7c80;
     --tint: #cd7fae; --tint-soft: #3a2733; --on-tint: #000000;
     --btn: #ffffff; --btn-ink: #000000;
     --red: #ff8a80;
