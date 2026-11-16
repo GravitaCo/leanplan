@@ -13,7 +13,7 @@ import { useStore } from '@/store/store'
 import { SUMMARY_MIND } from '@/screens/today/summaryCopy'
 import { checkedIn, checkinTime, makePlanOffered } from '@/screens/today/summary'
 import { thingView } from '@/screens/today/summary'
-import { BTN, tx, useTokens } from '../../lib/theme'
+import { BTN, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, Card, LinkBtn } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 
@@ -60,8 +60,8 @@ export function MindCard({ checkin: c, isToday, hard, thingSlot, options, windDo
           <Icon name="mind" size={20} color={t.mindInk} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[tx(13, 600), { color: t.mindInk }]}>Mind</Text>
-          <Text style={[tx(17, 500), { color: t.label }]}>{title}</Text>
+          <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.mindInk }]}>Mind</Text>
+          <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>{title}</Text>
           {sub && <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{sub}</Text>}
         </View>
         {done ? <Chevron color={t.label3} /> : <Btn title={SUMMARY_MIND.checkIn} small onPress={onCheckIn} style={{ alignSelf: 'center', height: 44, minHeight: 44, borderRadius: 22, paddingHorizontal: 18 }} />}

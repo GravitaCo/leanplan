@@ -25,7 +25,7 @@ import { cellId, kjFromKcal, labelIssues, parseCell, parseServing, servingRef, S
 import { CONFIRM, NAME_HINT, SHARE_CHECK } from '@/copy/scan'
 import { CREATE_FOOD } from '@/copy/food'
 import { NEEDS_NET } from '@/copy/connection'
-import { num, tx, BTN, useTokens } from '../../lib/theme'
+import { num, tx, BTN, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { BackButton, NavBtn, Seg, Sheet } from '../../lib/ui/primitives'
 import { Btn, List, Note } from '../../lib/ui/kit'
 import { FRow } from '../../lib/ui/fields'
@@ -300,7 +300,7 @@ export function ScanConfirmView({ draft, onBack, onClose, animate = true, onSave
           const note = s ? (
             // the web's `.flagnote .btn.sm { margin-left: 8px }`, wrapping under the sentence
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-              <FlagNote>{CONFIRM.didYouMean} <Text style={[tx(13, 700), num]}>{s.display}</Text>{s.cell === cellId(f, 'serving') ? CONFIRM.perServingSuffix : ''}? {s.because}</FlagNote>
+              <FlagNote>{CONFIRM.didYouMean} <Text style={[tx(13, 700), GLYPH_ROOM, num]}>{s.display}</Text>{s.cell === cellId(f, 'serving') ? CONFIRM.perServingSuffix : ''}? {s.because}</FlagNote>
               <Btn small kind="tinted" title={CONFIRM.accept} label={`Use ${s.display}`} onPress={accept} style={{ marginLeft: 8 }} />
             </View>
           ) : own ? <FlagNote>{own.msg}</FlagNote>

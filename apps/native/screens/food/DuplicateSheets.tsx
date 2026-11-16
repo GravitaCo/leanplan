@@ -14,7 +14,7 @@ import { BackButton, BareSheet, Row, Sheet, Toggle } from '../../lib/ui/primitiv
 import { Check } from '../../lib/ui/choices'
 import { Icon, type IconName } from '../../lib/ui/icons'
 import { Foot, Lbl } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import type { DuplicateAnswer, DuplicateAsk } from './useDuplicateSave'
 
 export function DuplicateSheets({ ask, answer, dismiss }: { ask: DuplicateAsk | null; answer: (a: DuplicateAnswer) => void; dismiss: () => void }) {
@@ -31,7 +31,7 @@ function DupHead({ icon, title, lead }: { icon: IconName; title: string; lead: s
       <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={22} stroke={1.8} color={t.tint} />
       </View>
-      <Text accessibilityRole="header" style={[tx(22, 600, 28, -0.02), { color: t.label, marginTop: 16 }]}>{title}</Text>
+      <Text accessibilityRole="header" style={[tx(22, 600, 28, -0.02), GLYPH_ROOM, { color: t.label, marginTop: 16 }]}>{title}</Text>
       <Text style={[tx(17, 400, 1.45), { color: t.label2, marginTop: 8 }]}>{lead}</Text>
     </View>
   )
@@ -60,7 +60,7 @@ function BarcodeUpdateSheet({ ask, answer, dismiss }: { ask: DuplicateAsk; answe
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Text style={[tx(17), num, { color: t.label2 }]}>{was}</Text>
               <Text accessibilityLabel={DUP.changesTo} style={[tx(15), { color: t.label2 }]}>→</Text>
-              <Text style={[tx(17, 600), num, { color: t.label }]}>{now}</Text>
+              <Text style={[tx(17, 600), GLYPH_ROOM, num, { color: t.label }]}>{now}</Text>
             </View>
           } />
         ))}

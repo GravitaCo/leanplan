@@ -9,7 +9,7 @@ import { shortDateOf } from '@/core/domain/date'
 import { Btn, Chip, Chips, Card, List, Tile } from '../../lib/ui/kit'
 import { PageHeader, Row, SettingRow, Sheet, NavBtn } from '../../lib/ui/primitives'
 import { Foot, GrpH, Prose, Sub } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { MIND_PLAN, PLAN_GUIDES } from '@/copy/plan'
 import { PlanCardView, PlanNote, PlanTile, WeekList } from './PlanParts'
 import { usePlanTab, type IfThenRow } from './usePlanTab'
@@ -58,7 +58,7 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
       )}
       {m.ended && m.card && (
         <Card plain style={{ marginBottom: 10 }}>
-          <Text style={[tx(17, 600, 1.3), { color: t.label, marginBottom: 10 }]}>You've reached the end of {m.card.plan.name}.</Text>
+          <Text style={[tx(17, 600, 1.3), GLYPH_ROOM, { color: t.label, marginBottom: 10 }]}>You've reached the end of {m.card.plan.name}.</Text>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 10 }}>When you're ready, you can look back and choose what's next. Until then, your week carries on as it is.</Foot>
           <Chips><Chip title="See what's next" onPress={() => go({ v: 'end', planId: m.card!.plan.id })} /></Chips>
         </Card>
@@ -85,7 +85,7 @@ export function PlanHome({ go, guide, setGuide }: { go: (to: PlanGo) => void; gu
         {([['workouts', m.workouts, 'Workouts'], ['exercises', m.exercises, 'Exercise library']] as const).map(([k, n, label]) => (
           <Tile key={k} onPress={() => go({ v: k })} style={{ flex: 1, gap: 2 }}>
             <Text style={[tx(26, 400, 1.1, 0), num, { color: t.label }]}>{n}</Text>
-            <Text style={[tx(15, 500, 1.3, 0), { color: t.label }]}>{label}</Text>
+            <Text style={[tx(15, 500, 1.3, 0), GLYPH_ROOM, { color: t.label }]}>{label}</Text>
           </Tile>
         ))}
       </View>

@@ -14,7 +14,7 @@ import { useStore } from '@/store/store'
 import { hideSetupCard } from '@/data/onboardingDraft'
 import { BUILD_PLAN } from '@/copy/onboarding'
 import { IF_THEN, SETUP_CARD } from '@/copy/onboardingApp'
-import { BTN, tx, useTokens } from '../../lib/theme'
+import { BTN, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, Card, LinkBtn } from '../../lib/ui/kit'
 import { BareSheet } from '../../lib/ui/primitives'
 import { OB_BTN } from './frame'
@@ -29,10 +29,10 @@ export function SetupCard() {
     <Card style={{ padding: 18, gap: 10, marginBottom: 16 }}>
       <View accessibilityLabel={SETUP_CARD.k} style={{ gap: 10 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={[tx(13, 600), { color: t.tint }]}>{SETUP_CARD.k}</Text>
+          <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{SETUP_CARD.k}</Text>
           <Text style={[tx(13), { color: t.label2 }]}>{SETUP_CARD.r}</Text>
         </View>
-        <Text style={[tx(20, 600, 1.25, -0.01), { color: t.label }]}>{SETUP_CARD.t}</Text>
+        <Text style={[tx(20, 600, 1.25, -0.01), GLYPH_ROOM, { color: t.label }]}>{SETUP_CARD.t}</Text>
         <Text style={[tx(14, 400, 1.45), { color: t.label2 }]}>{SETUP_CARD.s}</Text>
         <Btn title={SETUP_CARD.go} onPress={() => openSetup(true)} style={{ minHeight: 52, borderRadius: 26, marginTop: 6 }} />
         <LinkBtn title={SETUP_CARD.later} onPress={() => { hideSetupCard(); setHidden(true) }} style={{ textAlign: 'center', paddingVertical: 4 }} />
@@ -48,8 +48,8 @@ export function BuildPlanCard({ onBuild }: { onBuild?: () => void }) {
   return (
     <Card style={{ padding: 18, gap: 12, marginBottom: 10 }}>
       <View accessibilityLabel={BUILD_PLAN.t} style={{ gap: 12 }}>
-        <Text style={[tx(13, 600), { color: t.tint }]}>{BUILD_PLAN.k}</Text>
-        <Text style={[tx(20, 600, 1.25, -0.01), { color: t.label }]}>{BUILD_PLAN.t}</Text>
+        <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{BUILD_PLAN.k}</Text>
+        <Text style={[tx(20, 600, 1.25, -0.01), GLYPH_ROOM, { color: t.label }]}>{BUILD_PLAN.t}</Text>
         <Text style={[tx(14, 400, 1.45), { color: t.label2 }]}>{BUILD_PLAN.s}</Text>
         <Btn title={BUILD_PLAN.go} kind="gray" onPress={onBuild ?? (() => openSetup(true))} style={{ minHeight: 48, borderRadius: 24, backgroundColor: t.bg }} textStyle={{ fontSize: 16 }} />
       </View>
@@ -73,8 +73,8 @@ export function FirstPlanSheet({ onDone }: { onDone: () => void }) {
   return (
     <BareSheet label={IF_THEN.title} onClose={onDone}>
       <View style={{ gap: 14 }}>
-        <Text style={[tx(13, 600), { color: t.tint }]}>{IF_THEN.k}</Text>
-        <Text accessibilityRole="header" style={[tx(24, 600, 30), { color: t.label, marginTop: -6 }]}>{IF_THEN.title}</Text>
+        <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{IF_THEN.k}</Text>
+        <Text accessibilityRole="header" style={[tx(24, 600, 30), GLYPH_ROOM, { color: t.label, marginTop: -6 }]}>{IF_THEN.title}</Text>
         <Text style={[tx(15, 400, 1.5), { color: t.label2 }]}>{IF_THEN.lead}</Text>
         <View style={{ backgroundColor: t.elev, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 6 }}>
           <Text style={label}>{IF_THEN.after}</Text>

@@ -28,7 +28,7 @@ import { DayNav, MoveStrip } from '../../lib/ui/WeekStrip'
 import { PageHeader, XBtn } from '../../lib/ui/primitives'
 import { Btn, Chip, Chips, LinkBtn, List } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot, TextLink as InlineLink } from '../../lib/ui/text'
 import { TrainNav } from './nav'
 
@@ -119,7 +119,7 @@ function Train() {
   const foldRow = (s: string) => (
     <Pressable accessibilityRole="button" accessibilityState={{ expanded: lighterOpen }} onPress={() => setLighterOpen(!lighterOpen)}
       style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-      <Text style={[tx(16, 500), { color: t.label }]}>Lighter options</Text>
+      <Text style={[tx(16, 500), GLYPH_ROOM, { color: t.label }]}>Lighter options</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
         <Text numberOfLines={1} style={[tx(14, 400), { color: t.label2, flexShrink: 1 }]}>{s}</Text>
         <Chevron color={t.label3} rotate={lighterOpen ? 270 : 90} />
@@ -130,7 +130,7 @@ function Train() {
   const lighter = WELLBEING_ENABLED ? hardDayCard() : (
     <View style={lighterCard}>
       {lighterUp
-        ? <Text style={[tx(17, 600), { lineHeight: 22, color: t.label }]}>{m.lighterHeading}</Text>
+        ? <Text style={[tx(17, 600), GLYPH_ROOM, { lineHeight: 22, color: t.label }]}>{m.lighterHeading}</Text>
         : foldRow('Shorter, mobility, walk')}
       {(lighterUp || lighterOpen) && (
         <View accessibilityLabel="Today's session" style={{ marginTop: 10 }}><Chips>
@@ -159,8 +159,8 @@ function Train() {
                   style={({ pressed }) => ({ backgroundColor: t.bg, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 14, minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.move }} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[tx(12, 500), { color: t.label2 }]}>{x.k}</Text>
-                    <Text style={[tx(16, 600), { lineHeight: 19, marginTop: 2, color: t.label }]}>{x.t}</Text>
+                    <Text style={[tx(12, 500), GLYPH_ROOM, { color: t.label2 }]}>{x.k}</Text>
+                    <Text style={[tx(16, 600), GLYPH_ROOM, { lineHeight: 19, marginTop: 2, color: t.label }]}>{x.t}</Text>
                     <Text style={[tx(12, 400), num, { color: t.label2, marginTop: 4 }]}>{x.d}</Text>
                   </View>
                   <Chevron color={t.label3} />
@@ -195,7 +195,7 @@ function Train() {
 
       {isToday && showLoadNote(data, cur) && (
         <View style={card}>
-          <Text style={[tx(17, 600), { lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
+          <Text style={[tx(17, 600), GLYPH_ROOM, { lineHeight: 22, marginBottom: 10, color: t.label }]}>You've trained a lot this week. Rest is when your body adapts, so a lighter day can help.</Text>
           <Chips>
             <Chip title="Thanks" onPress={() => setPrefs({ loadNoteSeen: cur })} />
             {plannedKeys(data, shiftDay(cur, 1)).length > 0 && (
@@ -215,7 +215,7 @@ function Train() {
 
       {back && (
         <View style={card}>
-          <Text style={[tx(17, 600), { lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
+          <Text style={[tx(17, 600), GLYPH_ROOM, { lineHeight: 22, marginBottom: 10, color: t.label }]}>Welcome back. Want an easier first week?</Text>
           <Foot style={{ paddingTop: 0, paddingHorizontal: 0, paddingBottom: 10 }}>Breaks happen, and coming back is what counts. Shorter sessions for a week can make it easier to settle back in.</Foot>
           <Chips>
             <Chip title="Yes, go easier" onPress={() => setPrefs({ welcomeAsked: cur, easyFrom: cur, easyUntil: easyUntil(cur) })} />
@@ -286,7 +286,7 @@ function Train() {
           )}
           <TRow onPress={() => setAddOpen(true)} style={{ paddingVertical: 14, paddingHorizontal: 14, gap: 12 }}>
             <Icon name="plus" size={20} color={t.tint} />
-            <Text style={[tx(16, 500), { color: t.tint }]}>Add something</Text>
+            <Text style={[tx(16, 500), GLYPH_ROOM, { color: t.tint }]}>Add something</Text>
           </TRow>
         </List>
       </View>

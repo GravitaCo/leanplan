@@ -16,7 +16,7 @@ import { Btn, LinkBtn, List } from '../../lib/ui/kit'
 import { BackButton, NavBtn, Row, Swatch, Toggle, XBtn } from '../../lib/ui/primitives'
 import { NameField } from '../../lib/ui/fields'
 import { Foot } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { PlanNote, Timeline, WeekRows } from './PlanParts'
 import { DayEditor } from './PlanDayViews'
 import { StartChoice } from './PlanLibrary'
@@ -69,7 +69,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
       </View>
     </>
   )
-  const h1 = (s: string) => <Text accessibilityRole="header" style={[tx(30, 600, 36, -0.02), { color: t.label, marginTop: 4, marginBottom: 16 }]}>{s}</Text>
+  const h1 = (s: string) => <Text accessibilityRole="header" style={[tx(30, 600, 36, -0.02), GLYPH_ROOM, { color: t.label, marginTop: 4, marginBottom: 16 }]}>{s}</Text>
   const cta = (title: string, onPress: () => void, disabled?: boolean) => <Btn title={title} onPress={onPress} disabled={disabled} style={{ minHeight: 54, borderRadius: 27 }} />
 
   if (step === 1) {
@@ -92,7 +92,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
         )}
         <NameField label="Name" value={name} maxLength={120} onChangeText={(v) => { setName(v); setNamed(true) }} />
         <View style={{ backgroundColor: t.card, borderRadius: t.radius, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, marginBottom: 12 }}>
-          <Text style={[tx(16, 500), { flex: 1, color: t.label }]}>Plan length</Text>
+          <Text style={[tx(16, 500), GLYPH_ROOM, { flex: 1, color: t.label }]}>Plan length</Text>
           {stepBtn('Fewer weeks', '−', weeks - 1)}
           <Text style={[tx(26, 500), num, { minWidth: 58, textAlign: 'center', color: t.label }]}>{weeks}<Text style={[tx(13, 500), { color: t.label2 }]}> {weeks === 1 ? 'week' : 'weeks'}</Text></Text>
           {stepBtn('More weeks', '+', weeks + 1)}
@@ -136,7 +136,7 @@ export function PlanBuilder({ onCancel, onStart, onMaintenance, onOpenWorkout, n
       {h1('Ready to start')}
       <View style={{ backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 14, paddingHorizontal: 16, gap: 12, marginBottom: 16 }}>
         <View>
-          <Text style={[tx(20, 600), { color: t.label }]}>{name.trim() || 'My plan'}</Text>
+          <Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }]}>{name.trim() || 'My plan'}</Text>
           <Text style={[tx(13, 400, 1.38), num, { color: t.label2 }]}>{weeks} {weeks === 1 ? 'week' : 'weeks'} · {workouts} {workouts === 1 ? 'workout' : 'workouts'} a week</Text>
         </View>
         <Timeline cells={cells} />

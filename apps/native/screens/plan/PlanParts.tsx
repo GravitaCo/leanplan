@@ -17,7 +17,7 @@ import { List, useSurface } from '../../lib/ui/kit'
 import { Chevron, Icon } from '../../lib/ui/icons'
 import { CoverImage } from '../../lib/ui/CoverImage'
 import { Thumb } from '../train'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 
 /* ---------------------------------------------------------------- timeline */
 
@@ -159,7 +159,7 @@ export function FitsBadge({ text, style, big, btn }: { text: string; style?: Sty
   const t = useTokens()
   return (
     <View style={[{ alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 12, backgroundColor: t.tint }, style]}>
-      <Text style={[tx(12, 600, big ? 1.1 : 1.3, btn ? 0 : undefined), { color: '#fff' }]}>{text}</Text>
+      <Text style={[tx(12, 600, big ? 1.1 : 1.3, btn ? 0 : undefined), GLYPH_ROOM, { color: '#fff' }]}>{text}</Text>
     </View>
   )
 }
@@ -215,7 +215,7 @@ export function WeekRow({ row, onPress, emptyAdd }: { row: WeekRowModel; onPress
       <View style={{ flex: 1, minWidth: 0 }}>
         {names.length === 0
           ? emptyAdd
-            ? <Text style={[tx(17, 500), { color: t.tint }]}>+ Add</Text>
+            ? <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.tint }]}>+ Add</Text>
             : <Text numberOfLines={1} style={[tx(17, today ? 600 : 400, 1.3, onPress ? 0 : undefined), { color: t.label2 }]}>Rest · recovery counts too</Text>
           : <>
             <Text numberOfLines={1} style={[tx(17, today ? 600 : 400, 1.3, onPress ? 0 : undefined), { color: t.label }]}>{names.join(' + ')}</Text>
@@ -269,8 +269,8 @@ export function PlanCardView({ name, art, big, small, cells, endLabel, note, onP
           ? <CoverImage source={art} y={0.4} style={{ width: 56, height: 56, borderRadius: 14, overflow: 'hidden' }} />
           : <View style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.tint }} /></View>}
         <View style={{ flex: 1 }}>
-          <Text style={[tx(13, 600, 1.3, 0), { color: t.tint }]}>Your plan</Text>
-          <Text style={[tx(20, 600, 1.3, 0), { color: t.label }]}>{name}</Text>
+          <Text style={[tx(13, 600, 1.3, 0), GLYPH_ROOM, { color: t.tint }]}>Your plan</Text>
+          <Text style={[tx(20, 600, 1.3, 0), GLYPH_ROOM, { color: t.label }]}>{name}</Text>
         </View>
         <Chevron color={t.label3} />
       </View>

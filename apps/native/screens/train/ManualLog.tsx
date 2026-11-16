@@ -25,7 +25,7 @@ import { ExCard } from './Preview'
 import { Btn, LinkBtn, Stack } from '../../lib/ui/kit'
 import { BackButton, Seg, TitleRow, Toggle } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot, Sub, TextLink as InlineLink } from '../../lib/ui/text'
 import { TrainNav, toPoint } from './nav'
 
@@ -142,7 +142,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
                 : <LinkBtn flat title="Watch how to do it ›" onPress={() => { WebBrowser.openBrowserAsync(howToLink(shown.n)).catch(() => {}) }} />}
               {x && <LinkBtn flat title="Swap" label={`Swap ${shown.n}`} onPress={() => setSwapFor(exi)} />}
             </View>
-            {!!lastTxt && <Text style={[tx(13, 600), num, { color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
+            {!!lastTxt && <Text style={[tx(13, 600), GLYPH_ROOM, num, { color: t.label2, marginBottom: 8 }]}>Last time: {lastTxt}</Text>}
             {shape === 'reps' && loadOn && (
               <View style={{ marginBottom: 10 }}><Seg options={[['none', 'Bodyweight'], ['added', 'Added weight'], ['assist', 'Assisted']]} value={load} onChange={(v) => setLoad(exi, v)} /></View>
             )}
@@ -158,7 +158,7 @@ export function ManualLog({ type, slots, option, swaps, onSwap, onBack, easier }
                     <>
                       <Box value={r.sec ?? ''} ph="sec" label={`${label} seconds`} onChange={(v) => updateSet(exi, si, { sec: v })} /><U s="sec" />
                       <Pressable accessibilityRole="button" accessibilityLabel={`Time ${label}`} onPress={() => setTimer({ exi, si })} style={{ backgroundColor: t.fill, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10 }}>
-                        <Text style={[tx(15, 600), { color: t.tint }]}>Timer</Text>
+                        <Text style={[tx(15, 600), GLYPH_ROOM, { color: t.tint }]}>Timer</Text>
                       </Pressable>
                     </>
                   )}

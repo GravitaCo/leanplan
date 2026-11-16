@@ -10,7 +10,7 @@ import { EFFORTS } from '@/core/data/modalities'
 import { ChoiceGrid } from './AdjustSheet'
 import { Btn, List, Stack } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Row } from '../../lib/ui/primitives'
-import { font, tx, useTokens } from '../../lib/theme'
+import { font, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Sub } from '../../lib/ui/text'
 import { FRow } from '../../lib/ui/fields'
 
@@ -37,7 +37,7 @@ export function FinishSheet({ title, mins, gentle, rows, effort0, note0, onFinis
   return (
     <BareSheet label={`${title}, done`} onClose={onBack} overlay={overlay}>
       <View style={{ alignSelf: 'flex-start', marginBottom: 4 }}><NavBtn title="Back to workout" onPress={onBack} /></View>
-      <Text accessibilityRole="header" style={[tx(28, 600), { lineHeight: 32, letterSpacing: -0.56, marginTop: 4, color: t.label }]}>{title}, done.</Text>
+      <Text accessibilityRole="header" style={[tx(28, 600), GLYPH_ROOM, { lineHeight: 32, letterSpacing: -0.56, marginTop: 4, color: t.label }]}>{title}, done.</Text>
       <Sub style={{ marginTop: 2, marginBottom: 14 }}>{[minsOut != null && !gentle ? `${Math.round(minsOut)} min` : '', `${rows.length} ${rows.length === 1 ? 'exercise' : 'exercises'}`].filter(Boolean).join(' · ')}</Sub>
       <List style={{ marginBottom: 8 }}>
         {rows.map((r, i) => (

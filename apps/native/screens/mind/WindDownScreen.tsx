@@ -13,7 +13,7 @@ import type { IconName } from '../../lib/ui/icons'
 import { List } from '../../lib/ui/kit'
 import { NavBtn, Row, Sheet, Toggle } from '../../lib/ui/primitives'
 import { Foot, Lbl } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { flipPick, routineSheetRows, routineStart, saveRoutine, useWindDown } from './model'
 import { PushedTop } from './PushedTop'
 import { SupportSheet } from './SupportSheet'
@@ -40,7 +40,7 @@ export function WindDownScreen({ onBack, onSkill, children }: {
         {/* .wd-main: a column 10 apart, 6 from the title */}
         <View style={{ gap: 10, paddingTop: 6 }}>
           <Text style={[tx(17), { color: t.label2, marginTop: 2, marginHorizontal: 4, marginBottom: 4 }]}>{m.sub}</Text>
-          <Lbl right={m.from ? <Text style={[tx(13, 500), num, { color: t.label2 }]}>{m.from}</Text> : undefined} style={{ paddingTop: 10, paddingBottom: 0 }}>{m.routineLabel}</Lbl>
+          <Lbl right={m.from ? <Text style={[tx(13, 500), GLYPH_ROOM, num, { color: t.label2 }]}>{m.from}</Text> : undefined} style={{ paddingTop: 10, paddingBottom: 0 }}>{m.routineLabel}</Lbl>
           <List icons style={{ marginBottom: 8 }}>
             {m.steps.map((s) => (
               <Row key={s.key} title={s.name} sub={s.sub} wrapSub square={sq(s.icon)} onPress={s.opens ? () => onSkill(s.opens!) : undefined} />

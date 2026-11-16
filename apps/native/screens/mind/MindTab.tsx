@@ -15,7 +15,7 @@ import type { IconName } from '../../lib/ui/icons'
 import { Btn, Card, List } from '../../lib/ui/kit'
 import { PageHeader, Row } from '../../lib/ui/primitives'
 import { Foot, Lbl } from '../../lib/ui/text'
-import { tx, useTokens, type Tokens } from '../../lib/theme'
+import { tx, useTokens, type Tokens, GLYPH_ROOM } from '../../lib/theme'
 import { openMindCheckin, popView, pushView, stackOnArrival, stackView, useMindPage, type MindStack } from './model'
 import { OutsideScreen } from './OutsideScreen'
 import { ReflectionCard } from './ReflectionCard'
@@ -101,14 +101,14 @@ function MindPage({ onCheckin, onSupport, onSkill, onPlans, children }: {
                   {m.pairs.map(([k, v]) => (
                     <View key={k} testID="mind-pair" style={{ width: '46%', flexGrow: 1 }}>
                       <Text style={[tx(13), { color: t.label2 }]}>{k}</Text>
-                      <Text style={[tx(17, 500), { color: t.label, marginTop: 1 }]}>{v}</Text>
+                      <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label, marginTop: 1 }]}>{v}</Text>
                     </View>
                   ))}
                 </View>
               )
               : (
                 <View>
-                  <Text style={[tx(17, 500), { color: t.label }]}>{MIND.askTitle}</Text>
+                  <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>{MIND.askTitle}</Text>
                   <Text style={[tx(13), { color: t.label2, marginTop: 2 }]}>{MIND.askSub}</Text>
                 </View>
               )}

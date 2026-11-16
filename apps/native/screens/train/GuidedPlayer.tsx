@@ -42,7 +42,7 @@ import { BRAND_COLOR, GpBar, GpBot, GpClock, GpMain, GpPill, GpRound, GpSec, GpS
 import { Btn, List, Stack } from '../../lib/ui/kit'
 import { BareSheet, NavBtn, Row, Sheet, Toggle, overlayBack, useOverlayOpen } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
-import { font, num, tx, useTokens } from '../../lib/theme'
+import { font, num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Foot, Sub } from '../../lib/ui/text'
 import { Dots } from './gp'
 
@@ -440,7 +440,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
           ) : finding && calib ? (
             <GpBot label={`Find your weight: ${name}`}>
               <View>
-                <Text style={[tx(13, 600), { color: BRAND_COLOR }]}>{FIRST_SESSION.findK(calib.n + 1)}</Text>
+                <Text style={[tx(13, 600), GLYPH_ROOM, { color: BRAND_COLOR }]}>{FIRST_SESSION.findK(calib.n + 1)}</Text>
                 <Text accessibilityRole="header" style={[font(600), W, { fontSize: 28, lineHeight: 32, letterSpacing: -0.56 }]}>{name}</Text>
                 <Text style={[font(400), dim, { fontSize: 15, lineHeight: 21, marginTop: 4 }]}>{FIRST_SESSION.find}</Text>
               </View>
@@ -544,7 +544,7 @@ export function GuidedPlayer({ type, slots, option, onSwap, onClose, onFinished,
         {askFeel && (
           <BareSheet label={FIRST_SESSION.feelT} onClose={() => setAskFeel(null)} overlay>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text accessibilityRole="header" style={[tx(22, 600), { color: tk.label }]}>{FIRST_SESSION.feelT}</Text>
+              <Text accessibilityRole="header" style={[tx(22, 600), GLYPH_ROOM, { color: tk.label }]}>{FIRST_SESSION.feelT}</Text>
               <NavBtn title="Skip" onPress={() => setAskFeel(null)} />
             </View>
             <Text style={[tx(15, 400), num, { color: tk.label2, marginTop: 2, marginBottom: 12 }]}>{askFeel.line}</Text>

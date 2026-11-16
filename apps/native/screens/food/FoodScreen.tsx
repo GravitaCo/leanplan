@@ -19,7 +19,7 @@ import { Card, DashAdd, LinkBtn, List, RoundBtn } from '../../lib/ui/kit'
 import { AddC, PageHeader, Row, Sheet } from '../../lib/ui/primitives'
 import { DayNav } from '../../lib/ui/WeekStrip'
 import { Foot, GrpH, Lbl } from '../../lib/ui/text'
-import { num, tx, useTokens } from '../../lib/theme'
+import { num, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { MarginSheet } from './MarginSheet'
 import { AddFoodSheet } from './AddFoodSheet'
 import { MealsSheet } from './MealsSheet'
@@ -70,7 +70,7 @@ export function FoodScreen() {
             {fd.card === 'yes' ? (
               // Yes: totals in words; a range only after "Show a range" (ob9-4), never a target
               <View style={{ gap: 8 }}>
-                <Text style={[tx(22, 600, 1.2, -0.01), { color: t.label }]}>{FOOD9.meals(mw.slots.length)}</Text>
+                <Text style={[tx(22, 600, 1.2, -0.01), GLYPH_ROOM, { color: t.label }]}>{FOOD9.meals(mw.slots.length)}</Text>
                 <Text style={[tx(15, 400, 1.5), { color: t.label2 }]}>{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</Text>
                 {fv.rangeOnFood && <>
                   {/* inside `.f9` the bar keeps `.kbar`'s 14 above it (only `.pcard > .kbar` drops it) */}
@@ -88,7 +88,7 @@ export function FoodScreen() {
                 {pRange && pline(FOOD9.proteinRange(Math.round(tot.p), pRange.low, pRange.high))}
               </>
             ) : <>
-              {gentle ? <Text style={[tx(24, 600, 1.2, -0.01), { color: t.label }]}>{st.gentle}</Text> : kcalHead}
+              {gentle ? <Text style={[tx(24, 600, 1.2, -0.01), GLYPH_ROOM, { color: t.label }]}>{st.gentle}</Text> : kcalHead}
               <KcalBar k={tot.k} lo={r.lo} hi={r.hi} />
               {!gentle && pline(FOOD.range(fmt(r.lo), fmt(r.hi)), st.word)}
               <MacroTrio p={tot.p} c={tot.c} f={tot.f} tp={tg.p} tc={tg.c} tf={tg.f} />
@@ -187,7 +187,7 @@ function KcalHead({ kcal, margin, onMargin }: { kcal: number; margin: number; on
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', flexShrink: 1 }}>
-        <Text style={[tx(44, 600, 1, -0.03), num, { color: t.label }]}>{fmt(kcal)}</Text>
+        <Text style={[tx(44, 600, 1, -0.03), GLYPH_ROOM, num, { color: t.label }]}>{fmt(kcal)}</Text>
         <Text style={[tx(15), { color: t.label2 }]}>{FOOD.kcalEaten}</Text>
       </View>
       {kcal > 0 && <LinkBtn title={`± ${margin}`} label={FOOD.aboutEstimate} onPress={onMargin} style={num} />}

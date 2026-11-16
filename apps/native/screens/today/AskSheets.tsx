@@ -10,7 +10,7 @@ import { useStore } from '@/store/store'
 import { medicalOutcome } from '@/core/domain/onboarding'
 import { FOOD9 } from '@/copy/onboardingApp'
 import { CHECKIN, COPY, MEDICAL_ITEMS } from '@/copy/onboarding'
-import { BTN, tx, useTokens } from '../../lib/theme'
+import { BTN, tx, useTokens, GLYPH_ROOM } from '../../lib/theme'
 import { Btn, LinkBtn } from '../../lib/ui/kit'
 import { BareSheet } from '../../lib/ui/primitives'
 import { Icon } from '../../lib/ui/icons'
@@ -26,7 +26,7 @@ const F9_NO = { height: 48, minHeight: 48, borderRadius: 24 }
 /** `.cs-t` and `.cs-lead` */
 function Title({ children, style }: { children: string; style?: object }) {
   const t = useTokens()
-  return <Text style={[tx(24, 600), { color: t.label }, [{ lineHeight: 30, marginTop: 4 }, style]]}>{children}</Text>
+  return <Text style={[tx(24, 600), GLYPH_ROOM, { color: t.label }, [{ lineHeight: 30, marginTop: 4 }, style]]}>{children}</Text>
 }
 function Lead({ children }: { children: string }) {
   const t = useTokens()
@@ -44,7 +44,7 @@ export function FoodAskSheet({ ask, onClose }: { ask: 'today' | 'range'; onClose
   }
   return (
     <BareSheet label={c.t} onClose={() => pick(false)}><Consent>
-      <Text style={[tx(13, 600), { color: t.tint }]}>{c.k}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.tint }]}>{c.k}</Text>
       <Title style={{ marginTop: -6 }}>{c.t}</Title>
       <Lead>{c.s}</Lead>
       <Btn title={c.yes} onPress={() => pick(true)} style={OB_BTN} />
@@ -107,7 +107,7 @@ export function PregnancyCheckSheet({ onClose, onAnswers }: { onClose: () => voi
       <Lead>{CHECKIN.lead}</Lead>
       <Opts label={CHECKIN.title} opts={CHECKIN.options} value={[]} onPick={pick} />
       <Pressable accessibilityRole="button" onPress={later} style={{ padding: 4, alignItems: 'center' }}>
-        <Text style={[tx(16, 500, 1.3, BTN), { color: t.tint }]}>{CHECKIN.later}</Text>
+        <Text style={[tx(16, 500, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{CHECKIN.later}</Text>
       </Pressable>
     </Consent></BareSheet>
   )
