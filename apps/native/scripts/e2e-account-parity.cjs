@@ -35,7 +35,7 @@ function fakeJwt(uid, authAgoS = 10) {
   const now = Math.floor(Date.now() / 1000)
   return `${b({ alg: 'HS256', typ: 'JWT' })}.${b({ sub: uid, role: 'authenticated', aud: 'authenticated', exp: now + 86400, iat: now, amr: [{ method: 'password', timestamp: now - authAgoS }] })}.sig`
 }
-const USER = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'e2e@example.com', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
+const USER = { id: UID, aud: 'authenticated', role: 'authenticated', email: process.env.E2E_EMAIL || 'e2e@example.com', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const sessionOf = (authAgoS) => ({ access_token: fakeJwt(UID, authAgoS), token_type: 'bearer', expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400, refresh_token: 'r', user: USER })
 
 const GRANTED = { records: [{ id: 'aaaaaaaa-bbbb-4ccc-8ddd-0000000000aa', type: 'health', version: '2026-09-v1', granted: true, at: '2026-09-20T08:00:00.000Z' }] }
@@ -433,7 +433,7 @@ async function sameWords(browser, name, opts, ready, act) {
 
   await run('owner choice: Start fresh asks twice when the log is in no account, then loads the account', async ({ page }) => {
     await page.getByText('This device has another log').waitFor()
-    await btn(page, 'Start fresh with e2e@example.com').click()
+    await btn(page, 'Start fresh with ' + USER.email).click()
     await page.getByText('starting fresh deletes it for good', { exact: false }).waitFor()
     await btn(page, 'Export a copy').waitFor()
     await btn(page, 'Start fresh and delete it').click()

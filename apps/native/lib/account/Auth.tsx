@@ -298,6 +298,11 @@ export function OwnerChoiceScreen() {
   }
   // .auth-owner .card: centred, --label2, 15 pt, 1.45
   const p = (s: string) => <Text style={[tx(15, 400, 1.45), { color: t.label2, textAlign: 'center' }]}>{s}</Text>
+  // a label that wraps (an Apple relay address is long) stays centred inside the pill with the web
+  // button's own 6 pt side padding, as the web's <button class="btn"> does.
+  // TODO(N1-followup): Btn could do this for every long label (lib/ui/kit.tsx); until then, here
+  const wrapBtn = { paddingHorizontal: 6, paddingVertical: 1 }
+  const wrapLabel = { textAlign: 'center' as const, flexShrink: 1 }
   const card = { gap: 10 }
   return (
     <ScrollView style={{ flex: 1, backgroundColor: t.bg }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingTop: ins.top + 32, paddingBottom: ins.bottom + 28, paddingHorizontal: 16 }}>
@@ -318,9 +323,9 @@ export function OwnerChoiceScreen() {
           </Card>
           {sure && <Card plain style={card}>{p(OWNER.sure)}</Card>}
           <View style={{ gap: 8, marginTop: 16 }}>
-            {sure && <Btn kind="gray" title={OWNER.exportCopy} disabled={busy} onPress={() => exportBackup(data)} />}
-            <Btn title={sure ? OWNER.freshSure : OWNER.fresh(who)} disabled={busy} onPress={() => void pick('fresh')} />
-            <Btn kind="gray" title={OWNER.keep(who)} disabled={busy} onPress={() => void pick('keep')} />
+            {sure && <Btn kind="gray" title={OWNER.exportCopy} disabled={busy} onPress={() => exportBackup(data)} style={wrapBtn} textStyle={wrapLabel} />}
+            <Btn title={sure ? OWNER.freshSure : OWNER.fresh(who)} disabled={busy} onPress={() => void pick('fresh')} style={wrapBtn} textStyle={wrapLabel} />
+            <Btn kind="gray" title={OWNER.keep(who)} disabled={busy} onPress={() => void pick('keep')} style={wrapBtn} textStyle={wrapLabel} />
           </View>
         </View>
       )}
