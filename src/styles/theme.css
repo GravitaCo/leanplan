@@ -970,7 +970,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .tl-key span { display: flex; align-items: center; gap: 6px; }
 .tl-key .tl-c { width: 14px; height: 8px; border-radius: 2px; }
 .ptile { position: relative; display: block; width: 100%; height: 196px; border: 0; padding: 0; border-radius: 22px; overflow: hidden; background: var(--sep); color: #fff; text-align: left; }
-.ptile.big { height: 230px; }
+.ptile.big { height: 230px; font-weight: 400; } /* not the global .big's 600: only the name is bold (Benn, 16 Nov 2026) */
 .ptile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
 .ptile .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.72) 100%); }
 .ptile .fits { position: absolute; left: 12px; top: 12px; padding: 5px 10px; border-radius: 12px; background: var(--tint); color: #fff; font-size: 12px; font-weight: 600; }
