@@ -1,6 +1,6 @@
 /**
  * Cycle (docs/plans/cycle.md): symptom-aware, opt-in, device-only in v1. Pure logic, no React or
- * DOM, so web (src/screens) and native (apps/native) behave the same. The data lives in the
+ * DOM: shared and tested here; the UI is native only (apps/native; Benn, 16 Nov 2026). The data lives in the
  * device-only store (src/data/deviceOnly.ts, `cycle`); nothing here reads storage or the network.
  *
  * Ground rules this file keeps (cycle.md §1, §5.4, §6):
