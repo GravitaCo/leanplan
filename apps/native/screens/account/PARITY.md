@@ -32,7 +32,7 @@ Supabase stand-in; "words" = the screen's text equals the web's for the same sta
 ## Sign-in (AuthScreen)
 
 **Benn approved the sign-in screens on the phone, 16 Nov ("Login screens approved").** The approval covers the screens as built.
-The three sign-in error messages (AUTH.errOffline, errGoogle, errApple) are with Benn separately, through the lead.
+The three sign-in error messages (AUTH.errOffline "This needs a connection. Check you’re online, then try again.", errGoogle, errApple): Benn approved, 16 Nov ("three messages approved", in the lead's session).
 
 | Item | Native | Check |
 |---|---|---|
