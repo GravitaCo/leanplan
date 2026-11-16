@@ -131,6 +131,101 @@ config plugins and builds in the cloud (EAS), so no one needs to maintain Xcode 
   Gentle mode or wellbeing flagged: no step numbers, no band suggestion. A concern signal (steps
   rising sharply while mood or hunger answers drop) waits for the safety tiers' clinical review.
 
+### 3.5 Apple Watch phase 2: Benn's decisions (16 Nov 2026) and the specialists' verdicts
+
+Benn answered the 19 points of the phase 2 summary on 16 Nov and asked for some to be verified.
+`mental-performance`, `nutrition-accuracy` and `compliance` reviewed them the same day. **Where a
+verdict differs from Benn's answer, Benn's or Sara's call is still needed (marked OPEN).** Where they
+agree, this section replaces §3.1's data table and the matching §3.4 rules.
+
+**Decided (Benn, 16 Nov; specialists agree):**
+- Only sleep and walking (steps and walking workouts). Everything else in HealthKit is out of scope.
+- The watch supplies the night's hours; the person enters hours by hand only when there is no watch
+  night (`nightFor` in `sleep.ts` already prefers the device). "How did you sleep?" (Poor, OK, Good)
+  stays the person's own answer, never prefilled, and alone drives hard day, low signals and the hard
+  week (`mental-performance`).
+- A watch-only short night never makes a hard day.
+- The week shows overall weekly sleep: the most common band from all nights (watch or own), from 3
+  nights (`SLEEP_MIN_NIGHTS`), with "from 5 nights" beside it. The 4+ watch-night gate is dropped.
+- Sleep shows in gentle mode (hours band, own rating, the weekly line).
+- Walking is part of Train: a logged walk is a cardio session; a HealthKit walking workout arrives as
+  a proposed session and counts as training only when confirmed or at 5.6 km/h or more on the flat
+  (Compendium 17200, 4.8 MET); commute walks stay as steps; warm-up walking is inside its session's
+  minutes and never a separate session or energy figure (`nutrition-accuracy` R4, R6).
+- Steps suggest a daily-movement band and never apply it; imported walks count only when confirmed
+  or brisk; Apple's active energy is never read into any number; no step targets, rings or streaks.
+- When watch and manual entries disagree, the person confirms which is right; the two are never
+  added together, and until they answer, the manual entry counts.
+- A separate device record of imported data is kept (compliance first).
+- Background delivery; permission wording past `compliance` and Benn or Sara; a Connect screen and
+  the sleep views designed on the Design canvas; the privacy policy and register updated; Apple's
+  HealthKit rules met.
+- **An imported night is not a check-in** (Benn asked why; `mental-performance`): if it counted, the
+  check-in prompt would disappear and Summary would say "Checked in" without an answer
+  (`summary.ts` `checkedIn`); the weekly reflection would count 7 check-ins for a silent week
+  (`hasCheckinContent`); the hard-week gate would pass on fewer real answers (`mindOf`); welcome-back
+  and lighter-week support would switch off for someone who has gone quiet (`weekPicture.ts` `empty`,
+  `maintenanceLoop.ts` `activeDays`); and the consent and export summary would overstate check-ins.
+  Fix: exclude nights whose source isn't `'self'` from those three functions; keep them in
+  `nightFor` and the weekly sleep line.
+
+**OPEN: where the specialists differ from Benn's answer**
+
+1. **The minimum (Benn: aim for 6 to 7 hours).** `mental-performance`: the evidence says 7. NHS:
+   most adults need around 7 to 9 hours; AASM/SRS consensus (Watson 2015): 7 or more for 18 to 60,
+   and 6 or fewer is "inadequate". Proposed: one static grey reference line on the weekly sleep view,
+   "Most adults need around 7 to 9 hours (NHS)", never a goal ring, a nightly verdict, a count of
+   short nights, a streak or a reminder, and not shown the morning after a short night.
+2. **Sleep stages and "quality sleep" in Mind (Benn: surface stages and quality sleep).**
+   `mental-performance` advises against stages as stated: against a sleep lab, Apple Watch
+   (Series 8) got deep sleep right 51% of the time (Schyvens 2025, kappa 0.53); trackers can drive
+   orthosomnia (Baron 2017). Proposed: "quality sleep" = the person's own rating plus wake-time
+   regularity; stages only as an opt-in weekly rough split ("mostly light, some deep and REM"), no
+   minutes, with "Watches estimate stages roughly; how you feel counts more", never in gentle mode.
+   `compliance`: Apple guideline 1.4.1 asks for the method behind health measurements, so neutral
+   wording ("Your watch estimated...") or a published method.
+3. **The sleep, food and fitness link (Benn: factor it in).** Agreed in principle, with evidence
+   (Tasali 2022: about an hour more sleep, about 270 kcal a day less eaten over 2 weeks; Bogh 2023:
+   short or poor sleep associated with more regain over a year; Craven 2022: sleep loss lowers
+   exercise performance). Proposed: general education ("Studies link shorter sleep with feeling
+   hungrier and with training feeling harder") plus positive-only pattern lines from the person's own
+   answers. Never "sleep more to lose weight" (CAP 12.1 and 13).
+4. **Gentle mode (Benn: sleep shows).** Agreed for hours, own rating and the weekly line; proposed
+   hidden in gentle mode: stages, the 7 to 9 reference, sleep-hunger lines, any food or weight link.
+5. **Disagreements (Benn: asked and confirmed).** `mental-performance`: don't ask every morning (it
+   spends the asks budget and keeps sleep on people's minds). Proposed: the watch band shows with
+   "Not right?"; if the person changes it, one confirmation, and their choice wins for that night.
+6. **Steps and calories burned (Benn: steps count towards calories burned).** `nutrition-accuracy`:
+   supports steps feeding the maintenance estimate through the daily-movement band; advises against
+   any daily calories from steps added to the food range, for any group, and against a "calories
+   burned from steps" figure. Why: the activity level already counts daily walking (`STEPS_MULT` in
+   `targets.ts`), adaptive maintenance already includes all walking, and a daily allowance would
+   count the same steps twice and change the range every day. A step-based estimate carries about
+   ±30% a day. Sedentary people keep the net burn of counted walking sessions as today. Rules R1 to
+   R8 and 10 tests are in the review (16 Nov).
+7. **`STEPS_MULT` may over-credit steps** (finding): about +135 kcal per 2,500 steps for a 75 kg man
+   against about 70 to 90 kcal for the walking itself; its cited source isn't verified. A sourced
+   review before step-band suggestions ship.
+8. **A separate wearables consent** (`compliance`): off by default, asked on the Connect screen,
+   needs a current health yes; withdrawing it stops reading and deletes imported records, keeping the
+   person's own entries. Needs a `consents` migration and a server check (`security-data`).
+9. **Sync and backups** (`compliance`): sync per-night and per-day summaries on `day_logs` (asleep
+   minutes, bed and wake time, `source: 'healthkit'`; daily steps; walk type, start, duration; no
+   raw samples, route, heart rate or energy), so it inherits consent, withdrawal, purge, export and
+   deletion. Apple 5.1.3(ii) bars health data in iCloud; the phone store is included in iPhone
+   backups today (`apps/native/lib/platform/storage.ts`), so HealthKit-derived data must be kept out
+   of backups. Benn to decide whether to exclude the whole store.
+10. **Apple items** (`compliance`): rewrite the Health purpose string (it says sleep shows "next to
+    your check-in" and "Nothing is shared unless you choose to", untrue once data counts or syncs);
+    add the background-delivery entitlement; privacy label Health & Fitness, linked, app
+    functionality; an intended-purpose statement (general wellness, not diagnosing or monitoring
+    sleep disorders); DPIA §10 addendum signed before any imported data is stored, TestFlight
+    included.
+
+Order once the OPEN items are settled: consent, sync and backup decisions; the wearables consent and
+DPIA addendum; the code fixes (imported night not a check-in, `source: 'self'` kept); boards (Connect
+screen, sleep views, walk confirmation, "Not right?"); build; policy and labels; `ship-critic`.
+
 Measure in the concierge pilot: check-in answer rate before and after connecting a watch, gentle-mode
 switches and disconnects in the first 30 days, and "Did your watch data ever worry you?"
 
