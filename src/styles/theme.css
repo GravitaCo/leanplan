@@ -418,7 +418,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .navbtn { background: none; border: 0; color: var(--tint); font-size: 17px; padding: 4px 0; display: inline-flex; align-items: center; }
 .navbtn.b { font-weight: 600; }
 .sheet-bd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 16px 24px; flex: 1; }
-.sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input { background: var(--elev); }
+.sheet .list, .sheet .card, .sheet .note:not(.ok), .sheet .scale button, .sheet textarea, .sheet .sheet-input, .sheet .ticks { background: var(--elev); }
 .sheet .scale button.on { background: var(--tint); }
 
 /* duplicate foods (boards dup-1 to dup-4) */
@@ -740,6 +740,8 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .list.icons .li .tr { flex: 1 1 0; min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
 /* rows with no value: the label fills the row */
 .list.icons .li .m:nth-last-child(2), .list.icons .li .m:last-child { flex: 1 1 auto; min-width: 0; max-width: none; }
+/* a row inside an open section (Supplements' name, time, Edit, Delete) isn't a settings row: its label fills, so the actions sit at the end */
+.list.icons .acc-bd .li .m { flex: 1 1 auto; min-width: 0; max-width: none; }
 
 /* ===================== STUDIO: TRAIN AND PLAN (stage 4) ===================== */
 :root { --hero: #1d1d1f; --hero-ink: #ffffff; --hero-ink2: rgba(255, 255, 255, 0.72); }
