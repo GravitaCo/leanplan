@@ -127,6 +127,12 @@ config plugins and builds in the cloud (EAS), so no one needs to maintain Xcode 
   after a validation against weigh-ins beats Tali's estimate, and then at ±35% or more.
 - A change of more than 2,500 steps a day between the halves of the adaptive window marks the
   estimate as mixed or withholds it.
+- **The steps-band suggestion (board W4, mental-performance 16 Nov 2026):** a lower-band offer is also
+  held back in a hard week or with mostly low mood or energy answers (a smaller range in a low patch can
+  read as "eat less"), never says "dropped", "fell", "less active", "only" or "down", and has no arrows.
+  The week grid uses one neutral dot colour, no colour by band, no highlight, no trend line and no goal
+  column, and is hidden in gentle mode. Pilot: acceptance of higher and lower offers, and gentle-mode
+  switches or disconnects in the 14 days after a lower offer.
 - **Wording:** no step target, ring, streak, "keep going" or week-on-week increase; never linked to
   food ("earned", "burned"). Weekly words: "You walked on 5 days this week", steps one tap away.
   Gentle mode or wellbeing flagged: no step numbers, no band suggestion. A concern signal (steps
