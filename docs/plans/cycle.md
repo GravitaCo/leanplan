@@ -404,7 +404,7 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    uses the provisional defaults in §4 and §5.1; a clinician signs them off before beta.
 3. **Regulatory view** on whether the §5.1 rules, especially the one that changes nutrition, fit
    the no-medical-device position (§6). Agreed (Benn, 16 Nov 2026): the `compliance` agent does
-   this check, together with the demand research in item 1 (`marketing-research`).
+   this check; `marketing-research` does the demand research in item 1.
 4. **Lawyer:** Equality Act 2010 s.29 and a women-only offer gated on a self-declared answer
    (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds. Not now
    (Benn, 16 Nov 2026: "We do not need lawyer at this time").
