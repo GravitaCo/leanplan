@@ -633,6 +633,17 @@ let underAgeTried = 0
 /** Set by initAuth: make a Supabase session this device's live session. */
 let applySession: ((s: Session) => void) | null = null
 
+/**
+ * Whenever a session ends (sign-out, a session that expired, a deleted account) or another account's
+ * sign-in starts (the owner question), the next sign-in opens on Summary, not on whichever tab the
+ * last account was using (Benn, build 16: signing out from Profile and back in landed on Profile).
+ * store.tab isn't saved, so this only matters within one run of the app.
+ */
+function toFirstTab(st: { tab: Tab; profileOpen: string | null }): void {
+  st.tab = 'today'
+  st.profileOpen = null
+}
+
 export const useStore = create<StoreState>()(
   immer((set, get) => {
     // helper to persist after any mutation
@@ -1638,7 +1649,7 @@ export const useStore = create<StoreState>()(
             // as a signed-in account
             saveMode(null)
             const checking = check === 'verify'
-            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
+            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; toFirstTab(st) })
             if (checking) {
               // Data an older version synced without recording whose it was: if it matches this
               // account's rows it's theirs, so carry on without a question (and without marking
@@ -1676,7 +1687,7 @@ export const useStore = create<StoreState>()(
         const toSignIn = (msg?: string) => {
           setSession(null, null)
           saveMode(null)
-          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = msg ?? null })
+          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = msg ?? null; toFirstTab(st) })
         }
 
         // Listen before restoring, so a sign-out the server forces during startup (password
@@ -1942,7 +1953,7 @@ export const useStore = create<StoreState>()(
           applySession(session)
           get().runSync()
         } else {
-          set((st) => { st.signedIn = false; st.authNotice = SIGNED_OUT_MSG })
+          set((st) => { st.signedIn = false; st.authNotice = SIGNED_OUT_MSG; toFirstTab(st) })
         }
       },
 
@@ -2128,7 +2139,7 @@ export const useStore = create<StoreState>()(
           if (wipe) wipeDevice()
           set((st) => {
             if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
-            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'; toFirstTab(st)
           })
         }
         if (step.kind === 'done') clearPendingDeletion()
@@ -2151,7 +2162,7 @@ export const useStore = create<StoreState>()(
           underAgeTried = 0
           set((st) => {
             if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
-            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'; toFirstTab(st)
             st.authNotice = UNDER_AGE_SIGN_IN_MSG
           })
         }
@@ -2340,7 +2351,7 @@ export const useStore = create<StoreState>()(
           // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
           set((st) => {
             st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null; st.redoOpen = false; st.setupOpen = false
-            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'; toFirstTab(st)
             // the sign-in screen's banner: Apple couldn't be told, so the person can remove Tilo there
             st.authNotice = res.appleKept ? DELETE.appleKept : null
           })
@@ -2379,7 +2390,7 @@ export const useStore = create<StoreState>()(
           saveState(next)
           set((st) => { st.data = next; st.cur = todayStr(); st.underAge = null })
         }
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null; toFirstTab(st) })
       },
     }
   }),
