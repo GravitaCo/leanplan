@@ -152,6 +152,12 @@ export function checkinSuite(): number {
     ok('B: the person\'s answer replaces an imported night', mergeCheckin({ mood: 2, hunger: 0, night: watch }, { night: own }).night?.source === 'self')
     ok('B: a newer import replaces an older import', mergeCheckin(only, { night: { ...watch, ext: 'hk-2' } }).night?.ext === 'hk-2')
     ok('B: an import alongside answers keeps the answers', mergeCheckin({ mood: 4, hunger: 3, night: own }, { night: watch }).mood === 4)
+    // review follow-ups (mental-performance): nothing of the watch's reaches the person's own answer
+    const yday = { [shiftDay(MON, -1)]: day(shiftDay(MON, -1), { mood: 0, hunger: 0, night: watch }) }
+    ok('A: an imported night never pre-fills the wake time', wakePrefill(yday, MON) === '')
+    ok('A: the person\'s own wake time still pre-fills', wakePrefill({ [shiftDay(MON, -1)]: day(shiftDay(MON, -1), { mood: 0, hunger: 0, night: { ...own, wakeAt: '07:05' } }) }, MON) === '07:05')
+    ok('B: clearing in the sheet keeps an imported night', JSON.stringify(nightPatch(only, { band: '', wakeAt: '', touched: true }, T)) === '{}')
+    ok('B: clearing in the sheet removes the person\'s own night', (() => { const p = nightPatch({ mood: 0, hunger: 0, night: own }, { band: '', wakeAt: '', touched: true }, T); return 'night' in p && p.night === undefined })())
     ok('ownNight and isImportedNight', ownNight({ mood: 0, hunger: 0, night: own }) === own && ownNight(only) === undefined && isImportedNight(watch) && !isImportedNight(own) && !isImportedNight(undefined))
   }
 

@@ -4,7 +4,7 @@
  * a rough band and a wake time, both optional.
  */
 import type { CheckIn, DayLog, SleepBand, SleepNight } from '@/core/types'
-import { isHHMM, SLEEP_BANDS } from '@/core/domain/checkin'
+import { isHHMM, ownNight, SLEEP_BANDS } from '@/core/domain/checkin'
 import { shiftDay } from '@/core/domain/date'
 import { bandLabel } from '@/core/domain/sleep'
 
@@ -37,7 +37,8 @@ export function checkinSleepCopy(): string[] {
  * disclosure is opened"): the day before `day`'s wake time, if it has one. Never a guess.
  */
 export function wakePrefill(days: Record<string, DayLog | undefined>, day: string): string {
-  const w = days[shiftDay(day, -1)]?.checkin?.night?.wakeAt
+  // the person's own wake time only: a watch's is never pre-filled into their answer (§3.4)
+  const w = ownNight(days[shiftDay(day, -1)]?.checkin)?.wakeAt
   return isHHMM(w) ? w : ''
 }
 
@@ -55,10 +56,11 @@ export function nightShown(c: CheckIn | null | undefined): { band: SleepBand | '
  * answer always wins (native-app-plan §3.4): it replaces a night imported from a device, and an
  * import never replaces it (mergeCheckin). Both cleared removes the night.
  */
-export function nightPatch(_existing: CheckIn | null | undefined, s: { band: SleepBand | ''; wakeAt: string; touched: boolean }, t: string): Partial<CheckIn> {
+export function nightPatch(existing: CheckIn | null | undefined, s: { band: SleepBand | ''; wakeAt: string; touched: boolean }, t: string): Partial<CheckIn> {
   if (!s.touched) return {}
   const wakeAt = isHHMM(s.wakeAt) ? s.wakeAt : ''
-  if (!s.band && !wakeAt) return { night: undefined }
+  // clearing removes the person's own night, never one imported from a device
+  if (!s.band && !wakeAt) return existing?.night && existing.night.source !== 'self' ? {} : { night: undefined }
   const night: SleepNight = { source: 'self', ...(s.band ? { band: s.band } : {}), ...(wakeAt ? { wakeAt } : {}), t }
   return { night }
 }

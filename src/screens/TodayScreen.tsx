@@ -269,8 +269,8 @@ export function TodayScreen() {
           <span className="m">
             <span className="pk" style={{ color: 'var(--mind-ink)' }}>Mind</span>
             <span className="pt">{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : hasCheckinContent(day.checkin) ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</span>
-            <span className="ps">{day.checkin
-              ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
+            <span className="ps">{hasCheckinContent(day.checkin)
+              ? day.checkin!.hunger ? `Hunger: ${HUNGER[day.checkin!.hunger - 1]} · tap to update` : 'Tap to update your check-in'
               : 'Mood, sleep, stress and energy · 20 seconds'}</span>
           </span>
           <Chevron />

@@ -76,7 +76,8 @@ export function mergeCheckin(existing: CheckIn | null | undefined, patch: Partia
   const out = { ...(existing || {}) } as CheckIn & Obj
   for (const [k, v] of Object.entries(patch) as [string, unknown][]) {
     // an imported night never replaces the person's own (native-app-plan §3.4 fix B); the person can
-    // still change or clear theirs (a 'self' night, or none)
+    // still change or clear theirs (a 'self' night, or none). An importer only ever sends a night
+    // object, never an empty value: clearing is the person's act alone (tested in checkin.ts)
     if (k === 'night' && ownNight(existing) && isObj(v) && (v as { source?: unknown }).source !== 'self') continue
     const empty = v === undefined || v === null || v === 0 || v === '' || (Array.isArray(v) && !v.length)
     if (empty) { delete out[k]; continue }
