@@ -586,3 +586,18 @@ Order: gates 1 and 2 and the boards run first and in parallel; W1 next; W2, W3 a
 interfaces. Phase 1's open launch items (§10) continue alongside; phase 2 ships through the same
 TestFlight. To measure (concierge pilot, §3.4): check-in answer rate before and after connecting a
 watch, gentle-mode switches and disconnects in the first 30 days, and "Did your watch data ever worry you?"
+
+### 11.1 Phase 2 decisions for Benn or Sara (open, 16 Nov 2026)
+
+Each has a recommendation [G]; the board decisions are added when the boards are drafted.
+
+| # | Decision | Recommendation | Answer |
+|---|---|---|---|
+| P2-1 | Start phase 2 now, alongside phase 1's launch items? | Yes: the gates and boards don't wait on TestFlight | |
+| P2-2 | What is kept from the watch: raw readings, or only what Tilo uses? | Only what Tilo uses: a sleep band, bed and wake time per night; a daily step total; each walking workout's date, duration and pace. Nothing else is stored | |
+| P2-3 | Where it is kept: the phone only, or synced to the account like the rest of the log? | Synced, under the existing health consent, so it survives a new phone and is removed by account deletion and consent withdrawal (needs compliance and security-data) | |
+| P2-4 | How far back to read on first connect? | 28 days, the window the steps suggestion already uses | |
+| P2-5 | Read in the background, or only when the app is opened? | In the background, so sleep is there before the morning check-in | |
+| P2-6 | Disconnecting: remove what was imported, or keep it? | Remove it, from the phone and the account | |
+| P2-7 | Does the web app show watch data? | No: the watch lines are iPhone only; accepted steps suggestions and confirmed walks count everywhere, as any logged change does | |
+| P2-8 | Android (Health Connect) and Fitbit | Stay in phase 4, not phase 2 | |
