@@ -591,8 +591,8 @@ watch, gentle-mode switches and disconnects in the first 30 days, and "Did your 
 
 Gate 2 is done (N9, b4e399b: an imported night never counts as a check-in or replaces the person's
 own; mental-performance APPROVED, ship-critic SHIP). Gate 1 was drafted by N9 with `compliance`
-(APPROVE AS DRAFT for device-only storage) and `security-data` (agrees, with amendments H1 to H3 and
-M1 to M5 to write into the design); the full draft is in `docs/plans/apple-health-gate1.md`. The
+(APPROVE AS DRAFT for device-only storage) and `security-data` (APPROVED AS DRAFT on 16 Nov after its
+amendments H1 to H3 and M1 to M5 were written in); the full draft is in `docs/plans/apple-health-gate1.md`. The
 recommendations below follow the specialists where they settled it, and are my judgement [G] otherwise.
 The board decisions are added when the boards are drafted.
 
