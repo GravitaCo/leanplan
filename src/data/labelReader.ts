@@ -45,7 +45,18 @@ export type LabelReadResult =
  * scanned, so the reader can sign the read for the shared list (it's never stored there unless
  * the user agrees to share and saves the read unchanged).
  */
-export async function readLabel(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<LabelReadResult> {
+/** Why a read didn't succeed, for an app's own internal diagnostics (never the photo, a figure or
+ *  who): the outcome, the HTTP status when there was one, and the error's name. */
+export interface LabelReadFailure { kind: Exclude<LabelReadResult['status'], 'ok'>; status?: number; name?: string }
+
+export async function readLabel(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal; report?: (f: LabelReadFailure) => void } = {}): Promise<LabelReadResult> {
+  const why: { status?: number; name?: string } = {}
+  const r = await readOnce(images, opts, why)
+  if (r.status !== 'ok') opts.report?.({ kind: r.status, ...why })
+  return r
+}
+
+async function readOnce(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal }, why: { status?: number; name?: string }): Promise<LabelReadResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { status: 'offline' }
   if (!hasSession()) return { status: 'no-session' }
   const ctl = new AbortController()
@@ -64,6 +75,9 @@ export async function readLabel(images: { panel: string; front?: string; barcode
       signal: ctl.signal,
     })
     if (error) {
+      why.name = (error as { name?: string }).name
+      const status = (error as { context?: { status?: unknown } }).context?.status
+      why.status = typeof status === 'number' ? status : undefined
       if (error instanceof FunctionsHttpError) {
         const status = (error.context as Response | undefined)?.status
         if (status === 401) return { status: 'no-session' }
@@ -86,12 +100,13 @@ export async function readLabel(images: { panel: string; front?: string; barcode
       return { status: 'error' }
     }
     const read = data && typeof data === 'object' && (data as { ok?: unknown }).ok === true ? validateLabelRead((data as { read?: unknown }).read) : null
-    if (!read) return { status: 'error' }
+    if (!read) { why.name = 'InvalidRead'; return { status: 'error' } }
     // a signature for another barcode, or a malformed one, is simply not there
     const share = cleanToken((data as { share?: unknown }).share)
     return share ? { status: 'ok', read, share } : { status: 'ok', read }
   } catch (e) {
     const name = (e as { name?: string })?.name
+    why.name = name
     if (ctl.signal.aborted || navigator.onLine === false) return { status: 'offline' }
     return name === 'TypeError' ? { status: 'unavailable' } : { status: 'error' }
   } finally {

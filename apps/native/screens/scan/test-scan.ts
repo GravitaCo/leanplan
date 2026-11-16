@@ -275,6 +275,29 @@ async function reads() {
   check('a photo that can’t be encoded → error fallback, deleted, nothing sent', badPhoto.kind === 'confirm' && badPhoto.notice === 'Couldn’t read the photo right now. Type the numbers from the pack below.' && order.join() === 'flush,discard', { badPhoto, order })
   check('failNotice composes the web’s two lines', failNotice('unavailable', false) === 'Photo reading isn’t available right now. Type it in instead.')
   check('typed fallback keeps the barcode', typedDraft({ barcode: '5000157024671', taken: [] }).barcode === '5000157024671')
+
+  // the failure report for internal diagnostics: outcome, HTTP status, error name, and nothing else
+  const seen: unknown[] = []
+  const report = (f: unknown) => { seen.push(f) }
+  answer = () => json({ ok: false, error: 'upstream' }, 502)
+  await readLabel({ panel: PANEL }, { report })
+  const r502 = seen.pop()
+  check('a 502 is reported as error, 502, FunctionsHttpError', eq(r502, { kind: 'error', name: 'FunctionsHttpError', status: 502 }), r502)
+  answer = () => { throw new TypeError('Network request failed') }
+  await readLabel({ panel: PANEL }, { report })
+  const net = seen.pop() as { kind?: string; name?: string } | undefined
+  check('a failed request is reported as unavailable with its error name', net?.kind === 'unavailable' && net?.name === 'FunctionsFetchError', net)
+  answer = () => json({ ok: true, read: READ })
+  await readLabel({ panel: PANEL }, { report })
+  check('a good read reports nothing', seen.length === 0, seen)
+  answer = () => json({ ok: true, read: { nonsense: 1 } })
+  await readLabel({ panel: PANEL }, { report })
+  const bad = seen.pop() as Record<string, unknown> | undefined
+  check('a malformed reply is reported as InvalidRead, and a report holds only kind, status and name', bad?.name === 'InvalidRead' && Object.keys(bad ?? {}).every((k) => ['kind', 'status', 'name'].includes(k)), bad)
+  const screen = readFileSync('screens/scan/LabelCaptureView.tsx', 'utf8')
+  check('the label screen warns with the diagnostics prefix and only those three values', /console\.warn\('label read failed:', f\.kind, f\.status \?\? '-', f\.name \?\? '-'\)/.test(screen))
+  const diag = readFileSync('lib/platform/diag.ts', 'utf8')
+  check('internal diagnostics keep label read failures (EXPO_PUBLIC_DIAG builds only)', /first\.startsWith\('label read failed'\)/.test(diag) && /EXPO_PUBLIC_DIAG === '1'/.test(diag))
 }
 
 /* ---------------- camera on and off ---------------- */
