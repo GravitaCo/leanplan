@@ -11,7 +11,11 @@ import { freshForAccount } from '@/data/persistence'
 import { sleepMoreOpen } from '@/data/deviceOnly'
 import { LOCAL_USER } from '@/data/supabase'
 import { CHECKIN_SLEEP, CheckinFeet, checkinSleepCopy, nightPatch, nightShown, SleepMore, wakePrefill } from '@/screens/today/CheckinSleep'
-import type { CheckIn, DayLog } from '@/core/types'
+import type { AppState, CheckIn, DayLog, SleepNight } from '@/core/types'
+import { checkinOrNull, countedCheckin, hasCheckinContent, isImportedNight, mergeCheckin, ownNight } from '@/core/domain/checkin'
+import { observation, weekReflection } from '@/core/domain/mind'
+import { dayPicture } from '@/core/domain/weekPicture'
+import { checkedIn } from '@/screens/today/summary'
 
 function memoryStorage(): Storage {
   const m = new Map<string, string>()
@@ -50,7 +54,8 @@ export function checkinSuite(): number {
   ok('a band alone', JSON.stringify(nightPatch(mood, { band: 'lt5', wakeAt: '', touched: true }, T)) === JSON.stringify({ night: { source: 'self', band: 'lt5', t: T } }))
   ok('both cleared removes the night', (() => { const p = nightPatch(mood, { band: '', wakeAt: '', touched: true }, T); return 'night' in p && p.night === undefined })())
   ok('a bad time is never saved', JSON.stringify(nightPatch(mood, { band: '', wakeAt: '7am', touched: true }, T)) === JSON.stringify({ night: undefined }))
-  ok('a device night is never overwritten', JSON.stringify(nightPatch({ ...mood, night: { source: 'healthkit', asleepMin: 400, t: T } }, { band: '8+', wakeAt: '', touched: true }, T)) === '{}')
+  // the person's own answer always wins (native-app-plan §3.4): it replaces an imported night
+  ok('the person\'s answer replaces an imported night', JSON.stringify(nightPatch({ ...mood, night: { source: 'healthkit', asleepMin: 400, t: T } }, { band: '8+', wakeAt: '', touched: true }, T)) === JSON.stringify({ night: { source: 'self', band: '8+', t: T } }))
   ok('nightShown reads a self night, never a device one', JSON.stringify(nightShown({ ...mood, night: { source: 'self', band: '5-6', wakeAt: '06:45', t: T } })) === JSON.stringify({ band: '5-6', wakeAt: '06:45' })
     && JSON.stringify(nightShown({ ...mood, night: { source: 'healthkit', band: '5-6', t: T } })) === JSON.stringify({ band: '', wakeAt: '' }) && nightShown(null).band === '')
 
@@ -113,5 +118,42 @@ export function checkinSuite(): number {
     g.localStorage = realStorage
     g.fetch = realFetch
   }
+  /* ---------- Gate 2 (native-app-plan §3.4): an imported night never counts, never wins ---------- */
+  {
+    const watch: SleepNight = { source: 'healthkit', asleepMin: 330, bedAt: '23:40', wakeAt: '06:10', ext: 'hk-1', t: T }
+    const own: SleepNight = { source: 'self', band: '6-7', t: T }
+    const only: CheckIn = { mood: 0, hunger: 0, night: watch }
+    // fix A: counting
+    ok('A: an imported night alone is not a check-in', !hasCheckinContent(only) && countedCheckin(only) === null && !checkedIn(only))
+    ok('A: an imported night alone is still kept in storage', checkinOrNull(only) === only)
+    ok('A: the person\'s own night is a check-in', hasCheckinContent({ mood: 0, hunger: 0, night: own }) && checkedIn({ mood: 0, hunger: 0, night: own }))
+    ok('A: answers with an imported night still count', hasCheckinContent({ mood: 3, hunger: 0, night: watch }))
+    const MON = '2026-10-05'
+    const days: Record<string, DayLog> = {}
+    const day = (d: string, checkin: CheckIn): DayLog => ({ foods: [], supps: {}, weight: null, workout: null, checkin })
+    for (let i = 0; i < 7; i++) { const d = shiftDay(MON, i); days[d] = day(d, { mood: 0, hunger: 0, night: { ...watch, asleepMin: 300 } }) }
+    days[MON] = day(MON, { mood: 3, hunger: 0, night: own })
+    const r = weekReflection(days, MON, { today: shiftDay(MON, 6) })
+    ok('A: weekReflection counts only real check-ins (1 of 7 days)', r?.checkins === 1, r)
+    ok('A: the week\'s sleep line reads only the person\'s own nights (one is not enough)', r?.sleep === 'not-enough', r?.sleep)
+    // 14 days of watch nights where long ones came with good energy and short ones with low: the
+    // pattern the observation looks for, but from the watch only, so it must not appear
+    const obs: Record<string, DayLog> = {}
+    for (let i = 0; i < 14; i++) { const d = shiftDay('2026-10-01', i); const long = i % 2 === 0; obs[d] = day(d, { mood: 3, hunger: 0, energy: long ? 3 : 1, night: { ...watch, asleepMin: long ? 480 : 300 } }) }
+    const selfObs: Record<string, DayLog> = Object.fromEntries(Object.entries(obs).map(([d, x]) => [d, { ...x, checkin: { ...x.checkin!, night: { source: 'self', band: x.checkin!.night!.asleepMin! >= 420 ? '7-8' : '5-6', t: T } } }]))
+    ok('A: the same answers with own nights do make the observation (the check is live)', observation(selfObs, '2026-10-14') !== null)
+    ok('A: the pattern line never reads a watch night', observation(obs, '2026-10-14') === null)
+    const st = { days: { [MON]: day(MON, only) }, profile: {}, target: { kcal: 2000, p: 100, c: 200, f: 70 }, schedule: {} } as unknown as AppState
+    ok('A: the week picture shows no mind day for an imported night alone (mindOf)', dayPicture(st, MON, MON).mind === null)
+    // fix B: precedence
+    ok('B: an import never replaces the person\'s own night', JSON.stringify(mergeCheckin({ mood: 2, hunger: 0, night: own }, { night: watch }).night) === JSON.stringify(own))
+    ok('B: the person can still change their own night', mergeCheckin({ mood: 2, hunger: 0, night: own }, { night: { ...own, band: '8+' } }).night?.band === '8+')
+    ok('B: the person can still clear their own night', mergeCheckin({ mood: 2, hunger: 0, night: own }, { night: undefined }).night === undefined)
+    ok('B: the person\'s answer replaces an imported night', mergeCheckin({ mood: 2, hunger: 0, night: watch }, { night: own }).night?.source === 'self')
+    ok('B: a newer import replaces an older import', mergeCheckin(only, { night: { ...watch, ext: 'hk-2' } }).night?.ext === 'hk-2')
+    ok('B: an import alongside answers keeps the answers', mergeCheckin({ mood: 4, hunger: 3, night: own }, { night: watch }).mood === 4)
+    ok('ownNight and isImportedNight', ownNight({ mood: 0, hunger: 0, night: own }) === own && ownNight(only) === undefined && isImportedNight(watch) && !isImportedNight(own) && !isImportedNight(undefined))
+  }
+
   return bad
 }

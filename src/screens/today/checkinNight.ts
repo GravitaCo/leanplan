@@ -51,12 +51,12 @@ export function nightShown(c: CheckIn | null | undefined): { band: SleepBand | '
 /**
  * The `night` part of the check-in patch. Only when the person answered something here this time
  * (picked or cleared a band, or set or cleared the time): a pre-filled wake time they never
- * touched isn't saved, so opening the sheet never records a night by itself. A night from a
- * device (a later tier) is never overwritten from here. Both cleared removes the night.
+ * touched isn't saved, so opening the sheet never records a night by itself. The person's own
+ * answer always wins (native-app-plan §3.4): it replaces a night imported from a device, and an
+ * import never replaces it (mergeCheckin). Both cleared removes the night.
  */
-export function nightPatch(existing: CheckIn | null | undefined, s: { band: SleepBand | ''; wakeAt: string; touched: boolean }, t: string): Partial<CheckIn> {
+export function nightPatch(_existing: CheckIn | null | undefined, s: { band: SleepBand | ''; wakeAt: string; touched: boolean }, t: string): Partial<CheckIn> {
   if (!s.touched) return {}
-  if (existing?.night && existing.night.source !== 'self') return {}
   const wakeAt = isHHMM(s.wakeAt) ? s.wakeAt : ''
   if (!s.band && !wakeAt) return { night: undefined }
   const night: SleepNight = { source: 'self', ...(s.band ? { band: s.band } : {}), ...(wakeAt ? { wakeAt } : {}), t }

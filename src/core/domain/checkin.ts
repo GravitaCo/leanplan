@@ -32,17 +32,37 @@ export const isHHMM = (x: unknown): x is string => typeof x === 'string' && /^([
 /** a key from core/data/skills.ts THINGS: lower-case words and dashes, never free text */
 export const isThingKey = (x: unknown): x is string => typeof x === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(x) && x.length <= 40
 
-/** Whether this check-in holds anything: an answer, a note, a night, a skill used or a thing. */
+/** The person's own night (`source: 'self'`), never one imported from a watch or phone. */
+export function ownNight(c: Partial<CheckIn> | null | undefined): SleepNight | undefined {
+  return c?.night && c.night.source === 'self' ? c.night : undefined
+}
+
+/** A night imported from a device (any source but 'self'). */
+export const isImportedNight = (n: SleepNight | null | undefined): boolean => !!n && n.source !== 'self'
+
+/**
+ * Whether this counts as a check-in: an answer, a note, the person's own night, a skill used or a
+ * thing. A night imported from a watch never does (native-app-plan §3.4 fix A): the person's own
+ * answers are what Tilo goes by, so an import alone never makes a day "checked in".
+ */
 export function hasCheckinContent(c: Partial<CheckIn> | null | undefined): boolean {
   if (!c) return false
   if (SCORES.some((k) => !!c[k])) return true
   if (typeof c.note === 'string' && c.note.trim()) return true
-  return !!c.night || (Array.isArray(c.skills) && c.skills.length > 0) || !!c.thing
+  return !!ownNight(c) || (Array.isArray(c.skills) && c.skills.length > 0) || !!c.thing
 }
 
-/** The check-in, or null when it holds nothing (the "empty check-in becomes null" rule). */
-export function checkinOrNull(c: CheckIn | null | undefined): CheckIn | null {
+/** The check-in when it counts as one (hasCheckinContent), else null: what readers that ask "did they check in?" use. */
+export function countedCheckin(c: CheckIn | null | undefined): CheckIn | null {
   return c && hasCheckinContent(c) ? c : null
+}
+
+/**
+ * The stored check-in, or null when it holds nothing (the "empty check-in becomes null" rule). An
+ * imported night on its own is kept (it is data, not nothing), though it never counts as a check-in.
+ */
+export function checkinOrNull(c: CheckIn | null | undefined): CheckIn | null {
+  return c && (hasCheckinContent(c) || isImportedNight(c.night)) ? c : null
 }
 
 /**
@@ -55,6 +75,9 @@ export function checkinOrNull(c: CheckIn | null | undefined): CheckIn | null {
 export function mergeCheckin(existing: CheckIn | null | undefined, patch: Partial<CheckIn>): CheckIn {
   const out = { ...(existing || {}) } as CheckIn & Obj
   for (const [k, v] of Object.entries(patch) as [string, unknown][]) {
+    // an imported night never replaces the person's own (native-app-plan §3.4 fix B); the person can
+    // still change or clear theirs (a 'self' night, or none)
+    if (k === 'night' && ownNight(existing) && isObj(v) && (v as { source?: unknown }).source !== 'self') continue
     const empty = v === undefined || v === null || v === 0 || v === '' || (Array.isArray(v) && !v.length)
     if (empty) { delete out[k]; continue }
     out[k] = structuredClone(v)
