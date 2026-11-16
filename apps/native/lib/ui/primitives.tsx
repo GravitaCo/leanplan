@@ -20,7 +20,7 @@ import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
-import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
 import { UI } from '@/copy/ui'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
@@ -84,7 +84,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
     <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-        {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
+        {ini ? <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
       </View>
     </Pressable>
   )
@@ -153,7 +153,7 @@ export function BackButton({ onPress, label = UI.back, small }: { onPress: () =>
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', marginLeft: small ? -6 : 0, opacity: pressed ? 0.7 : 1 })}>
       <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
-      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
+      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -179,7 +179,7 @@ export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, col
       hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
       style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
       {icon && <Icon name={icon} color={fg} />}
-      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: fg }]}>{title}</Text>}
+      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), GLYPH_ROOM, { color: fg }]}>{title}</Text>}
     </Pressable>
   )
 }
@@ -462,7 +462,8 @@ function useKeyboard(windowHeight: number, onShown: () => void) {
   useEffect(() => {
     const ios = Platform.OS === 'ios'
     const move = (e: KeyboardEvent | null, up: boolean) => {
-      const h = ios && up && e ? Math.max(0, windowHeight - e.endCoordinates.screenY) : 0
+      // a zero-height or floating frame (a hardware keyboard, an undocked one) overlaps nothing
+      const h = ios && up && e && e.endCoordinates.height > 0 ? Math.max(0, windowHeight - e.endCoordinates.screenY) : 0
       if (ios && e?.duration) LayoutAnimation.configureNext({ duration: e.duration, update: { type: LayoutAnimation.Types.keyboard } })
       setState((s) => (s.up === up && s.h === h ? s : { up, h }))
     }
@@ -530,7 +531,7 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
   const kb = useKeyboard(height, reveal)
   // the sheet sits above the keyboard and never grows past the top: its top edge (grabber, title,
   // Done, close) stays on screen, and what doesn't fit scrolls
-  const max = height - insets.top - 12 - kb.h
+  const max = Math.max(240, height - insets.top - 12 - kb.h)
   const anim = animate && !reduce
   // overlay: Android's back closes it. Outside a Modal, BackHandler hears it; inside one (the guided
   // player), the holder's onRequestClose must call overlayBack() first, which closes the topmost
@@ -552,7 +553,7 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
         </Animated.View>
         <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
           <Animated.View testID="sheet" role="dialog" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
-            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb.up ? 0 : insets.bottom }}>
+            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb.h > 0 || (kb.up && Platform.OS !== 'ios') ? 0 : insets.bottom }}>
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
             <InSheet.Provider value>
