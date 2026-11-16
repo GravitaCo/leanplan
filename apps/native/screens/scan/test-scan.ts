@@ -294,6 +294,9 @@ async function reads() {
   await readLabel({ panel: PANEL }, { report })
   const bad = seen.pop() as Record<string, unknown> | undefined
   check('a malformed reply is reported as InvalidRead, and a report holds only kind, status and name', bad?.name === 'InvalidRead' && Object.keys(bad ?? {}).every((k) => ['kind', 'status', 'name'].includes(k)), bad)
+  answer = () => json({ ok: false, error: 'upstream' }, 502)
+  const thrown = await readLabel({ panel: PANEL }, { report: () => { throw new Error('diag broke') } })
+  check('a throwing report never changes the result', thrown.status === 'error', thrown)
   const screen = readFileSync('screens/scan/LabelCaptureView.tsx', 'utf8')
   check('the label screen warns with the diagnostics prefix and only those three values', /console\.warn\('label read failed:', f\.kind, f\.status \?\? '-', f\.name \?\? '-'\)/.test(screen))
   const diag = readFileSync('lib/platform/diag.ts', 'utf8')

@@ -52,7 +52,8 @@ export interface LabelReadFailure { kind: Exclude<LabelReadResult['status'], 'ok
 export async function readLabel(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal; report?: (f: LabelReadFailure) => void } = {}): Promise<LabelReadResult> {
   const why: { status?: number; name?: string } = {}
   const r = await readOnce(images, opts, why)
-  if (r.status !== 'ok') opts.report?.({ kind: r.status, ...why })
+  // a diagnostics callback that throws never changes the result
+  if (r.status !== 'ok') { try { opts.report?.({ kind: r.status, ...why }) } catch { /* ignored */ } }
   return r
 }
 
