@@ -187,7 +187,7 @@ function KcalHead({ kcal, margin, onMargin }: { kcal: number; margin: number; on
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', flexShrink: 1 }}>
-        <Text style={[tx(44, 600, 1, -0.03), num, { color: t.label }]}>{fmt(kcal)}</Text>
+        <Text style={[num, tx(44, 600, 1, -0.03) /* .kbig > span.num outranks .num: its tracking stays */, { color: t.label }]}>{fmt(kcal)}</Text>
         <Text style={[tx(15), { color: t.label2 }]}>{FOOD.kcalEaten}</Text>
       </View>
       {kcal > 0 && <LinkBtn title={`± ${margin}`} label={FOOD.aboutEstimate} onPress={onMargin} style={num} />}

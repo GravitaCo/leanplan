@@ -235,6 +235,27 @@ async function run() {
     }
   }
 
+  // 1b. the header: the connection pill, the title, the add button and the avatar sit at the web's positions
+  if (want('header')) {
+    const [w, n] = await pair(state(VIEWS.numbers), 'light')
+    const boxes = async (a) => {
+      const pill = a.page.getByRole('button', { name: /Up to date|Sync problem|Syncing|Offline|Saved on this phone/ }).first()
+      const add = a.page.getByRole('button', { name: 'Add food', exact: true }).first()
+      const title = a.page.getByRole('heading', { name: 'Food', exact: true }).first()
+      const r = {}
+      for (const [k, l] of Object.entries({ pill, add, title })) { const b = await l.boundingBox(); r[k] = b && Object.fromEntries(Object.entries(b).map(([x, v]) => [x, Math.round(v * 10) / 10])) }
+      return r
+    }
+    const bw = await boxes(w), bn = await boxes(n)
+    console.log('header web', JSON.stringify(bw)); console.log('header native', JSON.stringify(bn))
+    for (const [a, nm] of [[w, 'web'], [n, 'native']]) await a.page.screenshot({ path: path.join(OUT, `header-${nm}.png`), clip: { x: 0, y: 0, width: 390, height: 160 } })
+    const near = (x, y) => x && y && Math.abs(x - y) <= 1
+    check('header: the add button where the web has it', near(bw.add?.y, bn.add?.y) && near(bw.add?.x, bn.add?.x), { web: bw.add, native: bn.add })
+    check('header: the title where the web has it', near(bw.title?.y, bn.title?.y), { web: bw.title, native: bn.title })
+    check('header: the pill where the web has it', near(bw.pill?.y, bn.pill?.y) && near(bw.pill?.height, bn.pill?.height), { web: bw.pill, native: bn.pill })
+    await done(w, n, 'header')
+  }
+
   // 2. the sheets, numbers and gentle, light; numbers again in dark for the captures
   for (const [view, scheme] of [['numbers', 'light'], ['gentle', 'light'], ['numbers', 'dark']]) {
     if (!want('sheets:' + view + (scheme === 'dark' ? ':dark' : ''))) continue
