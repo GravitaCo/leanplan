@@ -70,7 +70,7 @@ export const dark: Tokens = {
   "placeholder": "#aaaaaf",
   "sep": "#38383a",
   "dash": "#48484a",
-  "ring": "#6e6e73",
+  "ring": "#7c7c80",
   "tint": "#cd7fae",
   "tintSoft": "#3a2733",
   "onTint": "#000000",
