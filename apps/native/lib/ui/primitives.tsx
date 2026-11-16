@@ -5,10 +5,11 @@
  * swipe-back are an improvement candidate that needs a board first (native-build-brief §4).
  *
  * Scroll lock: a sheet is a Modal, which already stops the screen behind it from scrolling, so
- * native needs no `useScrollLock`; the keyboard is handled by KeyboardAvoidingView inside the sheet.
+ * native needs no `useScrollLock`; with the keyboard up a sheet sits above it, its top edge never
+ * moving off screen, and the focused field scrolls into view (`useKeyboard`).
  */
-import { useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { AccessibilityInfo, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native'
+import { useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react'
+import { AccessibilityInfo, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type KeyboardEvent, type StyleProp, type ViewStyle } from 'react-native'
 import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { create } from 'zustand'
@@ -19,7 +20,7 @@ import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
 import { connectionLine } from '@/ui/ConnectionPill'
 import { Chevron, Icon, type IconName } from './icons'
 import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
-import { BTN, num, tx, useTokens, type Tokens } from '../theme'
+import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
 import { UI } from '@/copy/ui'
 
 /** Category colour keys, as on the web: each maps to a base and an -ink token. */
@@ -83,7 +84,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
     <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
       style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
-        {ini ? <Text style={[tx(16, 600, 1.3, BTN), { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
+        {ini ? <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
       </View>
     </Pressable>
   )
@@ -152,7 +153,7 @@ export function BackButton({ onPress, label = UI.back, small }: { onPress: () =>
     <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', marginLeft: small ? -6 : 0, opacity: pressed ? 0.7 : 1 })}>
       <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
-      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), { color: t.tint }]}>{label}</Text>
+      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -178,7 +179,7 @@ export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, col
       hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
       style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
       {icon && <Icon name={icon} color={fg} />}
-      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), { color: fg }]}>{title}</Text>}
+      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), GLYPH_ROOM, { color: fg }]}>{title}</Text>}
     </Pressable>
   )
 }
@@ -449,16 +450,33 @@ export function Disclosure({ icon, color, soft, label, value, open, onToggle, ch
 const SHEET_IN = SlideInDown.duration(340).easing(Easing.bezier(0.2, 0.9, 0.25, 1).factory())
 const FADE_IN = FadeIn.duration(250)
 
-function useKeyboardUp() {
-  const [up, setUp] = useState(false)
+/**
+ * The keyboard's overlap with the window's foot, in pt (iOS; 0 elsewhere: Android resizes the
+ * window itself), animated as the keyboard moves, plus `up` (any keyboard showing, on both).
+ * `onShown` runs once the keyboard has settled (to scroll the focused field into view).
+ */
+function useKeyboard(windowHeight: number, onShown: () => void) {
+  const [state, setState] = useState({ up: false, h: 0 })
+  const shown = useRef(onShown)
+  shown.current = onShown
   useEffect(() => {
-    const a = Keyboard.addListener('keyboardWillShow', () => setUp(true))
-    const b = Keyboard.addListener('keyboardWillHide', () => setUp(false))
-    const c = Keyboard.addListener('keyboardDidShow', () => setUp(true))
-    const d = Keyboard.addListener('keyboardDidHide', () => setUp(false))
-    return () => { a.remove(); b.remove(); c.remove(); d.remove() }
-  }, [])
-  return up
+    const ios = Platform.OS === 'ios'
+    const move = (e: KeyboardEvent | null, up: boolean) => {
+      // a zero-height or floating frame (a hardware keyboard, an undocked one) overlaps nothing
+      const h = ios && up && e && e.endCoordinates.height > 0 ? Math.max(0, windowHeight - e.endCoordinates.screenY) : 0
+      if (ios && e?.duration) LayoutAnimation.configureNext({ duration: e.duration, update: { type: LayoutAnimation.Types.keyboard } })
+      setState((s) => (s.up === up && s.h === h ? s : { up, h }))
+    }
+    const subs = [
+      Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (e) => move(e, true)),
+      Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', (e) => move(e, false)),
+      // the decimal pad and the text keyboard differ in height; a switch between them changes the frame
+      ...(ios ? [Keyboard.addListener('keyboardWillChangeFrame', (e) => { if (e.endCoordinates.screenY < windowHeight) move(e, true) })] : []),
+      Keyboard.addListener('keyboardDidShow', () => requestAnimationFrame(() => shown.current())),
+    ]
+    return () => subs.forEach((x) => x.remove())
+  }, [windowHeight])
+  return state
 }
 
 /** Open overlay sheets' close functions, oldest first. */
@@ -497,8 +515,23 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const reduce = useReducedMotion()
-  const kb = useKeyboardUp()
-  const max = height - insets.top - 12
+  // the focused field, scrolled into view inside the sheet once the keyboard is up (as Safari does)
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
+  const view = useRef({ y: 0, h: 0 })
+  const reveal = () => {
+    const input = TextInput.State.currentlyFocusedInput() as unknown as { measureLayout?: (rel: unknown, ok: (x: number, y: number, w: number, h: number) => void, fail?: () => void) => void } | null
+    const inner = (scroll.current as unknown as { getInnerViewRef?: () => unknown } | null)?.getInnerViewRef?.()
+    if (!input?.measureLayout || !inner || !scroll.current) return
+    input.measureLayout(inner, (_x, y, _w, h) => {
+      const { y: top, h: vh } = view.current
+      if (y < top + 8) scroll.current?.scrollTo({ y: Math.max(0, y - 16), animated: true })
+      else if (y + h > top + vh - 8) scroll.current?.scrollTo({ y: y + h - vh + 16, animated: true })
+    }, () => {})
+  }
+  const kb = useKeyboard(height, reveal)
+  // the sheet sits above the keyboard and never grows past the top: its top edge (grabber, title,
+  // Done, close) stays on screen, and what doesn't fit scrolls
+  const max = Math.max(240, height - insets.top - 12 - kb.h)
   const anim = animate && !reduce
   // overlay: Android's back closes it. Outside a Modal, BackHandler hears it; inside one (the guided
   // player), the holder's onRequestClose must call overlayBack() first, which closes the topmost
@@ -514,23 +547,25 @@ function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay,
   }, [overlay])
   const body = (
     <>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <View style={{ flex: 1, paddingBottom: kb.h }}>
         <Animated.View entering={anim ? FADE_IN : undefined} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
           <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
         </Animated.View>
         <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
           <Animated.View testID="sheet" role="dialog" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
-            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb ? 0 : insets.bottom }}>
+            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb.h > 0 || (kb.up && Platform.OS !== 'ios') ? 0 : insets.bottom }}>
             <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
             {header}
             <InSheet.Provider value>
-              <ScrollView style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
+              <ScrollView ref={scroll} onLayout={(e) => { view.current.h = e.nativeEvent.layout.height }}
+                onScroll={(e) => { view.current.y = e.nativeEvent.contentOffset.y }} scrollEventThrottle={32}
+                style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
                 {children}
               </ScrollView>
             </InSheet.Provider>
           </Animated.View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
       <ToastHost sheet={sheetId} />
     </>
   )

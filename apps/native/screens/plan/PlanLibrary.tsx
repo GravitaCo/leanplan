@@ -179,7 +179,8 @@ export function PlanPreview({ entry, onBack, onStart, onMaintenance, note }: {
   const fitsHere = !!tp && fits(tp, fitOf(profile))
   const fact = [tx(14), { color: t.label }]
   return (
-    <PlanPage footer={
+    // the web pads .pp 200 under its fixed bar: scrolled to the end, the last line sits 124 above the bar (measured)
+    <PlanPage end={124} footer={
       // .pp-cta: fixed at the bottom on --bg with a top rule
       <View style={{ borderTopWidth: 1, borderTopColor: t.sep, marginHorizontal: -16, marginTop: -12, paddingHorizontal: 16, paddingTop: 12, gap: 10, backgroundColor: t.bg }}>
         <StartChoice value={start} onChange={setStart} />

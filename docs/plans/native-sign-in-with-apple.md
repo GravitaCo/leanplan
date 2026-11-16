@@ -119,9 +119,8 @@ Built in `supabase/functions/_shared/apple.ts` and `delete-account`, tested in
 `main` after review, and needs the four secrets from step 3 first (without them every Apple account's
 deletion says Apple couldn't be told). The app keeps the code in memory only, for the one delete it
 was fetched for; a server error or timeout asks for Sign in with Apple again, since a code works once.
-When Apple can't be told, the sign-in screen's banner says (`DELETE.appleKept`, new words: Benn's or
-Sara's OK needed): "Your account is deleted. Tilo couldn’t remove Sign in with Apple, so you can remove
-Tilo yourself in your Apple Account settings, under Sign in with Apple."
+When Apple can't be told, the sign-in screen's banner says (`DELETE.appleKept`, compliance's wording,
+Benn approved 15 Nov): "Your account is deleted. Tilo couldn’t tell Apple, so Tilo may still be listed under Sign in with Apple in your Apple Account settings. You can remove it there."
 
 The design, as agreed:
 
@@ -146,3 +145,40 @@ independent controller for sign-in, with the relay and revocation notes. The pol
 moves when `native` is turned on (the web's published text doesn't change until then). App Store
 privacy label: Email Address and User ID, linked, App Functionality. Before launch: register the
 sending domains with Apple's Private Email Relay (register).
+
+## First device build (3dcc7038, 15 Nov): what Benn saw, and what changed
+
+**Raw errors on screen.** The sign-in screen showed iOS's and Expo's own error text. It no longer
+does. Every failure goes through `lib/account/rules.ts` `isNetworkError`: no connection gives
+`AUTH.errOffline`, a Google or Apple sign-in that didn't finish gives `AUTH.errGoogle` or
+`AUTH.errApple`, and closing Apple's or Google's sheet stays quiet. Password, sign-up and reset
+answers keep Supabase's own words, as on the web. These are new words, needing Benn's or Sara's OK.
+Each failure writes one line to the device log (`[sign-in] google failed at exchange: network`,
+`[TiloAuth] Sign in with Apple failed: <domain> <code>, underlying <domain> <code>`), with no email,
+code, token or user id. Xcode's console or Console.app shows it with the phone plugged in.
+
+**Apple, error 1000** (`ASAuthorizationError.unknown`, no sheet). This is not caused by the Supabase
+provider being off: that would fail later, at `signInWithIdToken`, after the sheet. The code follows
+Apple's pattern (delegate and presentation provider held, the anchor on the key window). The known
+causes of 1000 before any sheet, most likely first:
+1. The capability had only just been turned on. Benn ticked Sign In with Apple minutes before the
+   build, and Apple can take a while to apply it to the App ID. Trying again later, with no rebuild,
+   tells this one apart.
+2. The phone has no Apple Account signed in (Settings, top row), or the account lacks two-factor
+   authentication. Sign in with Apple needs both.
+3. The installed app's profile lacks the entitlement. Unlikely, because the build would not sign with
+   an entitlement its profile lacks. `codesign -d --entitlements - Tilo.app` on the IPA would confirm it.
+The new log line's underlying error names the cause.
+
+**Google, "fetch failed: Could not connect to the server."** `signInWithOAuth` makes no request (it
+only builds the URL), so this came from the one request after the sheet: `exchangeCodeForSession` at
+Supabase's `/auth/v1/token`. "fetch failed:" is Expo's own fetch (SDK 58 installs it globally) and
+"Could not connect to the server" is iOS's NSURLErrorCannotConnectToHost: the phone couldn't open a
+connection to Supabase just then. The path, supabase-js (2.119.0) and Expo's fetch are the same as in
+the spike that worked (e8df167); the registration rewrite only moved the same calls into
+`googleSignIn`. supabase-js drops the PKCE verifier when the exchange fails, so the app now saves it
+first and, only when the request got no answer, puts it back and exchanges once more after a second
+(`lib/account/exchange.ts`; lead, 15 Nov, since patchy phone networks are normal). An answer from
+Supabase is never retried. If the retry fails too, the person signs in again, which the words ask for. The likeliest cause is the phone's network
+at that moment (Wi-Fi, a VPN, iCloud Private Relay). The log line now says which step failed. The
+system prompt "Tilo wants to use …supabase.co to sign in" is iOS's normal notice for the sheet.

@@ -46,6 +46,12 @@ export const num: TextStyle = { fontVariant: ['tabular-nums'], letterSpacing: 0 
 export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, track?: number): TextStyle {
   return { fontFamily: GEIST[w], fontSize: size, lineHeight: lh < 4 ? Math.round(size * lh * 10) / 10 : lh, letterSpacing: track === undefined ? BODY_TRACK : track * size }
 }
+/**
+ * For a label whose box is as wide as its words (a button, chip or link): 1 pt of room after the
+ * last letter, inside the box, given back by the margin so nothing moves. iOS draws the last glyph
+ * only within the text's box, and a box rounded a hair narrower than the words cut it ("Check ir").
+ */
+export const GLYPH_ROOM: TextStyle = { paddingRight: 1, marginRight: -1 }
 /** body's -0.01em at 17 px, inherited as a length */
 export const BODY_TRACK = -0.17
 /** the tracking of text inside a web `<button>` (the browser's own button style resets it) */

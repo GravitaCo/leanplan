@@ -28,7 +28,11 @@ import { openLegal } from './legal'
 import { appleSignIn, emailRedirect, googleSignIn } from './oauth'
 import { AppleButton, appleAvailable } from '../../modules/tilo-auth'
 import { dark } from '../tokens.generated'
-import { coverFrame, photoHeight } from './rules'
+import { coverFrame, isNetworkError, photoHeight } from './rules'
+
+/** A Supabase answer to a password, sign-up or reset request: its own words, as the web shows them,
+ *  unless the request never reached Supabase (then the connection words, not the system's). */
+const serverErr = (e: { name?: string; message: string; status?: number }) => (isNetworkError(e) ? AUTH.errOffline : e.message)
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'check-email'
 
@@ -62,7 +66,7 @@ export function AuthScreen() {
       setBusy(true)
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: emailRedirect() })
       setBusy(false)
-      if (error) return setErr(error.message)
+      if (error) return setErr(serverErr(error))
       setSentFor('forgot')
       setModeRaw('check-email')
       return
@@ -74,7 +78,7 @@ export function AuthScreen() {
       setBusy(true)
       const { error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: emailRedirect() } })
       setBusy(false)
-      if (error) return setErr(error.message)
+      if (error) return setErr(serverErr(error))
       setSentFor('signup')
       setModeRaw('check-email')
       return
@@ -82,14 +86,14 @@ export function AuthScreen() {
     setBusy(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password: pw })
     setBusy(false)
-    if (error) setErr(error.message)
+    if (error) setErr(serverErr(error))
   }
 
   async function google() {
     setErr('')
     beginSignIn()
     const r = await googleSignIn()
-    if (r.status === 'error') setErr(r.message)
+    if (r.status === 'error') setErr(r.reason === 'network' ? AUTH.errOffline : AUTH.errGoogle)
   }
 
   async function apple() {
@@ -99,7 +103,7 @@ export function AuthScreen() {
     setBusy(true)
     const r = await appleSignIn()
     setBusy(false)
-    if (r.status === 'error') setErr(r.message)
+    if (r.status === 'error') setErr(r.reason === 'network' ? AUTH.errOffline : AUTH.errApple)
   }
 
   async function resend() {
@@ -112,7 +116,7 @@ export function AuthScreen() {
     setBusy(false)
     if (!error) return setResent(true)
     setResent(false)
-    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? AUTH.errRate : error.message)
+    setErr(error.status === 429 || /rate|security purposes/i.test(error.message) ? AUTH.errRate : serverErr(error))
   }
 
   const copy = AUTH.modes[mode]

@@ -28,7 +28,7 @@ public class TiloPickersModule: Module {
     }
 
     View(TiloDatePickerView.self) {
-      Name("TiloDatePicker")
+      ViewName("TiloDatePicker")
       Events("onPick")
 
       /// "time" or "date"
@@ -51,7 +51,7 @@ public class TiloPickersModule: Module {
     }
 
     View(TiloSliderView.self) {
-      Name("TiloSlider")
+      ViewName("TiloSlider")
       Events("onSlide")
 
       Prop("min", 0.0) { (view: TiloSliderView, v: Double) in view.slider.minimumValue = Float(v) }
@@ -70,7 +70,7 @@ public class TiloPickersModule: Module {
     }
 
     View(TiloMenuView.self) {
-      Name("TiloMenu")
+      ViewName("TiloMenu")
       Events("onPick")
 
       /// the options' words, in order

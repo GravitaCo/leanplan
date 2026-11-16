@@ -13,8 +13,9 @@ import { Platform } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
 import { supabase } from '@/data/supabase'
 import { useStore } from '@/store/store'
-import { codeFrom, reauthMatches } from './rules'
-import { setGoogleOAuth } from '@/data/platform'
+import { codeFrom, failureOf, reauthMatches, type SignInFailure } from './rules'
+import { AUTH_OPTIONS, setGoogleOAuth } from '@/data/platform'
+import { exchangeOnceMore } from './exchange'
 import { CryptoDigestAlgorithm, digestStringAsync, getRandomBytes } from 'expo-crypto'
 import { appleSignInNative } from '../../modules/tilo-auth'
 
@@ -30,7 +31,20 @@ export const emailRedirect = (): string => (web ? window.location.origin + windo
 let googleOpen = false
 export const googleInProgress = () => googleOpen
 
-export type GoogleResult = { status: 'ok'; uid: string } | { status: 'cancelled' } | { status: 'error'; message: string }
+/** `reason` picks the words on screen (Auth.tsx); the raw message is for the log only, never shown. */
+export type GoogleResult = { status: 'ok'; uid: string } | { status: 'cancelled' } | { status: 'error'; reason: SignInFailure; message: string }
+
+/**
+ * A sign-in diagnostic in the device log (Xcode or Console.app; lead, 15 Nov): which step failed and
+ * how, never an email, a code, a token or a user id. Error names and messages from supabase-js, Expo's
+ * fetch and AuthenticationServices carry none of those.
+ */
+function fail(provider: 'google' | 'apple', step: string, e: unknown): GoogleResult {
+  const err = (e && typeof e === 'object' ? e : { message: String(e) }) as { name?: string; message?: string; status?: number; code?: string }
+  const reason = failureOf(err)
+  console.warn(`[sign-in] ${provider} failed at ${step}: ${reason}`, err.name ?? '', err.code ?? '', err.status ?? '', err.message ?? '')
+  return { status: 'error', reason, message: err.message ?? '' }
+}
 
 /**
  * Google sign-in (and the fresh Google sign-in before deleting an account: `queryParams` asks Google
@@ -42,19 +56,28 @@ export async function googleSignIn(queryParams?: Record<string, string>): Promis
   try {
     if (web) {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: emailRedirect(), queryParams } })
-      return error ? { status: 'error', message: error.message } : { status: 'cancelled' }
+      return error ? fail('google', 'start', error) : { status: 'cancelled' }
     }
+    // builds the URL only (and the PKCE verifier on this phone): no request is made here
     const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT, skipBrowserRedirect: true, queryParams } })
-    if (error || !data?.url) return { status: 'error', message: error?.message ?? 'Google sign-in could not start.' }
+    if (error || !data?.url) return fail('google', 'start', error ?? { message: 'no URL' })
     const res = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT)
     if (res.type !== 'success') return { status: 'cancelled' }
-    const { code, why } = codeFrom(res.url)
-    if (!code) return { status: 'error', message: why || 'Google sign-in did not finish.' }
-    const { data: ex, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
-    if (exErr || !ex.session) return { status: 'error', message: exErr?.message ?? 'Google sign-in did not finish.' }
+    // Supabase's own error comes back in the return (a provider not enabled, a redirect not allowed)
+    // only Supabase's short error code goes to the log: its description can hold Google's code
+    const { code, errCode } = codeFrom(res.url)
+    if (!code) return fail('google', 'return', { message: errCode || 'no code in the return' })
+    // the one request: the code and this phone's verifier for a session, at Supabase's /auth/v1/token;
+    // once more if it never got an answer (lib/account/exchange.ts)
+    const store = AUTH_OPTIONS?.auth.storage
+    const storageKey = (supabase.auth as unknown as { storageKey: string }).storageKey
+    const { data: ex, error: exErr, retried } = store
+      ? await exchangeOnceMore(() => supabase.auth.exchangeCodeForSession(code), store, storageKey)
+      : { ...(await supabase.auth.exchangeCodeForSession(code)), retried: false }
+    if (exErr || !ex.session) return fail('google', retried ? 'exchange (after a retry)' : 'exchange', exErr ?? { message: 'no session' })
     return { status: 'ok', uid: ex.session.user.id }
   } catch (e) {
-    return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+    return fail('google', 'unexpected', e)
   } finally {
     googleOpen = false
   }
@@ -82,14 +105,16 @@ export async function appleSignIn(): Promise<GoogleResult & { code?: string }> {
   try {
     const raw = hex(getRandomBytes(32))
     const hashed = await digestStringAsync(CryptoDigestAlgorithm.SHA256, raw)
-    const cred = await appleSignInNative(hashed)
+    let cred
+    try { cred = await appleSignInNative(hashed) } catch (e) { return fail('apple', 'sheet', e) }
     if (!cred) return { status: 'cancelled' }
     const { data, error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: cred.identityToken, nonce: raw })
-    if (error || !data.session) return { status: 'error', message: error?.message ?? 'Sign in with Apple did not finish.' }
+    // e.g. "Unsupported provider: provider is not enabled" until Supabase's Apple provider is on
+    if (error || !data.session) return fail('apple', 'token', error ?? { message: 'no session' })
     // Apple's one-time authorization code: only the delete path uses it (the server revokes with it)
     return { status: 'ok', uid: data.session.user.id, ...(cred.authorizationCode ? { code: cred.authorizationCode } : {}) }
   } catch (e) {
-    return { status: 'error', message: e instanceof Error ? e.message : String(e) }
+    return fail('apple', 'unexpected', e)
   }
 }
 

@@ -172,7 +172,9 @@ export function PlanEnd({ plan, step0, onClose, onMaintenance, onPreview, onAgai
 
   if (step === 1) {
     return (
-      <PlanPage footer={
+      // the web's .pe pads 170 under its fixed bar: scrolled to the end, the last line sits 105 above
+      // Skip (measured); the footer's own 12 pt top padding (and Skip's line box) make up the rest here
+      <PlanPage end={94} footer={
         <>
           <View style={{ alignSelf: 'center' }}><LinkBtn title="Skip" onPress={() => { setGood(''); setChange(''); setStep(2) }} /></View>
           <Btn title="Continue" onPress={() => setStep(2)} style={{ minHeight: 54, borderRadius: 27 }} />

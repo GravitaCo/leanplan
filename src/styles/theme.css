@@ -39,6 +39,7 @@
   --placeholder: #646469;
   --sep: #e5e1db;
   --dash: #cfc9c1;      /* dashed "add" outlines */
+  --ring: #8e8a85;      /* an empty checkbox's edge (consent, onboarding's squares; Benn, 16 Nov 2026): 3:1 or more on --card, --elev and --bg in both modes */
 
   /* interactive */
   --tint: #9a4a7a;      /* mauve */
@@ -82,7 +83,7 @@
     --bg: #000000; --card: #1c1c1e; --elev: #2c2c2e; --sheet: #1c1c1e; --segon: #636366;
     --fill: rgba(118, 118, 128, 0.24); --fill2: rgba(118, 118, 128, 0.32); --fill3: rgba(118, 118, 128, 0.44);
     --tabbar: rgba(18, 18, 20, 0.86); --shadow: none;
-    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a;
+    --label: #ffffff; --label2: #98989d; --label3: rgba(235, 235, 245, 0.3); --placeholder: #aaaaaf; --sep: #38383a; --dash: #48484a; --ring: #7c7c80;
     --tint: #cd7fae; --tint-soft: #3a2733; --on-tint: #000000;
     --btn: #ffffff; --btn-ink: #000000;
     --red: #ff8a80;
@@ -974,7 +975,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .tl-key span { display: flex; align-items: center; gap: 6px; }
 .tl-key .tl-c { width: 14px; height: 8px; border-radius: 2px; }
 .ptile { position: relative; display: block; width: 100%; height: 196px; border: 0; padding: 0; border-radius: 22px; overflow: hidden; background: var(--sep); color: #fff; text-align: left; }
-.ptile.big { height: 230px; }
+.ptile.big { height: 230px; font-weight: 400; } /* not the global .big's 600: only the name is bold (Benn, 16 Nov 2026) */
 .ptile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; display: block; }
 .ptile .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.72) 100%); }
 .ptile .fits { position: absolute; left: 12px; top: 12px; padding: 5px 10px; border-radius: 12px; background: var(--tint); color: #fff; font-size: 12px; font-weight: 600; }
@@ -1111,7 +1112,23 @@ input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 
 .consent-screen .list { margin: 0; }
 .consent-screen .foot { text-align: center; }
 .consent-row { align-items: flex-start; gap: 12px; padding: 12px 16px; }
-.consent-row input { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 1px; padding: 0; accent-color: var(--tint); -webkit-appearance: checkbox; appearance: auto; }
+.consent-row input { width: 22px; height: 22px; flex: 0 0 22px; margin-top: 1px; padding: 0; }
+/* Tilo's own square (the onboarding options' .wz-dot.sq; Benn, 15 Nov 2026, its --ring edge 16 Nov), drawn on the real
+   checkbox, which stays a checkbox for screen readers and starts unticked */
+.consent-row input[type='checkbox'] {
+  -webkit-appearance: none; appearance: none; border-radius: 6px; background: none; box-shadow: inset 0 0 0 1.5px var(--ring);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.consent-row input[type='checkbox']:checked { background: var(--label); box-shadow: none; }
+.consent-row input[type='checkbox']:checked::after {
+  content: ''; width: 14px; height: 14px; background: var(--card);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.consent-row input[type='checkbox']:focus { outline: none; }
+.consent-row input[type='checkbox']:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; }
+/* Windows high contrast drops box-shadow and backgrounds: the browser's own checkbox there */
+@media (forced-colors: active) { .consent-row input[type='checkbox'] { -webkit-appearance: checkbox; appearance: auto; } .consent-row input[type='checkbox']:checked::after { content: none; } }
 .consent-row label { flex: 1; font-size: 15px; line-height: 1.4; }
 label a, .prose a { color: var(--tint); text-decoration: none; }
 .legal-rows a.li { color: inherit; text-decoration: none; }

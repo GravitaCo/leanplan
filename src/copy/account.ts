@@ -33,6 +33,11 @@ export const AUTH = {
   errMatch: 'Passwords do not match.',
   errShort: 'Password must be at least 8 characters.',
   errRate: 'Give it a minute, then try again.',
+  /** the phone app only: a sign-in, sign-up or reset request that couldn’t reach Tilo, and a Google or Apple sign-in
+   *  that didn't finish, in place of the raw system error (new words: need Benn's or Sara's OK) */
+  errOffline: 'This needs a connection. Check you’re online, then try again.',
+  errGoogle: 'Google sign-in didn’t finish. Try again in a moment.',
+  errApple: 'Sign in with Apple didn’t finish. Try again in a moment.',
   sent: (email: string) => `We sent a link to ${email || 'your inbox'}. Open it on this phone to continue.`,
   back: 'Back to sign in',
   resentLead: 'Sent again. It can take a minute or two. ',
@@ -212,8 +217,8 @@ export const DELETE = {
   /** native (iOS) only, for an account that signed in with Apple (its button is Apple's own, which
    *  says "Continue with Apple"). New words: to approve with Sign in with Apple (Benn or Sara) */
   reauthApple: 'To delete your account, confirm it’s you: sign in with Apple again.',
-  /** after a deletion, when Apple couldn't be reached to remove Tilo's Sign in with Apple (new words: need Benn's or Sara's OK) */
-  appleKept: 'Your account is deleted. Tilo couldn’t remove Sign in with Apple, so you can remove Tilo yourself in your Apple Account settings, under Sign in with Apple.',
+  /** after a deletion, when Apple couldn't be reached to remove Tilo's Sign in with Apple (compliance's wording; Benn approved, 15 Nov) */
+  appleKept: 'Your account is deleted. Tilo couldn’t tell Apple, so Tilo may still be listed under Sign in with Apple in your Apple Account settings. You can remove it there.',
   password: 'Your password, to confirm it’s you',
   typed: 'Type DELETE to confirm',
   wrongPassword: 'That password doesn’t match this account. Nothing has been deleted.',
