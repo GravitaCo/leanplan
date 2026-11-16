@@ -56,7 +56,7 @@ Status key: ☑ built on lib/ui and matched by a parity case (words and figures,
 | 4.1 | Library (choosing): back Plan, Plans, search, filter button (tint when filtered), goal chips (ink when on) or the filter chips with ×, count line, lead tile, the two-column grid with paging and its placeholder tile, empty text, + New plan | ☑ `[choosing · the library]` `[choosing · a goal chosen]` |
 | 4.2 | Filter sheet: six groups, Clear, Done, "Show n plans" / "No plans match" | ☑ `[choosing · filters]` |
 | 4.3 | Preview: hero photo or plain, round back, Fits your goal: …, name, line; last plan's note; about; How the n weeks go with timeline and key; a build week with its switch chips; maintenance and eating rows (`eatingLine`, gentle when numbers are quiet); For, Kit, Time; the beginner note; the safety foot; Starts (Today, next Monday, Pick a date) and Start plan fixed at the bottom | ☑ `[preview · suggested plan]` `[preview · another plan]` |
-| 4.4 | Pick a date: the platform date picker (N1's DateTimePicker), today to a year ahead (`startOn`) | ◑ N1 DateInput (system picker: device check) |
+| 4.4 | Pick a date: the platform date picker (N1's DateTimePicker), today to a year ahead (`startOn`) | ☑ N1 DateInput (system picker: checked on Benn's iPhone, 16 Nov 2026) |
 | 4.5 | Maintenance card: title, Close, heading, the two bars, five numbered steps, Got it | ☑ `[preview · maintenance card]` |
 | 4.6 | Builder: step header (Cancel / Back, "n of 3", three bars); 1 How long? (the last plan's note with hide, Name, length stepper 1 to 26, timeline, maintenance row, foot, Next); 2 Your week ("Start from the week you have now?" Copy it, rows with + Add, foot, no-rest note, counts, Next disabled when empty, day editor over the draft); 3 Ready to start (summary card, Starts, easier-week toggle, Ends …, Start plan) | ☑ `[build · step 1]` `[build · step 2]` `[build · step 3]` |
 | 4.7 | Details: hero (220), started/ends line, timeline and where (`detailsLines`), The weeks (rows open their week; lighter rows don't), Then maintenance / Carrying on with Read, actions (edit, choose a new plan in maintenance, add a week, rename, save a copy, stop), the foot | ☑ `[active · details]` `[maintenance · details]` `[own · details]` `[later · details]` |
@@ -70,7 +70,7 @@ Status key: ☑ built on lib/ui and matched by a parity case (words and figures,
 | # | What | Check |
 |---|---|---|
 | 5.1 | Workouts sheet: Ready-made, Yours (`routineLine`), Build a workout (when `canBuild`), foot | ☑ `[none · workouts sheet]` |
-| 5.2 | Workout page: hero (poster or plain), back, title, "Mondays · …" (`plannedDaysLine`) or "Your workout · …" / "Tilo workout · …", the exercises (each opens the library), the foot, Do this today, Edit workout / Make your own copy | ☑ `[none · a workout]` (poster: Bunny blocked in capture; device check) |
+| 5.2 | Workout page: hero (poster or plain), back, title, "Mondays · …" (`plannedDaysLine`) or "Your workout · …" / "Tilo workout · …", the exercises (each opens the library), the foot, Do this today, Edit workout / Make your own copy | ☑ `[none · a workout]` (poster: Bunny blocked in capture; checked on Benn's iPhone, 16 Nov 2026) |
 | 5.3 | Workout builder and library: N7's components | N7 |
 
 ## 6. If–then plans
@@ -89,7 +89,7 @@ Status key: ☑ built on lib/ui and matched by a parity case (words and figures,
 
 ## Known behaviour notes
 
-- Remove on a plan day: also offered as the row's VoiceOver custom action (lib/ui `Row` `actions`), since the pressable row groups its children on iOS. Device check with VoiceOver.
+- Remove on a plan day: also offered as the row's VoiceOver custom action (lib/ui `Row` `actions`), since the pressable row groups its children on iOS. Checked with VoiceOver on Benn's iPhone (16 Nov 2026).
 - The add-workout rows don't announce a checked state (the web's radio role); needs a `checked` option on lib/ui's `Row` (N1).
 - Not covered by any case: swap, `planOpen` from Train, flag-off wellbeing, Android back.
 
