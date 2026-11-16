@@ -12,7 +12,7 @@ import { MenuNative, SliderNative } from '../../modules/tilo-pickers'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
 import { Sheet } from './primitives'
-import { num, tx, BTN, useTokens } from '../theme'
+import { num, tx, BTN, useTokens, GLYPH_ROOM } from '../theme'
 
 const THUMB = 28
 
@@ -154,7 +154,7 @@ export function Scale<T extends string | number>({ items, value, onPick, cols = 
                 hitSlop={tall ? undefined : slop(0, 16 + (it.big != null ? 20.4 : 0) + (it.text != null ? 15.6 : 0))}
                 style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: tall ? 44 : undefined, justifyContent: 'center', alignItems: 'center', paddingVertical: 8,
                   borderRadius: 10, backgroundColor: on ? t.tint : bg, opacity: pressed ? 0.7 : 1 })}>
-                {it.big != null && <Text style={[tx(17, 700, 1.2, BTN), num, { color: fg, textAlign: 'center' }]}>{it.big}</Text>}
+                {it.big != null && <Text style={[tx(17, 700, 1.2, BTN), GLYPH_ROOM, num, { color: fg, textAlign: 'center' }]}>{it.big}</Text>}
                 {it.text != null && <Text style={[tx(13, 400, 1.2, BTN), { color: fg, textAlign: 'center' }]}>{it.text}</Text>}
               </Pressable>
             )

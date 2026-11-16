@@ -10,7 +10,7 @@ import { plannedKeys } from '@/core/domain/plans'
 import { isBuiltinKey, keyTitle } from '@/core/domain/routines'
 import { TALI_SHORT } from '@/core/data/taliWorkouts'
 import { Rings } from './charts'
-import { BTN, font, num, tx, useTokens } from '../theme'
+import { BTN, font, num, tx, useTokens, GLYPH_ROOM } from '../theme'
 import { UI } from '@/copy/ui'
 
 /** Monday to Sunday: each day a mini energy ring and its planned session. */
@@ -64,7 +64,7 @@ export function DayNav() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
       {btn(UI.previousDay, -1, 'chevL')}
-      <Text style={[tx(13, 500, 1.3, 0), { color: t.label2 }]}>{cur === todayStr() ? UI.today : f.dow} · {short}</Text>
+      <Text style={[tx(13, 500, 1.3, 0), GLYPH_ROOM, { color: t.label2 }]}>{cur === todayStr() ? UI.today : f.dow} · {short}</Text>
       {btn(UI.nextDay, 1, 'chevR')}
     </View>
   )

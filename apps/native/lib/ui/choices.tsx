@@ -12,7 +12,7 @@ import { Linking, Pressable, Text, View } from 'react-native'
 import type { SupportRow } from '@/screens/profile/supportRows'
 import { Icon } from './icons'
 import { slop, useSurface } from './kit'
-import { num, tx, BTN, useTokens } from '../theme'
+import { num, tx, BTN, useTokens, GLYPH_ROOM } from '../theme'
 
 /** One option: [key, title, optional sub], as the web's Opts takes it. */
 export type Opt<T extends string> = readonly [T, string, string?]
@@ -119,10 +119,10 @@ export function Signposts({ list, support }: {
   const row = { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12, paddingVertical: 13, paddingHorizontal: 16 }
   const name = (s: SupportRow) => <Text style={[tx(16), { color: t.label }]}>{s.name}</Text>
   const desc = (s: SupportRow) => <Text style={[tx(13, 400, 1.35), { color: t.label2 }]}>{s.desc}</Text>
-  const n = (s: string) => <Text style={[tx(16, 600), num, { color: t.tint }]}>{s}</Text>
+  const n = (s: string) => <Text style={[tx(16, 600), GLYPH_ROOM, num, { color: t.tint }]}>{s}</Text>
   const webLink = (s: SupportRow) => s.web ? (
     <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 14, bottom: 14 }} style={{ alignSelf: 'flex-start', marginTop: 2 }}>
-      <Text style={[tx(13, 500), { color: t.tint }]}>{s.webLabel ?? 'Webchat and email'}</Text>
+      <Text style={[tx(13, 500), GLYPH_ROOM, { color: t.tint }]}>{s.webLabel ?? 'Webchat and email'}</Text>
     </Pressable>
   ) : null
   return (
@@ -143,7 +143,7 @@ export function Signposts({ list, support }: {
               {s.web && (
                 <Pressable accessibilityRole="link" onPress={() => open(s.web!)} hitSlop={{ top: 8, bottom: 8 }} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: t.sep, marginTop: 8 }}>
                   <Text style={[tx(15), { color: t.label }]}>Webchat and email</Text>
-                  <Text style={[tx(16, 600), { color: t.tint }]}>Open</Text>
+                  <Text style={[tx(16, 600), GLYPH_ROOM, { color: t.tint }]}>Open</Text>
                 </Pressable>
               )}
             </View>

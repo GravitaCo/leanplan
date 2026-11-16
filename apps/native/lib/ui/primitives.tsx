@@ -43,7 +43,7 @@ export function ConnectionPillView({ kind, label, open, onPress }: { kind: Conne
       onPress={onPress} hitSlop={slop(0, 25)}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 13, backgroundColor: bg, flexShrink: 1, minWidth: 0 }}>
       <Icon name={CONN_ICON[kind]} size={15} color={color} />
-      <Text numberOfLines={1} style={[tx(12, 500, 15), num, { color, flexShrink: 1 }]}>{label}</Text>
+      <Text numberOfLines={1} style={[tx(12, 500, 15), GLYPH_ROOM, num, { color, flexShrink: 1 }]}>{label}</Text>
     </Pressable>
   )
 }
@@ -90,7 +90,7 @@ export function ProfileButton({ onPress }: { onPress?: () => void }) {
   )
 }
 
-const ltitle = (t: Tokens) => [tx(34, 600, 40, -0.025), { color: t.label, marginTop: 2 }]
+const ltitle = (t: Tokens) => [tx(34, 600, 40, -0.025), GLYPH_ROOM, { color: t.label, marginTop: 2 }]
 
 /**
  * A tab's large-title header (`.hdr`): the eyebrow with the connection pill across from it (tap for
@@ -109,7 +109,7 @@ export function PageHeader({ eyebrow, title, right, pill = true, profile = true,
     <View style={{ paddingTop: top ?? insets.top + 18, paddingBottom: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20, minWidth: 0, flexShrink: 1 }}>
-          {typeof eyebrow === 'string' ? <Text style={[tx(13, 500, 1.3, 0), { color: t.label2 }]}>{eyebrow}</Text> : eyebrow}
+          {typeof eyebrow === 'string' ? <Text style={[tx(13, 500, 1.3, 0), GLYPH_ROOM, { color: t.label2 }]}>{eyebrow}</Text> : eyebrow}
         </View>
         {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
       </View>
@@ -140,7 +140,7 @@ export function CatHead({ color, icon, label }: { color: Category; icon: IconNam
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icon name={icon} color={ink} />
-        <Text style={[tx(15, 600), { color: ink }]}>{label}</Text>
+        <Text style={[tx(15, 600), GLYPH_ROOM, { color: ink }]}>{label}</Text>
       </View>
     </View>
   )
@@ -202,7 +202,7 @@ export function Seg<T extends string>({ options, value, onChange, label, minHeig
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, h)}
             style={{ flex: 1, minHeight: minHeight, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent',
               boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
-            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), { color: t.label }]}>{l}</Text>
+            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{l}</Text>
           </Pressable>
         )
       })}
@@ -335,7 +335,7 @@ export function Row({ k, title, bold, expanded, actions, tag, sub, sub2, value, 
       <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
         {k != null && <Text style={[tx(13, 400, 1.3, tr), { color: t.label2 }]}>{k}</Text>}
         {/* .li.act: 16 pt medium */}
-        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
+        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), GLYPH_ROOM, { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
         {(sub != null || tag != null) && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
             {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
@@ -369,7 +369,7 @@ export function Tag({ children }: { children: ReactNode }) {
   return (
     // `vertical-align: 1px` on the web: sits 1 pt above the line's centre
     <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
-      <Text style={[tx(11, 700, 1.3, 0.3 / 11), { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
+      <Text style={[tx(11, 700, 1.3, 0.3 / 11), GLYPH_ROOM, { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
     </View>
   )
 }

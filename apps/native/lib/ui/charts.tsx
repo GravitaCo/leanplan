@@ -9,7 +9,7 @@ import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from 'react-nat
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, Easing } from 'react-native-reanimated'
 import type { DayStat } from '@/core/domain/insights'
 import { DOW } from '@/core/domain/date'
-import { BODY_TRACK, num, tx, useTokens, GEIST } from '../theme'
+import { BODY_TRACK, num, tx, useTokens, GEIST, GLYPH_ROOM } from '../theme'
 import { InPCard } from './kit'
 import { UI } from '@/copy/ui'
 
@@ -78,7 +78,7 @@ export function MacroTrio({ p, c, f, tp, tc, tf }: { p: number; c: number; f: nu
   const col = (label: string, v: number, goal: number) => (
     <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
       <Text style={[tx(13), { color: t.label2 }]}>{label}</Text>
-      <Text style={[tx(20, 600, 1.1), num, { color: t.label }]}>
+      <Text style={[tx(20, 600, 1.1), GLYPH_ROOM, num, { color: t.label }]}>
         {Math.round(v)}<Text style={[tx(13, 500, 1.1), { color: t.label2 }]}> g</Text>
       </Text>
       <Meter pct={goal ? v / goal : 0} />

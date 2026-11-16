@@ -237,7 +237,7 @@ function SummaryPage() {
     offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin))
 
   const openCheckin = () => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))
-  const pk = (color: string, label: string) => <Text style={[tx(13, 600), { color: color }]}>{label}</Text>
+  const pk = (color: string, label: string) => <Text style={[tx(13, 600), GLYPH_ROOM, { color: color }]}>{label}</Text>
   const sub = { fontSize: 13, color: t.label2 }
   const psq = (bg: string, icon: ReactNode, size = 40) => <View style={{ width: size, height: size, borderRadius: size === 56 ? 14 : 12, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>{icon}</View>
 
@@ -251,19 +251,19 @@ function SummaryPage() {
     : null
   const weightTile = !fv.weightBack || p.reviewWeight !== true ? (
     <Tile onPress={() => setSheet({ k: 'weight' })} label="Weight" style={{ flex: 1 }}>
-      <Text style={[tx(13, 600), { color: t.label2 }]}>Weight</Text>
-      <Text style={[tx(19, 600), { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>{day.weight ? 'Logged' : 'Add'}</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>Weight</Text>
+      <Text style={[tx(19, 600), GLYPH_ROOM, { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>{day.weight ? 'Logged' : 'Add'}</Text>
       <Text style={[tx(12, 400), { color: t.label2 }]}>{day.weight ? 'Today' : 'Whenever it suits you'}</Text>
     </Tile>
   ) : (
     <Tile onPress={() => setSheet({ k: 'weight' })} label="Weight" style={{ flex: 1 }}>
-      <Text style={[tx(13, 600), { color: t.label2 }]}>Weight</Text>
+      <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>Weight</Text>
       {lastW
         ? <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
-            <Text style={[tx(26, 600), num, { lineHeight: 29, letterSpacing: -0.5, color: t.label }]}>{r1(data.days[lastW].weight!)}</Text>
-            <Text style={[tx(15, 600), { color: t.label2 }]}>kg</Text>
+            <Text style={[tx(26, 600), GLYPH_ROOM, num, { lineHeight: 29, letterSpacing: -0.5, color: t.label }]}>{r1(data.days[lastW].weight!)}</Text>
+            <Text style={[tx(15, 600), GLYPH_ROOM, { color: t.label2 }]}>kg</Text>
           </View>
-        : <Text style={[tx(19, 600), { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>Add</Text>}
+        : <Text style={[tx(19, 600), GLYPH_ROOM, { color: t.label }, { marginTop: 2, lineHeight: 29 }]}>Add</Text>}
       <Text style={[tx(12, 400), { color: t.label2 }]}>{lastW ? (lastW === cur ? 'Today' : lastW > shiftDay(cur, -7) ? fmtDate(lastW).dow : dayMonthOf(lastW)) : 'Whenever it suits you'}</Text>
       {/* .wt-trend; a hard day (nutrition R5, R6): the last weigh-in and when it was, no trend */}
       {wRow && !hard ? <Text style={[tx(13, 500), { color: t.label }, { lineHeight: 17, marginTop: 6 }]}>{weightTileWords(wRow)}</Text> : null}
@@ -290,7 +290,7 @@ function SummaryPage() {
             {psq(t.mindFill, <Icon name="smile" size={20} color={t.label} />)}
             <View style={{ flex: 1, minWidth: 0 }}>
               {pk(t.mindInk, 'Mind')}
-              <Text style={[tx(17, 500), { color: t.label }]}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</Text>
+              <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>{day.checkin?.mood ? `Feeling ${MOODS[day.checkin.mood - 1].toLowerCase()}` : day.checkin ? 'Checked in' : isToday ? 'How are you today?' : 'How was this day?'}</Text>
               <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{day.checkin
                 ? day.checkin.hunger ? `Hunger: ${HUNGER[day.checkin.hunger - 1]} · tap to update` : 'Tap to update your check-in'
                 : 'Mood, sleep, stress and energy · 20 seconds'}</Text>
@@ -308,7 +308,7 @@ function SummaryPage() {
               {psq(t.mindFill, <Icon name="review" size={20} color={t.label} />)}
               <View style={{ flex: 1 }}>
                 {pk(t.mindInk, 'Weekly review')}
-                <Text style={[tx(17, 500), { color: t.label }]}>Your week</Text>
+                <Text style={[tx(17, 500), GLYPH_ROOM, { color: t.label }]}>Your week</Text>
                 <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>A two-minute look back</Text>
               </View>
             </Pressable>
@@ -369,13 +369,13 @@ function SummaryPage() {
             </View>
             {yes ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
-                <Text style={[tx(22, 600), { color: t.label }, { lineHeight: 26 }]}>{FOOD9.meals(mw.slots.length)}</Text>
+                <Text style={[tx(22, 600), GLYPH_ROOM, { color: t.label }, { lineHeight: 26 }]}>{FOOD9.meals(mw.slots.length)}</Text>
                 <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</Text>
               </Pressable>
             ) : some && gentle ? (
               <View style={{ gap: 8 }}>
                 <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 8 }}>
-                  <Text style={[tx(22, 600), { color: t.label }, { lineHeight: 26 }]}>{st.gentle}</Text>
+                  <Text style={[tx(22, 600), GLYPH_ROOM, { color: t.label }, { lineHeight: 26 }]}>{st.gentle}</Text>
                   <Text style={[tx(15, 400), { color: t.label2 }, { lineHeight: 22 }]}>{FOOD9.slots(mw.slots, mw.withProtein)}</Text>
                 </Pressable>
                 {!p.pregnancy?.flagged && <View style={{ alignSelf: 'flex-start' }}><LinkBtn title={FOOD9.seeRange} onPress={() => setTab('food')} style={[font(500), { fontSize: 14, paddingVertical: 0, paddingHorizontal: 0 }]} /></View>}
@@ -384,10 +384,10 @@ function SummaryPage() {
               <>
                 <Pressable accessibilityRole="button" accessibilityLabel="Open Food" onPress={() => setTab('food')} style={{ gap: 14 }}>
                   {gentle
-                    ? <Text style={[tx(24, 600), { color: t.label }, { lineHeight: 29 }]}>{st.gentle}</Text>
+                    ? <Text style={[tx(24, 600), GLYPH_ROOM, { color: t.label }, { lineHeight: 29 }]}>{st.gentle}</Text>
                     : (
                       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                        <Text style={[tx(44, 600), num, { lineHeight: 44, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
+                        <Text style={[tx(44, 600), GLYPH_ROOM, num, { lineHeight: 44, letterSpacing: -1.3, color: t.label }]}>{fmt(tot.k)}</Text>
                         <Text style={[tx(15, 400), num, { color: t.label2 }]}>of {fmt(r.lo)}–{fmt(r.hi)} kcal</Text>
                       </View>
                     )}
@@ -455,7 +455,7 @@ function SummaryPage() {
                 <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.moveFill, marginTop: -4, marginRight: -2, alignItems: 'center', justifyContent: 'center' }}>{moveIcon(20)}</View>
               </View>
               <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flex: 1, justifyContent: 'flex-end', gap: 4, paddingTop: 12 }}>
-                <Text style={[tx(19, 600), { color: t.label }, { lineHeight: 23, letterSpacing: -0.2 }]}>{moveTitle}</Text>
+                <Text style={[tx(19, 600), GLYPH_ROOM, { color: t.label }, { lineHeight: 23, letterSpacing: -0.2 }]}>{moveTitle}</Text>
                 <Text style={[tx(12, 400), { color: t.label2 }]}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</Text>
               </Pressable>
               {!logged && !isRest && <View style={{ marginTop: 10 }}>{startBtn(32)}</View>}
@@ -468,7 +468,7 @@ function SummaryPage() {
             <Pressable accessibilityRole="button" onPress={() => setTab('train')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               {psq(t.moveFill, moveIcon(20), 56)}
               <View style={{ flex: 1 }}>
-                <Text style={[tx(17, 600), { color: t.label }]}>{moveTitle}</Text>
+                <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>{moveTitle}</Text>
                 <Text style={[tx(13, 400), { color: t.label2 }, { marginTop: 1 }]}>{lighterMove ? `${moveSub} · ${LIGHTER_CHOICES}` : moveSub}</Text>
               </View>
               {startBtn(40) ?? <Chevron color={t.label3} />}
@@ -478,8 +478,8 @@ function SummaryPage() {
         {supps.length > 0 && (
           <Tile>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-              <Text style={[tx(13, 600), { color: t.label2 }]}>Supplements</Text>
-              <Text style={[tx(13, 500), { color: t.label2 }, num]}>{suppsTaken} of {supps.length}</Text>
+              <Text style={[tx(13, 600), GLYPH_ROOM, { color: t.label2 }]}>Supplements</Text>
+              <Text style={[tx(13, 500), GLYPH_ROOM, { color: t.label2 }, num]}>{suppsTaken} of {supps.length}</Text>
             </View>
             <View style={{ marginTop: 4 }}>
               {supps.map((s) => {
@@ -528,20 +528,20 @@ function SummaryPage() {
               <View style={{ flex: 1 }}>
                 <Text style={[tx(13), sub]}>Protein</Text>
                 {ws.logged >= 2
-                  ? <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{fmt(ws.avgP)} g</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>{dl == null ? 'a day' : Math.abs(dl) >= 5 ? `a day, ${dl > 0 ? 'up' : 'down'} ${Math.abs(dl)} g` : 'a day, steady'}</Text></>
-                  : <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>–</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>after 2 days</Text></>}
+                  ? <><Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }, [num, { marginTop: 2 }]]}>{fmt(ws.avgP)} g</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>{dl == null ? 'a day' : Math.abs(dl) >= 5 ? `a day, ${dl > 0 ? 'up' : 'down'} ${Math.abs(dl)} g` : 'a day, steady'}</Text></>
+                  : <><Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }, [num, { marginTop: 2 }]]}>–</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>after 2 days</Text></>}
               </View>
             )}
             <View style={{ flex: 1 }}>
               <Text style={[tx(13), sub]}>Workouts</Text>
               {workoutsDone
-                ? <><Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{workoutsDone}</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>done this week</Text></>
-                : <><Text style={[tx(20, 600), { color: t.label }, { marginTop: 2 }]}>None yet</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>this week</Text></>}
+                ? <><Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }, [num, { marginTop: 2 }]]}>{workoutsDone}</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>done this week</Text></>
+                : <><Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }, { marginTop: 2 }]}>None yet</Text><Text style={[tx(12, 400), { color: t.label2 }, { marginTop: 1 }]}>this week</Text></>}
             </View>
             {on.food && (
               <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${ws.logged === 1 ? '1 day' : `${ws.logged} days`} logged this week`} onPress={() => setTab('food')}>
                 <Text style={[tx(13), sub]}>Logged</Text>
-                <Text style={[tx(20, 600), { color: t.label }, [num, { marginTop: 2 }]]}>{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</Text>
+                <Text style={[tx(20, 600), GLYPH_ROOM, { color: t.label }, [num, { marginTop: 2 }]]}>{ws.logged === 1 ? '1 day' : `${ws.logged} days`}</Text>
               </Pressable>
             )}
           </View>
