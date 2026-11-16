@@ -589,15 +589,27 @@ watch, gentle-mode switches and disconnects in the first 30 days, and "Did your 
 
 ### 11.1 Phase 2 decisions for Benn or Sara (open, 16 Nov 2026)
 
-Each has a recommendation [G]; the board decisions are added when the boards are drafted.
+Gate 2 is done (N9, b4e399b: an imported night never counts as a check-in or replaces the person's
+own; mental-performance APPROVED, ship-critic SHIP). Gate 1 was drafted by N9 with `compliance`
+(APPROVE AS DRAFT for device-only storage) and `security-data` (agrees, with amendments H1 to H3 and
+M1 to M5 to write into the design); the full draft is in `docs/plans/apple-health-gate1.md`. The
+recommendations below follow the specialists where they settled it, and are my judgement [G] otherwise.
+The board decisions are added when the boards are drafted.
 
 | # | Decision | Recommendation | Answer |
 |---|---|---|---|
 | P2-1 | Start phase 2 now, alongside phase 1's launch items? | Yes: the gates and boards don't wait on TestFlight | |
-| P2-2 | What is kept from the watch: raw readings, or only what Tilo uses? | Only what Tilo uses: a sleep band, bed and wake time per night; a daily step total; each walking workout's date, duration and pace. Nothing else is stored | |
-| P2-3 | Where it is kept: the phone only, or synced to the account like the rest of the log? | Synced, under the existing health consent, so it survives a new phone and is removed by account deletion and consent withdrawal (needs compliance and security-data) | |
-| P2-4 | How far back to read on first connect? | 28 days, the window the steps suggestion already uses | |
-| P2-5 | Read in the background, or only when the app is opened? | In the background, so sleep is there before the morning check-in | |
-| P2-6 | Disconnecting: remove what was imported, or keep it? | Remove it, from the phone and the account | |
-| P2-7 | Does the web app show watch data? | No: the watch lines are iPhone only; accepted steps suggestions and confirmed walks count everywhere, as any logged change does | |
-| P2-8 | Android (Health Connect) and Fitbit | Stay in phase 4, not phase 2 | |
+| P2-2 | What is kept from the watch | Only what Tilo uses: a sleep band and wake time per night (14 nights); a daily step total rounded to 100, days under 1,000 kept as "not worn" (56 days); each walk's start, minutes and brisk or not (56 days). Never sleep stages, minutes asleep, heart rate, calories, routes, source or device | |
+| P2-3 | Where it is kept | On the iPhone only, excluded from iCloud backup; nothing synced except a walk the person adds to their log (compliance, security-data). So no watch lines on the web | |
+| P2-4 | A separate "Apple Health" consent, recorded on Connect, offered only with a current health consent yes | Yes (compliance); needs a one-line database change Benn applies first | |
+| P2-5 | How far back to read on first connect | 28 days, the window the steps suggestion uses | |
+| P2-6 | Read in the background? | No, read when the app opens (compliance leans to dropping it; device-only storage doesn't need it) | |
+| P2-7 | Bed time: read only to frame the night, or stored? | Read only, not stored, unless a board needs it | |
+| P2-8 | Walk distance: use Apple's older distance field, or ask a 4th permission? Store brisk or not, or a pace band? | No 4th permission; brisk or not, with nutrition-accuracy to confirm | |
+| P2-9 | Disconnecting | Wipes the imported data and stops reading; walks the person added stay in their log unless they choose "Remove the walks I added too" (needs a board) | |
+| P2-10 | No reading at all in gentle mode, while wellbeing is flagged, in care versions and safety weeks | Yes (compliance, mental-performance) | |
+| P2-11 | Permission wording | Option 1: "Tilo reads your sleep times, steps and walks from Apple Health to show them next to your check-in and suggest your daily movement. It stays on this iPhone unless you add a walk to your log. Tilo never reads sleep stages, heart rate or calories." | |
+| P2-12 | Pilot measures (Tilo has no analytics) | Ask pilot users directly; compliance reviews the method first | |
+| P2-13 | The app's main log is in iPhone iCloud backups (Apple guideline 5.1.3(ii) question, M5) | Ask compliance for a ruling before W1 ships; if needed, exclude the log from backup (it is synced to the account anyway) | |
+| P2-14 | Android (Health Connect) and Fitbit | Stay in phase 4 | |
+| P2-15 | Benn asked why Apple Health shows nothing: bring sleep and walking forward? | No shortcut: they ship in phase 2 behind the gates above | |
