@@ -127,6 +127,16 @@ fake-camera capture are screen-level (the suggestion logic is shared core, alrea
 the opt-in, the source cards, the report sheet and the queue are screen-level or shared store
 behaviour, carried over when the screens are built.
 
+## Open device items
+
+- **Wrong failure message on the phone (16 Nov 2026, Benn's device test).** With an expired Anthropic
+  key, ai-read-label answered 502 (`upstream`), which the app should show as "Couldn't read the photo
+  right now." The native build showed "Photo reading isn't available right now. Type it in instead."
+  The same 502 through the same shared `readLabel` gives the right message in Node (test-scan), so the
+  phone sees something different. Internal test builds (EXPO_PUBLIC_DIAG=1) now keep a
+  `label read failed: <outcome> <HTTP status> <error name>` line (lib/platform/diag.ts; a long press
+  on the sync pill shows it): reproduce with a failing read and read that line to find the cause.
+
 ## Open before the screens ship
 
 - The label screen calls `discardAll()` when it closes (and passes it to `readPhotos` as `discard`);

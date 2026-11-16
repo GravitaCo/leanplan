@@ -89,7 +89,10 @@ export function LabelCaptureView({ onBack, onClose, animate = true, barcode, bas
       barcode, base, taken: taken(), forShare: !!(forShare && onFail),
     }, {
       consentLetsSync: () => consentLetsSync(st().data), underAge: () => !!st().underAge, flushConsents: () => st().flushConsents(),
-      readLabel, discard: discardAll, signal: ctl.signal,
+      // why a read failed, for internal test builds' diagnostics (lib/platform/diag.ts): the outcome,
+      // the HTTP status and the error's name only, never the photo, a figure or who
+      readLabel: (b, o) => readLabel(b, { ...o, report: (f) => console.warn('label read failed:', f.kind, f.status ?? '-', f.name ?? '-') }),
+      discard: discardAll, signal: ctl.signal,
     })
     if (!aliveRef.current) return
     if (out.kind === 'share-failed') { onFail?.(out.note); return }
