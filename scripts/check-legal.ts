@@ -81,6 +81,23 @@ for (const onboarding of [false, true]) for (const mind of [false, true]) for (c
   gated.push(privacyPolicy({ ...o, native: true }), cookiePolicy({ ...o, native: true }))
   if (mind) gated.push(privacyPolicy({ ...o, native: true, suppNames: true }))
 }
+// Cycle (CYCLE_ENABLED, docs/plans/cycle.md §6): gates the privacy policy only. Off is the default
+// and leaves every version as it was (date included); on adds the Cycle section, the sex-answer
+// purpose and the new date, and never claims a forecast or a medical device
+for (const onboarding of [false, true]) for (const mind of [false, true]) for (const products of [false, true]) for (const native of [false, true]) {
+  const o = { onboarding, mind, products, native }, tag = JSON.stringify(o)
+  const off = privacyPolicy(o), on = privacyPolicy({ ...o, cycle: true })
+  if (!same(off, privacyPolicy({ ...o, cycle: false }))) fail(`Privacy policy: Cycle off isn't the default ${tag}`)
+  if (same(off, on)) fail(`Privacy policy: the Cycle gate changes nothing ${tag}`)
+  const offText = JSON.stringify(off), onText = JSON.stringify(on)
+  if (/Cycle/.test(offText)) fail(`Privacy policy: Cycle off still mentions Cycle ${tag}`)
+  if (!on.sections.some((s) => s.h === 'Cycle')) fail(`Privacy policy: Cycle on without its section ${tag}`)
+  if (!onText.includes('decide whether Tilo offers Cycle')) fail(`Privacy policy: Cycle on without the sex-answer purpose ${tag}`)
+  if (!onText.includes("It isn't a medical device.") || !onText.includes('never synced to your account')) fail(`Privacy policy: Cycle on without the intended purpose or the device-only line ${tag}`)
+  if (on.updated <= off.updated) fail(`Privacy policy: Cycle on doesn't move the date ${tag}`)
+  gated.push(on)
+  if (mind) gated.push(privacyPolicy({ ...o, cycle: true, suppNames: true }))
+}
 
 for (const doc of [...gated, sitePrivacy(), siteTerms(), siteCookies()]) {
   const ph = placeholdersIn(doc)

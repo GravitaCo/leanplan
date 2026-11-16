@@ -23,8 +23,13 @@ const email = () => fact('contactEmail', 'privacy email')
  * onboarding = ONBOARDING_ENABLED, and check:legal checks every combination. Each flag gates only
  * its own passages. With onboarding on and Mind off, the text is main's as of 2026-10-09 (npm test
  * compares it with scripts/fixtures-legal-onboarding.json).
+ * Cycle (docs/plans/cycle.md §6, the women-only period and symptom log, device-only in v1) is built
+ * but off (CYCLE_ENABLED in src/data/cycleFlag.ts). Its passages, and the line that the sex answer
+ * also decides whether Cycle is offered, are gated on `cycle`: `npm run legal:html` publishes with
+ * cycle = CYCLE_ENABLED, and check:legal checks it off and on with every other combination. With it
+ * off the text, including `updated`, is exactly as before (compliance, 16 Nov 2026).
  */
-export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false, native = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean; native?: boolean } = {}): LegalDoc {
+export function privacyPolicy({ onboarding = false, mind = false, suppNames = false, products = false, native = false, cycle = false }: { onboarding?: boolean; mind?: boolean; suppNames?: boolean; products?: boolean; native?: boolean; cycle?: boolean } = {}): LegalDoc {
   // The iPhone app's reminders through Apple's push service (native-build-plan N12, compliance
   // 13 Nov 2026): `native` stays off until the iPhone app reaches anyone outside Gravita's core team
   // (an external TestFlight group, or the App Store). With it off the text is unchanged. It also
@@ -42,7 +47,9 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
     // safeguard named on 11 Oct 2026
     // with onboarding on: the conditions and medicines question asked for every goal, and its two
     // settings (protein at the everyday amount, or a capped range), 24 Oct 2026
-    updated: '2026-11-05',
+    // Cycle (`cycle`), 16 Nov 2026: only the Cycle version carries the new date, so the published
+    // text with Cycle off is unchanged. Set it to the publish date when CYCLE_ENABLED goes on.
+    updated: cycle ? '2026-11-16' : '2026-11-05',
     intro:
       `This explains what Tilo collects, why, who else handles it and the rights you have. It covers the Tilo app ` +
       `(app.tilo.fit) and the Tilo website (www.tilo.fit). Tilo is run by ${who()} ("we", "us"). We are the controller ` +
@@ -74,8 +81,8 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           `Account: your email address and a password (stored as a secure hash, which we can't read). If you sign in with Google, we receive your email address, name and profile picture link from Google.` +
             (native ? ` If you sign in with Apple, we receive your email address (or a private relay address, if you choose Hide My Email) and Apple's identifier for you. We don't receive your name.` : ''),
           onboarding
-            ? `Profile: display name, sex (and, if you set Tilo up with its questions, your answer of female, male or prefer not to say, used for your energy estimate), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tilo worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`
-            : `Profile: display name, sex, age, height, weight, activity level, goal and diet pattern (such as vegetarian or vegan).`,
+            ? `Profile: display name, sex (and, if you set Tilo up with its questions, your answer of female, male or prefer not to say, used for your energy estimate${cycle ? ' and to decide whether Tilo offers Cycle, below' : ''}), age, height, weight, body fat (if you add it), how much you move on a normal day (a steps band or the kind of work you do), activity level, goal, pace, what would make Tilo worth it for you, diet pattern (such as vegetarian or vegan), and your training preferences: how confident you feel, how much you move at the moment, days and weekdays, session length, where you train, equipment, what you enjoy, cardio preferences, muscle groups to focus on, and any body areas to go easy on, with a note if you add one.`
+            : `Profile: display name, sex${cycle ? ' (also used to decide whether Tilo offers Cycle, below)' : ''}, age, height, weight, activity level, goal and diet pattern (such as vegetarian or vegan).`,
           ...(onboarding
             ? [
                 `Setup health questions: when you set Tilo up, it asks a few questions so your plan starts safely. Each one is optional. For the health check (heart, dizziness, pregnancy or recent surgery), the question about some conditions and medicines (diabetes treated with insulin or tablets that can cause lows, kidney disease, a weight-loss injection) and how things have been lately (sleep, stress and how much room you have for change), we keep only the result, such as "start gently" or "don't suggest eating less", never which item you picked (apart from pregnancy, below). For the conditions and medicines question, the result is one of two settings: one keeps protein at the everyday amount for adults, the other allows a higher protein range. We never keep which condition or medicine you picked, but because kidney disease is the only answer that always keeps protein at the everyday amount, that setting can say something about your health, so we treat it as health data and protect it like the rest. We do keep your answer about how food and weight feel for you (as "yes", "sometimes", "no" or "rather not say") and whether it turned Gentle mode on. If you answered sometimes, Tilo asks once, about two weeks in, whether you'd like your food range on Today as well as on Food, and we keep what you chose. If you answered yes, Tilo asks at your week-4 look-back whether a calorie range would help, and we keep what you chose and the date, so that after "Not now" it waits 12 weeks before asking again. Closing either question counts as the second answer ("Keep it on Food" or "Not now"). Because these choices are tied to your answer, we treat them as health data too. We also keep whether you're pregnant or breastfeeding (not which) with the date you told us. If you told us you are, Tilo asks every 12 weeks whether that still applies; if you choose "Ask me later" or close the question, we keep that date too and ask again two weeks later. We also keep when each answer was last changed, so answers given on two phones don't overwrite each other. You can see these answers, and change or clear them, in the app (Profile, then Health data, then Health check answers). How things have been lately isn't listed there: you can change it, or skip it to delete it, by redoing setup (Profile, then Health data, then Redo setup), which also lets you change what would make Tilo worth it and your daily movement.`,
@@ -107,6 +114,11 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
           ...(onboarding
             ? [
                 `On your device only, while you set Tilo up: your answers so far, so you can pick up where you left off. This draft is never uploaded, and is deleted when you finish setup, withdraw consent for health data, remove this device's log or delete your account.`,
+              ]
+            : []),
+          ...(cycle
+            ? [
+                `On your device only, if you turn Cycle on: your Cycle log (see Cycle, below). It is never synced to your account.`,
               ]
             : []),
           `Reminders: if you turn them on, ` +
@@ -143,6 +155,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             ` about your health, a special category of personal data, and your diet pattern may also reveal beliefs. ` +
             `So before anything is synced, the app asks for your explicit consent to all of it, when you first sign in, and records the date and the version of the wording you saw. ` +
             (onboarding ? `The setup questions about your health only appear once you've agreed. ` : '') +
+            (cycle ? `Cycle has its own consent, asked separately when you turn it on, and needs this one as well. ` : '') +
             `If you used Tilo before we asked, what you logged then was already synced to your account. ` +
             `If you used Tilo before we asked, you can choose "Not now". Everything you log then stays on your phone, and nothing syncs to your account or is backed up there. What was already in your account is kept there, unused, until ${UNCONSENTED_DELETION.long}, and then deleted unless you've agreed. Your phone keeps its copy, and if you agree later it uploads again from your phone. We ask once more after two weeks. Reminders only run once you've agreed.`,
           `You can withdraw that consent at any time in the app (Profile, then Privacy). Withdrawing stops Tilo syncing anything you log and deletes your log, profile, settings and reminders from your account, so your log stays only on your phones. ` +
@@ -157,9 +170,31 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
                 ? `It also clears your weigh-ins, check-ins, body details (weight, body fat, height and the sex answer used for your energy estimate), your setup answers (the health check, medical and lately results, pregnancy, how food and weight feel and what you chose when Tilo asked about a food or calorie range, what would make Tilo worth it, daily movement), your training preferences (including any injuries you've noted), and the reasons in your plans and workouts that came from them, and your steady starting weight, the pattern lines Tilo has shown you and your choice for next week, from this phone straight away, and from your other phones the next time each one connects. ` +
                   `Your name, age, goal, the sex shown in Profile and whether Gentle mode is on stay on your phones. `
                 : `It also clears your weigh-ins, check-ins, body details (weight and height), your steady starting weight, the pattern lines Tilo has shown you and your choice for next week, from this phone straight away, and from your other phones the next time each one connects. Your name, age, goal, sex and whether Gentle mode is on stay on your phones. `) +
+            (cycle ? `Withdrawing also ends your Cycle consent and deletes your Cycle log, from this phone straight away and from your other phones the next time each one connects. ` : '') +
             `Your account and your consent choices stay, so you can agree again later, and your log then uploads from your phone. To remove everything, delete your account (Profile, then Privacy, then Delete account; this needs a connection). Withdrawing does not affect what happened before.`,
         ],
       },
+      ...(cycle
+        ? [
+            {
+              h: 'Cycle',
+              p: [
+                `Cycle is an optional period and symptom log. Tilo offers it in Profile to people aged ${MIN_AGE} and over who chose female as their sex in Tilo and have agreed to Tilo keeping their health data. Seeing the offer collects nothing, and Cycle stays off unless you turn it on. ` +
+                  `It lets you record your periods and how you feel, as a personal diary. Tilo uses what you record to offer general wellness choices, such as a lighter session, and general information on when to speak to a GP. ` +
+                  `It isn't intended to diagnose, prevent, monitor or treat any disease or condition, to predict periods, ovulation or fertile days, or to help you get pregnant or avoid pregnancy. It isn't a medical device.`,
+                `What it keeps: your answer to its one setup question (such as regular periods, irregular periods or periods changing with age), and for each day you log, your flow, your pain and any symptoms you pick from a fixed list (such as cramps or a headache), never your own words. ` +
+                  `It also keeps which of its notes on when to get help it has shown you and when, any you marked as usual for you, and your earlier setup answers with their dates. ` +
+                  `This can reveal things about your sexual and reproductive health, so Cycle asks for its own explicit consent when you turn it on, separate from the one for health data.`,
+                `Where it's kept: on your phone only. Your Cycle log is never synced to your account, never sent to an AI service or anyone else, and never mentioned in a notification. ` +
+                  `Your account holds only the record of your Cycle consent choices (which one, the version of the wording and when), as for your other consents. Because it shows you chose to use a period log, we protect it like your health data. ` +
+                  `Like the rest of your log on this phone, your Cycle log is protected by your phone's lock, not by a separate password. If someone else signs in to Tilo on this phone, the app doesn't show them your Cycle log, and it's never moved into another account. ` +
+                  `It's included when you export your data, and the export file isn't encrypted, so keep it somewhere safe. If you lose or reset your phone, your Cycle log goes with it unless you exported it.`,
+                `Deleting it: each phone keeps its own Cycle log. You can delete the one on a phone at any time (Profile, then Privacy, then Delete all cycle data), even with no connection. Turning Cycle off records that you withdrew your Cycle consent and deletes your Cycle log, from that phone straight away (after offering you an export) and from your other phones the next time each one connects. ` +
+                  `Withdrawing consent for health data, removing this device's log when you sign out, deleting your account or clearing your browser data also deletes it. A plain sign-out keeps it on the phone for when you sign back in.`,
+              ],
+            },
+          ]
+        : []),
       {
         h: 'Why we use it, and our legal basis',
         ul: [
@@ -171,6 +206,12 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             ? [
                 `To add new products you save from a label photo to the shared product list. Basis: your consent, given separately when Tilo first asks (and, because it comes from what you log, your explicit consent for health data too). Once a product is added, it isn't linked to you.`,
                 `To keep the shared product list accurate and free of abuse (reports, hiding and removing products). Basis: our legitimate interest in a list everyone can rely on.`,
+              ]
+            : []),
+          ...(cycle
+            ? [
+                `To decide whether to offer Cycle, from the sex you chose in Tilo and your age. Basis: our contract with you.`,
+                `To run Cycle, if you turn it on: keep your log on your phone, show which day of your period it is, offer lighter options and show notes on when to get help. Basis: our contract with you, and your explicit consent to Cycle, given separately from the one for health data.`,
               ]
             : []),
           `To read and answer feedback you send us. Basis: our legitimate interest in improving Tilo.`,
@@ -194,6 +235,9 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
               ? `On a hard day, going by your check-in, Tilo also asks for less: fewer prompts and lighter choices. Your calorie and macro targets never change because of it. ` +
                 `Tilo works out weekly patterns, such as how your sleep, mood and energy went over the week, from your own answers, on your phone. ` +
                 `If most of your mood answers over the last two weeks were Low or Rough, Tilo may show you where to find support, at most once a month on each phone. It works this out on your phone and doesn't tell anyone. `
+              : '') +
+            (cycle
+              ? `If you use Cycle, Tilo works out on your phone, from what you logged: which day of your period it is ("Day 2 of your period"); when to show the period question in your check-in; whether to offer the lighter options on Train on a day you logged a lot of pain; a short note, in a week you logged a period, that weight can read a bit higher around one; and whether to show a short note on when to speak to a GP, for example after a long or very heavy period or when your log shows no period for a long time. While a note about having no period would show, Tilo won't suggest eating less. These describe what you logged. They aren't an assessment of your cycle or a forecast: Tilo never shows a predicted date and never says whether your cycle is normal. `
               : '') +
             `They have no legal or similarly significant effect on you, and nobody makes decisions about you from them.`,
         ],
@@ -260,6 +304,11 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             ? [
                 `Label photos: Tilo doesn't keep them. Anthropic deletes them as described above. The daily count of photo reads is deleted after 60 days, or sooner if you delete your account.`,
                 `Products on the shared list are kept for as long as the list exists, unless we remove them after a report or a check. Because nothing links them to you, deleting your account doesn't remove them, and we can't find the ones you added. Products still waiting on your phone are removed if you turn sharing off, withdraw consent for health data, or someone else signs in on that phone.`,
+              ]
+            : []),
+          ...(cycle
+            ? [
+                `Your Cycle log stays on your phone until you delete it, turn Cycle off, withdraw consent for health data, remove this device's log, delete your account or clear your browser data. The record of your Cycle consent choices is kept until you delete your account, like your other consent choices.`,
               ]
             : []),
           `Data on your device stays until you delete it in the app, clear your browser data or remove Tilo. Anything the app saved in your browser at the old address (app.tali.fit) stays in that browser until you remove it there or clear your browser data.`,

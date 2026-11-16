@@ -1031,6 +1031,144 @@ privacy policy say so. A version can still be taken down after a report.
 
 ---
 
+## 10. Addendum: Cycle
+
+**DRAFT, 16 November 2026, compliance. Not signed.** Covers branch `native/n14-cycle` from
+`4608955` (Cycle groundwork) plus the uncommitted work on it that day. Cycle is built behind
+`CYCLE_ENABLED` (`src/data/cycleFlag.ts`), off in every production build and on only in Benn's and
+Sara's `VITE_CYCLE=1` builds. Plan: `docs/plans/cycle.md` §3, §5.1, §6; regulatory check:
+`docs/plans/cycle-checks.md`; register: the two Cycle rows and item 49. Benn or Sara signs this
+section before Cycle reaches anyone beyond the two of them. Not legal or medical advice.
+
+### 10.1 Processing
+
+- **Who:** offered in Profile only to an adult (`MIN_AGE`) whose onboarding sex answer is female
+  (`profile.sexAnswer`, never the legacy `sex` field) and who has a current health yes
+  (`cycleOffered`, `src/core/domain/cycle.ts`). Seeing the offer collects nothing; Cycle stays off
+  until the person turns it on.
+- **Device only** (`deviceOnly.cycle` in `leanplan.v1`, stamped with the owner account): one setup
+  answer from six (regular, irregular, perimenopause, often stop or skip, no periods, prefer not to
+  say) with its dated history; per day, flow (stopped to heavy), pain (no pain, a bit, a lot) and
+  symptom chips from a fixed list; which safety prompts showed and when; "usual for me" marks. No
+  free text.
+- **Server:** only the `cycle` consent record (type, version `2026-11-v1`, yes or no, time) in
+  `consents`, once `docs/migrations/2026-11-16-cycle-consent.sql` is applied. No new table.
+- **Processing on the phone** (still Tilo's processing, register item 27): Day N of a period; when
+  the check-in row shows (an internal usual-start estimate that is never shown, exported as a
+  field, or sent anywhere); "a lot" of pain as one signal to the lighter-session offer (Train and
+  Today only); a weigh-in note in a week with logged flow; four signpost prompts (long bleed,
+  heavy, pain, no period); and, while the no-period prompt would be due, a hold on deficit
+  suggestions (`holdsDeficit`). Cycle data never feeds `lowSignals`, `hardDay` or `weekPicture`.
+- **Sex answer, new purpose:** it was collected for the energy estimate; it now also decides
+  whether Cycle is offered (Art. 5(1)(b), 6(4)). Compatible in my view: same relationship, same
+  person, no new recipient, and the only effect is an offer the person can ignore. Disclosed in the
+  gated policy text.
+
+### 10.2 Lawful basis
+
+Art. 6(1)(b) with Art. 9(2)(a) explicit consent, through a separate `cycle` consent that requires a
+current health yes (`grantCycle`). Separate, not a rewording of the health consent, so it stays
+specific (Art. 4(11), 9(2)(a); EDPB Guidelines 05/2020 on consent) and the health consent isn't
+re-asked of everyone. The ICO names signing up to a period tracker as an example of sex-life data,
+so the log, the consent record and any future "offer hidden" flag are treated as possibly sex-life
+as well as health data (Art. 9(1)); the consent wording must say "can reveal things about your
+sexual and reproductive health". The consent record's basis follows D10.
+
+### 10.3 Minimisation
+
+- Device only in v1; nothing about the log reaches the server (`scripts/test-cycle.ts` sentinel).
+- Fixed lists only; no free text, now or later.
+- No contraception question (Sara, 4 Nov). The setup option "My periods often stop or skip, for
+  example with some contraception" still names contraception: dropping "for example with some
+  contraception" loses nothing (register item 49(d)).
+- No forecast is ever stored for display; the usual-start estimate is computed, used for row timing
+  and discarded.
+- No synced "offer hidden" flag exists yet; if one is added it carries no reason.
+
+### 10.4 New risks
+
+Scores on the section 5 scale, proposed, not confirmed.
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R23 | **Exposure on a shared phone, or to a coercive partner or family member**, who opens the app on an unlocked phone and reads the log (periods, a gap, a setup answer). There is no app lock; only the phone's lock protects it. | Possible | Severe | High |
+| R24 | **The unencrypted export** (whole device state as JSON, including the Cycle log) is kept in Downloads, synced to a cloud drive or shared by mistake. | Possible | Significant | Medium |
+| R25 | **The setup answer or the log reveals reproductive or sex-life facts** (perimenopause, periods stopping, a long gap that may suggest pregnancy or contraception). Stored on the device; inferred by anyone who sees it. | Possible | Significant | Medium |
+| R26 | **Safety harm from the prompts and holds**: PMDD or severe pain not signposted, or signposted badly; prompts that read as judging; disordered eating worsened, for example a gap from under-eating met with diet suggestions. | Possible | Severe | High |
+| R27 | **Provisional thresholds with no clinician review** (`CYCLE_THRESHOLDS`, marked provisional) under- or over-prompt. | Probable (as built) | Significant | Medium |
+| R28 | **Withdrawal not fully honoured across phones**: another phone keeps its log until it next connects; until the migration is applied, a cycle "no" doesn't sync at all; an export keeps a copy. | Possible | Significant | Medium |
+| R29 | **Treated as a medical device or a contraception aid**, or a person relies on Tilo instead of seeing a GP. | Remote | Severe | Medium |
+
+### 10.5 Measures
+
+- **R23 Shared phone, coercive partner.** In place: off by default (the offer, as planned, is one quiet line
+  in Profile, never a modal); the owner stamp and the owner check (another account signing in never sees it or carries
+  it); notifications never mention periods; "Delete all cycle data" works offline and at once;
+  "remove from this device" wipes it. Recommended: Cycle settings and setup say plainly that only
+  the phone's lock protects the log and anyone who can open the phone can read it; consider a
+  discreet name in the tab or Profile entry (a design question for Benn and Sara). An app lock is
+  not planned. Residual: **unknown**. The likelihood can't be lowered much by Tilo, and the
+  severity for someone at risk of coercion is severe; I can't honestly score it below high
+  without a measure that protects data on an unlocked phone. Benn and Sara should decide whether
+  the warning is enough for wider testers.
+- **R24 Export.** In place: the privacy policy says the export isn't encrypted (gated text); the
+  backup import needs a current cycle yes and never overwrites this device's log. Recommended:
+  the export screen says the file includes the Cycle log and isn't encrypted (cycle.md §6
+  must-have 5). Residual: **medium**.
+- **R25 Setup answer.** In place: device only; six fixed options, including prefer not to say;
+  never asks why; changeable at any time; the history is kept for the alpha review only.
+  Recommended: drop the contraception example (item 49(d)); delete `setupLog` before beta, or
+  justify keeping it. Residual: **low** with both done, **medium** until then.
+- **R26 Safety (PMDD, disordered eating).** In place: prompts only signpost (GP, NHS 111), never
+  name a condition, grade severity or say "abnormal"; once per episode and at most every 91 days;
+  "usual for me" marks; paused during pregnancy or breastfeeding; the no-period hold stops deficit
+  suggestions rather than adding food targets; cycle data never feeds the hard-day or week
+  picture logic. Gaps: no PMDD-specific or mood-linked prompt (mood is in the check-in, cycle data
+  is kept apart from it by design), and the interaction with Gentle mode and the wellbeing flag
+  needs `mental-performance` review; the 111 signpost is wrong in Northern Ireland (register item
+  44). Recommended: `mental-performance` signs off the prompts and their wording; a clinician signs
+  off before beta. Residual: **unknown** until both reviews; treat as **high** until then, which is
+  why Cycle stays limited to Benn and Sara.
+- **R27 Thresholds.** In place: `CYCLE_THRESHOLDS.provisional`; flag limited to Benn and Sara.
+  Required before beta: clinician sign-off (cycle.md §0, §10.2); testers told the thresholds are
+  provisional. Residual: **medium** for the alpha, **low** after sign-off.
+- **R28 Withdrawal.** In place: turning Cycle off deletes the log on that phone and records a cycle
+  "no"; a health withdrawal deletes it and records a cycle "no"; a pulled cycle "no" deletes the
+  log on other phones (`applyCycleWithdrawal`, being added on this branch); the policy says the
+  export keeps a copy. Required: the migration applied before any `VITE_CYCLE=1` build is used
+  (otherwise the "no" never leaves the phone). Residual: **low** once applied.
+- **R29 Medical device.** In place: the intended-purpose statement (register "Cycle" row); no
+  forecast, phase, fertility or "abnormal" language; the internal estimate never shown; the
+  deficit hold worded as Tilo pausing its own suggestion. Recommended: the statement in the terms
+  and in Cycle settings; ASA/CAP rules for any marketing (cycle-checks.md item 4); an optional MHRA
+  borderline enquiry before public launch. Residual: **low**; unknown whether MHRA would agree.
+
+### 10.6 ICO prior consultation (section 7.3 re-checked)
+
+Section 7.3 found no residual high risk on its conditions. Cycle adds two risks that I can't score
+below high today: R23 (an unlocked phone and a coercive partner) and R26 (safety, until
+`mental-performance` and a clinician review it). Art. 36(1) asks whether a high risk remains after
+the controller's measures. My view, which a solicitor should confirm:
+
+- **Alpha (Benn and Sara only):** no consultation needed. They are the controller's own people,
+  fully informed, and can stop at any time.
+- **Wider testers or the public:** **unknown**. If R26 falls to medium after the reviews and Benn
+  and Sara accept a clear on-screen warning as the R23 measure with a residual of medium, the 7.3
+  conclusion stands. If either stays high, consult the ICO first, or don't release Cycle.
+
+### 10.7 Sign-off
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 10 approved by | | Benn or Sara. Before Cycle reaches anyone beyond the two of them. Confirm or change the scores in 10.4. |
+| Residual risk for R23 and R26 | | Accepted at medium, or prior consultation (10.6). |
+| Clinician sign-off of `CYCLE_THRESHOLDS` and the prompts | | Before beta (cycle.md §10.2). |
+| `mental-performance` review of the prompts, PMDD and disordered-eating safety | | Before wider testers. |
+| Migration `2026-11-16-cycle-consent.sql` applied | | Benn, after `security-data`. Before any `VITE_CYCLE=1` build is used. |
+| Cycle policy text published | | With the flag, after `ship-critic` and Benn's go-ahead (register item 49(c)). |
+
+---
+
 ## Sources checked
 
 - Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.
@@ -1046,5 +1184,8 @@ privacy policy say so. A version can still be taken down after a report.
   centre article on API retention (privacy.claude.com), both 10 Oct 2026. Anthropic DPA
   (anthropic.com/legal/data-processing-addendum, effective 24 Feb 2025) and the Commercial Terms
   preamble (effective 17 June 2025) read 11 Oct 2026; anthropic.com/subprocessors not readable. UK GDPR Recital 26 and Arts. 7(3), 11 not re-read for this draft.
+- Section 10 (16 Nov 2026): code on `native/n14-cycle` (`4608955` and the uncommitted work that
+  day); `docs/plans/cycle.md` on `origin/claude/pensive-bohr-twbee5`; `docs/plans/cycle-checks.md`
+  (that day's regulatory check, with its sources). No law or guidance re-read for this section.
 - UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); not re-read for this
   draft beyond the articles cited.
