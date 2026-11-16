@@ -101,7 +101,8 @@ config plugins and builds in the cloud (EAS), so no one needs to maintain Xcode 
   "restless", "debt", "deficit", "recovery score", "only". Gentle mode or wellbeing flagged: imported,
   never shown; never in care versions or safety weeks.
 - Weekly review: one context line after "What you did", with 4+ watch nights: "Your watch had you
-  mostly at 6 to 7 hours this week." Wake-time line (positive only, 5+ nights within an hour): "You
+  mostly at 6 to 7 hours this week." Left out when the person's own answers were mostly poor, or
+  when the watch's main band is under 6 hours (mental-performance, 16 Nov 2026). Wake-time line (positive only, 5+ nights within an hour): "You
   woke around the same time most days, which helps your body clock." No sleep tile on Summary.
 - Connect screen: "Your watch's sleep shows next to your check-in. Watches estimate sleep, so how you
   feel is the one that counts."
