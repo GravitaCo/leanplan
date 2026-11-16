@@ -22,6 +22,12 @@ a regulatory adviser and a clinician.
 | 29 Oct | **No under-18s.** | Benn |
 | 29 Oct | **Tali will never claim to be a medical device or give medical advice.** | Benn |
 | 29 Oct | Existing users reach the offer through Profile › "Set up my plan" only; Cycle's launch doesn't point them there. | Benn |
+| 4 Nov | **Design change approved: the check-in row (C1)** shows "Period today?" only during a logged period and a few days either side, not every day. Boards and §4 updated 4 Nov. | Sara |
+| 4 Nov | **Design change approved: the setup question (B2)** asks about bleeding, not contraception: Periods, usually regular / Irregular or unpredictable periods / Periods changing with age (perimenopause) / My periods often stop or skip, for example with some contraception / I don't have periods / Prefer not to say. B3b lines change to match; the "often stop or skip" answer takes over the contraception answer's job in §5.1. Still needs `compliance` and a clinician on the wording. | Sara |
+| 4 Nov | **Design change approved: the safety prompts (G1/G2)** start from what's usual for the person ("You know what's usual for your periods. If this is different from usual, or getting in the way of things…") and offer "This is usual for me", which stops that prompt unless the pattern changes. "This is usual for me" works on the bleeding-over-a-week, heavy and pain prompts alike (§5.1); "When to get help" and urgent advice are never switched off. Still needs `mental-performance`, and a clinician to define "changes". | Sara |
+| 4 Nov | **Check-in options (C2) stay as drafted:** no extra symptom chips and the same five options. The field label changes from "Bleeding" to "Menstrual flow" (C2, D3, G1). | Sara |
+| 16 Nov | **Cycle is for the native app** ("Note cycle is for native app", relayed by the lead): the UI is built in `apps/native` only, no web screens. The logic stays UI-free in `src/core` (shared and tested); nothing web-facing changes. | Benn |
+| 4 Nov | **Alpha runs without a clinician** (Benn's call, relayed by Sara): `compliance` and `mental-performance` check instead, and every "clinician to set" value below is a provisional alpha default until a clinician signs it off before beta. Their fixes (B1, B3b, A2, C1, D4, G1, G2) approved and applied the same day. | Sara |
 
 The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
 non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
@@ -106,17 +112,18 @@ the app or on the website.
 - **Seeing it collects nothing.** Women see one quiet offer in Profile (not a modal, not repeated).
   It is off until they turn it on.
 - **Setup, after the cycle consent, asks one question** (answer changeable any time; never asks why):
-  - Periods, no hormonal contraception
-  - On hormonal contraception (pill, hormonal coil, implant, injection)
+  - Periods, usually regular
   - Irregular or unpredictable periods
   - Periods changing with age (perimenopause)
+  - My periods often stop or skip, for example with some contraception
   - I don't have periods
   - Prefer not to say
+- **No contraception question** (Sara, 4 Nov). The only feature it changed was the long-gap prompt
+  (§5.1), and "often stop or skip" does that job without asking about contraception, which may
+  touch "sex life" (Art. 9(1)). `compliance` and the clinician to confirm the wording.
 - **The answer is stored only in the device `cycle` store**, never in a synced field: it is health
-  data, and contraception may touch "sex life" (Art. 9(1)). "I don't have periods" closes the offer;
-  the most a synced field may hold is a plain "offer hidden" flag with no reason.
-- The copper coil isn't hormonal, hence "hormonal coil" (`design` review, 29 Oct; `compliance` and
-  the clinician to confirm the wording).
+  data. "I don't have periods" closes the offer; the most a synced field may hold is a plain
+  "offer hidden" flag with no reason.
 - **Every answer gets the same features, except the no-period prompt (§5.1)** (logging, the lighter offer, safety prompts and "Day N of
   your period"), since none of them forecasts. Each answer says plainly what Tali will and won't do.
 - **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts;
@@ -131,7 +138,22 @@ the app or on the website.
 For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed to one row:
 "Period today?"** Pain and chips appear only after a bleeding answer or when the group is opened.
 
-- **Bleeding:** none / spotting / light / medium / heavy.
+**When the row shows** (Sara, 4 Nov: around a period, not every day):
+- during a logged period and for 3 days after it;
+- for "Periods, usually regular" with 2 or more logged starts: hidden between periods, and back from
+  7 days before their usual start until a period is logged (a regular cycle can still vary by about a week). The usual start is worked out on the
+  phone from their own logged starts and is never shown as a date, a count or a forecast;
+- with no period logged yet, or for any other answer: every check-in, as before (Tali can't tell
+  when a period is due, and the long-gap prompt in §5.1 relies on check-ins).
+- a logged period ends at the first "Stopped", or after 2 days with no menstrual flow answer. Flow logged again within 2 days of "Stopped" carries on the same period (a dry day in the middle), so "Day N" and the safety prompts aren't reset.
+- the estimate is never shown, never used for notifications or fertility features; the offer
+  screen says Tali uses logged starts to bring the question back early, and won't show a date for
+  the next period.
+- **Alpha measures:** where starts get logged (check-in, "Period started", back-fill), how many are
+  back-filled more than a day late, and how many land outside the window. Over 15% late: widen the
+  window or stop hiding the row.
+
+- **Menstrual flow** (label renamed from "Bleeding", Sara, 4 Nov): stopped / spotting / light / medium / heavy. "Stopped" (was "None") marks the end of a period or a dry day within one.
 - **Pain:** No pain / A bit / A lot (same wording as the soreness scale).
 - **Optional chips:** cramps, bloating, headache, breast tenderness, upset stomach. No "PMS" or
   "moody" chip; mood is already asked.
@@ -159,12 +181,30 @@ Generic signposting, never an assessment of the person's cycle (§6, medical-dev
 episode, through `src/core/data/signposts.ts`, shown in gentle mode too (without numbers). All
 thresholds need clinician sign-off.
 
-- **Bleeding for more than 7 days** → NHS heavy periods page.
-- **Heavy days across 2 or more cycles**, framed around impact ("if it's getting in the way of
-  things"), at most once per 3 months. A single heavy cycle doesn't fire it: self-rated "heavy"
-  would otherwise medicalise ordinary periods.
-- **Pain "A lot" across 2 or more cycles** → "Period pain that stops you doing things is worth
-  raising with a GP. You don't have to put up with it." No condition names.
+- **People know what's usual for their own periods** (Sara, 4 Nov). The bleeding, heavy and pain
+  prompts start "You know what's usual for your periods" and are framed around change or impact.
+  Each has a "This is usual for me" button that stops that prompt until the pattern changes.
+  "When to get help" and urgent advice are never switched off. After the tap: "Got it. Tali won't
+  show this again unless things change. 'When to get help' is always in Cycle settings." When
+  shown together, only the first card opens with "You know what's usual…". A returning prompt uses
+  the same copy, never "your periods have changed".
+- **"The pattern changes" (alpha defaults, clinician to confirm before beta)**, from the person's
+  own log against the periods logged up to the tap, kept in the device-only cycle store (exported
+  and deleted with it):
+  - long bleeding: a period at least 2 days longer than the one marked usual, or 14+ days;
+  - heavy: a period with more Heavy days than their most up to the tap;
+  - pain: a period with more "A lot" days than their most up to the tap;
+  - any change of setup answer, a pregnancy pause, or 12 months after the tap re-arms all three;
+  - the once-in-3-months limit still applies. Alpha measure: share of prompts marked usual (over
+    about 70% means the thresholds fire on ordinary periods).
+- **Bleeding for more than 7 days** → "If this is new for you, bleeding that lasts more than a week
+  is worth mentioning to a GP." NHS heavy periods page.
+- **Heavy days across 2 or more cycles** → "If they've got heavier, or they're getting in the way
+  of things, they're worth raising with a GP." At most once per 3 months. A single heavy cycle
+  doesn't fire it: self-rated "heavy" would otherwise medicalise ordinary periods.
+- **Pain "A lot" across 2 or more cycles** → (opener only if shown alone) "If the pain is worse than usual, or stops you doing
+  things, it's worth raising with a GP. You don't have to put up with it." At most once per 3
+  months. No condition names.
 - **No logged period for a long stretch** (proposed 90 days; NHS says see a GP after missing three
   in a row, which is longer for long cycles: clinician to set it):
   - fires only if the person kept checking in through that time, and first asks "Has a period come
@@ -175,13 +215,17 @@ thresholds need clinician sign-off.
   - for people in a deficit, the loop stops suggesting a deficit until a period is logged, and says
     so plainly; the person can still set their own target. Whether that change to nutrition stays
     outside medical-device rules needs a regulatory view (§10);
-  - not for the hormonal contraception or perimenopause answers, where no bleeding is often
+  - for "often stop or skip", the signpost lives in the answer's own line instead ("Tali won't ask
+    about gaps, so if your periods stop and that's new for you, it's worth mentioning to a GP")
+    and on "When to get help", which everyone sees; log answer changes on the device for the alpha
+    review;
+  - not for the "often stop or skip" or perimenopause answers, where no bleeding is often
     expected and the prompt would fire falsely (`design` review, 29 Oct; clinician to confirm);
   - whether "irregular" users get this prompt (they're equally at risk of low energy availability)
     is a clinician call.
 - **A static "When to get help" page** in Cycle settings for what Tali must not detect itself:
-  bleeding between periods or after sex (GP); feeling faint or breathless with heavy bleeding
-  (NHS 111); sudden severe pain (111 or 999).
+  bleeding between periods or after sex (GP); periods that stop, if that's new (GP); feeling faint
+  or breathless with heavy bleeding (NHS 111); sudden severe pain (111 or 999).
 - Self-harm language uses the existing crisis script.
 
 ### 5.2 Iron (v1.1)
@@ -341,6 +385,8 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    the safety prompts and "When to get help", delete and export.
    **Drafted 29 Oct, awaiting Benn:** the "Cycle v1 (draft for Benn)" page on the Design canvas, with
    PNG exports and the open design decisions in `docs/design/cycle-v1/README.md`.
+   **4 Nov:** Sara approved changes to C1, B2/B3b and G1/G2 (§0); boards redrawn the same day
+   (with A2, B3, D1, D5 and G4 wording to match) and §3, §4 and §5.1 updated.
 2. **Cycle v1 (device-only):** onboarding switched on first (§3); gate, setup and consent (with the `consents` migration); check-in row
    and store; Train's cycle signal; hunger copy; weigh-in note and guard; safety prompts; delete,
    export, withdrawal; legal, register and DPIA.
@@ -355,10 +401,22 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    v1 has no analytics, the same people measure success afterwards: did they keep training (a
    session or a swap rather than a skip) on symptom days; did the check-in feel like more work;
    how many turned Cycle off; did anyone feel judged by the prompts.
-2. **Clinician review** of the §5.1 thresholds and copy. Not decided yet (Benn, 29 Oct); it blocks
-   the safety prompts, not the boards.
+   **Done 16 Nov 2026 (`marketing-research`, full report in `cycle-checks.md`):** moderate case for
+   an alpha, low that it drives adoption alone; no direct evidence for symptom-first cycle features
+   in a fitness app (unknown). Five interviews before wider testers (cleared by `compliance` first);
+   go if at least 3 of 5 would log here and at most 1 needs phase coaching.
+2. **Clinician review** of the §5.1 thresholds and copy: not for alpha (Benn; Sara, 4 Nov). Alpha
+   uses the provisional defaults in §4 and §5.1; a clinician signs them off before beta.
 3. **Regulatory view** on whether the §5.1 rules, especially the one that changes nutrition, fit
-   the no-medical-device position (§6). Recommended, not yet agreed.
+   the no-medical-device position (§6). Agreed (Benn, 16 Nov 2026): the `compliance` agent does
+   this check; `marketing-research` does the demand research in item 1.
+   **Done 16 Nov 2026 (`compliance`, full report in `cycle-checks.md`):** general wellness, not
+   blocking, on three conditions: prompts only signpost (no condition names, severity or
+   "abnormal"); the deficit hold reads as Tilo pausing its own suggestion, with no promise that
+   eating more brings periods back; the internal usual-start estimate is never surfaced. Draft
+   intended-purpose statement recorded there. Equality Act: low risk; suggested settings route for
+   anyone (a Benn or Sara decision, open).
 4. **Lawyer:** Equality Act 2010 s.29 and a women-only offer gated on a self-declared answer
-   (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds.
+   (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds. Not now
+   (Benn, 16 Nov 2026: "We do not need lawyer at this time").
 5. **Unknown:** the Supabase backup retention window (matters only once sync exists).

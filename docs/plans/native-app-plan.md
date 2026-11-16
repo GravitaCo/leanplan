@@ -133,6 +133,12 @@ config plugins and builds in the cloud (EAS), so no one needs to maintain Xcode 
   The week grid uses one neutral dot colour, no colour by band, no highlight, no trend line and no goal
   column, and is hidden in gentle mode. Pilot: acceptance of higher and lower offers, and gentle-mode
   switches or disconnects in the 14 days after a lower offer.
+  Reworked as a choice (Benn, 16 Nov; mental-performance APPROVED): the evidence is one sentence
+  ("Most of the last 4 weeks were in 7,500 to 10,000 steps a day."), and its lower version always comes
+  with "Weeks vary. If you often walk without your watch, your current setting may still be right.";
+  "· From your watch" is styled exactly like "· Your setting now" (no tint, badge or highlight) and is
+  never called suggested, recommended or best fit; the current setting stays selected; the sheet only
+  shows when the watch's band differs from the setting.
 - **Wording:** no step target, ring, streak, "keep going" or week-on-week increase; never linked to
   food ("earned", "burned"). Weekly words: "You walked on 5 days this week", steps one tap away.
   Gentle mode or wellbeing flagged: no step numbers, no band suggestion. A concern signal (steps

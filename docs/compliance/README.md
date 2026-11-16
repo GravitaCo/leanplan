@@ -692,7 +692,20 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
     (h) Not compliance, but before the name goes public: a trade mark clearance search and filing
         for Tilo (not legal advice; a trade mark attorney should confirm).
 
-49. Cycle (2026-11-16, compliance; branch `native/n14-cycle`, plan `docs/plans/cycle.md` §3, §6,
+49. Open (2026-11-04, Cycle v1 design, not built; boards approved by Sara on 4 Nov 2026,
+    reviewed by compliance and mental-performance): the setup question no longer asks about
+    contraception ("My periods often stop or skip, for example with some contraception" does
+    the job). The answer is still Art. 9 health data and may hint at contraception ("sex life",
+    Art. 9(1)), so the cycle consent now names "your answer about your periods", it stays
+    device-only, and the DPIA addendum keeps its contraception line. The check-in row comes back
+    7 days before a regular user's usual start: an on-device estimate that is never shown, never
+    used for notifications or fertility features, and the offer screen says so honestly ("won't
+    show you a date for your next period"); the intended-purpose statement must mention it. Alpha
+    runs without a clinician (Benn; Sara, 4 Nov): the §5.1 thresholds in
+    `docs/plans/cycle.md` are provisional, lean towards signposting, and need clinician sign-off
+    before beta. Before alpha testers use Cycle: the separate cycle consent and `consents`
+    migration, deletion on withdrawal, a privacy-policy Cycle section and the DPIA addendum.
+    16 Nov 2026 update (compliance; branch `native/n14-cycle`, plan `docs/plans/cycle.md` §3, §6,
     regulatory check `docs/plans/cycle-checks.md`). Built behind `CYCLE_ENABLED`, off; on only in
     Benn's and Sara's `VITE_CYCLE=1` builds. Written in this change: the privacy policy's Cycle
     section, the sex-answer purpose ("also decides whether Cycle is offered"; Art. 5(1)(b), 6(4), 13)
