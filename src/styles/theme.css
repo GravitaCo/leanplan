@@ -143,6 +143,8 @@ svg.chev { width: 14px; height: 14px; color: var(--label3); flex: none; }
 .hdr-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
 .hdr-top .eyebrow { min-width: 0; }
 .hdr-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+/* 8 px between the sync pill's row and the title row, so the 44 px header control never touches the pill (Benn, 16 Nov 2026) */
+.hdr .hdr-row { margin-top: 8px; }
 /* the connection indicator (ob6-7): one neutral pill, never red or amber */
 .cpill {
   display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 13px; border: 0; flex: 0 1 auto; min-width: 0;
