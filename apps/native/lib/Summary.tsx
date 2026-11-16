@@ -46,7 +46,7 @@ import { Foot, Lbl } from './ui/text'
 import { Chevron, Icon } from './ui/icons'
 import { KcalBar, MacroTrio, WeekBars } from './ui/charts'
 import { WeekStrip } from './ui/WeekStrip'
-import { BTN, font, num, tx, useTokens } from './theme'
+import { BTN, GLYPH_ROOM, font, num, tx, useTokens } from './theme'
 import { MindCard } from '../screens/today/MindCard'
 import { LowMoodBanner } from '../screens/today/LowMoodBanner'
 import { CheckinSheet } from '../screens/today/CheckinSheet'
@@ -502,7 +502,7 @@ function SummaryPage() {
         {/* ---------- This week ---------- */}
         <Card>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text style={[tx(17, 600), { color: t.label }]}>This week</Text>
+            <Text style={[tx(17, 600), GLYPH_ROOM, { color: t.label }]}>This week</Text>
             <Text style={[tx(13, 400), { color: t.label2 }, num]}>{weekSpan(rows[0].d, rows[6].d)}</Text>
           </View>
           {on.food && (
