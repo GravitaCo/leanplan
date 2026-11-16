@@ -5,7 +5,7 @@ or published.** Decisions are in `native-build-plan.md` §11.1.
 
 Verdicts: `compliance` APPROVE AS DRAFT for option (c), device only, with a separate `health-import`
 consent (CHANGES NEEDED for (a) or (b)). `security-data` CHANGES NEEDED: agrees with (c), wanted H1 to H3
-and M1 to M5 written into the design: they are in §7, recheck pending.
+and M1 to M5 written into the design: they are in §7, and the recheck APPROVED AS DRAFT (16 Nov).
 
 ## 1. Reads (read only; never writes to HealthKit)
 
