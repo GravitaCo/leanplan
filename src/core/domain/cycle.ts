@@ -181,7 +181,10 @@ export function periodsOf(days: Record<string, CycleDay>): Period[] {
   let spotFrom: string | null = null
   for (const d of sortedDays(days)) {
     const v = days[d]
-    if (v.flow === 'stopped') { if (cur) stoppedAt = d; continue }
+    // a Stopped counts only while the period is still running (ship-critic, 16 Nov): one tapped on
+    // an ordinary day weeks later must not join the next period onto the last; the first Stopped
+    // sets the dry-day allowance, a later one doesn't stretch it
+    if (v.flow === 'stopped') { if (cur && stoppedAt === null && daysFrom(cur.last, d) <= SILENT_END_DAYS) stoppedAt = d; continue }
     if (!bleeds(v)) continue
     const carries = !!cur && (
       (stoppedAt === null && daysFrom(cur.last, d) <= SILENT_END_DAYS) ||
@@ -331,9 +334,10 @@ function recentlyShown(store: CycleStore, prompt: CyclePrompt, today: string): b
 function keptCheckingIn(checkins: string[], from: string, today: string): boolean {
   const set = new Set(checkins)
   for (let end = today; daysFrom(from, end) > 0; end = shiftDay(end, -T.noPeriodCheckinBlockDays)) {
-    let n = 0
-    for (let i = 0; i < T.noPeriodCheckinBlockDays && daysFrom(from, shiftDay(end, -i)) >= 0; i++) if (set.has(shiftDay(end, -i))) n++
-    if (n < T.noPeriodCheckinsPerBlock) return false
+    let n = 0, len = 0
+    for (let i = 0; i < T.noPeriodCheckinBlockDays && daysFrom(from, shiftDay(end, -i)) >= 0; i++) { len++; if (set.has(shiftDay(end, -i))) n++ }
+    // a shorter last block (a threshold that isn't a multiple of the block) needs proportionally fewer
+    if (n < Math.ceil(T.noPeriodCheckinsPerBlock * len / T.noPeriodCheckinBlockDays)) return false
   }
   return true
 }
@@ -393,7 +397,10 @@ export function holdsDeficit(store: CycleStore | undefined, today: string, f: Pr
   return longGapFrom(store, today, f) !== null
 }
 
-/* ---------------- store edits (pure: callers own persistence) ---------------- */
+/* ---------------- store edits (pure: callers own persistence) ----------------
+ * These change a CycleStore in place and save nothing. Every caller (the native Cycle screens)
+ * edits a copy from deviceOnly.cycleLog and writes it back with deviceOnly.saveCycle, whose
+ * CycleContext needs a current cycle yes; never write `deviceOnly.cycle` directly. */
 
 export const emptyCycle = (): CycleStore => ({ days: {} })
 

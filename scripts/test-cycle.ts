@@ -63,6 +63,10 @@ function coreChecks() {
       ['flow within 2 days of Stopped carries on the same period', ps[1].start === ago(12) && ps[1].last === ago(9) && ps[1].length === 4],
       ['flow after 2 silent days starts a new one', periodsOf(d2).length === 2],
       ['flow 2 days after Stopped carries on', periodsOf(d3).length === 1],
+      ['a Stopped tapped weeks after a period never joins the next one onto it (ship-critic)', (() => {
+        const x = store('irregular'); bleed(x.days, '2026-10-01', 3); x.days['2026-10-25'] = { flow: 'stopped' }; bleed(x.days, '2026-10-26', 2)
+        return periodsOf(x.days).length === 2 && !promptsDue(x, '2026-10-27').includes('long-bleed') && periodDay(x.days, '2026-10-27') === 2
+      })()],
     ])
     const live: Record<string, CycleDay> = {}
     bleed(live, ago(2), 3)
