@@ -613,3 +613,20 @@ The board decisions are added when the boards are drafted.
 | P2-13 | The app's main log is in iPhone iCloud backups (Apple guideline 5.1.3(ii) question, M5) | Ask compliance for a ruling before W1 ships; if needed, exclude the log from backup (it is synced to the account anyway) | |
 | P2-14 | Android (Health Connect) and Fitbit | Stay in phase 4 | |
 | P2-15 | Benn asked why Apple Health shows nothing: bring sleep and walking forward? | No shortcut: they ship in phase 2 behind the gates above | |
+
+Board decisions (canvas https://claude.ai/artifact/44c9HcSwvhTD5P2sQbr2m6, 16 Nov 2026; `design`
+APPROVED after a render check, copy by `mental-performance`; each D number is marked on its board):
+
+| # | Decision | Recommendation | Answer |
+|---|---|---|---|
+| D1 | Apple Health is the last row in Profile › Tracking and opens a sheet, with a new watch icon | Yes | |
+| D2 | The Apple Health consent step uses the health consent's layout (statement, one unticked box, Continue) with the P2-11 words; compliance writes the final box text | Yes | |
+| D4 | The "How to stop" path (Health › Data Access & Devices › Tilo) | Benn checks it on his iOS 27 iPhone | |
+| D7 | Gentle mode says reading has stopped; care versions and safety weeks pause without saying so | Yes (mental-performance) | |
+| D16 | After accepting a steps band, the toast says the daily range changed ("Daily movement updated, so your daily range has changed too. You can see it in Body and goal.") | Yes; nutrition-accuracy confirms the range changes at once | |
+| D22 | A day walked is a walk of 10+ minutes, from the watch or logged by hand; the line is left out at 0 days | Yes; nutrition-accuracy confirms | |
+| D3, D5, D8, D10, D11, D13 to D15, D18, D19, D21, D23 | Smaller layout and wording calls, each listed on its board | A quick yes or change per board | |
+
+Approved by mental-performance (no answer needed): D9 (the watch line goes once any sleep answer is
+given), D17 (one walk card a day, never a notification), D24 (the weekly watch-sleep line is left out
+after mostly poor answers or a main band under 6 hours).
