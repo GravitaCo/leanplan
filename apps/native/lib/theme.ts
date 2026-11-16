@@ -47,11 +47,15 @@ export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, 
   return { fontFamily: GEIST[w], fontSize: size, lineHeight: lh < 4 ? Math.round(size * lh * 10) / 10 : lh, letterSpacing: track === undefined ? BODY_TRACK : track * size }
 }
 /**
- * For a label whose box is as wide as its words (a button, chip or link): 1 pt of room after the
- * last letter, inside the box, given back by the margin so nothing moves. iOS draws the last glyph
- * only within the text's box, and a box rounded a hair narrower than the words cut it ("Check ir").
+ * For a one-line label whose box is as wide as its words (a button, chip, link or a heading beside
+ * something): 4 pt of room after the last letter, inside the box, given back by the margin so
+ * nothing moves. On Benn's iPhone such labels lost the end of their last letter ("Add fooc",
+ * "Star|t", "This weel", "Check ir"): 2 to 4 pt of a semibold word drawn past the width iOS gave its
+ * box. The cause isn't confirmed yet (the gallery's "Text fit" section measures it on a device); this
+ * keeps every such label whole meanwhile. The words keep their width whether the box hugs, stretches
+ * or wraps; not for a box with its own width or maxWidth (it would lose 4 pt) or text nested in text.
  */
-export const GLYPH_ROOM: TextStyle = { paddingRight: 1, marginRight: -1 }
+export const GLYPH_ROOM: TextStyle = { paddingRight: 4, marginRight: -4 }
 /** body's -0.01em at 17 px, inherited as a length */
 export const BODY_TRACK = -0.17
 /** the tracking of text inside a web `<button>` (the browser's own button style resets it) */

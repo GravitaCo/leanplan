@@ -248,7 +248,7 @@ export function Banner({ icon, iconColor, title, body, onPress, onDismiss, child
     <>
       {icon && <Icon name={icon} color={iconColor ?? t.label2} />}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={[tx(15, 700, 1.35, track), { color: t.label }]}>{title}</Text>
+        <Text style={[tx(15, 700, 1.35, track), GLYPH_ROOM, { color: t.label }]}>{title}</Text>
         {body != null && <Text style={[tx(15, 400, 1.35, track), { color: t.label2 }]}>{body}</Text>}
         {children}
       </View>
@@ -271,7 +271,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
   const t = useTokens()
   if (action) return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, width: '100%', maxWidth: 488, backgroundColor: t.hero, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
-      <Text style={[tx(15, 500), { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
+      <Text style={[tx(15, 500), GLYPH_ROOM, { color: t.heroInk, flexShrink: 1 }]}>{text}</Text>
       <Pressable accessibilityRole="button" onPress={action.run} hitSlop={{ ...slop(0, 26), left: 8, right: 8 }}>
         <Text style={[tx(16, 600, 21, BTN), GLYPH_ROOM, { color: t.brand, paddingVertical: 4 }]}>{action.label}</Text>
       </Pressable>
@@ -279,7 +279,7 @@ export function ToastView({ text, action }: { text: string; action?: { label: st
   )
   return (
     <View style={{ backgroundColor: t.elev, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, boxShadow: '0 8px 30px rgba(0, 0, 0, 0.2)' }}>
-      <Text style={[tx(15, 500), { color: t.label, textAlign: 'center' }]}>{text}</Text>
+      <Text style={[tx(15, 500), GLYPH_ROOM, { color: t.label, textAlign: 'center' }]}>{text}</Text>
     </View>
   )
 }
@@ -376,12 +376,12 @@ export function Big({ value, unit, pm, center, style }: { value: string; unit?: 
   const t = useTokens()
   return (
     <View style={[{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: center ? 'center' : 'flex-start' }, style]}>
-      <Text style={[tx(30, 600, 1.1, 0), num, { color: t.label }]}>{value}</Text>
-      {unit != null && <Text style={[tx(17, 600, 1.1, 0), num, { color: t.label2, marginLeft: 3 }]}>{unit}</Text>}
+      <Text style={[tx(30, 600, 1.1, 0), GLYPH_ROOM, num, { color: t.label }]}>{value}</Text>
+      {unit != null && <Text style={[tx(17, 600, 1.1, 0), GLYPH_ROOM, num, { color: t.label2, marginLeft: 3 }]}>{unit}</Text>}
       {/* vertical-align: 1px on the web: the pill sits 1 pt above the baseline */}
       {pm != null && (
         <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 8, paddingVertical: 2, paddingHorizontal: 7 }}>
-          <Text style={[tx(15, 600, 1.1, 0), num, { color: t.label2 }]}>{pm}</Text>
+          <Text style={[tx(15, 600, 1.1, 0), GLYPH_ROOM, num, { color: t.label2 }]}>{pm}</Text>
         </View>
       )}
     </View>

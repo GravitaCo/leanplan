@@ -9,7 +9,7 @@
 import { useState, type ReactNode } from 'react'
 import { Pressable, Text, View, type ViewStyle } from 'react-native'
 import { Icon, type IconName } from './icons'
-import { BTN, tx, useTokens } from '../theme'
+import { BTN, tx, useTokens, GLYPH_ROOM } from '../theme'
 
 export interface TileOpt<T extends string> { k: T; t: string; s?: string; icon?: IconName }
 
@@ -55,7 +55,7 @@ export function ChoiceTiles<T extends string>({ label, opts, value, onPick, thre
         if (three) return (
           <Pressable key={o.k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onPick(o.k)}
             style={{ flex: 1, minHeight: 56, padding: 6, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.btn : t.card }}>
-            <Text style={[tx(16, 600, 1.2, -0.01), { color: on ? t.btnInk : t.label, textAlign: 'center' }]}>{o.t}</Text>
+            <Text style={[tx(16, 600, 1.2, -0.01), GLYPH_ROOM, { color: on ? t.btnInk : t.label, textAlign: 'center' }]}>{o.t}</Text>
           </Pressable>
         )
         return (
