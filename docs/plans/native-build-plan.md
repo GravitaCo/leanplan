@@ -2,7 +2,7 @@
 
 Written 9 Nov 2026 by the lead engineer, from `native-build-brief.md` (streams, owners,
 approvals), `native-app-plan.md` (framework, architecture, phases) and `recipe-sharing.md` §11.
-Status: **spike done (13 Nov 2026): it runs on Benn's iPhone; results and the estimate in §3.1. Foundation streams next.**
+Status: **16 Nov 2026: phase 1 (parity) built; every stream merged on `claude/native-build`, build 16 on Benn's iPhone; launch items open (§10). Phase 2 (Apple Watch) planned in §11.**
 
 Labels: **[E]** checked in the code or a source on 9 Nov; **[I]** inference to confirm; **[G]**
 judgement call.
@@ -504,3 +504,85 @@ needs the D-U-N-S number).
    names stay off on iPhone until the DPIA 8.8 APNs addendum is signed).
 5. Then, through ship-critic on main and in this order: apply `docs/migrations/2026-11-13-native-push.sql`,
    deploy `send-supplement-reminders`.
+
+## 10. Status (16 Nov 2026)
+
+**Phase 1 (parity): built, not yet exited.** The exit in `native-app-plan.md` §8 also needs push live
+and TestFlight; both are in the open list below. Estimate: about 80% to a TestFlight-ready app [G].
+
+Done:
+- Every screen on the approved boards, merged on `claude/native-build`: Today, Mind, Food and
+  scanning, Train, Plan, Profile, account and consent, onboarding (behind its flag, as the web), Sign in
+  with Apple, reminders. Every stream's last head passed `ship-critic`.
+- Our own Swift modules in place of outside libraries (`native-dependencies.md`): tilo-store,
+  tilo-network, tilo-ai, tilo-health, tilo-camera, tilo-auth, tilo-pickers, tilo-notify, plus the
+  Notification Service Extension.
+- Build 16 (EAS 4574cfa8, commit e0858ec) runs on Benn's iPhone. Benn, 16 Nov: the sync problem looks
+  resolved; text no longer clips in the gallery's Text fit section; Sign in with Apple works (an
+  account with Hide My Email is a separate account; linking accounts is a later question).
+- Main batches 1 to 4 live on the web (batch 4, e24ca76: header gap, Supplements row, dark-mode ticks,
+  demo shadows removed, label-read diagnostics hook).
+- Benn's decisions, 16 Nov: the demo title stays without a shadow (about 3.3:1 over light footage,
+  accepted); the 8 px header gap stays on every header, Mind included.
+
+Waiting for build 17 (merged on `claude/native-build`): owner-screen buttons centre long addresses
+(N2); the next sign-in opens on Summary after any session ends (shared store, so also web batch 5);
+label-read diagnostics (N6). On the device: sign out from Profile, sign in, land on Summary.
+
+Open before TestFlight and the App Store:
+- Push: Benn's APNs key (§9.1), then the migration and `send-supplement-reminders` through `main`;
+  the extension checked on a device.
+- Sign in with Apple revocation on account deletion: the four APPLE_* function secrets.
+- Apple privacy: `NSPrivacyCollectedDataTypes` in the privacy manifest, the App Store privacy label,
+  the policies' `native` option switched on and republished, DPIA 8.8 APNs addendum signed.
+- App Store Connect app record ("Tilo: Food, Move, Mind"), then TestFlight. TestFlight also replaces
+  the Expo install page, which fails on Benn's Wi-Fi (install builds by the direct manifest link meanwhile).
+- The provisioning profile carries HealthKit `health-records` access, which the app never asks for:
+  drop it at the next profile regeneration (the app's own entitlement is empty, so nothing is signed with it).
+- Known: the wrong "Photo reading isn't available" message on one failed read (N6 diagnostics in build 17).
+
+How builds reach Benn: every EAS build comes with a direct install line for Safari
+(`itms-services://?action=download-manifest&url=https://api.expo.dev/v2/projects/4a22860f-a4a9-4472-99a2-6a4d22426b23/builds/<build id>/manifest.plist`), installed over mobile data.
+
+## 11. Phase 2: Apple Watch (prepared 16 Nov 2026)
+
+Scope is Benn's first set (`native-app-plan.md` §9.4): **sleep and walking**, read through HealthKit on
+the iPhone, with the specialists' rules in `native-app-plan.md` §3.4 as the specification. Nothing else
+from the §3.1 table (heart rate, HRV, weight, active energy) is read. Exit: approved by the specialists,
+in TestFlight.
+
+What exists: `modules/tilo-health` (N9) reads sleep samples, step sums and walking workouts, behind
+the HealthKit entitlement and permission string; only the internal Lab sheet calls it. No data is
+imported, stored or synced yet.
+
+Before any import (gates, in this order):
+1. **Compliance first:** the privacy policy, register and DPIA list each HealthKit type read (time
+   asleep, bed and wake times; steps; walking workouts), the permission wording (Benn or Sara), the
+   App Store label, and Apple's HealthKit rules (guideline 5.1.3). A new device field or table also
+   needs `security-data`, RLS with grants, `USER_TABLES`, the health-consent trigger and the purge
+   functions (CLAUDE.md, Backend and Legal).
+2. **The two code fixes from §3.4** (shared core, so the web too): (A) an imported night never
+   counts as a check-in (`hasCheckinContent`, `mindOf`, `weekReflection`); (B) an import never replaces
+   the person's own night record (`source: 'self'`).
+3. **Boards for Benn or Sara:** the connect screen in Profile, the watch line beside the check-in's
+   sleep question, the steps-band suggestion, confirming an imported walk, the two weekly-review lines.
+
+Streams (the existing sessions keep their areas):
+- **W1 Health data (N9 with N3):** the import layer in `src/core` (pure, platform-free) and the
+  native adapter on `tilo-health`; background delivery (HKObserverQuery plus the background-delivery
+  entitlement); bands only for sleep, no stages; days under 1,000 steps read as not worn.
+  Reviewers: security-data, compliance.
+- **W2 Sleep beside the check-in (N9):** the watch line while the question is unanswered, the weekly
+  context and wake-time lines, hidden in gentle mode, care versions and safety weeks.
+  Reviewers: mental-performance, design.
+- **W3 Walking (N8 with N4):** the steps-band suggestion on `activitySuggestion`'s rules, each step
+  counted once, imported walks counted as training only when confirmed or at 4.8+ MET, the 2,500-step
+  mixed-window rule in adaptive maintenance, Apple's active energy never used.
+  Reviewers: nutrition-accuracy, fitness-workouts, mental-performance (wording).
+- **W4 Connect and disconnect (N10):** the Profile connect screen, what is read, how to stop, and
+  removing imported data on disconnect. Reviewers: compliance, design.
+
+Order: gates 1 and 2 and the boards run first and in parallel; W1 next; W2, W3 and W4 on W1's
+interfaces. Phase 1's open launch items (§10) continue alongside; phase 2 ships through the same
+TestFlight. To measure (concierge pilot, §3.4): check-in answer rate before and after connecting a
+watch, gentle-mode switches and disconnects in the first 30 days, and "Did your watch data ever worry you?"

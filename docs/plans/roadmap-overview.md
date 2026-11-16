@@ -28,7 +28,7 @@ so the **Target** columns stay blank until Benn sets dates.
 | Next | Sign DPIA §§1–7, fix register #34, then turn onboarding on for the alpha | Brings the training engine (E1) to testers | |
 | Next | Training engine E2, then E3 | Builds on onboarding being on | |
 | Later | AI Phase 0 close-out, then AI Phase 1 (type a meal) | Paid plans wait on this | |
-| Now | Native app build (Benn, 9 Nov): spike, then parity streams; brief in `native-build-brief.md`, build plan in `native-build-plan.md` (branch `claude/maintenance-loop-build`, 5adeced); spike waits on Benn and Sara | Benn started the native build; recipe sharing is part of it | |
+| Now | Native app (Benn, 9 Nov): phase 1 parity built on `claude/native-build` (16 Nov, build 16 on Benn's iPhone), launch items open; phase 2 Apple Watch (sleep and walking) prepared. Status and plan: `native-build-plan.md` §10 and §11 | Benn started the native build; recipe sharing is part of it | |
 | Later | Monetisation | After AI Phase 1; not before Jan 2027 | |
 | Not yet placed | Cycle (§3, "Cycle") | Plan only; needs onboarding switched on first, plus demand research and a clinician; Benn to place it | |
 | Not yet placed | Recipe sharing by link (§3, "Recipe sharing") | Benn, 9 Nov: a native app feature; the ingredient check on adding a recipe can come first in the web app | |
@@ -209,7 +209,7 @@ every row) is listed there but is a robustness fix worth doing before the alpha 
 
 ### Native app (`native-app-plan.md`, now on `main`)
 
-Draft; nothing built. Phases: spike (about 2 weeks), parity, Apple Watch, store launch, Fitbit, AI.
+Phase 1 (parity) built on `claude/native-build` (16 Nov 2026); launch items and phase 2 (Apple Watch) in `native-build-plan.md` §10 and §11. Phases: spike, parity, Apple Watch, store launch, Fitbit, AI.
 
 ---
 
