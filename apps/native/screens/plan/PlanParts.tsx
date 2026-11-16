@@ -132,7 +132,7 @@ export function PlanTile({ name, line, art, artAt, fits, big, onPress, style }: 
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.tint }} />
         <View>
           <Text style={[nameText, { color: t.label }]}>{name}</Text>
-          <Text style={[tx(12), num, { color: t.label2, marginTop: 2 }]}>{line}</Text>
+          <Text style={[big ? tx(12, 400, 1.1) : tx(12), num, { color: t.label2, marginTop: 2 }]}>{line}</Text>
         </View>
       </Pressable>
     )
