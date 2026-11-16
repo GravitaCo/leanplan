@@ -7,14 +7,17 @@
  * lose), and weight is shown as a weekly trend rather than the daily bounce.
  */
 import type { AppState, DayLog, FatChoice, Food, IfThenPlan, LoggedFood, MealSlot, Profile, Recipe, RecipeItem } from '@/core/types'
-import { parseYmd, shiftDay, todayStr, ymd } from './date'
+import { fmt, parseYmd, r1, shiftDay, todayStr, ymd } from './date'
 import { dayTotals, roundAmount, scaleFood, unitOf, type MacroTotals } from './nutrition'
 import { workoutBurn } from './workout'
-import { fromLegacy, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf } from './sessions'
+import { foodView, maintenanceRange } from './foodMode'
+import { maintenanceEstimate } from './targets'
+import { sexOf } from './onboarding'
+import { fromLegacy, isBuiltin, mirroredIndex, sessionBurn, sessionNetBurn, sessionsOf, workoutsOf } from './sessions'
 import { FOODS } from '@/core/data/foods'
+import { aliasNames, currentName } from './duplicates'
 
 const FOOD_BY_NAME = new Map(FOODS.map((f) => [f.n, f]))
-const d1 = (x: number) => Math.round(x * 10) / 10
 
 export const MEALS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 export const MEAL_LABEL: Record<MealSlot, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
@@ -71,7 +74,7 @@ export function rangeExtra(s: AppState, d: string): number {
     const mirrored = wk?.type && !wk._mirror
       ? list.findIndex((x) => x.routineId === fromLegacy(wk, d).routineId)
       : mirroredIndex(list)
-    const keepOld = mirrored >= 0 && (list[mirrored].routineId || '').startsWith('builtin-')
+    const keepOld = mirrored >= 0 && isBuiltin(list[mirrored])
     return (keepOld ? old : 0) + list.reduce((a, x, i) => (keepOld && i === mirrored ? a : a + sessionBurn(x, kg)), 0)
   }
   if (s.profile.activityLevel !== 'sedentary') return 0
@@ -92,7 +95,20 @@ export function showBurnNote(s: AppState): boolean {
 
 /** The day's target (plus any workout allowance, see rangeExtra) ± the user's range width. */
 export function rangeFor(s: AppState, d: string): Range {
-  const mid = s.target.kcal + rangeExtra(s, d)
+  const b = baseRange(s, d), extra = rangeExtra(s, d)
+  return { mid: b.mid + extra, lo: b.lo + extra, hi: b.hi + extra }
+}
+
+/** rangeFor without the workout allowance: the everyday range (Profile shows this one). */
+export function baseRange(s: AppState, d: string): Range {
+  // Onboarding 9 (Sometimes, and Yes after its yes): ±15% around the maintenance estimate, to the nearest 50, never below the calorie floor
+  if (foodView(s.profile).wideRange) {
+    const est = maintenanceEstimate(s.profile, null, latestWeight(s, d))
+    const base = est ? Math.round(est.maint / 50) * 50 : s.target.kcal
+    const m = maintenanceRange(base, est ? { bmr: est.bmr, sex: sexOf(s.profile) } : undefined)
+    return { mid: Math.max(base, m.lo), lo: m.lo, hi: m.hi }
+  }
+  const mid = s.target.kcal
   const w = rangeWidth(s.profile)
   return { mid, lo: mid - w, hi: mid + w }
 }
@@ -111,9 +127,11 @@ export function energyStatus(k: number, r: Range): DayStatus {
 
 /** The most recent time this food was logged — drives "your usual" portions. */
 export function lastUse(s: AppState, name: string): LoggedFood | null {
+  // a saved food's earlier names (a merge or rename, core/domain/duplicates) count as it
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
-    for (let i = fs.length - 1; i >= 0; i--) if (fs[i].n === name && fs[i].src !== 'fat') return fs[i]
+    for (let i = fs.length - 1; i >= 0; i--) if (fs[i].src !== 'fat' && currentName(names, fs[i]) === name) return fs[i]
   }
   return null
 }
@@ -126,15 +144,23 @@ export function lastFatFor(s: AppState, name: string): FatChoice | null {
   return lastUse(s, name)?.fatChoice ?? null
 }
 /** A usual food plus the cooking fat it was logged with, ready to re-log. */
+/** A database food that's since been removed (unverified or outdated): its stored numbers are
+ *  never re-served (usuals, same as yesterday). Diary history keeps what was logged. */
+export function isRemovedFood(x: LoggedFood): boolean {
+  return x.src === 'db' && !FOOD_BY_NAME.has(x.n)
+}
+
 export function usualEntries(s: AppState, name: string, meal: MealSlot): LoggedFood[] {
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse()) {
     const fs = s.days[d].foods || []
     for (let i = fs.length - 1; i >= 0; i--) {
-      if (fs[i].n !== name || fs[i].src === 'fat') continue
+      if (fs[i].src === 'fat' || currentName(names, fs[i]) !== name) continue
+      if (isRemovedFood(fs[i])) return []
       // a cooking-fat entry is logged straight after its food
       const next = fs[i + 1]
-      const fat = next?.src === 'fat' && next.fatFor === name ? [relog(next, meal)] : []
-      return [relog(fs[i], meal), ...fat]
+      const fat = next?.src === 'fat' && next.fatFor === fs[i].n ? [relog(next, meal, names)] : []
+      return [relog(fs[i], meal, names), ...fat]
     }
   }
   return []
@@ -204,16 +230,19 @@ export interface Usual { n: string; count: number; last: LoggedFood }
 export function usuals(s: AppState, cur: string, meal: MealSlot): Usual[] {
   const days = Object.keys(s.days).filter((d) => d < cur).sort().reverse().slice(0, 21)
   const counts: Record<string, Usual> = {}
+  // a saved food's earlier names count as the food (core/domain/duplicates aliasNames)
+  const names = aliasNames(s.customFoods)
   for (const d of days) {
     const seen = new Set<string>()
     for (const x of s.days[d].foods || []) {
-      if (x.meal !== meal || x.src === 'fat' || seen.has(x.n)) continue
-      seen.add(x.n)
-      if (!counts[x.n]) counts[x.n] = { n: x.n, count: 0, last: x }
-      counts[x.n].count++
+      const n = currentName(names, x)
+      if (x.meal !== meal || x.src === 'fat' || seen.has(n) || isRemovedFood(x)) continue
+      seen.add(n)
+      if (!counts[n]) counts[n] = { n, count: 0, last: x }
+      counts[n].count++
     }
   }
-  const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => x.n))
+  const logged = new Set(dayOf(s, cur).foods.filter((x) => x.meal === meal).map((x) => currentName(names, x)))
   return Object.values(counts).filter((c) => c.count >= 2 && !logged.has(c.n)).sort((a, b) => b.count - a.count).slice(0, 4)
 }
 /**
@@ -240,14 +269,26 @@ export function entryAmount(x: LoggedFood, food: Food): number {
  * from today's data, so a corrected value (e.g. a chain's published figure) is never re-served
  * from an old snapshot. Same amount and unit; anything else keeps its logged numbers.
  */
-export function relog(x: LoggedFood, meal: MealSlot): LoggedFood {
+export function relog(x: LoggedFood, meal: MealSlot, names?: Map<string, string>): LoggedFood {
   const { ok: _ok, ...rest } = x
   const out: LoggedFood = { ...rest, meal, how: x.how === 'hand' || x.how === 'quick' || x.how === 'recipe' || x.src === 'fat' ? x.how : 'usual' }
+  // a saved food merged or renamed since: the new entry carries its current name (the old one
+  // keeps its own), numbers as logged
+  if (names) {
+    out.n = currentName(names, x)
+    if (x.src === 'fat' && x.fatFor) out.fatFor = names.get(x.fatFor) ?? x.fatFor
+  }
   const food = x.src === 'db' ? FOOD_BY_NAME.get(x.n) : undefined
-  if (food && x.grams && unitOf(food) === (x.unit ?? 'g')) {
-    const amount = entryAmount(x, food)
+  const unit = food ? unitOf(food) : undefined
+  // same unit: rescale the same amount. A food now sold per item (KFC Original Recipe, once per
+  // 100 g) re-logs as the same number of servings as items, at the chain's own figure.
+  const sameUnit = !!food && unit === (x.unit ?? 'g')
+  const nowPerItem = !!food && unit === 'item' && x.serv != null
+  if (food && x.grams && (sameUnit || nowPerItem)) {
+    const amount = sameUnit ? entryAmount(x, food) : roundAmount(x.serv!, 'item')
     const s = scaleFood(food, amount)
-    Object.assign(out, { grams: amount, k: d1(s.k), p: d1(s.p), c: d1(s.c), f: d1(s.f) })
+    Object.assign(out, { grams: amount, k: r1(s.k), p: r1(s.p), c: r1(s.c), f: r1(s.f) })
+    if (!sameUnit) out.unit = 'item'
   }
   return out
 }
@@ -257,11 +298,13 @@ export function mealEntries(s: AppState, d: string, meal: MealSlot): LoggedFood[
 export function recentFoods(s: AppState, all: Food[], limit = 8): Food[] {
   const seen = new Set<string>()
   const out: Food[] = []
+  const names = aliasNames(s.customFoods)
   for (const d of Object.keys(s.days).sort().reverse().slice(0, 14)) {
     for (const x of s.days[d].foods || []) {
-      if (seen.has(x.n)) continue
-      seen.add(x.n)
-      const m = all.find((f) => f.n === x.n)
+      const n = currentName(names, x)
+      if (seen.has(n)) continue
+      seen.add(n)
+      const m = all.find((f) => f.n === n)
       if (m) out.push(m)
       if (out.length >= limit) return out
     }
@@ -285,7 +328,7 @@ export function dayStat(s: AppState, d: string): DayStat {
     d, t, r,
     logged: x.foods.length > 0,
     future: d > todayStr(),
-    done: sessionsOf(x, d).length > 0,
+    done: workoutsOf(x, d).length > 0,
     planned: (s.schedule[parseYmd(d).getDay()] || 'Rest') !== 'Rest',
     inRange: t.k >= r.lo && t.k <= r.hi,
   }
@@ -326,8 +369,67 @@ export function weightWeekDelta(s: AppState, cur: string): number | null {
   return a.length && b.length ? Math.round((avg(a) - avg(b)) * 10) / 10 : null
 }
 
+/**
+ * Today's once-only "Plan when you'll do it" (ob5-4): after the first workout someone who went
+ * through setup logs, while they have no if-then plan and haven't used or waved it off.
+ */
+export function ifThenOfferDue(s: Pick<AppState, 'profile' | 'days'>): boolean {
+  const p = s.profile
+  if (!p?.onboardedAt || p.ifThenOffered || (p.plans ?? []).length) return false
+  // the first workout after setup: an older logged session (or a redo of setup) doesn't count
+  const from = p.onboardedAt.slice(0, 10)
+  return Object.entries(s.days || {}).some(([d, day]) => d >= from && workoutsOf(day, d).length > 0)
+}
+
 /** Plans not reviewed (or created) within the last week. */
 export function plansDue(p: Profile, today = todayStr()): IfThenPlan[] {
   const days = (a: string) => Math.round((parseYmd(today).getTime() - parseYmd(a).getTime()) / 864e5)
   return (p.plans ?? []).filter((pl) => days(pl.lastReview || pl.created || today) >= 7)
+}
+
+/* ---- "Same as yesterday" (nutrition-accuracy R1 to R3) ---- */
+
+/**
+ * What "Same as yesterday" copies into `meal` on `day`: yesterday's entries for that meal,
+ * re-logged at today's data (relog), leaving out foods no longer in Tilo and their cooking fat.
+ * The store's repeatYesterday and the Summary row both use this, so the row's kcal is exactly
+ * what the tap adds. `gone` counts the foods left out.
+ */
+export function entriesToRepeat(s: Pick<AppState, 'days'> & Partial<Pick<AppState, 'customFoods'>>, day: string, meal: MealSlot): { entries: LoggedFood[]; gone: number } {
+  const names = aliasNames(s.customFoods)
+  const all = (s.days[shiftDay(day, -1)]?.foods || []).filter((x) => x.meal === meal)
+  const gone = new Set(all.filter(isRemovedFood).map((x) => x.n))
+  const keep = all.filter((x) => !gone.has(x.n) && !(x.src === 'fat' && x.fatFor && gone.has(x.fatFor)))
+  return { entries: keep.map((x) => ({ ...relog(x, meal, names), how: x.how })), gone: gone.size }
+}
+
+export interface SameAsYesterdayRow {
+  meal: MealSlot
+  entries: LoggedFood[]
+  /** the sum of the re-logged entries (cooking fat included), unrounded */
+  kcal: number
+  /** "{names} · {kcal} kcal", or "{first} and {n} more · {kcal} kcal"; names only in gentle mode */
+  sub: string
+}
+
+/** Past this many characters of names, the sub-line names the first food and counts the rest. */
+export const SAME_NAMES_MAX = 60
+
+const listNames = (ns: string[]): string => (ns.length <= 1 ? ns.join('') : `${ns.slice(0, -1).join(', ')} and ${ns[ns.length - 1]}`)
+
+/**
+ * The Summary's "Same as yesterday" row for `meal` (the caller passes mealNow(), R1): only when
+ * that meal is empty on `day` and yesterday's has something to copy; never another meal. Its kcal
+ * is the sum of what entriesToRepeat would add (R2), formatted once, never yesterday's stored
+ * total. No kcal in gentle mode (R3).
+ */
+export function sameAsYesterdayRow(s: Pick<AppState, 'days'> & Partial<Pick<AppState, 'customFoods'>>, day: string, meal: MealSlot, opts: { gentle?: boolean; max?: number } = {}): SameAsYesterdayRow | null {
+  if ((s.days[day]?.foods || []).some((x) => x.meal === meal)) return null
+  const { entries } = entriesToRepeat(s, day, meal)
+  if (!entries.length) return null
+  const kcal = entries.reduce((a, x) => a + x.k, 0)
+  const names = [...new Set(entries.filter((x) => x.src !== 'fat').map((x) => x.n))]
+  const full = listNames(names)
+  const shown = names.length > 1 && full.length > (opts.max ?? SAME_NAMES_MAX) ? `${names[0]} and ${names.length - 1} more` : full
+  return { meal, entries, kcal, sub: opts.gentle ? shown : `${shown} · ${fmt(kcal)} kcal` }
 }

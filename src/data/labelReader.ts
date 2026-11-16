@@ -1,0 +1,120 @@
+/**
+ * Reads a nutrition-label photo through the `ai-read-label` Edge Function. Never on a launch or
+ * save path: the label capture view asks, and anything but a good read (offline, no session, slow,
+ * an error, the daily cap) sends the user to type the label in instead. No React, no DOM beyond
+ * fetch and localStorage.
+ */
+import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
+import { validateLabelRead, type LabelRead } from '@/core/domain/label'
+import { cleanToken, type ShareToken } from '../../supabase/functions/_shared/shared-product'
+import { getToken, hasSession, supabase } from './supabase'
+
+/**
+ * Label photo scanning, and with it Tilo's shared product list (SHARED_PRODUCTS_ENABLED). On once
+ * ai-read-label (with PRODUCT_SIGNING_KEY), submit-product, lookup-product and report-product are
+ * deployed, the shared-products migration is applied and the privacy policy describes both
+ * (Compliance). Set back to false to hide every entry point again.
+ */
+export const LABEL_SCAN_ENABLED: boolean = true
+
+export const LABEL_TIMEOUT_MS = 20_000
+export const LABEL_FUNCTION = 'ai-read-label'
+
+export type LabelReadResult =
+  /** `share`: the read's values signed for Tilo's shared list, when a barcode went with the photo
+   *  and the read parsed cleanly (ai-read-label); shared only if the user saves them unchanged */
+  | { status: 'ok'; read: LabelRead; share?: ShareToken }
+  /** no connection, or too slow */
+  | { status: 'offline' }
+  /** online, but the function couldn't be reached (not deployed, or its host is down) */
+  | { status: 'unavailable' }
+  /** not signed in on this device right now (e.g. offline since launch) */
+  | { status: 'no-session' }
+  /** the server has no yes to label photos for this account yet (e.g. the consent hasn't synced) */
+  | { status: 'consent' }
+  /** today's allowance used */
+  | { status: 'limit' }
+  /** the photo had no table the reader could make out */
+  | { status: 'unreadable' }
+  /** anything else: a server or model error */
+  | { status: 'error' }
+
+/**
+ * `images`: base64 JPEGs (no data: prefix), each already downscaled to ≤ 1.5 MB. The result is
+ * validated here too, so the app never trusts the wire. `barcode`: the pack's, when one was
+ * scanned, so the reader can sign the read for the shared list (it's never stored there unless
+ * the user agrees to share and saves the read unchanged).
+ */
+/** Why a read didn't succeed, for an app's own internal diagnostics (never the photo, a figure or
+ *  who): the outcome, the HTTP status when there was one, and the error's name. */
+export interface LabelReadFailure { kind: Exclude<LabelReadResult['status'], 'ok'>; status?: number; name?: string }
+
+export async function readLabel(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal; report?: (f: LabelReadFailure) => void } = {}): Promise<LabelReadResult> {
+  const why: { status?: number; name?: string } = {}
+  const r = await readOnce(images, opts, why)
+  // a diagnostics callback that throws never changes the result
+  if (r.status !== 'ok') { try { opts.report?.({ kind: r.status, ...why }) } catch { /* ignored */ } }
+  return r
+}
+
+async function readOnce(images: { panel: string; front?: string; barcode?: string }, opts: { timeoutMs?: number; signal?: AbortSignal }, why: { status?: number; name?: string }): Promise<LabelReadResult> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return { status: 'offline' }
+  if (!hasSession()) return { status: 'no-session' }
+  const ctl = new AbortController()
+  const timer = setTimeout(() => ctl.abort(), opts.timeoutMs ?? LABEL_TIMEOUT_MS)
+  const stop = () => ctl.abort()
+  opts.signal?.addEventListener('abort', stop)
+  try {
+    const { data, error } = await supabase.functions.invoke(LABEL_FUNCTION, {
+      body: {
+        panel: images.panel,
+        ...(images.front ? { front: images.front } : {}),
+        ...(images.barcode && /^\d{8,14}$/.test(images.barcode) ? { barcode: images.barcode } : {}),
+      },
+      // the session the app already holds: never wait on a token refresh here
+      headers: { Authorization: 'Bearer ' + getToken() },
+      signal: ctl.signal,
+    })
+    if (error) {
+      why.name = (error as { name?: string }).name
+      const status = (error as { context?: { status?: unknown } }).context?.status
+      why.status = typeof status === 'number' ? status : undefined
+      if (error instanceof FunctionsHttpError) {
+        const status = (error.context as Response | undefined)?.status
+        if (status === 401) return { status: 'no-session' }
+        // the function isn't deployed (the gateway's own 404)
+        if (status === 404) return { status: 'unavailable' }
+        if (status === 429) return { status: 'limit' }
+        if (status === 403) {
+          const body = await (error.context as Response).clone().json().catch(() => null)
+          return body?.error === 'consent' ? { status: 'consent' } : { status: 'error' }
+        }
+        if (status === 422) {
+          const body = await (error.context as Response).json().catch(() => null)
+          return body?.error === 'unreadable' ? { status: 'unreadable' } : { status: 'error' }
+        }
+        return { status: 'error' }
+      }
+      // a missing function fails its CORS preflight, which looks like no connection: only a
+      // timeout or a device that says it's offline is 'offline'
+      if (error instanceof FunctionsFetchError) return ctl.signal.aborted || navigator.onLine === false ? { status: 'offline' } : { status: 'unavailable' }
+      return { status: 'error' }
+    }
+    const read = data && typeof data === 'object' && (data as { ok?: unknown }).ok === true ? validateLabelRead((data as { read?: unknown }).read) : null
+    if (!read) { why.name = 'InvalidRead'; return { status: 'error' } }
+    // a signature for another barcode, or a malformed one, is simply not there
+    const share = cleanToken((data as { share?: unknown }).share)
+    return share ? { status: 'ok', read, share } : { status: 'ok', read }
+  } catch (e) {
+    const name = (e as { name?: string })?.name
+    why.name = name
+    if (ctl.signal.aborted || navigator.onLine === false) return { status: 'offline' }
+    return name === 'TypeError' ? { status: 'unavailable' } : { status: 'error' }
+  } finally {
+    clearTimeout(timer)
+    opts.signal?.removeEventListener('abort', stop)
+  }
+}
+
+/* Consent to send label photos is a consent record now ('label-photo', src/data/consent.ts);
+   the old device-only flag `tali.labelConsent` is migrated into it on launch. */

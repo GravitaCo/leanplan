@@ -9,3 +9,16 @@ __pycache__/
 
 # Personal Claude Code overrides
 .claude/settings.local.json
+.claude/worktrees/
+dist-e2e
+dist-ob
+.env
+.env.*
+dist-wb
+dist-wbr
+
+# copyrighted chain guides: download to re-run an importer, never commit (sha256 in each importer)
+nutritional_downloads/Starbucks-*
+nutritional_downloads/TobyCarvery-*
+scripts/import/data/costa-*.pdf
+scripts/import/data/chopstix-*.pdf

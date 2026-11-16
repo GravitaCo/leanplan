@@ -1,14 +1,12 @@
-/** Tali brand mark, drawn from Tali-App.svg (mauve mark on black) so it renders offline. */
+/** Tilo brand mark (docs/brand/Logo.svg), inlined so it renders offline. */
 
-/** The app icon: the mark on its black tile, with iOS-style rounded corners (as favicon.svg). */
-export function TaliIcon({ size = 88 }: { size?: number }) {
+const MARK = 'M123.57.33c-17.27,0-31.27,14-31.27,31.27s14,31.27,31.27,31.27,31.27-14,31.27-31.27S140.85.33,123.57.33ZM123.57,45.88c-7.87,0-14.27-6.4-14.27-14.27s6.4-14.27,14.27-14.27,14.27,6.4,14.27,14.27-6.4,14.27-14.27,14.27ZM65.63,28.52V.33h-17v28.19c0,18.59,15.13,33.72,33.72,33.72h9.95v-17h-9.95c-9.22,0-16.72-7.5-16.72-16.72ZM9.95,0H0v17h9.95c9.22,0,16.72,7.5,16.72,16.72v28.19h17v-28.19C43.67,15.13,28.54,0,9.95,0Z'
+
+/** The mark with no frame, for in-app use: plum on light surfaces, white on dark (--mark). */
+export function TaliMark({ width = 120 }: { width?: number }) {
   return (
-    <svg className="tali-icon" width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="Tali">
-      <rect className="tile-bg" x="0.5" y="0.5" width="99" height="99" rx="22.4" fill="#000" />
-      <g transform="translate(4 2)" fill="none" stroke="var(--brand)" strokeWidth="8" strokeLinecap="butt" strokeLinejoin="round">
-        <path d="M34 20V60a16 16 0 0 0 32 0V56a16 16 0 0 0-16-16H18" />
-        <path d="M66 56V68a8 8 0 0 0 8 8" />
-      </g>
+    <svg className="tali-mark" width={width} height={(width * 62.88) / 154.85} viewBox="0 0 154.85 62.88" role="img" aria-label="Tilo">
+      <path fill="currentColor" d={MARK} />
     </svg>
   )
 }

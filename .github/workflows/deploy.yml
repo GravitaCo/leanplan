@@ -21,13 +21,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       # Guardrails: nothing deploys unless every food reproduces its source and the logging
       # maths has no rounding drift (see CLAUDE.md, "Food data & offline").
       - run: npm test
       - run: npm run check:foods
+      # the legal texts must name a real controller and contact before they go live
+      - run: npm run check:legal
       - run: npm run build
       # Publish the new Tali app at the site root, with the previous LeanPlan
       # build parked at /legacy/ as a fallback during the transition.

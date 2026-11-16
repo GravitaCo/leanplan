@@ -1,7 +1,8 @@
 /** `npm run check:foods` — validates the built-in food database. Fails on errors. */
 import { FOODS } from '@/core/data/foods'
 import { validateFoods } from '@/core/data/validate'
-import audit from '../docs/data/food-audit-2026-09.json'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const r = validateFoods(FOODS)
 
@@ -9,11 +10,19 @@ const r = validateFoods(FOODS)
 // still hold exactly the reference values recorded in docs/data (kcal whole, macros to 0.1 g).
 // Changing one means re-auditing it, not editing the number.
 type Row = { n: string; ref: { source: string; code: string | null; k: number | null; p: number | null; c: number | null; f: number | null } }
-const byName = new Map((audit as Row[]).map((a) => [a.n, a]))
+// every docs/data/food-audit*.json (run from the repo root, as npm does)
+const dir = 'docs/data'
+const audit: Row[] = readdirSync(dir).filter((f) => /^food-audit.*\.json$/.test(f)).sort()
+  .flatMap((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')) as Row[])
+const byName = new Map<string, Row>()
+for (const a of audit) {
+  if (byName.has(a.n)) r.errors.push(`${a.n}: audited more than once in docs/data`)
+  byName.set(a.n, a)
+}
 const r1 = (x: number | null) => Math.round((x ?? 0) * 10) / 10
 for (const f of FOODS) {
   const key = f.src?.split(':')[0]
-  if (key !== 'cofid' && key !== 'usda') continue
+  if (key !== 'cofid' && key !== 'cofid-takeaway' && key !== 'takeaway-lab' && key !== 'usda') continue
   const a = byName.get(f.n)
   if (!a || a.ref.k == null) { r.errors.push(`${f.n}: cites ${f.src} but has no audit record`); continue }
   const want = { k: Math.round(a.ref.k), p: r1(a.ref.p), c: r1(a.ref.c), f: r1(a.ref.f) }
@@ -21,9 +30,35 @@ for (const f of FOODS) {
   if (diff.length) r.errors.push(`${f.n}: differs from its audited ${f.src} values (${diff.map((m) => `${m} ${f[m]} vs ${want[m]}`).join(', ')})`)
 }
 
+// Composite estimates (`est-cofid:CODE+CODE+…`): the audit record lists each CoFID component with
+// its grams and CoFID values; the food must be exactly their weighted sum, served at their total.
+type Part = { code: string; g: number; k: number | null; p: number | null; c: number | null; f: number | null }
+for (const f of FOODS) {
+  const [key, code] = f.src?.split(':') ?? []
+  if (key !== 'est-cofid' || !code?.includes('+')) continue
+  const a = byName.get(f.n) as (Row & { ref: { components?: Part[] } }) | undefined
+  const parts = a?.ref.components
+  if (!parts || a!.ref.code !== code || parts.map((x) => x.code).join('+') !== code) { r.errors.push(`${f.n}: composite ${f.src} has no matching audit record of its components`); continue }
+  const missing = parts.filter((x) => [x.k, x.p, x.c, x.f].some((v) => v == null) || !(x.g > 0))
+  if (missing.length) { r.errors.push(`${f.n}: component(s) ${missing.map((x) => x.code).join(', ')} have no CoFID values`); continue }
+  const g = parts.reduce((s, x) => s + x.g, 0)
+  const per = (m: 'k' | 'p' | 'c' | 'f') => parts.reduce((s, x) => s + x[m]! * x.g, 0) / g
+  const want = { k: Math.round(per('k')), p: r1(per('p')), c: r1(per('c')), f: r1(per('f')) }
+  const diff = (['k', 'p', 'c', 'f'] as const).filter((m) => f[m] !== want[m])
+  if (diff.length) r.errors.push(`${f.n}: isn't the sum of its components (${diff.map((m) => `${m} ${f[m]} vs ${want[m]}`).join(', ')})`)
+  if (f.g !== g) r.errors.push(`${f.n}: serving ${f.g} g isn't the components' total ${g} g`)
+}
+
 const sourced = FOODS.length - r.unsourced.length
 const withRef = FOODS.filter((f) => f.ref).length
 console.log(`${FOODS.length} foods · ${sourced} with a cited source · ${withRef} checked against a published figure · ${r.unsourced.length} not yet checked`)
+// Published figures we keep as published even though kcal exceeds the macros (the rule is that
+// what the user sees equals the source; the 20% menu margin covers it). Reviewed by
+// nutrition-accuracy, Sep 2026.
+const EXPLAINED = [/^Popeyes .*Shake/]
+const explained = r.warnings.filter((w) => EXPLAINED.some((re) => re.test(w)))
+r.warnings = r.warnings.filter((w) => !explained.includes(w))
+if (explained.length) console.log(`${explained.length} explained warning(s) (published figures kept as published)`)
 if (r.warnings.length) console.log(`\n${r.warnings.length} warning(s):\n  ` + r.warnings.join('\n  '))
 if (r.errors.length) {
   console.error(`\n${r.errors.length} error(s):\n  ` + r.errors.join('\n  '))

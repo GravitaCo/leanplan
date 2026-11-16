@@ -1,0 +1,199 @@
+import { useCallback, useMemo, useState } from 'react'
+import { useStore } from '@/store/store'
+import { keyTitle, warmupForKey, type WorkoutKey } from '@/core/domain/routines'
+import type { Routine, Session } from '@/core/types'
+import { Icon } from '@/ui/icons'
+import { FIRST_SESSION } from '../onboarding/copyApp'
+import { WORKOUTS, SWAPS, type SwapId } from '@/core/data/workouts'
+import { CARDIO_OPTIONS } from '@/core/data/constants'
+import { shorterPrescription, type ShorterKind } from '@/core/domain/dayOptions'
+import { exById } from '@/core/domain/library'
+import { setCount, warmupSlot, working, type Slot } from '@/core/domain/guided'
+import { careList } from '@/core/data/libraryLabels'
+import { BackButton, TitleRow } from '@/ui/primitives'
+import { SwapSheet } from './SwapSheet'
+import { DemoPlayer } from './DemoPlayer'
+import { Thumb } from './Thumb'
+import { WarmupCard } from './WarmupCard'
+import { ONBOARDING_ENABLED } from '../onboarding/Consent'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import { HARD_DAY_COPY, swapTile } from './hardDay'
+import { CHOICES, RED_FLAG, CARE_DISCLAIMER, warmupCopy, type Choice } from '@/copy/train'
+import { bareName, previewRows } from './trainModel'
+
+export { CHOICES, type Choice } from '@/copy/train'
+
+/**
+ * Session preview (Flow 1 step 2): the version for today, the exercise list with what to aim
+ * for, swaps for today only, then Start. Cardio days and the gentle swaps save from here.
+ */
+export function Preview({ type, choice, onChoice, slots, swaps, onSwap, session, note, dayName, isToday, onStart, onManual, onBack, onEditPlan, generated, swapId = 'mobility', shorterKind, noShorter, roughNote }: {
+  /** a built-in's type or the id of one of the user's own workouts */
+  type: WorkoutKey
+  choice: Choice
+  onChoice: (c: Choice) => void
+  slots: Slot[]
+  swaps: Record<number, string>
+  onSwap: (i: number, id: string) => void
+  session?: Session
+  /** easier-week / lighter-day note under the chips */
+  note?: string | null
+  dayName: string
+  isToday: boolean
+  onStart: () => void
+  onManual: () => void
+  onBack: () => void
+  onEditPlan: () => void
+  /** a workout the engine generated (onboarding flag): a quiet thumbs up or down on each exercise (ob5-3) */
+  generated?: Routine
+  /** the day-matched swap the 'swap' choice opens (wellbeing flag) */
+  swapId?: SwapId
+  /** which shorter version today is (wellbeing flag; none: today's behaviour) */
+  shorterKind?: ShorterKind | null
+  /** a rough night left nothing in the shorter version: the swap is offered instead */
+  noShorter?: boolean
+  /** B3.17 under the Shorter note */
+  roughNote?: boolean
+}) {
+  const rate = useStore((s) => s.rateExercise)
+  const prefs = useStore((s) => s.data.profile.training?.exPrefs)
+  const routines = useStore((s) => s.data.routines)
+  const cur = useStore((s) => s.cur)
+  const days = useStore((s) => s.data.days)
+  const saveCardio = useStore((s) => s.saveCardio)
+  const [swapFor, setSwapFor] = useState<number | null>(null)
+  const [demo, setDemo] = useState<number | null>(null)
+  const closeDemo = useCallback(() => setDemo(null), [])
+  const shorter = choice === 'shorter'
+  const swapKey: SwapId | null = choice === 'swap' ? swapId : choice === 'mobility' || choice === 'walk' ? choice : null
+  const swap = swapKey ? SWAPS[swapKey] : null
+  const easier = shorter && shorterKind === 'easier'
+  const title = swap ? swap.title.split(' · ')[0] : keyTitle(type, routines)
+  const logged = session?.ex?.some((e) => working(e.sets).length > 0)
+  const wSlot = warmupSlot(slots.map((s) => s.shape))
+  const training = useStore((s) => s.data.profile.training)
+  // every session opens with the warm-up block (ob3-5), the same one the player runs
+  const warm = useMemo(() => (ONBOARDING_ENABLED ? warmupForKey(type, routines, training) : null), [type, routines, training])
+
+  // cardio card state (a retired type from an older log still shows as saved)
+  const cardioS = type === 'Cardio' ? session : undefined
+  const [cardioType, setCardioType] = useState(cardioS?.cardio?.key || 'Brisk walk')
+  const [mins, setMins] = useState(cardioS?.mins != null ? String(cardioS.mins) : '')
+  const [walkMins, setWalkMins] = useState('')
+
+  const rows = useMemo(() => previewRows(slots, days, cur, session, shorter, shorterKind), [slots, days, cur, session, shorter, shorterKind])
+
+  const sub = swap
+    ? `${dayName} · ${swap.ex.length} ${swap.ex.length === 1 ? 'move' : 'moves'}`
+    : type === 'Cardio' ? `${dayName} · ${shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}`
+    : `${dayName} · ${warm || (WELLBEING_ENABLED && wSlot >= 0) ? 'warm-up and ' : ''}${slots.length} ${slots.length === 1 ? 'exercise' : 'exercises'} · ${setCount(slots.map((s) => s.shown), shorter)}`
+
+  return (
+    <div className="screen pv">
+      <div className="pv-back"><BackButton label={isToday ? 'Today' : dayName} onClick={onBack} /></div>
+      <TitleRow title={title} />
+      <div className="sub" style={{ marginTop: 2 }}>{sub}</div>
+
+      <div className={'vchips' + (WELLBEING_ENABLED ? ' hd-wrap' : '')} role="radiogroup" aria-label="Today's version">
+        {CHOICES.filter(([k]) => !(logged && (k === 'mobility' || k === 'walk' || k === 'swap')) && !(noShorter && k === 'shorter' && choice !== 'shorter')).map(([k, label]) => (
+          <button key={k} role="radio" aria-checked={choice === k} className={'vchip' + (choice === k ? ' on' : '')} onClick={() => onChoice(k)}>{k === 'swap' ? swapTile(swapId).title : label}</button>
+        ))}
+      </div>
+      {note && <div className="foot" style={{ padding: '0 4px 10px' }}>{note}</div>}
+      {roughNote && shorter && <div className="foot" style={{ padding: '0 4px 10px' }}>{HARD_DAY_COPY.roughNote}</div>}
+      {swap && <div className="foot" style={{ padding: '0 4px 10px' }}>This counts as today's session. Your plan carries on as usual.</div>}
+
+      {swap ? (
+        <>
+          {swap.note && <div className="foot" style={{ padding: '0 4px 10px' }}>{swap.note}</div>}
+          {swap.ex.map((e) => (
+            <div className="card ex" key={e.n}>
+              <div className="h"><div className="n">{e.n}</div><span className="tg">{e.t}</span></div>
+              <div className="cue">{e.cue}</div>
+            </div>
+          ))}
+          {swapKey === 'walk' && (
+            <div className="list">
+              <div className="frow"><label htmlFor="w_min">Minutes</label>
+                <input id="w_min" type="number" inputMode="numeric" value={walkMins} placeholder={swap.mins} onChange={(e) => setWalkMins(e.target.value)} /></div>
+            </div>
+          )}
+          <div className="foot" style={{ padding: '4px 4px 0' }}>{RED_FLAG}</div>
+          <div className="stack"><button className="btn" onClick={() => { saveCardio(swap.cardioType, swapKey === 'walk' ? walkMins || swap.mins : swap.mins, 'swap'); onBack() }}>
+            Save {swapKey === 'walk' ? 'walk' : 'mobility'}</button></div>
+        </>
+      ) : type === 'Cardio' ? (
+        <>
+          {warm && <WarmupCard block={warm} />}
+          <div className="card ex">
+            <div className="h"><div className="n">{WORKOUTS.Cardio.ex[0].n}</div><span className="tg">{shorter ? shorterPrescription(WORKOUTS.Cardio.ex[0].t) : WORKOUTS.Cardio.ex[0].t}</span></div>
+            <div className="cue">{WORKOUTS.Cardio.ex[0].cue}</div>
+          </div>
+          <div className="list">
+            <div className="frow"><label htmlFor="c_type">Type</label>
+              <select id="c_type" value={cardioType} onChange={(e) => setCardioType(e.target.value)}>
+                {(CARDIO_OPTIONS.includes(cardioType) ? CARDIO_OPTIONS : [...CARDIO_OPTIONS, cardioType]).map((o) => <option key={o}>{o}</option>)}
+              </select></div>
+            <div className="frow"><label htmlFor="c_min">Minutes</label>
+              <input id="c_min" type="number" inputMode="numeric" value={mins} placeholder="25" onChange={(e) => setMins(e.target.value)} /></div>
+          </div>
+          <div className="stack"><button className="btn" onClick={() => { saveCardio(cardioType, mins, cardioS?.option === 'swap' ? 'swap' : shorter ? 'shorter' : undefined); onBack() }}>Save cardio</button></div>
+          <div className="foot" style={{ padding: '12px 4px 0' }}>{RED_FLAG}</div>
+        </>
+      ) : (
+        <>
+          {!warm && wSlot >= 0 && (
+            <div className="warm">
+              <span className="wi" aria-hidden="true">↻</span>
+              <div><div className="t">Warm up first</div>
+                <div className="s">{warmupCopy(bareName(slots[wSlot].shown.n))}</div></div>
+            </div>
+          )}
+          {warm && <WarmupCard block={warm} extra={wSlot >= 0 ? `Then one or two lighter ${bareName(slots[wSlot].shown.n).toLowerCase()} sets, building up to your working weight.` : undefined} />}
+          <div className="list">
+            {rows.map(({ s, detail }) => {
+              const gentler = !s.swapped && s.x?.gentler && (s.x.equipment[0] === 'barbell' || s.x.equipment[0] === 'trap-bar') && s.x.difficulty !== 'beginner' ? exById(s.x.gentler) : undefined
+              return (
+                <div className="li pv-row" key={s.i}>
+                  {s.shown.video
+                    ? <button className="thumb-btn" onClick={() => setDemo(s.i)} aria-label={`Watch example: ${s.shown.n}`}><Thumb video={s.shown.video} shape={s.shape} play /></button>
+                    : <Thumb shape={s.shape} />}
+                  <div className="m">
+                    <div className="t">{bareName(s.shown.n)}</div>
+                    <div className="s num">{s.rx}{detail ? ' · ' + detail : ''}</div>
+                    {s.swapped && <div className="s2">In place of {bareName(s.planned.n)}, today only. <button className="linkbtn inl" onClick={() => onSwap(s.i, s.planned.id!)}>Undo</button>
+                      {s.x?.care?.length ? <> Asks quite a lot of {careList(s.x.care)}.</> : null}</div>}
+                    {gentler && <div className="s2">New to this? The {gentler.n.toLowerCase()} is a good place to start. Tap Swap.</div>}
+                  </div>
+                  {generated && s.x && !s.swapped && (
+                    <span className="pv-thumbs">
+                      <button aria-label={`I like ${bareName(s.shown.n)}`} aria-pressed={!!prefs?.liked?.includes(s.x.id)} className={prefs?.liked?.includes(s.x.id) ? 'on' : ''} onClick={() => rate(generated.id, s.i, 'up')}><Icon name="thumbUp" size={17} /></button>
+                      <button aria-label={`Not for me: ${bareName(s.shown.n)}`} onClick={() => rate(generated.id, s.i, 'down')}><Icon name="thumbDown" size={17} /></button>
+                    </span>
+                  )}
+                  {s.x && <button className="linkbtn" onClick={() => setSwapFor(s.i)} aria-label={`Swap ${s.shown.n}`}>Swap</button>}
+                </div>
+              )
+            })}
+          </div>
+          {generated && <div className="foot" style={{ padding: '4px 4px 0' }}>{FIRST_SESSION.thumbsNote}</div>}
+          <div className="foot" style={{ padding: '4px 4px 0' }}>
+            Swaps here only change today. {easier ? HARD_DAY_COPY.spareEasier : 'Stop each set with two or three reps to spare.'}{slots.some((s) => s.swapped && s.x?.care?.length) ? ' ' + CARE_DISCLAIMER : ''} {RED_FLAG}
+          </div>
+          <div className="stack pv-cta">
+            <button className="btn" onClick={onStart}>{logged ? 'Continue' : 'Start'}</button>
+            <button className="linkbtn" onClick={onManual}>{logged ? 'Edit sets by hand' : 'Log sets by hand'}</button>
+            <button className="linkbtn" onClick={onEditPlan}>Edit {keyTitle(type, routines)} in Plan</button>
+          </div>
+        </>
+      )}
+
+      {demo != null && (() => { const sh = slots.find((s) => s.i === demo)?.shown; return sh?.video ? <DemoPlayer ex={sh} onClose={closeDemo} /> : null })()}
+      {swapFor != null && (() => {
+        const sl = slots.find((s) => s.i === swapFor)
+        return sl?.x ? <SwapSheet current={sl.x} planned={swaps[swapFor] ? exById(sl.planned.id) : undefined} shorter={shorter}
+          loggedSets={rows.find((r) => r.s.i === swapFor)?.done ?? 0} onPick={(id) => onSwap(swapFor, id)} onClose={() => setSwapFor(null)} /> : null
+      })()}
+    </div>
+  )
+}

@@ -62,6 +62,14 @@ has a real running cost.
 
 ## 1. What actually runs today (measured from the repo, 24 September 2026)
 
+> **Status, 6 October 2026: parts of this snapshot are superseded.** AI is now built: AI label
+> reading (`supabase/functions/ai-read-label`, the `ai_usage` table with a daily cap,
+> `src/data/labelReader.ts`), switched off behind `LABEL_SCAN_ENABLED`. Benn decided on 26 Sept
+> that label reading is free for everyone for now (`label-scan-and-shared-products.md`), which
+> overrides decision 7 and the Plus line for photo logging below as far as label reading goes.
+> Guest mode is retired: everyone signs up. Table counts, the push sender's location, video
+> hosting and the service-worker version have also moved on. Re-measure before relying on §1.
+
 | Component | Status today | Evidence |
 |---|---|---|
 | App hosting | GitHub Pages, built by GitHub Actions on push to `main` | `.github/workflows/deploy.yml` |
@@ -118,7 +126,6 @@ and handled separately.
 | Web Push | **ASSUMPTION** no per-message fee from browser push services; sender cost unknown (§1) | a few reminders a day | about £0 |
 | Edge Functions (for AI calls, later) | 2M invocations included on Pro, then $2 per million [S1] | | about £0 |
 
-**Guest users cost nothing:** guest mode is local-only and never touches Supabase (`CLAUDE.md`).
 
 ### 2.3 Variable cost per paying user and net receipts
 
@@ -610,7 +617,7 @@ higher than modelled.
 
 Our own numbers should replace every industry median above within three months of launch. Collect
 them first-party and aggregated (no third-party trackers seeing health data; `security-data` to
-review the design). Guests stay uncounted beyond an anonymous install count.
+review the design). Everyone has an account (guest mode is retired), so no separate guest count.
 
 | Metric | Definition | Why |
 |---|---|---|
@@ -760,3 +767,7 @@ review the design). Guests stay uncounted beyond an anonymous install count.
 - **2026-09-24:** Consolidated into one plan: merged the additional ideas into the recommended
   model and revenue ranking, stated each figure once, removed superseded and duplicate material,
   renumbered sections and sources.
+- **2026-10-06:** Brought onto `main` with the `cfo` agent. Added a status note to §1: AI label
+  reading is built (off behind a flag) and free for now per Benn's 26 Sept decision, which
+  supersedes decision 7 for label reading; guest mode is retired (guest lines removed). Not
+  re-modelled.

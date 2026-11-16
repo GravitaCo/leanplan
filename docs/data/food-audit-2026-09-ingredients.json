@@ -1,0 +1,3810 @@
+[
+ {
+  "n": "Beef mince, extra lean (about 5% fat), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-508",
+   "name": "Beef, mince, raw, extra lean",
+   "k": 130.0,
+   "p": 21.9,
+   "c": 0.0,
+   "f": 4.2
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Beef mince, standard (about 15% fat), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-469",
+   "name": "Beef, mince, raw",
+   "k": 225.0,
+   "p": 19.7,
+   "c": 0.0,
+   "f": 16.2
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Beef, diced (stewing steak), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-077",
+   "name": "Beef, stewing steak, raw, lean and fat",
+   "k": 146.0,
+   "p": 22.1,
+   "c": 0.0,
+   "f": 6.4
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Beef braising steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-007",
+   "name": "Beef, braising steak, raw, lean and fat",
+   "k": 160.0,
+   "p": 20.7,
+   "c": 0.0,
+   "f": 8.6
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Beef sirloin steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-065",
+   "name": "Beef, sirloin steak, raw, lean and fat",
+   "k": 201.0,
+   "p": 21.6,
+   "c": 0.0,
+   "f": 12.7
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Beef rump steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-471",
+   "name": "Beef, rump steak, raw, lean and fat",
+   "k": 174.0,
+   "p": 20.7,
+   "c": 0.0,
+   "f": 10.1
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Beef fillet steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-017",
+   "name": "Beef, fillet steak, raw, lean and fat",
+   "k": 155.0,
+   "p": 20.9,
+   "c": 0.0,
+   "f": 7.9
+  },
+  "status": "new",
+  "serving_g": 170
+ },
+ {
+  "n": "Beef topside joint, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-085",
+   "name": "Beef, topside, raw, lean and fat",
+   "k": 198.0,
+   "p": 20.4,
+   "c": 0.0,
+   "f": 12.9
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Beef brisket, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-013",
+   "name": "Beef, brisket, raw, lean and fat",
+   "k": 218.0,
+   "p": 18.4,
+   "c": 0.0,
+   "f": 16.0
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Liver, ox, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-415",
+   "name": "Liver, ox, raw",
+   "k": 155.0,
+   "p": 21.1,
+   "c": 0.0,
+   "f": 7.8
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Chicken breast, raw, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-290",
+   "name": "Chicken, light meat, raw",
+   "k": 106.0,
+   "p": 24.0,
+   "c": 0.0,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken thigh or drumstick, raw, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-289",
+   "name": "Chicken, dark meat, raw",
+   "k": 109.0,
+   "p": 20.9,
+   "c": 0.0,
+   "f": 2.8
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken thigh or drumstick, raw, with skin",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-293",
+   "name": "Chicken, leg quarter, raw, meat and skin",
+   "k": 193.0,
+   "p": 18.3,
+   "c": 0.0,
+   "f": 13.3
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken thigh or drumstick, raw, with skin, weighed with bone",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-294",
+   "name": "Chicken, leg quarter, raw, meat and skin, weighed with bone",
+   "k": 133.0,
+   "p": 12.6,
+   "c": 0.0,
+   "f": 9.2
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Chicken drumstick, roasted, with skin",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-335",
+   "name": "Chicken, drumsticks, roasted, meat and skin",
+   "k": 185.0,
+   "p": 25.8,
+   "c": 0.0,
+   "f": 9.1
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Chicken drumstick, roasted, with skin, weighed with bone",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-336",
+   "name": "Chicken, drumsticks, roasted, meat and skin, weighed with bone",
+   "k": 116.0,
+   "p": 16.2,
+   "c": 0.0,
+   "f": 5.7
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken thigh, casseroled, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-319",
+   "name": "Chicken, thighs, casseroled, meat only, diced",
+   "k": 180.0,
+   "p": 25.6,
+   "c": 0.0,
+   "f": 8.6
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken, whole, raw, with skin",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-297",
+   "name": "Chicken, whole, raw, meat and skin",
+   "k": 201.0,
+   "p": 19.1,
+   "c": 0.0,
+   "f": 13.8
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chicken, whole, raw, with skin, weighed with bone",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-298",
+   "name": "Chicken, whole, raw, meat and skin, weighed with bone",
+   "k": 131.0,
+   "p": 12.4,
+   "c": 0.0,
+   "f": 9.0
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Chicken liver, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-411",
+   "name": "Liver, chicken, raw",
+   "k": 92.0,
+   "p": 17.7,
+   "c": 0.0,
+   "f": 2.3
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Turkey breast, raw, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-349",
+   "name": "Turkey, light meat, raw",
+   "k": 105.0,
+   "p": 24.4,
+   "c": 0.0,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Turkey thigh or drumstick, raw, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-348",
+   "name": "Turkey, dark meat, raw",
+   "k": 104.0,
+   "p": 20.4,
+   "c": 0.0,
+   "f": 2.5
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Turkey, whole, raw, with skin",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-352",
+   "name": "Turkey, whole, raw",
+   "k": 133.0,
+   "p": 21.6,
+   "c": 0.0,
+   "f": 5.2
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Duck, raw, skinless",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-489",
+   "name": "Duck, meat only, raw",
+   "k": 137.0,
+   "p": 19.7,
+   "c": 0.0,
+   "f": 6.5
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Duck, raw, with skin and fat",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-371",
+   "name": "Duck, raw, meat, fat and skin",
+   "k": 388.0,
+   "p": 13.1,
+   "c": 0.0,
+   "f": 37.3
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork, diced, raw, lean",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-529",
+   "name": "Pork, diced, raw, lean",
+   "k": 122.0,
+   "p": 23.1,
+   "c": 0.0,
+   "f": 3.3
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork mince (10% fat), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-606",
+   "name": "Pork, mince, raw",
+   "k": 164.0,
+   "p": 19.2,
+   "c": 0.0,
+   "f": 9.7
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Pork loin steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-522",
+   "name": "Pork, loin steaks, raw, lean and fat",
+   "k": 187.0,
+   "p": 21.4,
+   "c": 0.0,
+   "f": 11.2
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork loin chop, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-536",
+   "name": "Pork, loin chops, raw, lean and fat",
+   "k": 191.0,
+   "p": 21.3,
+   "c": 0.0,
+   "f": 11.7
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork loin chop, raw, weighed with bone",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-537",
+   "name": "Pork, loin chops, raw, lean and fat, weighed with bone",
+   "k": 162.0,
+   "p": 18.1,
+   "c": 0.0,
+   "f": 10.0
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Pork tenderloin (fillet), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-510",
+   "name": "Pork, fillet medallions, raw, lean",
+   "k": 96.0,
+   "p": 22.8,
+   "c": 0.0,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork shoulder steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-554",
+   "name": "Pork, shoulder steaks (collar), raw, lean and fat",
+   "k": 168.0,
+   "p": 18.7,
+   "c": 0.0,
+   "f": 10.4
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork belly slices, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-557",
+   "name": "Pork, belly joint/slices, raw, lean and fat",
+   "k": 258.0,
+   "p": 19.1,
+   "c": 0.0,
+   "f": 20.2
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork leg joint, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-514",
+   "name": "Pork, leg joint, raw, lean and fat",
+   "k": 215.0,
+   "p": 19.9,
+   "c": 0.0,
+   "f": 15.0
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Pork spare ribs, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-609",
+   "name": "Pork, spare ribs, raw, lean and fat",
+   "k": 195.0,
+   "p": 18.7,
+   "c": 0.0,
+   "f": 13.4
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Bacon, back rashers, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-497",
+   "name": "Bacon rashers, back, raw",
+   "k": 215.0,
+   "p": 16.5,
+   "c": 0.0,
+   "f": 16.5
+  },
+  "status": "new",
+  "serving_g": 25
+ },
+ {
+  "n": "Bacon, back rashers, fat trimmed, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-646",
+   "name": "Bacon rashers, back, fat trimmed, raw",
+   "k": 136.0,
+   "p": 18.8,
+   "c": 0.0,
+   "f": 6.7
+  },
+  "status": "new",
+  "serving_g": 25
+ },
+ {
+  "n": "Bacon, streaky rashers, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-016",
+   "name": "Bacon rashers, streaky, raw",
+   "k": 276.0,
+   "p": 15.8,
+   "c": 0.0,
+   "f": 23.6
+  },
+  "status": "new",
+  "serving_g": 40
+ },
+ {
+  "n": "Pork sausage, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-510",
+   "name": "Sausages, pork, raw",
+   "k": 309.0,
+   "p": 11.9,
+   "c": 9.6,
+   "f": 25.0
+  },
+  "status": "new",
+  "serving_g": 57
+ },
+ {
+  "n": "Pork sausage, reduced fat, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-658",
+   "name": "Sausages, pork, reduced fat, raw",
+   "k": 141.0,
+   "p": 14.4,
+   "c": 8.7,
+   "f": 5.6
+  },
+  "status": "new",
+  "serving_g": 57
+ },
+ {
+  "n": "Beef sausage, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "19-656",
+   "name": "Sausages, beef, raw",
+   "k": 258.0,
+   "p": 12.7,
+   "c": 8.4,
+   "f": 19.5
+  },
+  "status": "new",
+  "serving_g": 57
+ },
+ {
+  "n": "Lamb mince, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-481",
+   "name": "Lamb, mince, raw",
+   "k": 196.0,
+   "p": 19.1,
+   "c": 0.0,
+   "f": 13.3
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Lamb, diced (stewing), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-182",
+   "name": "Lamb, stewing, raw, lean and fat",
+   "k": 203.0,
+   "p": 22.5,
+   "c": 0.0,
+   "f": 12.6
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Lamb shoulder, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-170",
+   "name": "Lamb, shoulder, raw, lean and fat",
+   "k": 235.0,
+   "p": 17.6,
+   "c": 0.0,
+   "f": 18.3
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Lamb loin chop, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-476",
+   "name": "Lamb, loin chops, raw, lean and fat",
+   "k": 277.0,
+   "p": 17.6,
+   "c": 0.0,
+   "f": 23.0
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Lamb loin chop, raw, weighed with bone",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-497",
+   "name": "Lamb, loin chops, raw, lean and fat, weighed with bone",
+   "k": 216.0,
+   "p": 13.7,
+   "c": 0.0,
+   "f": 17.9
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Lamb, rack of, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-166",
+   "name": "Lamb, rack of, raw, lean and fat",
+   "k": 283.0,
+   "p": 17.3,
+   "c": 0.0,
+   "f": 23.8
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Lamb neck fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-161",
+   "name": "Lamb, neck fillet, raw, lean and fat",
+   "k": 232.0,
+   "p": 18.4,
+   "c": 0.0,
+   "f": 17.6
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Liver, lamb, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "18-413",
+   "name": "Liver, lamb, raw",
+   "k": 137.0,
+   "p": 20.3,
+   "c": 0.0,
+   "f": 6.2
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Salmon fillet, raw (farmed)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-356",
+   "name": "Salmon, farmed, flesh only, raw",
+   "k": 217.0,
+   "p": 20.4,
+   "c": 0.0,
+   "f": 15.0
+  },
+  "status": "new",
+  "serving_g": 130
+ },
+ {
+  "n": "Salmon fillet, raw (wild)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-360",
+   "name": "Salmon, wild, flesh only, raw",
+   "k": 179.0,
+   "p": 22.1,
+   "c": 0.0,
+   "f": 10.1
+  },
+  "status": "new",
+  "serving_g": 130
+ },
+ {
+  "n": "Cod fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-372",
+   "name": "Cod, flesh only, raw",
+   "k": 75.0,
+   "p": 17.5,
+   "c": 0.0,
+   "f": 0.6
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Haddock fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-375",
+   "name": "Haddock, flesh only, raw",
+   "k": 75.0,
+   "p": 17.8,
+   "c": 0.0,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Smoked haddock fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-492",
+   "name": "Haddock, flesh only, smoked, raw",
+   "k": 83.0,
+   "p": 19.7,
+   "c": 0.0,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Pollock fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-378",
+   "name": "Pollock, Alaskan, flesh only, raw",
+   "k": 72.0,
+   "p": 16.4,
+   "c": 0.0,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Hake fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-070",
+   "name": "Hake, flesh only, raw",
+   "k": 92.0,
+   "p": 18.0,
+   "c": 0.0,
+   "f": 2.2
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Coley fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-383",
+   "name": "Coley, flesh only, raw",
+   "k": 82.0,
+   "p": 18.0,
+   "c": 0.0,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Plaice fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-381",
+   "name": "Plaice, flesh only, raw",
+   "k": 76.0,
+   "p": 16.4,
+   "c": 0.0,
+   "f": 1.2
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Tilapia, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-154",
+   "name": "Tilapia, raw",
+   "k": 85.0,
+   "p": 17.8,
+   "c": 0.0,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Rainbow trout fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-395",
+   "name": "Trout, rainbow, flesh only, raw",
+   "k": 127.0,
+   "p": 19.9,
+   "c": 0.0,
+   "f": 5.3
+  },
+  "status": "new",
+  "serving_g": 130
+ },
+ {
+  "n": "Mackerel fillet, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-393",
+   "name": "Mackerel, flesh only, raw",
+   "k": 233.0,
+   "p": 18.0,
+   "c": 0.0,
+   "f": 17.9
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Tuna steak, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-399",
+   "name": "Tuna, flesh only, raw",
+   "k": 107.0,
+   "p": 25.2,
+   "c": 0.0,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "King prawns, raw, peeled",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-387",
+   "name": "Prawns, king, raw",
+   "k": 77.0,
+   "p": 17.6,
+   "c": 0.0,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "King prawns, cooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-389",
+   "name": "Prawns, king, purchased cooked",
+   "k": 68.0,
+   "p": 16.2,
+   "c": 0.0,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Squid, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-263",
+   "name": "Squid, raw",
+   "k": 81.0,
+   "p": 15.4,
+   "c": 1.2,
+   "f": 1.7
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Mussels, raw, flesh only (weigh without shells)",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-497",
+   "name": "Mussels, raw",
+   "k": 74.0,
+   "p": 12.1,
+   "c": 2.5,
+   "f": 1.8
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Pink salmon, canned in brine, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-420",
+   "name": "Salmon, pink, canned in brine, drained",
+   "k": 138.0,
+   "p": 23.6,
+   "c": 0.0,
+   "f": 4.8
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Tuna, canned in sunflower oil, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-417",
+   "name": "Tuna, canned in sunflower oil, drained",
+   "k": 159.0,
+   "p": 25.4,
+   "c": 0.0,
+   "f": 6.4
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Anchovies, canned in oil, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "16-448",
+   "name": "Anchovies, canned in oil, drained",
+   "k": 191.0,
+   "p": 25.2,
+   "c": 0.0,
+   "f": 10.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Egg yolk, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-939",
+   "name": "Eggs, chicken, yolk, raw",
+   "k": 347.0,
+   "p": 16.4,
+   "c": 0.0,
+   "f": 31.3
+  },
+  "status": "new",
+  "serving_g": 17
+ },
+ {
+  "n": "White rice, long grain, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-861",
+   "name": "Rice, white, long grain, raw",
+   "k": 355.0,
+   "p": 6.7,
+   "c": 85.1,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "White rice, easy cook, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-863",
+   "name": "Rice, white, long grain, easy cook, raw",
+   "k": 347.0,
+   "p": 7.0,
+   "c": 82.3,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Basmati rice, white, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-857",
+   "name": "Rice, white, basmati, raw",
+   "k": 351.0,
+   "p": 8.1,
+   "c": 83.7,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Basmati rice, brown, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-866",
+   "name": "Rice, brown, basmati, raw",
+   "k": 355.0,
+   "p": 8.9,
+   "c": 77.6,
+   "f": 3.1
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Basmati rice, brown, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-867",
+   "name": "Rice, brown, basmati, boiled in unsalted water",
+   "k": 131.0,
+   "p": 3.3,
+   "c": 28.7,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Brown rice, wholegrain, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-868",
+   "name": "Rice, brown, wholegrain, raw",
+   "k": 333.0,
+   "p": 7.7,
+   "c": 77.0,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Thai jasmine (fragrant) rice, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-874",
+   "name": "Rice, Thai fragrant, raw",
+   "k": 352.0,
+   "p": 6.4,
+   "c": 84.5,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Thai jasmine (fragrant) rice, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-875",
+   "name": "Rice, Thai fragrant, boiled in unsalted water",
+   "k": 133.0,
+   "p": 2.3,
+   "c": 32.1,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Risotto rice (arborio), uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-878",
+   "name": "Rice, white, Italian Arborio risotto, raw",
+   "k": 354.0,
+   "p": 6.4,
+   "c": 85.2,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Wild rice, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-872",
+   "name": "Rice, wild, raw",
+   "k": 343.0,
+   "p": 12.2,
+   "c": 75.8,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Pasta, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-716",
+   "name": "Pasta, white, dried, raw",
+   "k": 343.0,
+   "p": 11.3,
+   "c": 75.6,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Spaghetti, dried, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-722",
+   "name": "Pasta, white, spaghetti, dried, boiled in unsalted water",
+   "k": 141.0,
+   "p": 4.4,
+   "c": 31.5,
+   "f": 0.6
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Wholewheat pasta, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-718",
+   "name": "Pasta, wholewheat, spaghetti, dried, raw",
+   "k": 329.0,
+   "p": 12.6,
+   "c": 68.3,
+   "f": 2.5
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Egg pasta, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-715",
+   "name": "Pasta, egg, white, dried, raw",
+   "k": 365.0,
+   "p": 12.9,
+   "c": 74.8,
+   "f": 3.6
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Fresh egg pasta, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-726",
+   "name": "Pasta, egg, fresh, raw",
+   "k": 282.0,
+   "p": 10.6,
+   "c": 57.0,
+   "f": 2.9
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Fresh pasta, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-450",
+   "name": "Pasta, plain, fresh, boiled",
+   "k": 159.0,
+   "p": 6.6,
+   "c": 31.8,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Egg noodles, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-719",
+   "name": "Noodles, egg, dried, raw",
+   "k": 338.0,
+   "p": 12.0,
+   "c": 72.6,
+   "f": 2.0
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Egg noodles, medium, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-724",
+   "name": "Noodles, egg, medium, dried, boiled in unsalted water",
+   "k": 166.0,
+   "p": 5.8,
+   "c": 35.7,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 180
+ },
+ {
+  "n": "Couscous, dry",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-901",
+   "name": "Couscous, plain, raw",
+   "k": 364.0,
+   "p": 12.0,
+   "c": 79.2,
+   "f": 2.1
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Quinoa, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-843",
+   "name": "Quinoa, raw",
+   "k": 309.0,
+   "p": 13.8,
+   "c": 55.7,
+   "f": 5.0
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Bulgur wheat, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-904",
+   "name": "Wheat, bulgur, raw",
+   "k": 352.0,
+   "p": 10.6,
+   "c": 77.8,
+   "f": 2.0
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Pearl barley, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-002",
+   "name": "Barley, pearl, raw",
+   "k": 360.0,
+   "p": 7.9,
+   "c": 83.6,
+   "f": 1.7
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Pearl barley, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-003",
+   "name": "Barley, pearl, boiled",
+   "k": 120.0,
+   "p": 2.7,
+   "c": 27.6,
+   "f": 0.6
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Semolina, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-903",
+   "name": "Semolina, raw",
+   "k": 349.0,
+   "p": 10.6,
+   "c": 77.9,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Buckwheat groats, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-006",
+   "name": "Buckwheat, groats",
+   "k": 364.0,
+   "p": 8.1,
+   "c": 84.9,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Plain flour, white",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-886",
+   "name": "Flour, wheat, white, plain, soft",
+   "k": 352.0,
+   "p": 9.1,
+   "c": 80.9,
+   "f": 1.4
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Self-raising flour, white",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-888",
+   "name": "Flour, wheat, white, self raising",
+   "k": 348.0,
+   "p": 8.9,
+   "c": 79.6,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Strong white bread flour",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-887",
+   "name": "Flour, wheat, bread/strong, white",
+   "k": 353.0,
+   "p": 11.3,
+   "c": 79.2,
+   "f": 1.2
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Wholemeal flour",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-889",
+   "name": "Flour, wheat, wholemeal",
+   "k": 327.0,
+   "p": 11.6,
+   "c": 69.9,
+   "f": 2.0
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Cornflour",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-1045",
+   "name": "Flour, corn",
+   "k": 354.0,
+   "p": 0.6,
+   "c": 92.0,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Gram (chickpea) flour",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-896",
+   "name": "Flour, gram",
+   "k": 353.0,
+   "p": 22.7,
+   "c": 57.0,
+   "f": 5.4
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Rice flour",
+  "ref": {
+   "source": "CoFID",
+   "code": "11-021",
+   "name": "Flour, rice",
+   "k": 366.0,
+   "p": 6.4,
+   "c": 80.1,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Baking powder",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-355",
+   "name": "Baking powder",
+   "k": 163.0,
+   "p": 5.2,
+   "c": 37.8,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 4
+ },
+ {
+  "n": "Yeast, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-379",
+   "name": "Yeast, dried",
+   "k": 169.0,
+   "p": 35.6,
+   "c": 3.5,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 7
+ },
+ {
+  "n": "Cocoa powder",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-545",
+   "name": "Cocoa powder",
+   "k": 312.0,
+   "p": 18.5,
+   "c": 11.5,
+   "f": 21.7
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Plain chocolate (for cooking)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-491",
+   "name": "Chocolate, plain",
+   "k": 510.0,
+   "p": 5.0,
+   "c": 63.5,
+   "f": 28.0
+  },
+  "status": "new",
+  "serving_g": 25
+ },
+ {
+  "n": "Desiccated coconut",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-873",
+   "name": "Coconut, desiccated",
+   "k": 604.0,
+   "p": 5.6,
+   "c": 6.4,
+   "f": 62.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Sugar, brown (soft)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-060",
+   "name": "Sugar, brown",
+   "k": 380.0,
+   "p": 0.1,
+   "c": 101.3,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 4
+ },
+ {
+  "n": "Sugar, demerara",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-061",
+   "name": "Sugar, Demerara",
+   "k": 394.0,
+   "p": 0.5,
+   "c": 104.5,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 4
+ },
+ {
+  "n": "Icing sugar",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-062",
+   "name": "Sugar, icing",
+   "k": 393.0,
+   "p": 0.0,
+   "c": 104.9,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Golden syrup",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-065",
+   "name": "Syrup, golden",
+   "k": 298.0,
+   "p": 0.3,
+   "c": 79.0,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 20
+ },
+ {
+  "n": "Red lentils, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-657",
+   "name": "Lentils, red, split, dried, raw",
+   "k": 311.0,
+   "p": 25.6,
+   "c": 51.2,
+   "f": 1.8
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Red lentils, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-658",
+   "name": "Lentils, red, split, dried, boiled in unsalted water",
+   "k": 102.0,
+   "p": 8.1,
+   "c": 16.9,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Green or brown lentils, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-089",
+   "name": "Lentils, green and brown, whole, dried, raw",
+   "k": 297.0,
+   "p": 24.3,
+   "c": 48.8,
+   "f": 1.9
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Split peas, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-141",
+   "name": "Peas, split, dried, raw",
+   "k": 328.0,
+   "p": 22.1,
+   "c": 58.2,
+   "f": 2.4
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Split peas, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-142",
+   "name": "Peas, split, dried, boiled in unsalted water",
+   "k": 126.0,
+   "p": 8.3,
+   "c": 22.7,
+   "f": 0.9
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Chickpeas, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-074",
+   "name": "Beans, chick peas, Kabuli, whole, dried, raw",
+   "k": 320.0,
+   "p": 21.3,
+   "c": 49.6,
+   "f": 5.4
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Red kidney beans, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-109",
+   "name": "Beans, red kidney, dried, raw",
+   "k": 266.0,
+   "p": 22.1,
+   "c": 44.1,
+   "f": 1.4
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Butter beans, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-070",
+   "name": "Beans, butter, dried, raw",
+   "k": 290.0,
+   "p": 19.1,
+   "c": 52.9,
+   "f": 1.7
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Butter beans, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-663",
+   "name": "Beans, butter, dried, boiled in unsalted water",
+   "k": 105.0,
+   "p": 8.1,
+   "c": 16.8,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Haricot beans, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-086",
+   "name": "Beans, haricot, whole, dried, raw",
+   "k": 286.0,
+   "p": 21.4,
+   "c": 49.7,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Black-eyed beans, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-062",
+   "name": "Beans, blackeye, whole, dried, raw",
+   "k": 311.0,
+   "p": 23.5,
+   "c": 54.1,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Black-eyed beans, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-063",
+   "name": "Beans, blackeye, whole, dried, boiled in unsalted water",
+   "k": 116.0,
+   "p": 8.8,
+   "c": 19.9,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Pinto beans, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-106",
+   "name": "Beans, pinto, dried, raw",
+   "k": 327.0,
+   "p": 21.1,
+   "c": 57.1,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Mung dal, dried, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-098",
+   "name": "Beans, mung, dahl, dried, raw",
+   "k": 291.0,
+   "p": 26.8,
+   "c": 46.3,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Chickpeas, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-670",
+   "name": "Beans, chick peas, canned, re-heated, drained",
+   "k": 129.0,
+   "p": 8.4,
+   "c": 18.3,
+   "f": 3.0
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Red kidney beans, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-660",
+   "name": "Beans, red kidney, canned in water, re-heated, drained",
+   "k": 100.0,
+   "p": 8.6,
+   "c": 15.1,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Butter beans, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-559",
+   "name": "Beans, butter, canned, re-heated, drained",
+   "k": 77.0,
+   "p": 5.9,
+   "c": 13.0,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Cannellini beans, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-666",
+   "name": "Beans, cannellini, canned, re-heated, drained",
+   "k": 104.0,
+   "p": 7.6,
+   "c": 15.9,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Haricot beans, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-665",
+   "name": "Beans, haricot, canned, re-heated, drained",
+   "k": 96.0,
+   "p": 7.1,
+   "c": 15.6,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 120
+ },
+ {
+  "n": "Baked beans, reduced sugar and salt",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-535",
+   "name": "Baked beans, canned in tomato sauce, reduced sugar, reduced salt",
+   "k": 75.0,
+   "p": 5.0,
+   "c": 13.5,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Refried beans",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-108",
+   "name": "Beans, pinto, re-fried beans",
+   "k": 107.0,
+   "p": 6.2,
+   "c": 15.3,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Peas, frozen, uncooked",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-527",
+   "name": "Peas, frozen, raw",
+   "k": 68.0,
+   "p": 5.3,
+   "c": 10.7,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Peas, frozen, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-536",
+   "name": "Peas, frozen, boiled in unsalted water",
+   "k": 70.0,
+   "p": 5.5,
+   "c": 11.2,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Garden peas, fresh, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-438",
+   "name": "Peas, raw",
+   "k": 83.0,
+   "p": 6.9,
+   "c": 11.3,
+   "f": 1.5
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Garden peas, fresh, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-439",
+   "name": "Peas, boiled in unsalted water",
+   "k": 79.0,
+   "p": 6.7,
+   "c": 10.0,
+   "f": 1.6
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Garden peas, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-564",
+   "name": "Peas, canned in water, re-heated, drained",
+   "k": 59.0,
+   "p": 5.3,
+   "c": 8.0,
+   "f": 0.9
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Marrowfat peas, canned, drained",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-562",
+   "name": "Peas, marrowfat, canned, re-heated, drained",
+   "k": 87.0,
+   "p": 6.9,
+   "c": 13.8,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Mushy peas, canned",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-563",
+   "name": "Peas, mushy, canned, re-heated",
+   "k": 81.0,
+   "p": 5.8,
+   "c": 13.8,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Mange-tout, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-122",
+   "name": "Peas, mange-tout, raw",
+   "k": 32.0,
+   "p": 3.6,
+   "c": 4.2,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Sugar snap peas, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-143",
+   "name": "Peas, sugar-snap, raw",
+   "k": 34.0,
+   "p": 3.4,
+   "c": 5.0,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Potatoes, raw (old, peeled)",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-489",
+   "name": "Potatoes, old, raw, flesh only",
+   "k": 82.0,
+   "p": 1.9,
+   "c": 19.6,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "New potatoes, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-618",
+   "name": "Potatoes, new and salad, flesh only, raw",
+   "k": 68.0,
+   "p": 1.7,
+   "c": 16.1,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Sweet potato, raw, peeled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-463",
+   "name": "Sweet potato, raw, flesh only",
+   "k": 87.0,
+   "p": 1.2,
+   "c": 21.3,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 200
+ },
+ {
+  "n": "Shallots, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-342",
+   "name": "Shallots, raw",
+   "k": 20.0,
+   "p": 1.5,
+   "c": 3.3,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Spring onions, bulbs only, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-351",
+   "name": "Spring onions, bulbs only, raw",
+   "k": 35.0,
+   "p": 0.9,
+   "c": 8.5,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Ginger, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-890",
+   "name": "Ginger, fresh",
+   "k": 44.0,
+   "p": 1.8,
+   "c": 8.1,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Red chilli, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-317",
+   "name": "Peppers, capsicum, chilli, red, raw",
+   "k": 26.0,
+   "p": 1.8,
+   "c": 4.2,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Green chilli, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-316",
+   "name": "Peppers, capsicum, chilli, green, raw",
+   "k": 20.0,
+   "p": 2.9,
+   "c": 0.7,
+   "f": 0.6
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Green pepper, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-318",
+   "name": "Peppers, capsicum, green, raw",
+   "k": 15.0,
+   "p": 0.8,
+   "c": 2.6,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Yellow pepper, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-526",
+   "name": "Pepper, capsicum, yellow, raw",
+   "k": 23.0,
+   "p": 0.8,
+   "c": 4.6,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Carrots, young, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-448",
+   "name": "Carrots, young, raw",
+   "k": 30.0,
+   "p": 0.7,
+   "c": 6.0,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "White cabbage, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-509",
+   "name": "Cabbage, white, raw",
+   "k": 24.0,
+   "p": 1.2,
+   "c": 4.8,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Red cabbage, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-190",
+   "name": "Cabbage, red, raw",
+   "k": 21.0,
+   "p": 1.1,
+   "c": 3.7,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Green cabbage, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-510",
+   "name": "Cabbage, green, raw",
+   "k": 27.0,
+   "p": 2.4,
+   "c": 4.1,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Chinese leaf (Chinese cabbage), raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-187",
+   "name": "Cabbage, Chinese, raw",
+   "k": 12.0,
+   "p": 1.0,
+   "c": 1.4,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Spring greens, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-348",
+   "name": "Spring greens, raw",
+   "k": 33.0,
+   "p": 3.0,
+   "c": 3.1,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Baby spinach, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-521",
+   "name": "Spinach, baby, raw",
+   "k": 16.0,
+   "p": 2.6,
+   "c": 0.2,
+   "f": 0.6
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Spinach, frozen, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-458",
+   "name": "Spinach, frozen, boiled in unsalted water",
+   "k": 21.0,
+   "p": 3.1,
+   "c": 0.5,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Swiss chard, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-223",
+   "name": "Chard, Swiss, raw",
+   "k": 19.0,
+   "p": 1.8,
+   "c": 2.9,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Purple sprouting broccoli, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-174",
+   "name": "Broccoli, purple sprouting, raw",
+   "k": 35.0,
+   "p": 3.9,
+   "c": 2.6,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Broad beans, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-064",
+   "name": "Beans, broad, whole, raw",
+   "k": 59.0,
+   "p": 5.7,
+   "c": 7.2,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Runner beans, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-112",
+   "name": "Beans, runner, raw",
+   "k": 22.0,
+   "p": 1.6,
+   "c": 3.2,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Beansprouts, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-426",
+   "name": "Beansprouts, mung, raw",
+   "k": 31.0,
+   "p": 2.9,
+   "c": 4.0,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Sweetcorn kernels, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-622",
+   "name": "Sweetcorn, kernels, raw",
+   "k": 60.0,
+   "p": 3.4,
+   "c": 8.1,
+   "f": 1.8
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Corn on the cob, raw, weighed with core",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-623",
+   "name": "Sweetcorn, kernels, 'on-the-cob', raw, weighed with core",
+   "k": 36.0,
+   "p": 2.0,
+   "c": 4.8,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 150
+ },
+ {
+  "n": "Okra, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-300",
+   "name": "Okra, raw",
+   "k": 31.0,
+   "p": 2.8,
+   "c": 3.0,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Fennel, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-241",
+   "name": "Fennel, Florence, raw",
+   "k": 12.0,
+   "p": 0.9,
+   "c": 1.8,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Celeriac, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-219",
+   "name": "Celeriac, raw",
+   "k": 18.0,
+   "p": 1.2,
+   "c": 2.3,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Swede, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-359",
+   "name": "Swede, flesh only, raw",
+   "k": 24.0,
+   "p": 0.7,
+   "c": 5.0,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Turnip, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-389",
+   "name": "Turnip, flesh only, raw",
+   "k": 23.0,
+   "p": 0.9,
+   "c": 4.7,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Beetroot, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-164",
+   "name": "Beetroot, raw",
+   "k": 36.0,
+   "p": 1.7,
+   "c": 7.6,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Pumpkin, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-326",
+   "name": "Pumpkin, flesh only, raw",
+   "k": 13.0,
+   "p": 0.7,
+   "c": 2.2,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Marrow, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-274",
+   "name": "Marrow, raw",
+   "k": 12.0,
+   "p": 0.5,
+   "c": 2.2,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Radishes, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-656",
+   "name": "Radish, red, flesh and skin, raw",
+   "k": 12.0,
+   "p": 0.7,
+   "c": 1.4,
+   "f": 0.4
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Watercress, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-669",
+   "name": "Watercress, raw",
+   "k": 10.0,
+   "p": 1.9,
+   "c": 0.0,
+   "f": 0.3
+  },
+  "status": "new",
+  "serving_g": 20
+ },
+ {
+  "n": "Oyster mushrooms, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-293",
+   "name": "Mushrooms, oyster, raw",
+   "k": 8.0,
+   "p": 1.6,
+   "c": 0.0,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Shiitake mushrooms, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-294",
+   "name": "Mushrooms, shiitake, dried, raw",
+   "k": 296.0,
+   "p": 9.6,
+   "c": 63.9,
+   "f": 1.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Globe artichoke, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-153",
+   "name": "Artichoke, globe, raw",
+   "k": 18.0,
+   "p": 2.8,
+   "c": 2.7,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Water chestnuts, raw",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-394",
+   "name": "Water chestnuts, raw",
+   "k": 46.0,
+   "p": 1.4,
+   "c": 10.4,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Gherkins",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-245",
+   "name": "Gherkins, raw",
+   "k": 12.0,
+   "p": 1.0,
+   "c": 1.8,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 20
+ },
+ {
+  "n": "Mixed vegetables, frozen, boiled",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-543",
+   "name": "Vegetables, mixed, frozen, boiled in unsalted water",
+   "k": 42.0,
+   "p": 3.3,
+   "c": 6.6,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 80
+ },
+ {
+  "n": "Avocado, flesh only",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-386",
+   "name": "Avocado, Hass, flesh only",
+   "k": 171.0,
+   "p": 1.8,
+   "c": 1.7999999999999998,
+   "f": 17.4
+  },
+  "status": "new",
+  "serving_g": 75
+ },
+ {
+  "n": "Lemon juice, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-277",
+   "name": "Lemon juice, fresh",
+   "k": 7.0,
+   "p": 0.3,
+   "c": 1.6,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Lime juice, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-279",
+   "name": "Lime juice, fresh",
+   "k": 9.0,
+   "p": 0.4,
+   "c": 1.6,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Tomato purée",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-531",
+   "name": "Tomato puree",
+   "k": 67.0,
+   "p": 4.4,
+   "c": 12.9,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Mixed herbs, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-884",
+   "name": "Mixed herbs, dried",
+   "k": 261.0,
+   "p": 12.1,
+   "c": 36.3,
+   "f": 8.5
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Basil, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-805",
+   "name": "Basil, dried, ground",
+   "k": 251.0,
+   "p": 14.4,
+   "c": 43.2,
+   "f": 4.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Bay leaves, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-806",
+   "name": "Bay leaf, dried",
+   "k": 313.0,
+   "p": 7.6,
+   "c": 48.6,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Coriander leaves, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-818",
+   "name": "Coriander leaves, dried",
+   "k": 279.0,
+   "p": 21.8,
+   "c": 41.7,
+   "f": 4.8
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Dill, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-825",
+   "name": "Dill, dried",
+   "k": 253.0,
+   "p": 19.9,
+   "c": 42.2,
+   "f": 4.4
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Marjoram, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-835",
+   "name": "Marjoram, dried",
+   "k": 271.0,
+   "p": 12.7,
+   "c": 42.5,
+   "f": 7.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Mint, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-837",
+   "name": "Mint, dried",
+   "k": 279.0,
+   "p": 24.8,
+   "c": 34.6,
+   "f": 4.6
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Parsley, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-845",
+   "name": "Parsley, dried",
+   "k": 181.0,
+   "p": 15.8,
+   "c": 14.5,
+   "f": 7.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Rosemary, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-882",
+   "name": "Rosemary, dried",
+   "k": 331.0,
+   "p": 4.9,
+   "c": 46.4,
+   "f": 15.2
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Sage, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-854",
+   "name": "Sage, dried, ground",
+   "k": 315.0,
+   "p": 10.6,
+   "c": 42.7,
+   "f": 12.7
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Tarragon, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-858",
+   "name": "Tarragon, dried, ground",
+   "k": 295.0,
+   "p": 22.8,
+   "c": 42.8,
+   "f": 7.2
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Thyme, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-883",
+   "name": "Thyme, dried, ground",
+   "k": 276.0,
+   "p": 9.1,
+   "c": 45.3,
+   "f": 7.4
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Curry powder",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-876",
+   "name": "Curry powder",
+   "k": 233.0,
+   "p": 9.5,
+   "c": 26.1,
+   "f": 10.8
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Garam masala",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-829",
+   "name": "Garam masala",
+   "k": 379.0,
+   "p": 15.6,
+   "c": 45.2,
+   "f": 15.1
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Cayenne pepper, ground",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-847",
+   "name": "Pepper, cayenne, ground",
+   "k": 318.0,
+   "p": 12.0,
+   "c": 31.7,
+   "f": 17.3
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Ginger, ground",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-832",
+   "name": "Ginger, ground",
+   "k": 284.0,
+   "p": 7.4,
+   "c": 60.0,
+   "f": 3.3
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Garlic powder",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-830",
+   "name": "Garlic powder",
+   "k": 246.0,
+   "p": 18.7,
+   "c": 42.7,
+   "f": 1.2
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Onions, dried",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-590",
+   "name": "Onions, dried, raw",
+   "k": 309.0,
+   "p": 8.8,
+   "c": 70.2,
+   "f": 1.2
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Saffron",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-852",
+   "name": "Saffron",
+   "k": 310.0,
+   "p": 11.4,
+   "c": 61.5,
+   "f": 5.9
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Basil, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-804",
+   "name": "Basil, fresh",
+   "k": 40.0,
+   "p": 3.1,
+   "c": 5.1,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Coriander, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-888",
+   "name": "Coriander leaves, fresh",
+   "k": 18.0,
+   "p": 2.1,
+   "c": 1.2,
+   "f": 0.5
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Parsley, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-844",
+   "name": "Parsley, fresh",
+   "k": 34.0,
+   "p": 3.0,
+   "c": 2.7,
+   "f": 1.3
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Mint, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-836",
+   "name": "Mint, fresh",
+   "k": 43.0,
+   "p": 3.8,
+   "c": 5.3,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Chives, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-887",
+   "name": "Chives, fresh",
+   "k": 27.0,
+   "p": 3.3,
+   "c": 1.9,
+   "f": 0.7
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Dill, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-824",
+   "name": "Dill, fresh",
+   "k": 25.0,
+   "p": 3.7,
+   "c": 0.9,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Rosemary, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-892",
+   "name": "Rosemary, fresh",
+   "k": 99.0,
+   "p": 1.4,
+   "c": 13.5,
+   "f": 4.4
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Thyme, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-893",
+   "name": "Thyme, fresh",
+   "k": 95.0,
+   "p": 3.0,
+   "c": 15.1,
+   "f": 2.5
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Sage, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-853",
+   "name": "Sage, fresh",
+   "k": 119.0,
+   "p": 3.9,
+   "c": 15.6,
+   "f": 4.6
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Tarragon, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-857",
+   "name": "Tarragon, fresh",
+   "k": 49.0,
+   "p": 3.4,
+   "c": 6.3,
+   "f": 1.1
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Curry leaves, fresh",
+  "ref": {
+   "source": "CoFID",
+   "code": "13-821",
+   "name": "Curry leaves, fresh",
+   "k": 97.0,
+   "p": 7.9,
+   "c": 13.3,
+   "f": 1.3
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Salt",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-367",
+   "name": "Salt",
+   "k": 0.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Chicken stock, ready-made (liquid)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-681",
+   "name": "Stock, chicken, ready made, retail",
+   "k": 12.0,
+   "p": 2.3,
+   "c": 0.2,
+   "f": 0.2
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Stock pot / stock gel, as sold",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-680",
+   "name": "Stock gel",
+   "k": 163.0,
+   "p": 6.7,
+   "c": 27.8,
+   "f": 3.6
+  },
+  "status": "new",
+  "serving_g": 28
+ },
+ {
+  "n": "Gravy granules, dry",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-724",
+   "name": "Gravy instant granules",
+   "k": 407.0,
+   "p": 4.4,
+   "c": 65.2,
+   "f": 16.1
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Worcestershire sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-723",
+   "name": "Worcestershire sauce",
+   "k": 113.0,
+   "p": 1.4,
+   "c": 28.3,
+   "f": 0.1
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Vinegar (malt, cider or wine)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-339",
+   "name": "Vinegar",
+   "k": 22.0,
+   "p": 0.4,
+   "c": 0.6,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Mustard, wholegrain",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-365",
+   "name": "Mustard, wholegrain",
+   "k": 140.0,
+   "p": 8.2,
+   "c": 4.2,
+   "f": 10.2
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Mustard powder",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-362",
+   "name": "Mustard powder",
+   "k": 452.0,
+   "p": 28.9,
+   "c": 20.7,
+   "f": 28.7
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Curry paste",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-720",
+   "name": "Curry paste",
+   "k": 253.0,
+   "p": 4.7,
+   "c": 11.3,
+   "f": 21.3
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Pesto, red",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-623",
+   "name": "Pesto, red",
+   "k": 317.0,
+   "p": 5.0,
+   "c": 5.9,
+   "f": 30.6
+  },
+  "status": "new",
+  "serving_g": 20
+ },
+ {
+  "n": "Horseradish sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-314",
+   "name": "Horseradish sauce",
+   "k": 153.0,
+   "p": 2.5,
+   "c": 17.9,
+   "f": 8.4
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Mint sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-707",
+   "name": "Mint sauce",
+   "k": 101.0,
+   "p": 1.6,
+   "c": 21.5,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Chilli sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-719",
+   "name": "Chilli sauce",
+   "k": 40.0,
+   "p": 1.3,
+   "c": 7.3,
+   "f": 0.8
+  },
+  "status": "new",
+  "serving_g": 15
+ },
+ {
+  "n": "Stir-fry sauce",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-629",
+   "name": "Sauce, Chinese stir fry",
+   "k": 92.0,
+   "p": 1.4,
+   "c": 19.9,
+   "f": 1.3
+  },
+  "status": "new",
+  "serving_g": 50
+ },
+ {
+  "n": "Coconut milk, canned",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-889",
+   "name": "Coconut milk, retail",
+   "k": 169.0,
+   "p": 1.1,
+   "c": 3.3,
+   "f": 16.9
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Coconut milk, reduced fat, canned",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-890",
+   "name": "Coconut milk, reduced fat, retail",
+   "k": 79.0,
+   "p": 0.7,
+   "c": 2.0,
+   "f": 7.7
+  },
+  "status": "new",
+  "serving_g": 100
+ },
+ {
+  "n": "Sesame seeds",
+  "ref": {
+   "source": "CoFID",
+   "code": "14-844",
+   "name": "Sesame seeds",
+   "k": 598.0,
+   "p": 18.2,
+   "c": 0.9,
+   "f": 58.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Butter, unsalted",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-661",
+   "name": "Butter, unsalted",
+   "k": 744.0,
+   "p": 0.6,
+   "c": 0.6,
+   "f": 82.2
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Butter, spreadable",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-655",
+   "name": "Butter, spreadable (75-80% fat)",
+   "k": 715.0,
+   "p": 0.4,
+   "c": 0.5,
+   "f": 79.1
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Ghee (butter)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-640",
+   "name": "Ghee, butter",
+   "k": 878.0,
+   "p": 0.1,
+   "c": 0.0,
+   "f": 97.6
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Lard",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-010",
+   "name": "Lard",
+   "k": 891.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Beef dripping",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-487",
+   "name": "Dripping, beef",
+   "k": 891.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.0
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Rapeseed oil (tbsp ~14g)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-041",
+   "name": "Oil, rapeseed",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "new",
+  "serving_g": 14
+ },
+ {
+  "n": "Sunflower oil (tbsp ~14g)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-045",
+   "name": "Oil, sunflower",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "new",
+  "serving_g": 14
+ },
+ {
+  "n": "Groundnut (peanut) oil (tbsp ~14g)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-040",
+   "name": "Oil, peanut (groundnut)",
+   "k": 899.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 99.9
+  },
+  "status": "new",
+  "serving_g": 14
+ },
+ {
+  "n": "Sesame oil (tsp ~5g)",
+  "ref": {
+   "source": "CoFID",
+   "code": "17-043",
+   "name": "Oil, sesame",
+   "k": 898.0,
+   "p": 0.2,
+   "c": 0.0,
+   "f": 99.7
+  },
+  "status": "new",
+  "serving_g": 5
+ },
+ {
+  "n": "Whipping cream",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-333",
+   "name": "Cream, fresh, whipping",
+   "k": 381.0,
+   "p": 2.0,
+   "c": 2.7,
+   "f": 40.3
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Extra thick cream",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-337",
+   "name": "Cream, dairy, extra thick (24% fat)",
+   "k": 236.0,
+   "p": 2.9,
+   "c": 3.4,
+   "f": 23.5
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Creme fraiche, half fat",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-336",
+   "name": "Creme fraiche, half fat",
+   "k": 162.0,
+   "p": 2.7,
+   "c": 4.4,
+   "f": 15.0
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Mascarpone",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-490",
+   "name": "Cheese, Mascarpone",
+   "k": 435.0,
+   "p": 4.6,
+   "c": 4.3,
+   "f": 44.5
+  },
+  "status": "new",
+  "serving_g": 30
+ },
+ {
+  "n": "Ricotta",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-176",
+   "name": "Cheese, Ricotta",
+   "k": 144.0,
+   "p": 9.4,
+   "c": 2.0,
+   "f": 11.0
+  },
+  "status": "new",
+  "serving_g": 50
+ },
+ {
+  "n": "Quark",
+  "ref": {
+   "source": "CoFID",
+   "code": "12-174",
+   "name": "Cheese, Quark",
+   "k": 74.0,
+   "p": 14.6,
+   "c": 4.0,
+   "f": 0.0
+  },
+  "status": "new",
+  "serving_g": 50
+ },
+ {
+  "n": "Cumin, ground or seeds",
+  "ref": {
+   "source": "USDA",
+   "code": "170923",
+   "name": "Spices, cumin seed",
+   "k": 375.0,
+   "p": 17.81,
+   "c": 44.24,
+   "f": 22.27
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Paprika",
+  "ref": {
+   "source": "USDA",
+   "code": "171329",
+   "name": "Spices, paprika",
+   "k": 282.0,
+   "p": 14.14,
+   "c": 53.99,
+   "f": 12.89
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Turmeric, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "172231",
+   "name": "Spices, turmeric, ground",
+   "k": 312.0,
+   "p": 9.68,
+   "c": 67.14,
+   "f": 3.25
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Chilli powder",
+  "ref": {
+   "source": "USDA",
+   "code": "171319",
+   "name": "Spices, chili powder",
+   "k": 282.0,
+   "p": 13.46,
+   "c": 49.7,
+   "f": 14.28
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Cinnamon, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171320",
+   "name": "Spices, cinnamon, ground",
+   "k": 247.0,
+   "p": 3.99,
+   "c": 80.59,
+   "f": 1.24
+  },
+  "status": "new",
+  "serving_g": 3
+ },
+ {
+  "n": "Black pepper, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170931",
+   "name": "Spices, pepper, black",
+   "k": 251.0,
+   "p": 10.39,
+   "c": 63.95,
+   "f": 3.26
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "White pepper, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170933",
+   "name": "Spices, pepper, white",
+   "k": 296.0,
+   "p": 10.4,
+   "c": 68.61,
+   "f": 2.12
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Oregano, dried",
+  "ref": {
+   "source": "USDA",
+   "code": "171328",
+   "name": "Spices, oregano, dried",
+   "k": 265.0,
+   "p": 9.0,
+   "c": 68.92,
+   "f": 4.28
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Coriander, ground (seeds)",
+  "ref": {
+   "source": "USDA",
+   "code": "170922",
+   "name": "Spices, coriander seed",
+   "k": 298.0,
+   "p": 12.37,
+   "c": 54.99,
+   "f": 17.77
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Nutmeg, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171326",
+   "name": "Spices, nutmeg, ground",
+   "k": 525.0,
+   "p": 5.84,
+   "c": 49.29,
+   "f": 36.31
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Allspice, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171315",
+   "name": "Spices, allspice, ground",
+   "k": 263.0,
+   "p": 6.09,
+   "c": 72.12,
+   "f": 8.69
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Cardamom, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170919",
+   "name": "Spices, cardamom",
+   "k": 311.0,
+   "p": 10.76,
+   "c": 68.47,
+   "f": 6.7
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Cloves, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "171321",
+   "name": "Spices, cloves, ground",
+   "k": 274.0,
+   "p": 5.97,
+   "c": 65.53,
+   "f": 13.0
+  },
+  "status": "new",
+  "serving_g": 1
+ },
+ {
+  "n": "Fennel seeds",
+  "ref": {
+   "source": "USDA",
+   "code": "171323",
+   "name": "Spices, fennel seed",
+   "k": 345.0,
+   "p": 15.8,
+   "c": 52.29,
+   "f": 14.87
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Mustard seeds, ground",
+  "ref": {
+   "source": "USDA",
+   "code": "170929",
+   "name": "Spices, mustard seed, ground",
+   "k": 508.0,
+   "p": 26.08,
+   "c": 28.09,
+   "f": 36.24
+  },
+  "status": "new",
+  "serving_g": 2
+ },
+ {
+  "n": "Chicken stock cube, dry (1 cube ~10g)",
+  "ref": {
+   "source": "USDA",
+   "code": "171563",
+   "name": "Soup, chicken broth cubes, dry",
+   "k": 198.0,
+   "p": 14.6,
+   "c": 23.5,
+   "f": 4.7
+  },
+  "status": "new",
+  "serving_g": 10
+ },
+ {
+  "n": "Chicken stock, made with a cube",
+  "ref": {
+   "source": "USDA",
+   "code": "174566",
+   "name": "Soup, chicken broth cubes, dry, prepared with water",
+   "k": 5.0,
+   "p": 0.39,
+   "c": 0.62,
+   "f": 0.12
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Beef stock cube, dry (1 cube ~6g)",
+  "ref": {
+   "source": "USDA",
+   "code": "171561",
+   "name": "Soup, beef broth, cubed, dry",
+   "k": 170.0,
+   "p": 17.3,
+   "c": 16.1,
+   "f": 4.0
+  },
+  "status": "new",
+  "serving_g": 6
+ },
+ {
+  "n": "Beef stock, made with a cube",
+  "ref": {
+   "source": "USDA",
+   "code": "172923",
+   "name": "Soup, beef broth, cubed, prepared with water",
+   "k": 3.0,
+   "p": 0.21,
+   "c": 0.25,
+   "f": 0.08
+  },
+  "status": "new",
+  "serving_g": 250
+ },
+ {
+  "n": "Black beans, dried, uncooked",
+  "ref": {
+   "source": "USDA",
+   "code": "173734",
+   "name": "Beans, black, mature seeds, raw",
+   "k": 341.0,
+   "p": 21.6,
+   "c": 62.36,
+   "f": 1.42
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Sea bass fillet, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "175142",
+   "name": "Fish, sea bass, mixed species, raw",
+   "k": 97.0,
+   "p": 18.43,
+   "c": 0.0,
+   "f": 2.0
+  },
+  "status": "new",
+  "serving_g": 140
+ },
+ {
+  "n": "Rice noodles, dried, uncooked",
+  "ref": {
+   "source": "USDA",
+   "code": "169742",
+   "name": "Rice noodles, dry",
+   "k": 364.0,
+   "p": 5.95,
+   "c": 80.18,
+   "f": 0.56
+  },
+  "status": "new",
+  "serving_g": 60
+ },
+ {
+  "n": "Beef mince, 10% fat, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "174030",
+   "name": "Beef, ground, 90% lean meat / 10% fat, raw",
+   "k": 176.0,
+   "p": 20.0,
+   "c": 0.0,
+   "f": 10.0
+  },
+  "status": "new",
+  "serving_g": 125
+ },
+ {
+  "n": "Beef mince, 20% fat, raw",
+  "ref": {
+   "source": "USDA",
+   "code": "174036",
+   "name": "Beef, ground, 80% lean meat / 20% fat, raw",
+   "k": 254.0,
+   "p": 17.17,
+   "c": 0.0,
+   "f": 20.0
+  },
+  "status": "new",
+  "serving_g": 125
+ }
+]

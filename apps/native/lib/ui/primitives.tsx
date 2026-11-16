@@ -1,0 +1,611 @@
+/**
+ * Native ports of src/ui/primitives.tsx, ProfileButton.tsx and ConnectionPill.tsx: the same
+ * props, words and accessibility labels, sizes and colours read from theme.css. Sheets are the
+ * web's own bottom sheet (grabber, Cancel · title · action), not the system's: native sheets and
+ * swipe-back are an improvement candidate that needs a board first (native-build-brief §4).
+ *
+ * Scroll lock: a sheet is a Modal, which already stops the screen behind it from scrolling, so
+ * native needs no `useScrollLock`; with the keyboard up a sheet sits above it, its top edge never
+ * moving off screen, and the focused field scrolls into view (`useKeyboard`).
+ */
+import { useContext, useEffect, useRef, useState, type ComponentRef, type ReactNode } from 'react'
+import { AccessibilityInfo, Alert, BackHandler, type AccessibilityActionEvent, StyleSheet, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type KeyboardEvent, type StyleProp, type ViewStyle } from 'react-native'
+import Animated, { Easing, FadeIn, SlideInDown, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { create } from 'zustand'
+import { useStore } from '@/store/store'
+import { useConnection } from '@/store/hooks'
+import { WELLBEING_ENABLED } from '@/data/wellbeingFlag'
+import type { ConnectionKind, ConnectionState } from '@/core/domain/connection'
+import { connectionLine } from '@/ui/ConnectionPill'
+import { Chevron, Icon, type IconName } from './icons'
+import { DIAG, diagLines } from '../platform/diag'
+import { InIconList, InWrapList, InSheet, ToastHost, initials, slop, useSheetId, useSurface } from './kit'
+import { BTN, GLYPH_ROOM, num, tx, useTokens, type Tokens } from '../theme'
+import { UI } from '@/copy/ui'
+
+/** Category colour keys, as on the web: each maps to a base and an -ink token. */
+export type Category = 'energy' | 'activity' | 'body' | 'mind'
+const INK: Record<Category, keyof Tokens> = { energy: 'energyInk', activity: 'activityInk', body: 'bodyInk', mind: 'mindInk' }
+
+/* ---------------------------------------------------------------- connection pill */
+
+const CONN_ICON: Record<ConnectionKind, IconName> = {
+  'up-to-date': 'check', pending: 'cloudUp', offline: 'cloudOff', 'sign-in': 'person', problem: 'alert', 'phone-only': 'cloudOff',
+}
+
+/** `.cpill`: the pill's look for one state (the gallery draws every state). */
+export function ConnectionPillView({ kind, label, open, onPress, onLongPress }: { kind: ConnectionKind; label: string; open?: boolean; onPress?: () => void; onLongPress?: () => void }) {
+  const t = useTokens()
+  const bg = useSurface(t)
+  const color = kind === 'up-to-date' ? t.label2 : t.label
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={onPress ? { expanded: !!open } : undefined}
+      onPress={onPress} onLongPress={onLongPress} hitSlop={slop(0, 25)}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 13, backgroundColor: bg, flexShrink: 1, minWidth: 0 }}>
+      <Icon name={CONN_ICON[kind]} size={15} color={color} />
+      <Text numberOfLines={1} style={[tx(12, 500, 15), GLYPH_ROOM, num, { color, flexShrink: 1 }]}>{label}</Text>
+    </Pressable>
+  )
+}
+
+/** The one connection indicator: the pill in every tab header. On "Sync problem" a tap also tries again. */
+export function ConnectionPill({ open, onToggle }: { open?: boolean; onToggle?: () => void }) {
+  const c = useConnection()
+  const runSync = useStore((s) => s.runSync)
+  // internal test builds: a long press shows the last sync warnings (lib/platform/diag.ts)
+  const onLongPress = DIAG ? () => { const l = diagLines(); Alert.alert('Sync details', l.length ? l.join('\n\n') : 'No sync warnings since the app opened.') } : undefined
+  return <ConnectionPillView kind={c.kind} label={c.label} open={open} onLongPress={onLongPress} onPress={() => { if (c.kind === 'problem') runSync(); onToggle?.() }} />
+}
+
+/** `.cline`: the line under the pill, the state's name in bold, then what it means. */
+export function ConnectionLineView({ state }: { state: ConnectionState }) {
+  const t = useTokens()
+  const l = connectionLine(state)
+  // role=status on the web: VoiceOver hears it when it appears or changes (TalkBack: the live region)
+  useEffect(() => { if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(`${l.head} ${l.body}`) }, [l.head, l.body])
+  return (
+    <Text accessibilityLiveRegion="polite" style={[tx(13, 400, 1.4), { color: t.label2, paddingTop: 8, paddingHorizontal: 4 }]}>
+      <Text style={[tx(13, 600, 1.4), { color: t.label }]}>{l.head}</Text> {l.body}
+    </Text>
+  )
+}
+
+export function ConnectionLine() {
+  return <ConnectionLineView state={useConnection()} />
+}
+
+/* ---------------------------------------------------------------- headers */
+
+/** `.pfl` + `.avatar.soft`: the way into Profile beside every title, 40 pt in a 44 pt tap area. */
+export function ProfileButton({ onPress }: { onPress?: () => void }) {
+  const t = useTokens()
+  const name = useStore((s) => s.data.profile.name)
+  const setTab = useStore((s) => s.setTab)
+  const ini = initials(name || '')
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={UI.profile} onPress={onPress ?? (() => setTab('profile'))}
+      style={{ width: 44, height: 44, marginRight: -2, marginBottom: -2, padding: 2, alignItems: 'center', justifyContent: 'flex-start' }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.tintSoft, alignItems: 'center', justifyContent: 'center' }}>
+        {ini ? <Text style={[tx(16, 600, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{ini}</Text> : <Icon name="person" color={t.tint} />}
+      </View>
+    </Pressable>
+  )
+}
+
+const ltitle = (t: Tokens) => [tx(34, 600, 40, -0.025), GLYPH_ROOM, { color: t.label, marginTop: 2 }]
+
+/**
+ * A tab's large-title header (`.hdr`): the eyebrow with the connection pill across from it (tap for
+ * the line underneath), the 34 pt title, and with WELLBEING_ENABLED the Profile avatar beside it,
+ * top-aligned to its first line. Screens other than the five tabs pass `pill={false}`.
+ * `top` is the space above (the web's safe area plus 18).
+ */
+export function PageHeader({ eyebrow, title, right, pill = true, profile = true, onProfile, top }: {
+  eyebrow?: ReactNode; title: string; right?: ReactNode; pill?: boolean; profile?: boolean; onProfile?: () => void; top?: number
+}) {
+  const t = useTokens()
+  const insets = useSafeAreaInsets()
+  const [line, setLine] = useState(false)
+  const av = WELLBEING_ENABLED && profile
+  return (
+    <View style={{ paddingTop: top ?? insets.top + 18, paddingBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20, minWidth: 0, flexShrink: 1 }}>
+          {typeof eyebrow === 'string' ? <Text style={[tx(13, 500, 1.3, 0), GLYPH_ROOM, { color: t.label2 }]}>{eyebrow}</Text> : eyebrow}
+        </View>
+        {pill && <ConnectionPill open={line} onToggle={() => setLine((x) => !x)} />}
+      </View>
+      {/* .hdr .hdr-row: 8 pt below the pill's row, so the 44 pt header control never touches the pill */}
+      <View style={{ flexDirection: 'row', alignItems: av ? 'flex-start' : 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 8 }}>
+        <Text accessibilityRole="header" style={[ltitle(t), { flexShrink: 1, minWidth: 0 }]}>{title}</Text>
+        {av
+          ? right ? <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>{right}<ProfileButton onPress={onProfile} /></View> : <ProfileButton onPress={onProfile} />
+          : right}
+      </View>
+      {pill && line && <ConnectionLine />}
+    </View>
+  )
+}
+
+/** A pushed screen's large title (under its back button), with the avatar beside it when WELLBEING_ENABLED. */
+export function TitleRow({ title, onProfile }: { title: ReactNode; onProfile?: () => void }) {
+  const t = useTokens()
+  const h = <Text accessibilityRole="header" style={[ltitle(t), { flexShrink: 1, minWidth: 0 }]}>{title}</Text>
+  if (!WELLBEING_ENABLED) return h
+  return <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>{h}<ProfileButton onPress={onProfile} /></View>
+}
+
+/** `.hk-h`: a card heading, the category icon and label in the category's ink. */
+export function CatHead({ color, icon, label }: { color: Category; icon: IconName; label: string }) {
+  const t = useTokens()
+  const ink = t[INK[color]] as string
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Icon name={icon} color={ink} />
+        <Text style={[tx(15, 600), GLYPH_ROOM, { color: ink }]}>{label}</Text>
+      </View>
+    </View>
+  )
+}
+
+/** `.navbtn` with a back chevron: tinted, 17 pt. `small` is `.del .navbtn` (16 pt medium, 6 pt further left). */
+export function BackButton({ onPress, label = UI.back, small }: { onPress: () => void; label?: string; small?: boolean }) {
+  const t = useTokens()
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={slop(0, 30)}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, alignSelf: 'flex-start', marginLeft: small ? -6 : 0, opacity: pressed ? 0.7 : 1 })}>
+      <Icon name="chevL" size={20} stroke={2.6} color={t.tint} />
+      <Text style={[small ? tx(16, 500, 1.3, BTN) : tx(17, 400, 1.3, BTN), GLYPH_ROOM, { color: t.tint }]}>{label}</Text>
+    </Pressable>
+  )
+}
+
+/** `.navbtn`: a sheet header's Cancel or Done (`bold` is `.navbtn.b`). */
+export function NavBtn({ title, onPress, bold, disabled, icon, label, muted, color, style }: {
+  /** the words; an icon-only navbtn (the search bar's scan button, a row's delete ✕) gives `icon` and `label` */
+  title?: string; onPress: () => void; bold?: boolean; disabled?: boolean; icon?: IconName
+  /** the web's aria label */
+  label?: string
+  /** in --label3 (a My foods row's delete) instead of the tint */
+  muted?: boolean
+  /** any other colour (the recipe builder's remove ✕ in --red) */
+  color?: string
+  /** a context's own padding (`.searchbar .scanbtn`: 4 2) */
+  style?: StyleProp<ViewStyle>
+}) {
+  const t = useTokens()
+  // .navbtn:disabled is --label3 at full strength
+  const fg = disabled || muted ? t.label3 : color ?? t.tint
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} accessibilityState={{ disabled: !!disabled }}
+      hitSlop={icon && !title ? slop(20, 28) : { ...slop(0, 30), left: 8, right: 8 }}
+      style={({ pressed }) => [{ paddingVertical: 4, flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.7 : 1 }, style]}>
+      {icon && <Icon name={icon} color={fg} />}
+      {title != null && <Text style={[tx(17, bold ? 600 : 400, 1.3, BTN), GLYPH_ROOM, { color: fg }]}>{title}</Text>}
+    </Pressable>
+  )
+}
+
+/* ---------------------------------------------------------------- controls */
+
+/** `.seg`: a segmented control (a radio group), the chosen segment raised on --segon. */
+export function Seg<T extends string>({ options, value, onChange, label, minHeight }: {
+  options: [T, string][]; value: T | undefined; onChange: (v: T) => void; label?: string
+  /** each segment's minimum height (`.reset-main .seg button { min-height: 32px }`); 28.9 by default */
+  minHeight?: number
+}) {
+  const t = useTokens()
+  const h = Math.max(28.9, minHeight ?? 0)
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={{ flexDirection: 'row', backgroundColor: t.fill, borderRadius: 9, padding: 2 }}>
+      {options.map(([v, l]) => {
+        const on = v === value
+        return (
+          <Pressable key={v} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(v)} hitSlop={slop(0, h)}
+            style={{ flex: 1, minHeight: minHeight, borderRadius: 7, paddingVertical: 6, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.segon : 'transparent',
+              boxShadow: on ? '0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04)' : undefined }}>
+            <Text numberOfLines={1} style={[tx(13, 600, 1.3, BTN), GLYPH_ROOM, { color: t.label }]}>{l}</Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}
+
+/** `.toggle`: a 51 × 31 switch, the knob sliding 20 pt over 0.2 s (at once with Reduce Motion on). */
+export function Toggle({ on, onChange, disabled, label }: { on: boolean; onChange: () => void; disabled?: boolean; label: string }) {
+  const t = useTokens()
+  const reduce = useReducedMotion()
+  const x = useSharedValue(on ? 1 : 0)
+  useEffect(() => { x.value = reduce ? (on ? 1 : 0) : withTiming(on ? 1 : 0, { duration: 200 }) }, [on, reduce]) // eslint-disable-line react-hooks/exhaustive-deps
+  const off = t.fill2, tint = t.tint
+  const track = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(x.value, [0, 1], [off, tint]) }))
+  const knob = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * 20 }] }))
+  return (
+    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: on, disabled: !!disabled }} disabled={disabled} onPress={onChange}
+      hitSlop={slop(51, 31)} style={{ opacity: disabled ? 0.4 : 1 }}>
+      <Animated.View style={[{ width: 51, height: 31, borderRadius: 15.5 }, track]}>
+        <Animated.View style={[{ position: 'absolute', width: 27, height: 27, left: 2, top: 2, borderRadius: 13.5, backgroundColor: '#fff', boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)' }, knob]} />
+      </Animated.View>
+    </Pressable>
+  )
+}
+
+/* ---------------------------------------------------------------- grouped rows */
+
+/** `.ico`: a settings-row icon, a 30 pt rounded square; `soft` is the pastel Profile square. */
+export function RowIcon({ icon, color, soft, ink }: {
+  icon: IconName
+  /** the square's fill: a token value, e.g. t.mindFill, or a solid category colour */
+  color: string
+  /** `soft`: the icon in --label (Profile's pastel squares); otherwise --on-cat */
+  soft?: boolean
+  /** any icon colour, e.g. t.mindInk on t.mindFill, or t.onFood on t.energy */
+  ink?: string
+}) {
+  const t = useTokens()
+  return (
+    <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={icon} size={18} color={ink ?? (soft ? t.label : t.onCat)} />
+    </View>
+  )
+}
+
+const LI: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingVertical: 10, paddingHorizontal: 16 }
+/** `.li`, 48 pt high in a `.list.icons` */
+function useLi(): ViewStyle {
+  return useContext(InIconList) ? { ...LI, minHeight: 48 } : LI
+}
+
+/**
+ * A row's label and value. In a `.list.icons` the label keeps its width (at most 72%) and a value
+ * takes the rest, 15 pt, right-aligned and truncating; with no value the label fills the row.
+ */
+function LabelValue({ label, sub, value, btn }: { label: string; sub?: ReactNode; value?: ReactNode; btn: boolean }) {
+  const t = useTokens()
+  // a tappable row is a <button> on the web, whose text the browser doesn't track
+  const tr = btn ? BTN : undefined
+  const icons = useContext(InIconList)
+  const wrap = useContext(InWrapList)
+  const hasValue = value != null
+  // .list.icons: the label keeps its width (at most 72%) and the value takes the rest, truncating;
+  // .list.nf-rows: the label takes the row, its sub wraps, and the value keeps its full width
+  const m: ViewStyle = wrap ? { flex: 1, minWidth: 0 } : icons && hasValue ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }
+  return (
+    <>
+      <View style={m}>
+        <Text numberOfLines={1} style={[tx(17, 400, 1.3, tr), { color: t.label }]}>{label}</Text>
+        {sub != null && <Text numberOfLines={wrap ? undefined : 1} style={[tx(13, 400, wrap ? 1.35 : 1.3, tr), { color: t.label2, marginTop: 2 }]}>{sub}</Text>}
+      </View>
+      {hasValue && (
+        <Text numberOfLines={1} style={[tx(icons ? 15 : 17), num, { color: t.label2 }, icons && !wrap && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>
+      )}
+    </>
+  )
+}
+
+/**
+ * `.li`: a plain grouped-list row. A leading slot (an icon square, `act`'s icon, or any node such as
+ * a thumbnail), a title, an optional sub (with an optional `.tag` at its end, "Mine"), then a value, a right control or
+ * (when tappable) a chevron.
+ * - `act`: `.li.act`, a tinted action row ("New plan"), 16 pt medium, with a leading `icon`.
+ * - `nested`: `.li.nf-sub`, a sub-row under a settings row in a `List icons` (58 in, title wraps).
+ * - `pv`: `.pv-row`, a 72 pt row for a thumbnail (`lead`), title and sub wrapping, an optional `sub2`.
+ * - `wrapSub`: the sub wraps at 1.35 (`.mind-skills`, `.wd-steps`).
+ * - `needsnet`: `.li.needsnet`, an online-only row dimmed to --label2 while offline.
+ * - `strong`: the value is `.tr.kc` (--label, 16 pt medium).
+ */
+export function Row({ k, title, bold, expanded, actions, tag, sub, sub2, value, strong, right, onPress, chevron, act, icon, square, lead, nested, pv, wrapSub, needsnet, label: label0, accessibilityLabel, wrap, style }: {
+  title: string; tag?: string; sub?: ReactNode; sub2?: ReactNode; value?: ReactNode; strong?: boolean; right?: ReactNode; onPress?: () => void
+  /** `.dup-k` above `.dup-nm`: a 13 pt --label2 key over the 17 pt title, which then wraps (2 between) */
+  k?: string
+  /** the title at 600 (`.li.go-walk .t`) */
+  bold?: boolean
+  /** a row that opens something in place reports it open or closed (the web's aria-expanded) */
+  expanded?: boolean
+  /** buttons beside the row's own (the `right` slot's "Remove", the web's sibling buttons), named
+   *  by their aria labels: a tappable row groups what's inside it for VoiceOver, so they're
+   *  offered as its custom actions too */
+  actions?: { label: string; onPress: () => void }[]
+  /** default: shown when the row is tappable and has no right control */
+  chevron?: boolean; act?: boolean; icon?: IconName
+  /** an icon square: any fill and icon colour (`RowIcon`) */
+  square?: { icon: IconName; fill: string; ink?: string; soft?: boolean }
+  lead?: ReactNode; nested?: boolean; pv?: boolean; wrapSub?: boolean; needsnet?: boolean
+  /** the web's aria-label for the row (`accessibilityLabel` is the same thing) */
+  label?: string; accessibilityLabel?: string
+  /** the title wraps instead of truncating (`.del .li .t`) */
+  wrap?: boolean
+  /** a screen's own row spacing on top of `.li` (`.lib-row`: min-height 64; `.trow`: 76, padding 12 14) */
+  style?: StyleProp<ViewStyle>
+}) {
+  const t = useTokens()
+  const li = useLi()
+  const tr = onPress ? BTN : undefined
+  const fg = act ? t.tint : needsnet ? t.label2 : t.label
+  const label = label0 ?? accessibilityLabel
+  const wrapTitle = nested || pv || wrap || k != null
+  const icons = useContext(InIconList)
+  // a pv sub wraps at the body's 1.3; wrapSub (.mind-skills, .wd-steps) wraps at 1.35
+  const subWraps = wrapSub || pv || wrap
+  const subLh = wrapSub ? 1.35 : 1.3
+  const body = (
+    <>
+      {lead}
+      {square && <RowIcon icon={square.icon} color={square.fill} ink={square.ink} soft={square.soft} />}
+      {icon && <Icon name={icon} color={fg} />}
+      <View style={icons && value != null ? { flexShrink: 0, maxWidth: '72%' } : { flex: 1, minWidth: 0 }}>
+        {k != null && <Text style={[tx(13, 400, 1.3, tr), { color: t.label2 }]}>{k}</Text>}
+        {/* .li.act: 16 pt medium */}
+        <Text testID="row-title" numberOfLines={wrapTitle ? undefined : 1} style={[act ? tx(16, 500, 1.3, tr) : tx(17, bold ? 600 : 400, 1.3, tr), GLYPH_ROOM, { color: fg }, k != null && { marginTop: 2 }]}>{title}</Text>
+        {(sub != null || tag != null) && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+            {sub != null && <Text numberOfLines={subWraps ? undefined : 1} style={[tx(13, 400, subLh, tr), { color: t.label2, flexShrink: 1 }]}>{sub}</Text>}
+            {tag != null && <Tag>{tag}</Tag>}
+          </View>
+        )}
+        {sub2 != null && <Text style={[tx(13, 400, 1.35, tr), { color: t.label2, marginTop: 3 }]}>{sub2}</Text>}
+      </View>
+      {/* .tr (.tr.kc: --label, 16 pt medium); in a .list.icons 15 pt, filling the rest, right-aligned */}
+      {value != null && <Text numberOfLines={1} style={[tx(icons ? 15 : strong ? 16 : 17, strong ? 500 : 400, 1.3, tr), num, { color: strong ? t.label : t.label2 }, icons && { flex: 1, minWidth: 0, textAlign: 'right' }]}>{value}</Text>}
+      {/* centred in the row whatever it is (a small Btn pins itself to the start of a column) */}
+      {right != null ? <View style={{ alignSelf: 'center' }}>{right}</View> : (chevron ?? (!!onPress && !act)) && <Chevron color={t.label3} />}
+    </>
+  )
+  const s: ViewStyle = { ...li, ...(nested ? { paddingLeft: 58 } : null), ...(pv ? { paddingVertical: 10, paddingHorizontal: 14, minHeight: 72 } : null) }
+  // a screen's spacing may raise the row's minimum height (.lib-row 64, .trow 76), never lower it
+  const own = StyleSheet.flatten(style)
+  // each extra button as a named custom action ("activate" stays the row's own)
+  const acts = actions?.map((a, i) => ({ name: `action${i}`, label: a.label }))
+  const onAction = actions ? (e: AccessibilityActionEvent) => { const m = /^action(\d+)$/.exec(e.nativeEvent.actionName); if (m) actions[+m[1]]?.onPress() } : undefined
+  const rs: StyleProp<ViewStyle> = [s, style, typeof own?.minHeight === 'number' && own.minHeight < (s.minHeight as number) ? { minHeight: s.minHeight } : null]
+  return onPress
+    ? <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={expanded === undefined ? undefined : { expanded }} onPress={onPress}
+        accessibilityActions={acts} onAccessibilityAction={onAction} style={({ pressed }) => [rs, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View accessible={label != null} accessibilityLabel={label} accessibilityActions={label != null ? acts : undefined} onAccessibilityAction={onAction} style={rs}>{body}</View>
+}
+
+/** `.tag`: a small uppercase label beside a title ("Mine"), 11 pt bold on --fill. */
+export function Tag({ children }: { children: ReactNode }) {
+  const t = useTokens()
+  return (
+    // `vertical-align: 1px` on the web: sits 1 pt above the line's centre
+    <View style={{ marginLeft: 6, top: -1, backgroundColor: t.fill, borderRadius: 5, paddingVertical: 1, paddingHorizontal: 5 }}>
+      <Text style={[tx(11, 700, 1.3, 0.3 / 11), GLYPH_ROOM, { color: t.label2, textTransform: 'uppercase' }]}>{children}</Text>
+    </View>
+  )
+}
+
+/** `.addc`: the round add button at a row's end (28 pt, --fill, a tinted plus) in a 44 pt touch area. */
+export function AddC({ onPress, label }: { onPress?: () => void; label?: string }) {
+  const t = useTokens()
+  const dot = <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center' }}><Icon name="plus" size={20} stroke={2.8} color={t.tint} /></View>
+  return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={slop(28, 28)}>{dot}</Pressable> : dot
+}
+
+/**
+ * `.x-btn`: a round button (30 pt, --fill, a --label2 icon), in a 44 pt touch area: the x, or
+ * another `icon` turned by `rotate` (the builder's move up and down: chevL/chevR at 90). Disabled
+ * at 35%.
+ */
+export function XBtn({ onPress, label, icon = 'x', rotate = 0, disabled }: { onPress: () => void; label: string; icon?: IconName; rotate?: number; disabled?: boolean }) {
+  const t = useTokens()
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} hitSlop={slop(30, 30)}
+      style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: t.fill, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.35 : pressed ? 0.7 : 1 })}>
+      <View style={rotate ? { transform: [{ rotate: `${rotate}deg` }] } : undefined}><Icon name={icon} size={20} stroke={2.6} color={t.label2} /></View>
+    </Pressable>
+  )
+}
+
+/** `.catsq`: a plain colour square for a row's `lead` (36 pt, radius 10; `sm` 30 pt, radius 8). */
+export function Swatch({ color, sm }: { color: string; sm?: boolean }) {
+  const d = sm ? 30 : 36
+  return <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: d, height: d, borderRadius: sm ? 8 : 10, backgroundColor: color, flexShrink: 0 }} />
+}
+
+/** A grouped-list row that opens something (icon · label · value · chevron); put it in a `List icons`. */
+export function SettingRow({ icon, color, soft, label, sub, value, onPress, right, accessibilityLabel }: {
+  icon: IconName; color: string; soft?: boolean; label: string; sub?: ReactNode; value?: ReactNode; onPress?: () => void; right?: ReactNode
+  /** the web's aria-label where it names the row differently from its words ("Take a photo of the barcode") */
+  accessibilityLabel?: string
+}) {
+  const t = useTokens()
+  const li = useLi()
+  const body = (
+    <>
+      <RowIcon icon={icon} color={color} soft={soft} />
+      <LabelValue label={label} sub={sub} value={value} btn={!!onPress} />
+      {right ?? (onPress && <Chevron color={t.label3} />)}
+    </>
+  )
+  return onPress
+    ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>{body}</Pressable>
+    : <View accessible={accessibilityLabel != null} accessibilityLabel={accessibilityLabel} style={li}>{body}</View>
+}
+
+/** A grouped-list row that expands in place; the chevron turns 90° over 0.2 s. */
+export function Disclosure({ icon, color, soft, label, value, open, onToggle, children }: {
+  icon: IconName; color: string; soft?: boolean; label: string; value?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode
+}) {
+  const t = useTokens()
+  const li = useLi()
+  const reduce = useReducedMotion()
+  const r = useSharedValue(open ? 90 : 0)
+  useEffect(() => { r.value = reduce ? (open ? 90 : 0) : withTiming(open ? 90 : 0, { duration: 200 }) }, [open, reduce]) // eslint-disable-line react-hooks/exhaustive-deps
+  const turn = useAnimatedStyle(() => ({ transform: [{ rotate: `${r.value}deg` }] }))
+  return (
+    <View>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle}
+        style={({ pressed }) => [li, pressed && { backgroundColor: t.fill }]}>
+        <RowIcon icon={icon} color={color} soft={soft} />
+        <LabelValue label={label} value={open ? undefined : value} btn />
+        <Animated.View style={turn}><Chevron color={t.label3} /></Animated.View>
+      </Pressable>
+      {open && <View style={{ paddingTop: 4, paddingHorizontal: 16, paddingBottom: 16 }}>{children}</View>}
+    </View>
+  )
+}
+
+/* ---------------------------------------------------------------- sheets */
+
+const SHEET_IN = SlideInDown.duration(340).easing(Easing.bezier(0.2, 0.9, 0.25, 1).factory())
+const FADE_IN = FadeIn.duration(250)
+
+/**
+ * The keyboard's overlap with the window's foot, in pt (iOS; 0 elsewhere: Android resizes the
+ * window itself), animated as the keyboard moves, plus `up` (any keyboard showing, on both).
+ * `onShown` runs once the keyboard has settled (to scroll the focused field into view).
+ */
+function useKeyboard(windowHeight: number, onShown: () => void) {
+  const [state, setState] = useState({ up: false, h: 0 })
+  const shown = useRef(onShown)
+  shown.current = onShown
+  useEffect(() => {
+    const ios = Platform.OS === 'ios'
+    const move = (e: KeyboardEvent | null, up: boolean) => {
+      // a zero-height or floating frame (a hardware keyboard, an undocked one) overlaps nothing
+      const h = ios && up && e && e.endCoordinates.height > 0 ? Math.max(0, windowHeight - e.endCoordinates.screenY) : 0
+      if (ios && e?.duration) LayoutAnimation.configureNext({ duration: e.duration, update: { type: LayoutAnimation.Types.keyboard } })
+      setState((s) => (s.up === up && s.h === h ? s : { up, h }))
+    }
+    const subs = [
+      Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (e) => move(e, true)),
+      Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', (e) => move(e, false)),
+      // the decimal pad and the text keyboard differ in height; a switch between them changes the frame
+      ...(ios ? [Keyboard.addListener('keyboardWillChangeFrame', (e) => { if (e.endCoordinates.screenY < windowHeight) move(e, true) })] : []),
+      Keyboard.addListener('keyboardDidShow', () => requestAnimationFrame(() => shown.current())),
+    ]
+    return () => subs.forEach((x) => x.remove())
+  }, [windowHeight])
+  return state
+}
+
+/** Open overlay sheets' close functions, oldest first. */
+const overlays: (() => void)[] = []
+const useOverlayCount = create<{ n: number }>(() => ({ n: 0 }))
+
+/**
+ * True while an overlay sheet is open. A full-screen view that holds overlay sheets sets
+ * `importantForAccessibility={open ? 'no-hide-descendants' : 'auto'}` on its own content, so
+ * TalkBack can't reach the view behind the sheet (VoiceOver is kept out by the sheet itself),
+ * as the web's sheet is aria-modal.
+ */
+export function useOverlayOpen(): boolean {
+  return useOverlayCount((s) => s.n > 0)
+}
+
+/**
+ * For a full-screen view that holds overlay sheets (the guided player's Modal): call it first in the
+ * view's `onRequestClose`. It closes the topmost overlay sheet and returns true, or returns false when
+ * none is open, so Android's back closes the sheet before the view, as on the web.
+ */
+export function overlayBack(): boolean {
+  const top = overlays[overlays.length - 1]
+  if (!top) return false
+  top()
+  return true
+}
+
+/** The frame both sheets share: backdrop, the sheet sliding up, the grabber, Escape/back to close. */
+function SheetFrame({ label, onClose, tall, grow, animate = true, bare, overlay, header, children }: {
+  label: string; onClose: () => void; tall?: boolean; grow?: boolean; animate?: boolean; bare?: boolean; overlay?: boolean; header?: ReactNode; children: ReactNode
+}) {
+  const t = useTokens()
+  // this sheet's place in the stack, so the topmost one carries the toast
+  const sheetId = useSheetId()
+  const insets = useSafeAreaInsets()
+  const { height } = useWindowDimensions()
+  const reduce = useReducedMotion()
+  // the focused field, scrolled into view inside the sheet once the keyboard is up (as Safari does)
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
+  const view = useRef({ y: 0, h: 0 })
+  const reveal = () => {
+    const input = TextInput.State.currentlyFocusedInput() as unknown as { measureLayout?: (rel: unknown, ok: (x: number, y: number, w: number, h: number) => void, fail?: () => void) => void } | null
+    const inner = (scroll.current as unknown as { getInnerViewRef?: () => unknown } | null)?.getInnerViewRef?.()
+    if (!input?.measureLayout || !inner || !scroll.current) return
+    input.measureLayout(inner, (_x, y, _w, h) => {
+      const { y: top, h: vh } = view.current
+      if (y < top + 8) scroll.current?.scrollTo({ y: Math.max(0, y - 16), animated: true })
+      else if (y + h > top + vh - 8) scroll.current?.scrollTo({ y: y + h - vh + 16, animated: true })
+    }, () => {})
+  }
+  const kb = useKeyboard(height, reveal)
+  // the sheet sits above the keyboard and never grows past the top: its top edge (grabber, title,
+  // Done, close) stays on screen, and what doesn't fit scrolls
+  const max = Math.max(240, height - insets.top - 12 - kb.h)
+  const anim = animate && !reduce
+  // overlay: Android's back closes it. Outside a Modal, BackHandler hears it; inside one (the guided
+  // player), the holder's onRequestClose must call overlayBack() first, which closes the topmost
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    if (!overlay) return
+    const close = () => closeRef.current()
+    overlays.push(close)
+    useOverlayCount.setState({ n: overlays.length })
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { close(); return true })
+    return () => { sub.remove(); overlays.splice(overlays.indexOf(close), 1); useOverlayCount.setState({ n: overlays.length }) }
+  }, [overlay])
+  const body = (
+    <>
+      <View style={{ flex: 1, paddingBottom: kb.h }}>
+        <Animated.View entering={anim ? FADE_IN : undefined} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
+          <Pressable style={{ flex: 1 }} onPress={onClose} accessible={false} importantForAccessibility="no" />
+        </Animated.View>
+        <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }} pointerEvents="box-none">
+          <Animated.View testID="sheet" role="dialog" entering={anim ? SHEET_IN : undefined} accessibilityViewIsModal accessibilityLabel={label} onAccessibilityEscape={onClose}
+            style={{ width: '100%', maxWidth: 520, backgroundColor: t.sheet, borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: max, height: tall ? max : undefined, paddingBottom: kb.h > 0 || (kb.up && Platform.OS !== 'ios') ? 0 : insets.bottom }}>
+            <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: t.fill3, marginTop: 6, alignSelf: 'center' }} />
+            {header}
+            <InSheet.Provider value>
+              <ScrollView ref={scroll} onLayout={(e) => { view.current.h = e.nativeEvent.layout.height }}
+                onScroll={(e) => { view.current.y = e.nativeEvent.contentOffset.y }} scrollEventThrottle={32}
+                style={{ flexGrow: tall ? 1 : 0, flexShrink: 1 }} contentContainerStyle={{ paddingTop: bare ? 10 : 2, paddingHorizontal: 16, paddingBottom: 24, flexGrow: grow ? 1 : undefined }} keyboardShouldPersistTaps="handled">
+                {children}
+              </ScrollView>
+            </InSheet.Provider>
+          </Animated.View>
+        </View>
+      </View>
+      <ToastHost sheet={sheetId} />
+    </>
+  )
+  // the web's .sheet-root is a fixed layer over the page (z-index 60): an overlay sheet is that layer
+  // drawn inside whatever full-screen view holds it (the guided player's own Modal), not a new modal
+  return overlay
+    // modal for VoiceOver: as the holder's last child, its siblings are the holder's own content
+    ? <View accessibilityViewIsModal style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, elevation: 60 }}>{body}</View>
+    : <Modal transparent visible animationType="none" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>{body}</Modal>
+}
+
+/**
+ * A bottom sheet with a navigation header (left action · title · right action). `left` defaults to
+ * Cancel; pass null for nothing. `animate={false}` when swapping views inside an open sheet.
+ * `overlay`: draw the sheet over the current full-screen view instead of opening a new modal (for a
+ * sheet over the guided player, itself a Modal); render it as that view's last child. It looks the same.
+ */
+export function Sheet({ title, onClose, left, right, tall, grow, animate = true, overlay, children }: {
+  title: string; onClose: () => void; left?: ReactNode | null; right?: ReactNode; tall?: boolean
+  /** the content fills the sheet's height (with `tall`), so a `<View style={{ flex: 1 }} />` spacer
+   *  sets what follows at the foot (`.dup-merge` with `.dup-grow`) */
+  grow?: boolean
+  animate?: boolean; overlay?: boolean; children: ReactNode
+}) {
+  const t = useTokens()
+  const header = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingHorizontal: 16, paddingBottom: 10 }}>
+      <View style={{ flex: 1, alignItems: 'flex-start' }}>{left === undefined ? <NavBtn title={UI.cancel} onPress={onClose} /> : left}</View>
+      <Text accessibilityRole="header" numberOfLines={1} style={[tx(17, 600), { color: t.label, textAlign: 'center', maxWidth: 210 }]}>{title}</Text>
+      <View style={{ flex: 1, alignItems: 'flex-end' }}>{right}</View>
+    </View>
+  )
+  return <SheetFrame label={title} onClose={onClose} tall={tall} grow={grow} animate={animate} overlay={overlay} header={header}>{children}</SheetFrame>
+}
+
+/** A bottom sheet without the navigation header, for sheets whose first line is their own large title. */
+export function BareSheet({ label, onClose, overlay, children }: { label: string; onClose: () => void; overlay?: boolean; children: ReactNode }) {
+  return <SheetFrame label={label} onClose={onClose} bare overlay={overlay}>{children}</SheetFrame>
+}

@@ -6,6 +6,9 @@ export const PHASE_LABEL: Record<TempoPhaseKind, string> = {
   squeeze: 'Squeeze',
   lower: 'Lower slowly',
   stretch: 'Hold the stretch',
+  pull: 'Pull',
+  push: 'Push out',
+  return: 'Return slowly',
 }
 
 /** One-word names for the pace row, where four phases share the width. */
@@ -15,6 +18,9 @@ export const PHASE_SHORT: Record<TempoPhaseKind, string> = {
   squeeze: 'Squeeze',
   lower: 'Lower',
   stretch: 'Stretch',
+  pull: 'Pull',
+  push: 'Push',
+  return: 'Return',
 }
 
 export interface TempoState {
@@ -27,6 +33,8 @@ export interface TempoState {
   progress: number
   /** phase length in seconds, rounded to the nearest half second for display */
   lengthSec: number
+  /** the count this phase runs to ("2 of 3"): the last value `count` reaches */
+  countOf: number
 }
 
 /** Which phase of the demo is on screen at time `t` (seconds). */
@@ -45,6 +53,7 @@ export function tempoAt(m: ExerciseMedia, t: number): TempoState {
     rep: ph[i].rep ?? null,
     reps,
     count: Math.min(Math.floor(into) + 1, Math.max(1, Math.ceil(len))),
+    countOf: Math.max(1, Math.ceil(len)),
     progress: Math.min(into / len, 1),
     lengthSec: Math.round(len * 2) / 2,
   }

@@ -6,48 +6,96 @@ same **character and scene block** in every prompt so the same person, outfit an
 in every clip. Once a clip is made, it goes into the app as described in CLAUDE.md, "Exercise
 demo videos".
 
-## Status: every exercise in the app (September 2026)
+**Ready-to-paste lists** (every exercise and warm-up, with the demonstrator blocks) are in
+`docs/video-prompts/`.
 
-From `src/core/data/workouts.ts`. File names are the ones the clip will get in `public/videos/`.
+## Status: every exercise in the app
 
-| # | Workout | Exercise (as named in the app) | Clip file | Status |
-|---|---|---|---|---|
-| 1 | Legs | Barbell squat | Bunny `736acf7f…` | **done** (1 rep) |
-| 2 | Legs | Romanian deadlift (dumbbell or barbell) | `romanian-deadlift.mp4` | **done** |
-| 3 | Legs | Leg extension (machine) | `leg-extension.mp4` | needed |
-| 4 | Legs | Seated or standing calf raise | `calf-raise.mp4` | needed |
-| 5 | Legs | Plank | `plank.mp4` | needed (hold) |
-| 6 | Push | Barbell bench press | Bunny `df890da8…` | **done** |
-| 7 | Push | Incline dumbbell press | `incline-dumbbell-press.mp4` | needed |
-| 8 | Push | Dumbbell shoulder press (seated) | `shoulder-press.mp4` | needed |
-| 9 | Push | Lateral raise | `lateral-raise.mp4` | needed |
-| 10 | Push | Triceps rope pushdown (cable) | `triceps-pushdown.mp4` | needed |
-| 11 | Pull | Lat pulldown | `lat-pulldown.mp4` | needed |
-| 12 | Pull | Seated cable row | `seated-cable-row.mp4` | needed |
-| 13 | Pull | Chest-supported dumbbell row | `chest-supported-row.mp4` | needed |
-| 14 | Pull | Face pull (cable) | `face-pull.mp4` | needed |
-| 15 | Pull | Biceps curl (barbell or dumbbell) | `barbell-curl.mp4` | **done** |
-| 16a | Pull | Cable crunch (or dead bug): cable crunch | `cable-crunch.mp4` | needed |
-| 16b | Pull | Cable crunch (or dead bug): dead bug | `dead-bug.mp4` | needed |
-| 17a | Cardio | Brisk walk | `brisk-walk.mp4` | needed (steady pace) |
-| 17b | Cardio | Incline treadmill | `incline-treadmill.mp4` | needed (steady pace) |
-| 17c | Cardio | Stationary bike | `stationary-bike.mp4` | needed (steady pace) |
-| 17d | Cardio | Cross-trainer (in the cardio type list) | `cross-trainer.mp4` | optional |
-| 17e | Cardio | Rower (in the cardio type list) | `rower.mp4` | optional |
+54 exercises appear in a workout, Tali plan workout, lighter day or warm-up; **25 have a clip, 29 still need one.** Generated from the app's data on 8 Oct 2026.
 
-The **barbell squat** and **barbell bench press** clips are hosted on Bunny Stream. They replaced
-the leg press and chest press in Legs and Push for now; those two come back with the exercise
-library (workout plan phase 3), and their prompts are kept below for then.
+### Still needed
+
+| Exercise (as named in the app) | Kind | Used in |
+|---|---|---|
+| Calf raise | reps | Legs |
+| Leg extension (machine) | reps | Legs |
+| Plank | hold | Legs |
+| Lateral raise | reps | Push |
+| Cable crunch | reps | Pull |
+| Chest-supported dumbbell row | reps | Pull |
+| Seated cable row | reps | Pull, Tali: Full body A |
+| Brisk walk | timed (steady pace) | Cardio |
+| Chair pose | hold | Tali: Balance & Mobility |
+| Dead bug | reps | Tali: Full body A |
+| Leg curl (machine) | reps | Tali: Full body A |
+| One-arm dumbbell row | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Tali: Full body C |
+| Step-up | reps | Tali: Strength & Balance A |
+| Tree pose | hold | Tali: Strength & Balance A, Tali: Balance & Mobility |
+| Cat–cow | reps | Lighter: mobility, Tali: Balance & Mobility, Warm-up |
+| Easy walk | timed (steady pace) | Lighter: walk |
+| Lying hamstring stretch | hold | Lighter: mobility |
+| Lying knee rolls | reps | Lighter: mobility |
+| Arm circles | reps | Warm-up |
+| Band pull-apart | reps | Warm-up |
+| Bodyweight squat | reps | Warm-up |
+| Hip 90/90 switch | reps | Warm-up |
+| Hip circles | reps | Warm-up |
+| Inchworm | reps | Warm-up |
+| Leg swings | reps | Warm-up |
+| Open book | reps | Warm-up |
+| Thread the needle | hold | Warm-up |
+| Wall slide | reps | Warm-up |
+| World's greatest stretch | reps | Warm-up |
+
+### Done (on Bunny)
+
+| Exercise | Kind | Used in | Bunny video |
+|---|---|---|---|
+| Barbell squat | reps | Legs | `736acf7f…` |
+| Romanian deadlift (dumbbell or barbell) | reps | Legs, Tali: Full body B | `9375b37c…` |
+| Barbell bench press | reps | Push | `df890da8…` |
+| Dumbbell shoulder press (seated) | reps | Push, Tali: Full body B | `29092357…` |
+| Incline dumbbell press | reps | Push, Tali: Full body C | `01693135…` |
+| Triceps rope pushdown (cable) | reps | Push | `db9a8075…` |
+| Biceps curl (barbell or dumbbell) | reps | Pull | `67eda569…` |
+| Face pull (cable) | reps | Pull, Tali: Full body C | `6d5a1fa4…` |
+| Lat pulldown | reps | Pull, Tali: Full body B | `9d104b30…` |
+| Bird-dog | reps | Tali: Strength & Balance B | `28383feb…` |
+| Dumbbell bench press | reps | Tali: Full body A | `c3115e41…` |
+| Dumbbell split squat | reps | Tali: Full body C | `cf04a486…` |
+| Farmer carry | timed move | Tali: Strength & Balance A, Tali: Full body C | `8fd6dda5…` |
+| Goblet squat | reps | Tali: Strength & Balance B, Tali: Full body A | `97700dd2…` |
+| Hip thrust | reps | Tali: Full body C | `b3c11705…` |
+| Incline push-up | reps | Tali: Strength & Balance A, Tali: Strength & Balance B, Warm-up | `0f94c2e0…` |
+| Knee to wall | reps | Tali: Balance & Mobility, Warm-up | `e7138db7…` |
+| Leg press | reps | Tali: Full body B | `7d511341…` |
+| Side plank (knees) | hold | Tali: Strength & Balance B, Tali: Full body B | `8dde7844…` |
+| Sit to stand | reps | Tali: Strength & Balance A | `5b34fdf0…` |
+| Split squat | reps | Tali: Strength & Balance B, Tali: Balance & Mobility | `31719b54…` |
+| Glute bridge | reps | Lighter: mobility, Tali: Strength & Balance A, Warm-up | `ffc84847…` |
+| Half-kneeling hip flexor stretch | hold | Lighter: mobility, Tali: Balance & Mobility | `13668949…` |
+| March on the spot with arm swings | timed move | Lighter: mobility, Tali: Balance & Mobility, Warm-up | `013b8f18…` |
+| Shoulder rolls | reps | Lighter: mobility, Tali: Balance & Mobility, Warm-up | `abbffae3…` |
+
+Run the status list again from the app's data whenever a workout changes. The copy-paste prompts
+Benn uses (a demonstrator block plus an exercise prompt, women's and men's lists, every library
+exercise and warm-up move) are in `docs/video-prompts/`; this file keeps the house rules.
+
+
+The **barbell squat** and **barbell bench press** replaced the leg press and chest press in Legs and
+Push. The leg press is used again in Tali's Full body B (its prompt is under Legs); the chest press
+prompt is kept for when it returns.
 
 **New clips can go straight to Bunny Stream.** The app plays each video's MP4 fallback
 (`https://vz-36841ffb-54c.b-cdn.net/<video id>/play_720p.mp4`) with its `thumbnail.jpg` as the
 poster, so MP4 fallback must stay switched on in the library. The library refuses requests with no
 referrer, so the links don't open on their own but do play inside the app.
 
-**How the app will use each kind of clip.** Rep clips (most of the list) get the tempo counter
-that the curl and deadlift already have. The plank is a hold: until the planned hold timer is
-built (workout plan §5.5), it plays without a counter. Cardio clips show a steady pace and have
-no counter; they are there to show posture and set-up.
+**How the app uses each kind of clip.** Rep clips (most of the list) get the tempo counter,
+timed from the footage. Holds (a plank, a stretch, a yoga pose) and timed moves (a march) play
+with no counter: the hold timer runs over the clip (Design canvas row "Holds"), so a hold clip
+only needs the person to stay still in the pose. Cardio clips show a steady pace and have no
+counter; they are there to show posture and set-up.
 
 ## Tips for a clip that works in the app
 
@@ -64,18 +112,76 @@ no counter; they are there to show posture and set-up.
   (a rounded back, bouncing, swinging), regenerate it rather than accepting it.
 - **Match the app's cue.** Each prompt below follows the form cue the app already shows for that
   exercise, so the video and the text agree.
+- **Pick the camera angle that shows the move best; don't default to side-on** (Benn, 26 Oct 2026).
+  Choose the angle from the movement: side-on when the work goes forwards and back or up and down
+  (a squat's depth, a row's elbow path), front-on when it goes out to the side (an abduction, a
+  lateral raise), a three-quarter view when both matter, and whatever keeps the whole working limb
+  and the equipment in frame. Leave room above the head for moves that rise (a step-up).
+- **Clips are expensive: check before spending, not after** (Benn, 26 Oct 2026). Before a prompt
+  is generated, and above all before a retake:
+  - Say the move in one line (which joint moves, which way, which muscle) and check it against
+    the app's cue.
+  - If there is any doubt about how the move or the machine works, look it up in a trusted
+    reference first (an exercise library such as ACE or ExRx, the NHS, a manufacturer's manual)
+    and write the prompt from that.
+  - Have the `fitness-workouts` agent review the prompt.
+  - For a machine, make and check a still of the start position before animating it.
+  - A retake changes the one thing that failed and says so; no retake runs without Benn's OK.
+- **Keep the age range broad** (Benn, 26 Oct 2026). Pick demonstrators so each batch spans ages: at least
+  half in their 20s or 30s, one in their 40s or 50s, and no more than one aged 60 or over in a batch of five.
+  Tali is for every age, so the clips should look it, with no lean towards older or younger people.
+- **Prefer rewording the cue over a retake.** If a clip shows a safe, standard version of the
+  move that differs from the cue (for example a row braced on one hand instead of hand and knee),
+  widen the cue to cover it rather than spend credits on a retake.
 
 ## Character and scene block (use in every prompt)
 
+The studio, light, camera and tone stay the same in every clip. The demonstrator varies in age,
+heritage, build, hair and clothing so people see bodies like their own (Benn, 29 Sept 2026).
+**Framing follows the move:** show the whole body, head to feet, when the legs, hips, knees or
+floor position matter (a glute bridge, an incline push-up, a hinge); arm and shoulder moves keep
+a medium shot, because a vertical frame zoomed out that far makes the person too small (Benn).
+**Same background in every clip:** a low black bench and a small dumbbell rack, soft-focus
+against the wall, as in the clips already live (Benn, option 1). 
+**Every body type, with ordinary bodies as the focus:** prompts ask for ordinary, everyday bodies
+and never for a muscular or fitness-model build. A clip of a more muscular person is still welcome
+when the move is right, because Tali includes all body types (Benn, 26 Oct 2026).
+
 > Plain minimalist studio, seamless warm off-white walls and floor, soft diffused daylight.
-> Woman in her 30s, medium natural build, realistic skin, low ponytail, charcoal leggings,
-> sage-green sports bra, open cropped tank, flat training shoes. Calm, focused expression.
+> In the soft-focus background against the wall: a low black bench and a small rack of black
+> dumbbells, nothing else.
+> A {gender} in {their} {age}, {heritage} heritage, {build}, realistic skin with natural
+> texture, {hair}. An ordinary, everyday body with soft, natural muscle tone: not muscular, no
+> defined or bulging muscles, no visible abs or veins, not a fitness model. Wearing {outfit},
+> in muted tones with no logos or text, and flat training shoes. Calm, focused expression.
 > Real-time speed, realistic weight and physics, 35mm lens, shallow depth of field, natural
 > colour grade, no text. Vertical 9:16 framing. Static camera: no zoom, push-in or pan.
 
+- **gender / their:** woman / her, man / his. The exercise prompts are written with "she"; for
+  a man, use the "he" version of the prompt.
+- **age:** 20s, 30s, 40s, 50s, 60s, 70s
+- **heritage:** Black African, Black Caribbean, East Asian, South Asian, Southeast Asian,
+  Middle Eastern, North African, Latin American, White European, mixed
+- **build:** slim build, medium natural build, soft average build, curvy build, pear-shaped build
+  (fuller hips and thighs), apple-shaped build (weight carried around the middle), larger build,
+  soft stocky build (no athletic or muscular builds)
+- **hair:** low ponytail, short cropped hair, braids tied back, natural afro tied back, short
+  grey hair, shaved head, hair in a low bun, a fitted sports hijab
+- **outfit (workout-appropriate, fitted enough to show the joints).** Pick one that suits the
+  gender chosen:
+  - women: charcoal leggings, a sage-green sports bra and an open cropped tank; full-length
+    leggings and a fitted long-sleeve top; dark joggers and a fitted plain T-shirt; relaxed
+    stone-coloured trousers and a zip-up training top
+  - men: dark joggers and a fitted plain T-shirt; navy training shorts and a loose vest;
+    full-length leggings under training shorts with a fitted long-sleeve top; relaxed
+    stone-coloured trousers and a zip-up training top
+  - with the sports hijab (women): full-length leggings and a fitted long-sleeve top
+
+Keep one demonstrator for the whole clip, and vary demonstrators across clips.
+
 **For machine and cable exercises, add:**
 
-> The only equipment in the studio is a single matte black [machine name], clean and modern,
+> The equipment the person uses is a single matte black [machine name], clean and modern,
 > with no branding or logos.
 
 **End every rep prompt with:**
@@ -92,7 +198,7 @@ These are typical coaching tempos (judgement calls), not measurements.
 
 ## Legs
 
-### Leg press (for phase 3)
+### Leg press (done: on Bunny, compact plate-loaded machine)
 
 Add the machine line with "45-degree leg press machine".
 
@@ -106,7 +212,7 @@ Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 3-second low
 at 90 degrees, a 1-second pause, a 1.5-second press, and a 1-second pause at the top with the
 knees soft."
 
-### 2. Romanian deadlift (done: `public/videos/romanian-deadlift.mp4`)
+### 2. Romanian deadlift (done: on Bunny)
 
 > Side-on medium-wide shot. She stands tall holding the barbell at hip height with an overhand
 > grip, knees softly bent. She hinges at the hips over three seconds, pushing her hips back and
@@ -180,7 +286,7 @@ Each rep is a 3-second lowering to mid-chest, a 1-second pause, a 1.5-second pre
 seconds", but the prompt asks for 3 to match the other exercises. Either change the prompt to
 2 seconds or update the cue so the video and text agree.
 
-### 7. Incline dumbbell press (needed)
+### 7. Incline dumbbell press (done: on Bunny)
 
 > Low front three-quarter angle. She sits back on a bench set to about 30 degrees, feet flat,
 > holding a dumbbell in each hand above her upper chest. She lowers the dumbbells under control
@@ -191,7 +297,7 @@ Timing text: "Starting with the dumbbells pressed up, 2 slow repetitions in abou
 Each rep is a 3-second lowering, a 1-second pause, a 1.5-second press, and a 1-second pause at
 the top."
 
-### 8. Seated dumbbell shoulder press (needed)
+### 8. Seated dumbbell shoulder press (done: on Bunny)
 
 > Front three-quarter medium shot. She sits on a bench with the back upright, feet flat, holding
 > a dumbbell in each hand at ear height, palms facing forward. She presses the dumbbells
@@ -212,7 +318,7 @@ pause at ear height."
 Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 1.5-second raise, a 1-second
 pause at shoulder height, a 3-second lowering, and a 1-second pause at the bottom."
 
-### 10. Triceps rope pushdown (needed)
+### 10. Triceps rope pushdown (done: on Bunny, single handle)
 
 Add the machine line with "cable station with a rope attachment at the top".
 
@@ -228,7 +334,7 @@ Timing text: "2 slow repetitions in about 13 seconds. Each rep is a 1.5-second p
 
 ## Pull
 
-### 11. Lat pulldown (needed)
+### 11. Lat pulldown (done: on Bunny)
 
 Add the machine line with "lat pulldown machine with a straight bar".
 
@@ -266,7 +372,7 @@ Timing text: "Starting with the dumbbells hanging, 2 slow repetitions in about 1
 rep is a 1.5-second row, a 1-second squeeze, a 3-second lowering, and a 1-second hang at the
 bottom."
 
-### 14. Face pull (needed)
+### 14. Face pull (done: on Bunny)
 
 Add the machine line with "cable station with a rope attachment at head height".
 
@@ -279,7 +385,7 @@ Timing text: "Starting with her arms straight, 2 slow repetitions in about 13 se
 is a 1.5-second pull, a 1-second squeeze, a 3-second return, and a 1-second pause with arms
 straight."
 
-### 15. Biceps curl (done: `public/videos/barbell-curl.mp4`)
+### 15. Biceps curl (done: on Bunny)
 
 > Medium shot from the side. She stands tall holding the barbell with an underhand,
 > shoulder-width grip, elbows pinned to her sides. She curls the bar up without leaning back,

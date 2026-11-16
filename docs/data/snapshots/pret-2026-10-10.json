@@ -1,0 +1,8541 @@
+{
+ "source": "Pret A Manger UK menu (data embedded in pret.co.uk/en-GB/products pages)",
+ "url": "https://www.pret.co.uk/en-GB/products",
+ "fetched": "2026-10-10",
+ "items": [
+  {
+   "sku": "UK006642",
+   "name": "Americano",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 334,
+   "serv": {
+    "kj": 7.0,
+    "k": 2.0,
+    "f": 0.2,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 2.0,
+    "k": 1.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "variants": [
+    {
+     "sku": "UK006642",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 7.0,
+      "k": 2.0,
+      "f": 0.2,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 2.0,
+      "k": 1.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007785",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 54.0,
+      "k": 12.9,
+      "f": 0.2,
+      "c": 2.7,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK006641",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 152.0,
+      "k": 36.0,
+      "f": 1.2,
+      "c": 3.8,
+      "fi": 0.0,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 43.4,
+      "k": 10.3,
+      "f": 0.3,
+      "c": 1.1,
+      "fi": 0.0,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007376",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 125.0,
+      "k": 30.0,
+      "f": 1.4,
+      "c": 2.1,
+      "fi": 0.4,
+      "p": 2.3
+     },
+     "per100": {
+      "kj": 35.7,
+      "k": 8.6,
+      "f": 0.4,
+      "c": 0.6,
+      "fi": 0.1,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007352",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 54.3,
+      "k": 12.9,
+      "f": 0.2,
+      "c": 2.7,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK005158",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 17.0,
+      "k": 3.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 5.0,
+      "k": 0.9,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007454",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 59.0,
+      "k": 14.0,
+      "f": 0.5,
+      "c": 1.4,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 16.9,
+      "k": 4.0,
+      "f": 0.1,
+      "c": 0.4,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK005156",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 147.0,
+      "k": 35.0,
+      "f": 1.3,
+      "c": 3.4,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 42.0,
+      "k": 10.0,
+      "f": 0.4,
+      "c": 1.0,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007453",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 115.0,
+      "k": 27.0,
+      "f": 0.2,
+      "c": 3.8,
+      "fi": 0.0,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 32.9,
+      "k": 7.7,
+      "f": 0.1,
+      "c": 1.1,
+      "fi": 0.0,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007348",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 54.3,
+      "k": 12.9,
+      "f": 0.2,
+      "c": 2.7,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007349",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 125.0,
+      "k": 30.0,
+      "f": 1.4,
+      "c": 2.1,
+      "fi": 0.4,
+      "p": 2.3
+     },
+     "per100": {
+      "kj": 35.7,
+      "k": 8.6,
+      "f": 0.4,
+      "c": 0.6,
+      "fi": 0.1,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007797",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 54.0,
+      "k": 12.9,
+      "f": 0.2,
+      "c": 2.7,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006555",
+   "name": "Cappuccino",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 295,
+   "serv": {
+    "kj": 488.0,
+    "k": 116.0,
+    "f": 4.1,
+    "c": 11.6,
+    "fi": 0.2,
+    "p": 8.2
+   },
+   "per100": {
+    "kj": 166.0,
+    "k": 39.0,
+    "f": 1.4,
+    "c": 3.9,
+    "fi": 0.1,
+    "p": 2.8
+   },
+   "variants": [
+    {
+     "sku": "UK006555",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 488.0,
+      "k": 116.0,
+      "f": 4.1,
+      "c": 11.6,
+      "fi": 0.2,
+      "p": 8.2
+     },
+     "per100": {
+      "kj": 166.0,
+      "k": 39.0,
+      "f": 1.4,
+      "c": 3.9,
+      "fi": 0.1,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK007428",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 384.0,
+      "k": 92.0,
+      "f": 3.3,
+      "c": 8.8,
+      "fi": 0.0,
+      "p": 6.6
+     },
+     "per100": {
+      "kj": 137.1,
+      "k": 32.9,
+      "f": 1.2,
+      "c": 3.1,
+      "fi": 0.0,
+      "p": 2.4
+     }
+    },
+    {
+     "sku": "UK007404",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 384.0,
+      "k": 92.0,
+      "f": 3.3,
+      "c": 8.8,
+      "fi": 0.0,
+      "p": 6.6
+     },
+     "per100": {
+      "kj": 137.1,
+      "k": 32.9,
+      "f": 1.2,
+      "c": 3.1,
+      "fi": 0.0,
+      "p": 2.4
+     }
+    },
+    {
+     "sku": "UK006881",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 492.0,
+      "k": 116.0,
+      "f": 1.8,
+      "c": 24.4,
+      "fi": 0.4,
+      "p": 0.6
+     },
+     "per100": {
+      "kj": 273.3,
+      "k": 64.4,
+      "f": 1.0,
+      "c": 13.6,
+      "fi": 0.2,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK006899",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 385.0,
+      "k": 92.0,
+      "f": 4.2,
+      "c": 5.5,
+      "fi": 1.2,
+      "p": 7.3
+     },
+     "per100": {
+      "kj": 181.6,
+      "k": 43.4,
+      "f": 2.0,
+      "c": 2.6,
+      "fi": 0.6,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK006874",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 492.0,
+      "k": 116.0,
+      "f": 1.8,
+      "c": 24.4,
+      "fi": 0.4,
+      "p": 0.6
+     },
+     "per100": {
+      "kj": 175.7,
+      "k": 41.4,
+      "f": 0.6,
+      "c": 8.7,
+      "fi": 0.1,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK007342",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 385.0,
+      "k": 92.0,
+      "f": 4.2,
+      "c": 5.5,
+      "fi": 1.2,
+      "p": 7.3
+     },
+     "per100": {
+      "kj": 181.6,
+      "k": 43.4,
+      "f": 2.0,
+      "c": 2.6,
+      "fi": 0.6,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK005163",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 384.0,
+      "k": 92.0,
+      "f": 3.3,
+      "c": 8.8,
+      "fi": 0.0,
+      "p": 6.6
+     },
+     "per100": {
+      "kj": 137.1,
+      "k": 32.9,
+      "f": 1.2,
+      "c": 3.1,
+      "fi": 0.0,
+      "p": 2.4
+     }
+    },
+    {
+     "sku": "UK020384",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 298.0,
+      "k": 71.0,
+      "f": 1.8,
+      "c": 12.8,
+      "fi": 0.5,
+      "p": 0.6
+     },
+     "per100": {
+      "kj": 101.0,
+      "k": 24.0,
+      "f": 0.6,
+      "c": 4.3,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK020385",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 257.0,
+      "k": 61.0,
+      "f": 1.6,
+      "c": 10.9,
+      "fi": 0.5,
+      "p": 0.5
+     },
+     "per100": {
+      "kj": 99.0,
+      "k": 23.0,
+      "f": 0.6,
+      "c": 4.2,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006643",
+   "name": "Espresso",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 64,
+   "serv": {
+    "kj": 7.0,
+    "k": 2.0,
+    "f": 0.2,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 11.0,
+    "k": 3.0,
+    "f": 0.2,
+    "c": 0.1,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "variants": [
+    {
+     "sku": "UK006643",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 7.0,
+      "k": 2.0,
+      "f": 0.2,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 11.0,
+      "k": 3.0,
+      "f": 0.2,
+      "c": 0.1,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK005152",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK001256",
+   "name": "Filter Coffee",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 335.62,
+   "serv": {
+    "kj": 8.0,
+    "k": 2.0,
+    "f": 0.2,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 2.0,
+    "k": 1.0,
+    "f": 0.1,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "variants": [
+    {
+     "sku": "UK001256",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 8.0,
+      "k": 2.0,
+      "f": 0.2,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 2.0,
+      "k": 1.0,
+      "f": 0.1,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007787",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 67.0,
+      "k": 16.0,
+      "f": 0.6,
+      "c": 2.5,
+      "fi": 0.3,
+      "p": 0.1
+     },
+     "per100": {
+      "kj": 19.0,
+      "k": 4.0,
+      "f": 0.2,
+      "c": 0.7,
+      "fi": 0.1,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007408",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 52.0,
+      "k": 12.0,
+      "f": 0.3,
+      "c": 1.5,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 15.0,
+      "k": 3.0,
+      "f": 0.1,
+      "c": 0.4,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK001257",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 68.0,
+      "k": 16.0,
+      "f": 0.7,
+      "c": 1.5,
+      "fi": 0.0,
+      "p": 1.1
+     },
+     "per100": {
+      "kj": 19.0,
+      "k": 5.0,
+      "f": 0.2,
+      "c": 0.4,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007357",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 64.0,
+      "k": 15.0,
+      "f": 0.8,
+      "c": 0.8,
+      "fi": 0.2,
+      "p": 1.1
+     },
+     "per100": {
+      "kj": 18.0,
+      "k": 4.0,
+      "f": 0.2,
+      "c": 0.2,
+      "fi": 0.1,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007356",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 44.0,
+      "k": 10.0,
+      "f": 0.4,
+      "c": 1.6,
+      "fi": 0.1,
+      "p": 0.1
+     },
+     "per100": {
+      "kj": 12.0,
+      "k": 3.0,
+      "f": 0.1,
+      "c": 0.5,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006647",
+   "name": "Flat White",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 264,
+   "serv": {
+    "kj": 411.0,
+    "k": 98.0,
+    "f": 3.4,
+    "c": 10.0,
+    "fi": 0.0,
+    "p": 6.8
+   },
+   "per100": {
+    "kj": 156.0,
+    "k": 37.0,
+    "f": 1.3,
+    "c": 3.8,
+    "fi": 0.0,
+    "p": 2.6
+   },
+   "variants": [
+    {
+     "sku": "UK006647",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 411.0,
+      "k": 98.0,
+      "f": 3.4,
+      "c": 10.0,
+      "fi": 0.0,
+      "p": 6.8
+     },
+     "per100": {
+      "kj": 156.0,
+      "k": 37.0,
+      "f": 1.3,
+      "c": 3.8,
+      "fi": 0.0,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK006577",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 430.0,
+      "k": 102.0,
+      "f": 1.5,
+      "c": 21.3,
+      "fi": 0.3,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 172.0,
+      "k": 40.8,
+      "f": 0.6,
+      "c": 8.5,
+      "fi": 0.1,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007405",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 335.0,
+      "k": 80.0,
+      "f": 2.9,
+      "c": 7.7,
+      "p": 5.8
+     },
+     "per100": {
+      "kj": 134.0,
+      "k": 32.0,
+      "f": 1.2,
+      "c": 3.1,
+      "p": 2.3
+     }
+    },
+    {
+     "sku": "UK006883",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 442.0,
+      "k": 105.0,
+      "f": 1.6,
+      "c": 21.9,
+      "fi": 0.4,
+      "p": 0.5
+     },
+     "per100": {
+      "kj": 176.8,
+      "k": 42.0,
+      "f": 0.6,
+      "c": 8.8,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK006868",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 430.0,
+      "k": 102.0,
+      "f": 1.5,
+      "c": 21.3,
+      "fi": 0.3,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 219.4,
+      "k": 52.0,
+      "f": 0.8,
+      "c": 10.9,
+      "fi": 0.2,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK006875",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 441.0,
+      "k": 104.0,
+      "f": 1.6,
+      "c": 22.0,
+      "fi": 0.4,
+      "p": 0.5
+     },
+     "per100": {
+      "kj": 176.4,
+      "k": 41.6,
+      "f": 0.6,
+      "c": 8.8,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK006901",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 323.0,
+      "k": 77.0,
+      "f": 3.6,
+      "c": 4.1,
+      "fi": 1.0,
+      "p": 6.3
+     },
+     "per100": {
+      "kj": 173.7,
+      "k": 41.4,
+      "f": 1.9,
+      "c": 2.2,
+      "fi": 0.5,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK007345",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 323.0,
+      "k": 77.0,
+      "f": 3.6,
+      "c": 4.1,
+      "fi": 1.0,
+      "p": 6.3
+     },
+     "per100": {
+      "kj": 173.7,
+      "k": 41.4,
+      "f": 1.9,
+      "c": 2.2,
+      "fi": 0.5,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK005160",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 335.0,
+      "k": 80.0,
+      "f": 2.9,
+      "c": 7.7,
+      "p": 5.8
+     },
+     "per100": {
+      "kj": 134.0,
+      "k": 32.0,
+      "f": 1.2,
+      "c": 3.1,
+      "p": 2.3
+     }
+    },
+    {
+     "sku": "UK007430",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 335.0,
+      "k": 80.0,
+      "f": 2.9,
+      "c": 7.7,
+      "p": 5.8
+     },
+     "per100": {
+      "kj": 134.0,
+      "k": 32.0,
+      "f": 1.2,
+      "c": 3.1,
+      "p": 2.3
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006780",
+   "name": "Latte",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 344,
+   "serv": {
+    "kj": 573.0,
+    "k": 136.0,
+    "f": 4.6,
+    "c": 14.0,
+    "fi": 0.0,
+    "p": 9.5
+   },
+   "per100": {
+    "kj": 166.0,
+    "k": 40.0,
+    "f": 1.3,
+    "c": 4.1,
+    "fi": 0.0,
+    "p": 2.8
+   },
+   "variants": [
+    {
+     "sku": "UK006780",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 573.0,
+      "k": 136.0,
+      "f": 4.6,
+      "c": 14.0,
+      "fi": 0.0,
+      "p": 9.5
+     },
+     "per100": {
+      "kj": 166.0,
+      "k": 40.0,
+      "f": 1.3,
+      "c": 4.1,
+      "fi": 0.0,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK006576",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 633.0,
+      "k": 150.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 175.8,
+      "k": 41.7,
+      "f": 0.6,
+      "c": 8.7,
+      "fi": 0.1,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK007426",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 494.0,
+      "k": 118.0,
+      "f": 4.3,
+      "c": 11.3,
+      "p": 8.5
+     },
+     "per100": {
+      "kj": 149.7,
+      "k": 35.8,
+      "f": 1.3,
+      "c": 3.4,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK007403",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 494.0,
+      "k": 118.0,
+      "f": 4.3,
+      "c": 11.3,
+      "fi": 0.0,
+      "p": 8.5
+     },
+     "per100": {
+      "kj": 149.7,
+      "k": 35.8,
+      "f": 1.3,
+      "c": 3.4,
+      "fi": 0.0,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK006885",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 631.0,
+      "k": 149.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 247.0,
+      "k": 58.3,
+      "f": 0.9,
+      "c": 12.3,
+      "fi": 0.2,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK006898",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 473.0,
+      "k": 113.0,
+      "f": 5.3,
+      "c": 6.1,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 177.8,
+      "k": 42.5,
+      "f": 2.0,
+      "c": 2.3,
+      "fi": 0.6,
+      "p": 3.5
+     }
+    },
+    {
+     "sku": "UK006867",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 633.0,
+      "k": 150.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 238.0,
+      "k": 56.4,
+      "f": 0.9,
+      "c": 11.8,
+      "fi": 0.2,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK006873",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 707.0,
+      "k": 167.0,
+      "f": 2.5,
+      "c": 35.0,
+      "fi": 0.6,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 214.2,
+      "k": 50.6,
+      "f": 0.8,
+      "c": 10.6,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK005161",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 494.0,
+      "k": 118.0,
+      "f": 4.3,
+      "c": 11.3,
+      "p": 8.5
+     },
+     "per100": {
+      "kj": 149.7,
+      "k": 35.8,
+      "f": 1.3,
+      "c": 3.4,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK007340",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 473.0,
+      "k": 113.0,
+      "f": 5.3,
+      "c": 6.1,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 177.8,
+      "k": 42.5,
+      "f": 2.0,
+      "c": 2.3,
+      "fi": 0.6,
+      "p": 3.5
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006712",
+   "name": "Macchiato",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 75,
+   "serv": {
+    "kj": 29.0,
+    "k": 7.0,
+    "f": 0.3,
+    "c": 0.6,
+    "fi": 0.0,
+    "p": 0.4
+   },
+   "per100": {
+    "kj": 39.0,
+    "k": 9.0,
+    "f": 0.4,
+    "c": 0.8,
+    "fi": 0.0,
+    "p": 0.5
+   },
+   "variants": [
+    {
+     "sku": "UK006712",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 29.0,
+      "k": 7.0,
+      "f": 0.3,
+      "c": 0.6,
+      "fi": 0.0,
+      "p": 0.4
+     },
+     "per100": {
+      "kj": 39.0,
+      "k": 9.0,
+      "f": 0.4,
+      "c": 0.8,
+      "fi": 0.0,
+      "p": 0.5
+     }
+    },
+    {
+     "sku": "UK007786",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 25.0,
+      "k": 6.0,
+      "f": 0.1,
+      "c": 1.3,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 41.7,
+      "k": 10.0,
+      "f": 0.2,
+      "c": 2.2,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007407",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 21.0,
+      "k": 5.0,
+      "f": 0.2,
+      "c": 0.5,
+      "fi": 0.0,
+      "p": 0.4
+     },
+     "per100": {
+      "kj": 35.0,
+      "k": 8.3,
+      "f": 0.3,
+      "c": 0.8,
+      "fi": 0.0,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007358",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 28.0,
+      "k": 7.0,
+      "f": 0.1,
+      "c": 1.4,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 46.7,
+      "k": 11.7,
+      "f": 0.2,
+      "c": 2.3,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007363",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 7.0,
+      "k": 4.0,
+      "f": 0.2,
+      "c": 0.3,
+      "fi": 0.1,
+      "p": 0.3
+     },
+     "per100": {
+      "kj": 11.7,
+      "k": 6.7,
+      "f": 0.3,
+      "c": 0.5,
+      "fi": 0.2,
+      "p": 0.5
+     }
+    },
+    {
+     "sku": "UK007360",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 28.0,
+      "k": 7.0,
+      "f": 0.1,
+      "c": 1.4,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 46.7,
+      "k": 11.7,
+      "f": 0.2,
+      "c": 2.3,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK005154",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 21.0,
+      "k": 5.0,
+      "f": 0.0,
+      "c": 0.5,
+      "p": 0.4
+     },
+     "per100": {
+      "kj": 35.0,
+      "k": 8.3,
+      "f": 0.0,
+      "c": 0.8,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007434",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 21.0,
+      "k": 5.0,
+      "f": 0.0,
+      "c": 0.5,
+      "p": 0.4
+     },
+     "per100": {
+      "kj": 35.0,
+      "k": 8.3,
+      "f": 0.0,
+      "c": 0.8,
+      "p": 0.7
+     }
+    },
+    {
+     "sku": "UK007798",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 25.0,
+      "k": 6.0,
+      "f": 0.1,
+      "c": 1.3,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 41.7,
+      "k": 10.0,
+      "f": 0.2,
+      "c": 2.2,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007359",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 17.0,
+      "k": 4.0,
+      "f": 0.2,
+      "c": 0.3,
+      "fi": 0.1,
+      "p": 0.3
+     },
+     "per100": {
+      "kj": 28.3,
+      "k": 6.7,
+      "f": 0.3,
+      "c": 0.5,
+      "fi": 0.2,
+      "p": 0.5
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006553",
+   "name": "Mocha",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 344,
+   "serv": {
+    "kj": 825.0,
+    "k": 196.0,
+    "f": 5.3,
+    "c": 25.0,
+    "fi": 2.8,
+    "p": 10.7
+   },
+   "per100": {
+    "kj": 240.0,
+    "k": 57.0,
+    "f": 1.5,
+    "c": 7.3,
+    "fi": 0.8,
+    "p": 3.1
+   },
+   "variants": [
+    {
+     "sku": "UK006553",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 825.0,
+      "k": 196.0,
+      "f": 5.3,
+      "c": 25.0,
+      "fi": 2.8,
+      "p": 10.7
+     },
+     "per100": {
+      "kj": 240.0,
+      "k": 57.0,
+      "f": 1.5,
+      "c": 7.3,
+      "fi": 0.8,
+      "p": 3.1
+     }
+    },
+    {
+     "sku": "UK006578",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 913.0,
+      "k": 216.0,
+      "f": 3.3,
+      "c": 43.6,
+      "fi": 1.9,
+      "p": 1.2
+     },
+     "per100": {
+      "kj": 253.6,
+      "k": 60.0,
+      "f": 0.9,
+      "c": 12.1,
+      "fi": 0.5,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007406",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 778.0,
+      "k": 185.0,
+      "f": 5.2,
+      "c": 24.4,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 235.8,
+      "k": 56.1,
+      "f": 1.6,
+      "c": 7.4,
+      "fi": 0.5,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK006882",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 915.0,
+      "k": 216.0,
+      "f": 3.3,
+      "c": 44.0,
+      "fi": 1.9,
+      "p": 1.9
+     },
+     "per100": {
+      "kj": 277.3,
+      "k": 65.5,
+      "f": 1.0,
+      "c": 13.3,
+      "fi": 0.6,
+      "p": 0.6
+     }
+    },
+    {
+     "sku": "UK006869",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 856.0,
+      "k": 204.0,
+      "f": 3.0,
+      "c": 41.0,
+      "fi": 0.5,
+      "p": 1.8
+     },
+     "per100": {
+      "kj": 281.6,
+      "k": 67.1,
+      "f": 1.0,
+      "c": 13.5,
+      "fi": 0.2,
+      "p": 0.6
+     }
+    },
+    {
+     "sku": "UK006877",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 915.0,
+      "k": 216.0,
+      "f": 3.3,
+      "c": 44.0,
+      "fi": 1.9,
+      "p": 1.9
+     },
+     "per100": {
+      "kj": 277.3,
+      "k": 65.5,
+      "f": 1.0,
+      "c": 13.3,
+      "fi": 0.6,
+      "p": 0.6
+     }
+    },
+    {
+     "sku": "UK006900",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 760.0,
+      "k": 181.0,
+      "f": 6.2,
+      "c": 19.5,
+      "fi": 2.9,
+      "p": 10.1
+     },
+     "per100": {
+      "kj": 277.4,
+      "k": 66.1,
+      "f": 2.3,
+      "c": 7.1,
+      "fi": 1.1,
+      "p": 3.7
+     }
+    },
+    {
+     "sku": "UK007346",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 760.0,
+      "k": 181.0,
+      "f": 6.2,
+      "c": 19.5,
+      "fi": 2.9,
+      "p": 10.1
+     },
+     "per100": {
+      "kj": 277.4,
+      "k": 66.1,
+      "f": 2.3,
+      "c": 7.1,
+      "fi": 1.1,
+      "p": 3.7
+     }
+    },
+    {
+     "sku": "UK007432",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 778.0,
+      "k": 185.0,
+      "f": 5.2,
+      "c": 24.4,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 235.8,
+      "k": 56.1,
+      "f": 1.6,
+      "c": 7.4,
+      "fi": 0.5,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK005165",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 778.0,
+      "k": 185.0,
+      "f": 5.2,
+      "c": 24.4,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 235.8,
+      "k": 56.1,
+      "f": 1.6,
+      "c": 7.4,
+      "fi": 0.5,
+      "p": 2.8
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK020283",
+   "name": "Pumpkin Spice Latte",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 347,
+   "serv": {
+    "kj": 770.0,
+    "k": 183.0,
+    "f": 4.7,
+    "c": 25.5,
+    "fi": 0.5,
+    "p": 9.3
+   },
+   "per100": {
+    "kj": 222.0,
+    "k": 53.0,
+    "f": 1.4,
+    "c": 7.3,
+    "fi": 0.2,
+    "p": 2.7
+   },
+   "variants": [
+    {
+     "sku": "UK020283",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 770.0,
+      "k": 183.0,
+      "f": 4.7,
+      "c": 25.5,
+      "fi": 0.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 222.0,
+      "k": 53.0,
+      "f": 1.4,
+      "c": 7.3,
+      "fi": 0.2,
+      "p": 2.7
+     }
+    },
+    {
+     "sku": "UK020284",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 628.0,
+      "k": 148.0,
+      "f": 1.0,
+      "c": 25.8,
+      "fi": 0.5,
+      "p": 8.8
+     },
+     "per100": {
+      "kj": 181.0,
+      "k": 43.0,
+      "f": 0.3,
+      "c": 7.4,
+      "fi": 0.2,
+      "p": 2.5
+     }
+    },
+    {
+     "sku": "UK020285",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 728.0,
+      "k": 173.0,
+      "f": 5.8,
+      "c": 19.4,
+      "fi": 2.1,
+      "p": 9.9
+     },
+     "per100": {
+      "kj": 210.0,
+      "k": 50.0,
+      "f": 1.7,
+      "c": 5.6,
+      "fi": 0.6,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK020286",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 757.0,
+      "k": 179.0,
+      "f": 3.6,
+      "c": 34.5,
+      "fi": 2.7,
+      "p": 0.9
+     },
+     "per100": {
+      "kj": 218.0,
+      "k": 52.0,
+      "f": 1.0,
+      "c": 9.9,
+      "fi": 0.8,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK020287",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 550.0,
+      "k": 130.0,
+      "f": 2.0,
+      "c": 26.8,
+      "fi": 1.1,
+      "p": 0.6
+     },
+     "per100": {
+      "kj": 159.0,
+      "k": 38.0,
+      "f": 0.6,
+      "c": 7.7,
+      "fi": 0.3,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK020288",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 628.0,
+      "k": 148.0,
+      "f": 1.0,
+      "c": 25.8,
+      "fi": 0.5,
+      "p": 8.8
+     },
+     "per100": {
+      "kj": 181.0,
+      "k": 43.0,
+      "f": 0.3,
+      "c": 7.4,
+      "fi": 0.2,
+      "p": 2.5
+     }
+    },
+    {
+     "sku": "UK020289",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 770.0,
+      "k": 183.0,
+      "f": 4.7,
+      "c": 25.5,
+      "fi": 0.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 222.0,
+      "k": 53.0,
+      "f": 1.4,
+      "c": 7.3,
+      "fi": 0.2,
+      "p": 2.7
+     }
+    },
+    {
+     "sku": "UK020290",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 728.0,
+      "k": 173.0,
+      "f": 5.8,
+      "c": 19.4,
+      "fi": 2.1,
+      "p": 9.9
+     },
+     "per100": {
+      "kj": 210.0,
+      "k": 50.0,
+      "f": 1.7,
+      "c": 5.6,
+      "fi": 0.6,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK020291",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 757.0,
+      "k": 179.0,
+      "f": 3.6,
+      "c": 34.5,
+      "fi": 2.7,
+      "p": 0.9
+     },
+     "per100": {
+      "kj": 218.0,
+      "k": 52.0,
+      "f": 1.0,
+      "c": 9.9,
+      "fi": 0.8,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK020292",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 550.0,
+      "k": 130.0,
+      "f": 2.0,
+      "c": 26.8,
+      "fi": 1.1,
+      "p": 0.6
+     },
+     "per100": {
+      "kj": 159.0,
+      "k": 38.0,
+      "f": 0.6,
+      "c": 7.7,
+      "fi": 0.3,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK020293",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 627.0,
+      "k": 148.0,
+      "f": 1.0,
+      "c": 25.7,
+      "fi": 0.5,
+      "p": 8.8
+     },
+     "per100": {
+      "kj": 182.0,
+      "k": 43.0,
+      "f": 0.3,
+      "c": 7.5,
+      "fi": 0.2,
+      "p": 2.6
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK021508",
+   "name": "Toasted Marshmallow Hot Chocolate",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 382,
+   "serv": {
+    "kj": 1505.0,
+    "k": 360.0,
+    "f": 17.0,
+    "c": 38.7,
+    "fi": 2.8,
+    "p": 11.4
+   },
+   "per100": {
+    "kj": 394.0,
+    "k": 94.0,
+    "f": 4.5,
+    "c": 10.1,
+    "fi": 0.7,
+    "p": 3.0
+   }
+  },
+  {
+   "sku": "UK021477",
+   "name": "Toasted Marshmallow Latte",
+   "section": "Hot drinks / Coffee",
+   "type": "barista_beverage",
+   "g": 380,
+   "serv": {
+    "kj": 1226.0,
+    "k": 293.0,
+    "f": 16.6,
+    "c": 26.1,
+    "fi": 0.0,
+    "p": 9.9
+   },
+   "per100": {
+    "kj": 323.0,
+    "k": 77.0,
+    "f": 4.4,
+    "c": 6.9,
+    "fi": 0.0,
+    "p": 2.6
+   }
+  },
+  {
+   "sku": "UK003567",
+   "name": "Babyccino",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 31,
+   "serv": {
+    "kj": 77.0,
+    "k": 18.0,
+    "f": 0.5,
+    "c": 2.1,
+    "fi": 0.2,
+    "p": 1.1
+   },
+   "per100": {
+    "kj": 247.0,
+    "k": 59.0,
+    "f": 1.8,
+    "c": 6.8,
+    "fi": 0.5,
+    "p": 3.7
+   },
+   "variants": [
+    {
+     "sku": "UK003567",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 77.0,
+      "k": 18.0,
+      "f": 0.5,
+      "c": 2.1,
+      "fi": 0.2,
+      "p": 1.1
+     },
+     "per100": {
+      "kj": 247.0,
+      "k": 59.0,
+      "f": 1.8,
+      "c": 6.8,
+      "fi": 0.5,
+      "p": 3.7
+     }
+    },
+    {
+     "sku": "UK007402",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 52.0,
+      "k": 12.0,
+      "f": 0.2,
+      "c": 2.3,
+      "fi": 0.2,
+      "p": 0.1
+     },
+     "per100": {
+      "kj": 167.0,
+      "k": 40.0,
+      "f": 0.8,
+      "c": 7.3,
+      "fi": 0.7,
+      "p": 0.5
+     }
+    },
+    {
+     "sku": "UK007479",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 61.0,
+      "k": 14.0,
+      "f": 0.1,
+      "c": 2.1,
+      "fi": 0.2,
+      "p": 1.1
+     },
+     "per100": {
+      "kj": 196.0,
+      "k": 46.0,
+      "f": 0.4,
+      "c": 6.9,
+      "fi": 0.5,
+      "p": 3.5
+     }
+    },
+    {
+     "sku": "UK007456",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 72.0,
+      "k": 17.0,
+      "f": 0.7,
+      "c": 1.4,
+      "fi": 0.3,
+      "p": 1.2
+     },
+     "per100": {
+      "kj": 232.0,
+      "k": 55.0,
+      "f": 2.2,
+      "c": 4.6,
+      "fi": 1.1,
+      "p": 3.9
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK003463",
+   "name": "Breakfast Tea",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 323,
+   "serv": {
+    "kj": 61.0,
+    "k": 15.0,
+    "f": 0.5,
+    "c": 1.5,
+    "fi": 0.0,
+    "p": 1.0
+   },
+   "per100": {
+    "kj": 19.0,
+    "k": 5.0,
+    "f": 0.1,
+    "c": 0.5,
+    "fi": 0.0,
+    "p": 0.3
+   },
+   "variants": [
+    {
+     "sku": "UK003463",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 61.0,
+      "k": 15.0,
+      "f": 0.5,
+      "c": 1.5,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 19.0,
+      "k": 5.0,
+      "f": 0.1,
+      "c": 0.5,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007788",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 57.3,
+      "k": 13.6,
+      "f": 0.2,
+      "c": 2.8,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007477",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007472",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 52.8,
+      "k": 12.5,
+      "f": 0.2,
+      "c": 2.6,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007473",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 59.0,
+      "k": 14.0,
+      "f": 0.5,
+      "c": 1.4,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 16.4,
+      "k": 3.9,
+      "f": 0.1,
+      "c": 0.4,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007471",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 141.0,
+      "k": 33.0,
+      "f": 1.6,
+      "c": 1.8,
+      "fi": 0.5,
+      "p": 2.3
+     },
+     "per100": {
+      "kj": 42.7,
+      "k": 10.0,
+      "f": 0.5,
+      "c": 0.5,
+      "fi": 0.2,
+      "p": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK020102",
+   "name": "Chai Latte",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 336,
+   "serv": {
+    "kj": 874.0,
+    "k": 207.0,
+    "f": 5.5,
+    "c": 28.1,
+    "fi": 0.5,
+    "p": 11.2
+   },
+   "per100": {
+    "kj": 260.0,
+    "k": 62.0,
+    "f": 1.6,
+    "c": 8.4,
+    "fi": 0.2,
+    "p": 3.3
+   }
+  },
+  {
+   "sku": "UK003464",
+   "name": "Earl Grey Tea",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 323,
+   "serv": {
+    "kj": 61.0,
+    "k": 15.0,
+    "f": 0.5,
+    "c": 1.5,
+    "fi": 0.0,
+    "p": 1.0
+   },
+   "per100": {
+    "kj": 19.0,
+    "k": 5.0,
+    "f": 0.1,
+    "c": 0.5,
+    "fi": 0.0,
+    "p": 0.3
+   },
+   "variants": [
+    {
+     "sku": "UK003464",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 61.0,
+      "k": 15.0,
+      "f": 0.5,
+      "c": 1.5,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 19.0,
+      "k": 5.0,
+      "f": 0.1,
+      "c": 0.5,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007789",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 57.3,
+      "k": 13.6,
+      "f": 0.2,
+      "c": 2.8,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007478",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007476",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 52.8,
+      "k": 12.5,
+      "f": 0.2,
+      "c": 2.6,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007474",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 59.0,
+      "k": 14.0,
+      "f": 0.5,
+      "c": 1.4,
+      "fi": 0.0,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 16.4,
+      "k": 3.9,
+      "f": 0.1,
+      "c": 0.4,
+      "fi": 0.0,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007475",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 141.0,
+      "k": 33.0,
+      "f": 1.6,
+      "c": 1.8,
+      "fi": 0.5,
+      "p": 2.3
+     },
+     "per100": {
+      "kj": 42.7,
+      "k": 10.0,
+      "f": 0.5,
+      "c": 0.5,
+      "fi": 0.2,
+      "p": 0.7
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK004550",
+   "name": "Hot Chocolate",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 319,
+   "serv": {
+    "kj": 1039.0,
+    "k": 247.0,
+    "f": 5.4,
+    "c": 35.3,
+    "fi": 5.3,
+    "p": 11.5
+   },
+   "per100": {
+    "kj": 326.0,
+    "k": 77.0,
+    "f": 1.7,
+    "c": 11.1,
+    "fi": 1.7,
+    "p": 3.6
+   },
+   "variants": [
+    {
+     "sku": "UK004550",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 1039.0,
+      "k": 247.0,
+      "f": 5.4,
+      "c": 35.3,
+      "fi": 5.3,
+      "p": 11.5
+     },
+     "per100": {
+      "kj": 326.0,
+      "k": 77.0,
+      "f": 1.7,
+      "c": 11.1,
+      "fi": 1.7,
+      "p": 3.6
+     }
+    },
+    {
+     "sku": "UK007416",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1077.0,
+      "k": 256.0,
+      "f": 6.4,
+      "c": 37.5,
+      "fi": 2.8,
+      "p": 10.6
+     },
+     "per100": {
+      "kj": 326.4,
+      "k": 77.6,
+      "f": 1.9,
+      "c": 11.4,
+      "fi": 0.8,
+      "p": 3.2
+     }
+    },
+    {
+     "sku": "UK006579",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1214.0,
+      "k": 288.0,
+      "f": 4.4,
+      "c": 57.1,
+      "fi": 3.3,
+      "p": 2.3
+     },
+     "per100": {
+      "kj": 337.2,
+      "k": 80.0,
+      "f": 1.2,
+      "c": 15.9,
+      "fi": 0.9,
+      "p": 0.6
+     }
+    },
+    {
+     "sku": "UK006876",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1212.0,
+      "k": 287.0,
+      "f": 4.4,
+      "c": 57.1,
+      "fi": 3.3,
+      "p": 3.0
+     },
+     "per100": {
+      "kj": 367.3,
+      "k": 87.0,
+      "f": 1.3,
+      "c": 17.3,
+      "fi": 1.0,
+      "p": 0.9
+     }
+    },
+    {
+     "sku": "UK006902",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1055.0,
+      "k": 251.0,
+      "f": 7.4,
+      "c": 32.4,
+      "fi": 4.3,
+      "p": 11.4
+     },
+     "per100": {
+      "kj": 376.8,
+      "k": 89.6,
+      "f": 2.6,
+      "c": 11.6,
+      "fi": 1.5,
+      "p": 4.1
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK006758",
+   "name": "Matcha Latte",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 332,
+   "serv": {
+    "kj": 361.0,
+    "k": 86.0,
+    "f": 2.1,
+    "c": 15.3,
+    "fi": 0.6,
+    "p": 1.2
+   },
+   "per100": {
+    "kj": 109.0,
+    "k": 26.0,
+    "f": 0.6,
+    "c": 4.6,
+    "fi": 0.2,
+    "p": 0.3
+   },
+   "variants": [
+    {
+     "sku": "UK006758",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 361.0,
+      "k": 86.0,
+      "f": 2.1,
+      "c": 15.3,
+      "fi": 0.6,
+      "p": 1.2
+     },
+     "per100": {
+      "kj": 109.0,
+      "k": 26.0,
+      "f": 0.6,
+      "c": 4.6,
+      "fi": 0.2,
+      "p": 0.3
+     }
+    },
+    {
+     "sku": "UK007413",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 444.0,
+      "k": 105.0,
+      "f": 0.9,
+      "c": 14.2,
+      "fi": 0.0,
+      "p": 9.8
+     },
+     "per100": {
+      "kj": 134.0,
+      "k": 32.0,
+      "f": 0.3,
+      "c": 4.3,
+      "fi": 0.0,
+      "p": 3.0
+     }
+    },
+    {
+     "sku": "UK007551",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 548.0,
+      "k": 131.0,
+      "f": 6.0,
+      "c": 7.5,
+      "fi": 1.7,
+      "p": 11.0
+     },
+     "per100": {
+      "kj": 165.0,
+      "k": 39.0,
+      "f": 1.8,
+      "c": 2.3,
+      "fi": 0.5,
+      "p": 3.3
+     }
+    },
+    {
+     "sku": "UK007550",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 594.0,
+      "k": 141.0,
+      "f": 4.9,
+      "c": 13.9,
+      "fi": 0.0,
+      "p": 10.4
+     },
+     "per100": {
+      "kj": 179.0,
+      "k": 42.0,
+      "f": 1.5,
+      "c": 4.2,
+      "fi": 0.0,
+      "p": 3.1
+     }
+    },
+    {
+     "sku": "UK007790",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 580.0,
+      "k": 138.0,
+      "f": 3.7,
+      "c": 23.4,
+      "fi": 2.2,
+      "p": 1.4
+     },
+     "per100": {
+      "kj": 175.0,
+      "k": 41.0,
+      "f": 1.1,
+      "c": 7.1,
+      "fi": 0.7,
+      "p": 0.4
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK003465",
+   "name": "Peppermint Tea",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 322,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK003466",
+   "name": "Tropical Green Tea",
+   "section": "Hot drinks / Tea and other hot drinks",
+   "type": "barista_beverage",
+   "g": 322,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK021468",
+   "name": "Banana Cinnamon Porridge",
+   "section": "Hot food / Porridge",
+   "type": "food",
+   "g": 334.75,
+   "serv": {
+    "kj": 1188.0,
+    "k": 283.0,
+    "f": 8.8,
+    "c": 39.3,
+    "fi": 5.1,
+    "p": 9.0
+   },
+   "per100": {
+    "kj": 355.0,
+    "k": 84.0,
+    "f": 2.6,
+    "c": 11.7,
+    "fi": 1.5,
+    "p": 2.7
+   }
+  },
+  {
+   "sku": "UK020515",
+   "name": "Coconut & Quinoa Porridge",
+   "section": "Hot food / Porridge",
+   "type": "food",
+   "g": 300,
+   "serv": {
+    "kj": 1152.0,
+    "k": 275.0,
+    "f": 12.2,
+    "c": 34.4,
+    "fi": 1.5,
+    "p": 6.1
+   },
+   "per100": {
+    "kj": 384.0,
+    "k": 92.0,
+    "f": 4.1,
+    "c": 11.5,
+    "fi": 0.5,
+    "p": 2.0
+   }
+  },
+  {
+   "sku": "UK004209",
+   "name": "Pret's Proper Porridge",
+   "section": "Hot food / Porridge",
+   "type": "food",
+   "g": 300,
+   "serv": {
+    "kj": 906.0,
+    "k": 216.0,
+    "f": 8.7,
+    "c": 23.7,
+    "fi": 4.2,
+    "p": 8.7
+   },
+   "per100": {
+    "kj": 302.0,
+    "k": 72.0,
+    "f": 2.9,
+    "c": 7.9,
+    "fi": 1.4,
+    "p": 2.9
+   }
+  },
+  {
+   "sku": "UK021469",
+   "name": "Side Porridge",
+   "section": "Hot food / Porridge",
+   "type": "food",
+   "g": 200,
+   "serv": {
+    "kj": 604.0,
+    "k": 144.0,
+    "f": 5.8,
+    "c": 15.8,
+    "fi": 2.8,
+    "p": 5.8
+   },
+   "per100": {
+    "kj": 302.0,
+    "k": 72.0,
+    "f": 2.9,
+    "c": 7.9,
+    "fi": 1.4,
+    "p": 2.9
+   }
+  },
+  {
+   "sku": "UK020603",
+   "name": "Crispy Potato Bites",
+   "section": "Hot food / Hot food boxes",
+   "type": "food",
+   "g": 150,
+   "serv": {
+    "kj": 780.0,
+    "k": 185.0,
+    "f": 4.8,
+    "c": 30.0,
+    "fi": 3.9,
+    "p": 3.6
+   },
+   "per100": {
+    "kj": 520.0,
+    "k": 124.0,
+    "f": 3.2,
+    "c": 20.0,
+    "fi": 2.6,
+    "p": 2.4
+   }
+  },
+  {
+   "sku": "UK005764",
+   "name": "Kale & Cauli Macaroni Cheese",
+   "section": "Hot food / Hot food boxes",
+   "type": "food",
+   "g": 360,
+   "serv": {
+    "kj": 2237.0,
+    "k": 535.0,
+    "f": 26.7,
+    "c": 45.5,
+    "fi": 5.1,
+    "p": 25.5
+   },
+   "per100": {
+    "kj": 621.0,
+    "k": 149.0,
+    "f": 7.4,
+    "c": 12.6,
+    "fi": 1.4,
+    "p": 7.1
+   }
+  },
+  {
+   "sku": "UK021541",
+   "name": "Butter Chicken Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 748.0,
+    "k": 179.0,
+    "f": 9.9,
+    "c": 12.4,
+    "fi": 4.0,
+    "p": 8.1
+   },
+   "per100": {
+    "kj": 410.0,
+    "k": 98.0,
+    "f": 5.4,
+    "c": 6.8,
+    "fi": 2.2,
+    "p": 4.4
+   }
+  },
+  {
+   "sku": "UK021467",
+   "name": "Butter Chicken Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 365,
+   "serv": {
+    "kj": 1496.0,
+    "k": 359.0,
+    "f": 19.8,
+    "c": 24.9,
+    "fi": 7.9,
+    "p": 16.2
+   },
+   "per100": {
+    "kj": 410.0,
+    "k": 98.0,
+    "f": 5.4,
+    "c": 6.8,
+    "fi": 2.2,
+    "p": 4.4
+   }
+  },
+  {
+   "sku": "UK008242",
+   "name": "Chicken Laksa Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 616.0,
+    "k": 148.0,
+    "f": 9.1,
+    "c": 11.3,
+    "fi": 2.0,
+    "p": 4.3
+   },
+   "per100": {
+    "kj": 338.0,
+    "k": 81.0,
+    "f": 5.0,
+    "c": 6.2,
+    "fi": 1.1,
+    "p": 2.4
+   }
+  },
+  {
+   "sku": "UK008241",
+   "name": "Chicken Laksa Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 365,
+   "serv": {
+    "kj": 1232.0,
+    "k": 296.0,
+    "f": 18.1,
+    "c": 22.5,
+    "fi": 3.9,
+    "p": 8.7
+   },
+   "per100": {
+    "kj": 338.0,
+    "k": 81.0,
+    "f": 5.0,
+    "c": 6.2,
+    "fi": 1.1,
+    "p": 2.4
+   }
+  },
+  {
+   "sku": "UK021540",
+   "name": "Creamy Roast Chicken Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 478.0,
+    "k": 114.0,
+    "f": 6.2,
+    "c": 8.9,
+    "fi": 1.1,
+    "p": 5.1
+   },
+   "per100": {
+    "kj": 262.0,
+    "k": 63.0,
+    "f": 3.4,
+    "c": 4.9,
+    "fi": 0.6,
+    "p": 2.8
+   }
+  },
+  {
+   "sku": "UK021465",
+   "name": "Creamy Roast Chicken Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 365,
+   "serv": {
+    "kj": 955.0,
+    "k": 229.0,
+    "f": 12.5,
+    "c": 17.8,
+    "fi": 2.1,
+    "p": 10.2
+   },
+   "per100": {
+    "kj": 262.0,
+    "k": 63.0,
+    "f": 3.4,
+    "c": 4.9,
+    "fi": 0.6,
+    "p": 2.8
+   }
+  },
+  {
+   "sku": "UK021542",
+   "name": "Pret's Lasagne Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 639.0,
+    "k": 153.0,
+    "f": 8.0,
+    "c": 12.2,
+    "fi": 2.0,
+    "p": 6.9
+   },
+   "per100": {
+    "kj": 350.0,
+    "k": 84.0,
+    "f": 4.4,
+    "c": 6.7,
+    "fi": 1.1,
+    "p": 3.8
+   }
+  },
+  {
+   "sku": "UK020249",
+   "name": "Pret's Lasagne Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 360,
+   "serv": {
+    "kj": 1260.0,
+    "k": 302.0,
+    "f": 15.8,
+    "c": 24.1,
+    "fi": 4.0,
+    "p": 13.7
+   },
+   "per100": {
+    "kj": 350.0,
+    "k": 84.0,
+    "f": 4.4,
+    "c": 6.7,
+    "fi": 1.1,
+    "p": 3.8
+   }
+  },
+  {
+   "sku": "UK007758",
+   "name": "Pret's Mushroom Risotto",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 365,
+   "serv": {
+    "kj": 934.0,
+    "k": 222.0,
+    "f": 7.8,
+    "c": 29.5,
+    "fi": 3.0,
+    "p": 7.1
+   },
+   "per100": {
+    "kj": 256.0,
+    "k": 61.0,
+    "f": 2.1,
+    "c": 8.1,
+    "fi": 0.8,
+    "p": 1.9
+   }
+  },
+  {
+   "sku": "UK007757",
+   "name": "Pret's Mushroom Risotto Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 467.0,
+    "k": 111.0,
+    "f": 3.9,
+    "c": 14.7,
+    "fi": 1.5,
+    "p": 3.6
+   },
+   "per100": {
+    "kj": 256.0,
+    "k": 61.0,
+    "f": 2.1,
+    "c": 8.1,
+    "fi": 0.8,
+    "p": 1.9
+   }
+  },
+  {
+   "sku": "UK020267",
+   "name": "Soup White Baguette with Butter",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 74,
+   "serv": {
+    "kj": 1015.0,
+    "k": 241.0,
+    "f": 7.3,
+    "c": 36.6,
+    "fi": 1.6,
+    "p": 6.5
+   },
+   "per100": {
+    "kj": 1372.0,
+    "k": 326.0,
+    "f": 9.9,
+    "c": 49.5,
+    "fi": 2.1,
+    "p": 8.7
+   }
+  },
+  {
+   "sku": "UK006220",
+   "name": "Souper Tomato",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 365,
+   "serv": {
+    "kj": 590.0,
+    "k": 141.0,
+    "f": 5.2,
+    "c": 15.1,
+    "fi": 5.0,
+    "p": 6.0
+   },
+   "per100": {
+    "kj": 162.0,
+    "k": 39.0,
+    "f": 1.4,
+    "c": 4.1,
+    "fi": 1.4,
+    "p": 1.6
+   }
+  },
+  {
+   "sku": "UK006550",
+   "name": "Souper Tomato Side Soup",
+   "section": "Hot food / Soup and breads",
+   "type": "food",
+   "g": 182.5,
+   "serv": {
+    "kj": 295.0,
+    "k": 71.0,
+    "f": 2.6,
+    "c": 7.5,
+    "fi": 2.5,
+    "p": 3.0
+   },
+   "per100": {
+    "kj": 162.0,
+    "k": 39.0,
+    "f": 1.4,
+    "c": 4.1,
+    "fi": 1.4,
+    "p": 1.6
+   }
+  },
+  {
+   "sku": "UK020168",
+   "name": "Classic Cheese Bloomer Toastie",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 198.5,
+   "serv": {
+    "kj": 2667.0,
+    "k": 638.0,
+    "f": 34.8,
+    "c": 51.4,
+    "fi": 4.7,
+    "p": 27.5
+   },
+   "per100": {
+    "kj": 1343.0,
+    "k": 322.0,
+    "f": 17.5,
+    "c": 25.9,
+    "fi": 2.4,
+    "p": 13.9
+   }
+  },
+  {
+   "sku": "UK006060",
+   "name": "Falafel & Halloumi Hot Wrap",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 265.08,
+   "serv": {
+    "kj": 2609.0,
+    "k": 623.0,
+    "f": 29.5,
+    "c": 63.1,
+    "fi": 8.2,
+    "p": 22.3
+   },
+   "per100": {
+    "kj": 984.0,
+    "k": 235.0,
+    "f": 11.1,
+    "c": 23.8,
+    "fi": 3.1,
+    "p": 8.4
+   }
+  },
+  {
+   "sku": "UK020169",
+   "name": "Ham & Cheese Bloomer Toastie",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 212,
+   "serv": {
+    "kj": 2480.0,
+    "k": 592.0,
+    "f": 27.7,
+    "c": 50.8,
+    "fi": 5.0,
+    "p": 32.5
+   },
+   "per100": {
+    "kj": 1170.0,
+    "k": 279.0,
+    "f": 13.1,
+    "c": 23.9,
+    "fi": 2.4,
+    "p": 15.3
+   }
+  },
+  {
+   "sku": "UK020243",
+   "name": "Italian Style Chicken & Basil Hot Wrap",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 247.94,
+   "serv": {
+    "kj": 2325.0,
+    "k": 555.0,
+    "f": 24.5,
+    "c": 48.2,
+    "fi": 6.1,
+    "p": 32.4
+   },
+   "per100": {
+    "kj": 938.0,
+    "k": 224.0,
+    "f": 9.9,
+    "c": 19.4,
+    "fi": 2.5,
+    "p": 13.1
+   }
+  },
+  {
+   "sku": "UK006491",
+   "name": "Swedish Meatball Hot Wrap",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 238.62,
+   "serv": {
+    "kj": 2629.0,
+    "k": 630.0,
+    "f": 35.5,
+    "c": 44.8,
+    "fi": 4.8,
+    "p": 30.3
+   },
+   "per100": {
+    "kj": 1102.0,
+    "k": 264.0,
+    "f": 14.9,
+    "c": 18.8,
+    "fi": 2.0,
+    "p": 12.7
+   }
+  },
+  {
+   "sku": "UK020170",
+   "name": "Tuna Melt Bloomer Toastie",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 218.12,
+   "serv": {
+    "kj": 2315.0,
+    "k": 552.0,
+    "f": 22.8,
+    "c": 50.2,
+    "fi": 5.0,
+    "p": 34.1
+   },
+   "per100": {
+    "kj": 1061.0,
+    "k": 253.0,
+    "f": 10.4,
+    "c": 23.0,
+    "fi": 2.3,
+    "p": 15.6
+   }
+  },
+  {
+   "sku": "UK021546",
+   "name": "Warm Beef Birria & Jalapeño Ciabatta",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 264.02,
+   "serv": {
+    "kj": 2088.0,
+    "k": 496.0,
+    "f": 15.4,
+    "c": 59.1,
+    "fi": 5.0,
+    "p": 27.9
+   },
+   "per100": {
+    "kj": 791.0,
+    "k": 188.0,
+    "f": 5.8,
+    "c": 22.4,
+    "fi": 1.9,
+    "p": 10.6
+   }
+  },
+  {
+   "sku": "UK021538",
+   "name": "Warm Chicken Caesar Bacon Ciabatta",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 268,
+   "serv": {
+    "kj": 3304.0,
+    "k": 791.0,
+    "f": 45.2,
+    "c": 54.4,
+    "fi": 3.5,
+    "p": 39.9
+   },
+   "per100": {
+    "kj": 1233.0,
+    "k": 295.0,
+    "f": 16.9,
+    "c": 20.3,
+    "fi": 1.3,
+    "p": 14.9
+   }
+  },
+  {
+   "sku": "UK021470",
+   "name": "Warm Three Cheese & Tomato Ciabatta",
+   "section": "Hot food / Toasted sandwiches, wraps and baguettes",
+   "type": "food",
+   "g": 223.52,
+   "serv": {
+    "kj": 2387.0,
+    "k": 570.0,
+    "f": 25.0,
+    "c": 59.2,
+    "fi": 5.1,
+    "p": 24.5
+   },
+   "per100": {
+    "kj": 1068.0,
+    "k": 255.0,
+    "f": 11.2,
+    "c": 26.5,
+    "fi": 2.3,
+    "p": 10.9
+   }
+  },
+  {
+   "sku": "UK021472",
+   "name": "Bacon, Cheese & Jalapeño Pastry",
+   "section": "Hot food / Hot pastries",
+   "type": "food",
+   "g": 175,
+   "serv": {
+    "kj": 2466.0,
+    "k": 591.0,
+    "f": 36.4,
+    "c": 48.6,
+    "fi": 2.3,
+    "p": 16.1
+   },
+   "per100": {
+    "kj": 1409.0,
+    "k": 338.0,
+    "f": 20.8,
+    "c": 27.8,
+    "fi": 1.3,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK004468",
+   "name": "Ham & Cheese Croissant",
+   "section": "Hot food / Hot pastries",
+   "type": "food",
+   "g": 98,
+   "serv": {
+    "kj": 1300.0,
+    "k": 312.0,
+    "f": 19.4,
+    "c": 19.9,
+    "fi": 1.9,
+    "p": 13.5
+   },
+   "per100": {
+    "kj": 1327.0,
+    "k": 318.0,
+    "f": 19.8,
+    "c": 20.3,
+    "fi": 1.9,
+    "p": 13.8
+   }
+  },
+  {
+   "sku": "UK004469",
+   "name": "Mozzarella & Tomato Croissant",
+   "section": "Hot food / Hot pastries",
+   "type": "food",
+   "g": 108.62,
+   "serv": {
+    "kj": 1555.0,
+    "k": 373.0,
+    "f": 24.6,
+    "c": 24.1,
+    "fi": 1.8,
+    "p": 12.9
+   },
+   "per100": {
+    "kj": 1432.0,
+    "k": 344.0,
+    "f": 22.7,
+    "c": 22.2,
+    "fi": 1.6,
+    "p": 11.9
+   }
+  },
+  {
+   "sku": "UK008246",
+   "name": "Pret's Sausage Roll",
+   "section": "Hot food / Hot pastries",
+   "type": "food",
+   "g": 110,
+   "serv": {
+    "kj": 1600.0,
+    "k": 384.0,
+    "f": 26.0,
+    "c": 22.4,
+    "fi": 3.0,
+    "p": 13.7
+   },
+   "per100": {
+    "kj": 1454.0,
+    "k": 349.0,
+    "f": 23.6,
+    "c": 20.4,
+    "fi": 2.7,
+    "p": 12.5
+   }
+  },
+  {
+   "sku": "UK021471",
+   "name": "Spinach & Feta Pastry",
+   "section": "Hot food / Hot pastries",
+   "type": "food",
+   "g": 175,
+   "serv": {
+    "kj": 2296.0,
+    "k": 551.0,
+    "f": 34.5,
+    "c": 45.0,
+    "fi": 5.2,
+    "p": 12.6
+   },
+   "per100": {
+    "kj": 1312.0,
+    "k": 315.0,
+    "f": 19.7,
+    "c": 25.7,
+    "fi": 3.0,
+    "p": 7.2
+   }
+  },
+  {
+   "sku": "UK020438",
+   "name": "Pret's Veggie Breakfast Ciabatta",
+   "section": "Hot food / Breakfast rolls",
+   "type": "food",
+   "g": 205.6,
+   "serv": {
+    "kj": 1561.0,
+    "k": 372.0,
+    "f": 14.9,
+    "c": 40.4,
+    "fi": 4.2,
+    "p": 17.1
+   },
+   "per100": {
+    "kj": 759.0,
+    "k": 181.0,
+    "f": 7.2,
+    "c": 19.7,
+    "fi": 2.1,
+    "p": 8.3
+   }
+  },
+  {
+   "sku": "UK020921",
+   "name": "Sausage & Bacon Ciabatta",
+   "section": "Hot food / Breakfast rolls",
+   "type": "food",
+   "g": 153,
+   "serv": {
+    "kj": 1952.0,
+    "k": 467.0,
+    "f": 24.5,
+    "c": 37.1,
+    "fi": 2.8,
+    "p": 23.2
+   },
+   "per100": {
+    "kj": 1276.0,
+    "k": 305.0,
+    "f": 16.0,
+    "c": 24.3,
+    "fi": 1.8,
+    "p": 15.1
+   }
+  },
+  {
+   "sku": "UK020439",
+   "name": "Triple Bacon Ciabatta",
+   "section": "Hot food / Breakfast rolls",
+   "type": "food",
+   "g": 118,
+   "serv": {
+    "kj": 1353.0,
+    "k": 322.0,
+    "f": 11.3,
+    "c": 35.7,
+    "fi": 2.2,
+    "p": 18.1
+   },
+   "per100": {
+    "kj": 1146.0,
+    "k": 273.0,
+    "f": 9.6,
+    "c": 30.3,
+    "fi": 1.9,
+    "p": 15.4
+   }
+  },
+  {
+   "sku": "UK020442",
+   "name": "Triple Sausage Ciabatta",
+   "section": "Hot food / Breakfast rolls",
+   "type": "food",
+   "g": 148,
+   "serv": {
+    "kj": 1960.0,
+    "k": 469.0,
+    "f": 25.9,
+    "c": 37.8,
+    "fi": 3.0,
+    "p": 19.8
+   },
+   "per100": {
+    "kj": 1324.0,
+    "k": 317.0,
+    "f": 17.5,
+    "c": 25.5,
+    "fi": 2.0,
+    "p": 13.4
+   }
+  },
+  {
+   "sku": "UK020440",
+   "name": "Ultimate Breakfast Ciabatta",
+   "section": "Hot food / Breakfast rolls",
+   "type": "food",
+   "g": 216.6,
+   "serv": {
+    "kj": 2103.0,
+    "k": 503.0,
+    "f": 25.4,
+    "c": 40.9,
+    "fi": 3.8,
+    "p": 25.7
+   },
+   "per100": {
+    "kj": 971.0,
+    "k": 232.0,
+    "f": 11.7,
+    "c": 18.9,
+    "fi": 1.8,
+    "p": 11.9
+   }
+  },
+  {
+   "sku": "UK020513",
+   "name": "British Sausages, Pret's Baked Beans & Egg Pot",
+   "section": "Hot food / Hot pots",
+   "type": "food",
+   "g": 246,
+   "serv": {
+    "kj": 1421.0,
+    "k": 342.0,
+    "f": 19.5,
+    "c": 12.0,
+    "fi": 14.9,
+    "p": 22.1
+   },
+   "per100": {
+    "kj": 578.0,
+    "k": 139.0,
+    "f": 7.9,
+    "c": 4.9,
+    "fi": 6.1,
+    "p": 9.0
+   }
+  },
+  {
+   "sku": "UK020514",
+   "name": "Roasted Mushroom, Pret's Baked Beans & Egg Pot",
+   "section": "Hot food / Hot pots",
+   "type": "food",
+   "g": 227,
+   "serv": {
+    "kj": 797.0,
+    "k": 191.0,
+    "f": 6.6,
+    "c": 11.2,
+    "fi": 15.1,
+    "p": 14.1
+   },
+   "per100": {
+    "kj": 351.0,
+    "k": 84.0,
+    "f": 2.9,
+    "c": 4.9,
+    "fi": 6.7,
+    "p": 6.2
+   }
+  },
+  {
+   "sku": "UK000765",
+   "name": "All Butter Croissant",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 71,
+   "serv": {
+    "kj": 1213.0,
+    "k": 291.0,
+    "f": 16.8,
+    "c": 27.5,
+    "fi": 1.6,
+    "p": 6.5
+   },
+   "per100": {
+    "kj": 1709.0,
+    "k": 409.0,
+    "f": 23.7,
+    "c": 38.8,
+    "fi": 2.2,
+    "p": 9.1
+   }
+  },
+  {
+   "sku": "UK005667",
+   "name": "Almond Croissant",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 90,
+   "serv": {
+    "kj": 1596.0,
+    "k": 382.0,
+    "f": 21.1,
+    "c": 38.9,
+    "fi": 2.6,
+    "p": 7.8
+   },
+   "per100": {
+    "kj": 1773.0,
+    "k": 424.0,
+    "f": 23.5,
+    "c": 43.2,
+    "fi": 2.8,
+    "p": 8.7
+   }
+  },
+  {
+   "sku": "UK005671",
+   "name": "Chocolate Croissant",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 86,
+   "serv": {
+    "kj": 1461.0,
+    "k": 350.0,
+    "f": 20.6,
+    "c": 33.4,
+    "fi": 3.7,
+    "p": 5.9
+   },
+   "per100": {
+    "kj": 1699.0,
+    "k": 407.0,
+    "f": 24.0,
+    "c": 38.8,
+    "fi": 4.3,
+    "p": 6.9
+   }
+  },
+  {
+   "sku": "UK006927",
+   "name": "Cinnamon Danish",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 111,
+   "serv": {
+    "kj": 1728.0,
+    "k": 413.0,
+    "f": 20.9,
+    "c": 48.3,
+    "fi": 2.5,
+    "p": 6.7
+   },
+   "per100": {
+    "kj": 1557.0,
+    "k": 372.0,
+    "f": 18.8,
+    "c": 43.5,
+    "fi": 2.3,
+    "p": 6.0
+   }
+  },
+  {
+   "sku": "UK005705",
+   "name": "Pain aux Raisins",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 121,
+   "serv": {
+    "kj": 1504.0,
+    "k": 358.0,
+    "f": 14.4,
+    "c": 49.0,
+    "fi": 2.5,
+    "p": 7.0
+   },
+   "per100": {
+    "kj": 1243.0,
+    "k": 296.0,
+    "f": 11.9,
+    "c": 40.5,
+    "fi": 2.1,
+    "p": 5.8
+   }
+  },
+  {
+   "sku": "UK007692",
+   "name": "Very Berry Croissant",
+   "section": "Breakfast / Breakfast pastries",
+   "type": "food",
+   "g": 88,
+   "serv": {
+    "kj": 1255.0,
+    "k": 299.0,
+    "f": 12.2,
+    "c": 41.7,
+    "fi": 2.3,
+    "p": 4.4
+   },
+   "per100": {
+    "kj": 1426.0,
+    "k": 340.0,
+    "f": 13.9,
+    "c": 47.4,
+    "fi": 2.6,
+    "p": 5.0
+   }
+  },
+  {
+   "sku": "UK006825",
+   "name": "Bacon & Egg Mayo Breakfast Baguette",
+   "section": "Breakfast / Breakfast baguettes",
+   "type": "food",
+   "g": 139,
+   "serv": {
+    "kj": 1463.0,
+    "k": 348.0,
+    "f": 13.7,
+    "c": 38.7,
+    "fi": 2.0,
+    "p": 16.6
+   },
+   "per100": {
+    "kj": 1052.0,
+    "k": 251.0,
+    "f": 9.9,
+    "c": 27.8,
+    "fi": 1.4,
+    "p": 11.9
+   }
+  },
+  {
+   "sku": "UK007489",
+   "name": "Free-Range Egg & Avo Breakfast Baguette",
+   "section": "Breakfast / Breakfast baguettes",
+   "type": "food",
+   "g": 151.79,
+   "serv": {
+    "kj": 1454.0,
+    "k": 347.0,
+    "f": 15.0,
+    "c": 39.0,
+    "fi": 3.2,
+    "p": 12.3
+   },
+   "per100": {
+    "kj": 958.0,
+    "k": 228.0,
+    "f": 9.9,
+    "c": 25.7,
+    "fi": 2.1,
+    "p": 8.1
+   }
+  },
+  {
+   "sku": "UK001044",
+   "name": "Roasted Tomato & Egg Mayo Breakfast Baguette",
+   "section": "Breakfast / Breakfast baguettes",
+   "type": "food",
+   "g": 153.5,
+   "serv": {
+    "kj": 1515.0,
+    "k": 361.0,
+    "f": 14.3,
+    "c": 42.3,
+    "fi": 3.2,
+    "p": 14.1
+   },
+   "per100": {
+    "kj": 987.0,
+    "k": 235.0,
+    "f": 9.3,
+    "c": 27.6,
+    "fi": 2.1,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK001341",
+   "name": "Smoked Salmon & Egg Mayo Breakfast Baguette",
+   "section": "Breakfast / Breakfast baguettes",
+   "type": "food",
+   "g": 149,
+   "serv": {
+    "kj": 1476.0,
+    "k": 352.0,
+    "f": 13.7,
+    "c": 38.7,
+    "fi": 1.9,
+    "p": 17.5
+   },
+   "per100": {
+    "kj": 991.0,
+    "k": 236.0,
+    "f": 9.2,
+    "c": 25.9,
+    "fi": 1.3,
+    "p": 11.8
+   }
+  },
+  {
+   "sku": "UK006718",
+   "name": "Acai & Almond Butter Bowl",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 186.64,
+   "serv": {
+    "kj": 1416.0,
+    "k": 338.0,
+    "f": 12.9,
+    "c": 43.7,
+    "fi": 7.4,
+    "p": 8.1
+   },
+   "per100": {
+    "kj": 759.0,
+    "k": 181.0,
+    "f": 6.9,
+    "c": 23.4,
+    "fi": 4.0,
+    "p": 4.4
+   }
+  },
+  {
+   "sku": "UK006210",
+   "name": "Bircher Muesli",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 213.8,
+   "serv": {
+    "kj": 1413.0,
+    "k": 336.0,
+    "f": 11.0,
+    "c": 43.5,
+    "fi": 3.8,
+    "p": 14.0
+   },
+   "per100": {
+    "kj": 661.0,
+    "k": 157.0,
+    "f": 5.1,
+    "c": 20.3,
+    "fi": 1.8,
+    "p": 6.5
+   }
+  },
+  {
+   "sku": "UK020510",
+   "name": "Blueberry Balance Bowl",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 218,
+   "serv": {
+    "kj": 1331.0,
+    "k": 318.0,
+    "f": 13.6,
+    "c": 33.8,
+    "fi": 4.2,
+    "p": 12.9
+   },
+   "per100": {
+    "kj": 610.0,
+    "k": 146.0,
+    "f": 6.2,
+    "c": 15.5,
+    "fi": 1.9,
+    "p": 5.9
+   }
+  },
+  {
+   "sku": "UK005773",
+   "name": "Five Berry Bowl",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 206.6,
+   "serv": {
+    "kj": 1403.0,
+    "k": 334.0,
+    "f": 9.8,
+    "c": 45.7,
+    "fi": 5.7,
+    "p": 12.9
+   },
+   "per100": {
+    "kj": 679.0,
+    "k": 162.0,
+    "f": 4.7,
+    "c": 22.1,
+    "fi": 2.7,
+    "p": 6.2
+   }
+  },
+  {
+   "sku": "UK020129",
+   "name": "Mango & Banana Sunshine Bowl",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 166.42,
+   "serv": {
+    "kj": 1432.0,
+    "k": 342.0,
+    "f": 13.4,
+    "c": 45.9,
+    "fi": 5.7,
+    "p": 6.4
+   },
+   "per100": {
+    "kj": 861.0,
+    "k": 205.0,
+    "f": 8.1,
+    "c": 27.6,
+    "fi": 3.4,
+    "p": 3.9
+   }
+  },
+  {
+   "sku": "UK020376",
+   "name": "The Big Apple Bowl",
+   "section": "Breakfast / Birchers and yoghurt bowls",
+   "type": "food",
+   "g": 193.93,
+   "serv": {
+    "kj": 1278.0,
+    "k": 304.0,
+    "f": 8.4,
+    "c": 43.2,
+    "fi": 4.2,
+    "p": 11.7
+   },
+   "per100": {
+    "kj": 659.0,
+    "k": 157.0,
+    "f": 4.3,
+    "c": 22.3,
+    "fi": 2.2,
+    "p": 6.0
+   }
+  },
+  {
+   "sku": "UK020107",
+   "name": "Chicken Salad",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 213.72,
+   "serv": {
+    "kj": 2211.0,
+    "k": 529.0,
+    "f": 29.3,
+    "c": 42.7,
+    "fi": 3.8,
+    "p": 21.8
+   },
+   "per100": {
+    "kj": 1034.0,
+    "k": 248.0,
+    "f": 13.7,
+    "c": 20.0,
+    "fi": 1.8,
+    "p": 10.2
+   }
+  },
+  {
+   "sku": "UK000809",
+   "name": "Chicken, Avocado & Basil",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 239.62,
+   "serv": {
+    "kj": 2042.0,
+    "k": 488.0,
+    "f": 23.3,
+    "c": 43.5,
+    "fi": 6.0,
+    "p": 23.2
+   },
+   "per100": {
+    "kj": 852.0,
+    "k": 204.0,
+    "f": 9.7,
+    "c": 18.2,
+    "fi": 2.5,
+    "p": 9.7
+   }
+  },
+  {
+   "sku": "UK020354",
+   "name": "Chicken, Avocado & Basil Half Sandwich",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 119.81,
+   "serv": {
+    "kj": 1021.0,
+    "k": 244.0,
+    "f": 11.6,
+    "c": 21.8,
+    "fi": 3.0,
+    "p": 11.6
+   },
+   "per100": {
+    "kj": 852.0,
+    "k": 204.0,
+    "f": 9.7,
+    "c": 18.2,
+    "fi": 2.5,
+    "p": 9.7
+   }
+  },
+  {
+   "sku": "UK006827",
+   "name": "Classic Super Club",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 233.1,
+   "serv": {
+    "kj": 2208.0,
+    "k": 528.0,
+    "f": 26.5,
+    "c": 43.5,
+    "fi": 4.1,
+    "p": 26.8
+   },
+   "per100": {
+    "kj": 947.0,
+    "k": 226.0,
+    "f": 11.4,
+    "c": 18.6,
+    "fi": 1.8,
+    "p": 11.5
+   }
+  },
+  {
+   "sku": "UK020365",
+   "name": "Classic Super Club Half Sandwich",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 116.55,
+   "serv": {
+    "kj": 1104.0,
+    "k": 264.0,
+    "f": 13.3,
+    "c": 21.7,
+    "fi": 2.1,
+    "p": 13.4
+   },
+   "per100": {
+    "kj": 947.0,
+    "k": 226.0,
+    "f": 11.4,
+    "c": 18.6,
+    "fi": 1.8,
+    "p": 11.5
+   }
+  },
+  {
+   "sku": "UK021286",
+   "name": "Coronation Chicken",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 214.6,
+   "serv": {
+    "kj": 2037.0,
+    "k": 486.0,
+    "f": 21.9,
+    "c": 47.7,
+    "fi": 4.5,
+    "p": 22.3
+   },
+   "per100": {
+    "kj": 949.0,
+    "k": 227.0,
+    "f": 10.2,
+    "c": 22.2,
+    "fi": 2.1,
+    "p": 10.4
+   }
+  },
+  {
+   "sku": "UK020781",
+   "name": "Egg Florentine",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 242.48,
+   "serv": {
+    "kj": 1926.0,
+    "k": 459.0,
+    "f": 19.2,
+    "c": 45.5,
+    "fi": 4.7,
+    "p": 23.7
+   },
+   "per100": {
+    "kj": 794.0,
+    "k": 189.0,
+    "f": 7.9,
+    "c": 18.8,
+    "fi": 1.9,
+    "p": 9.8
+   }
+  },
+  {
+   "sku": "UK000698",
+   "name": "Free-Range Egg Mayo",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 175,
+   "serv": {
+    "kj": 1591.0,
+    "k": 379.0,
+    "f": 14.3,
+    "c": 43.3,
+    "fi": 3.8,
+    "p": 17.3
+   },
+   "per100": {
+    "kj": 909.0,
+    "k": 217.0,
+    "f": 8.2,
+    "c": 24.8,
+    "fi": 2.2,
+    "p": 9.9
+   }
+  },
+  {
+   "sku": "UK006440",
+   "name": "Ham & Cheese",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 194.62,
+   "serv": {
+    "kj": 2223.0,
+    "k": 531.0,
+    "f": 25.8,
+    "c": 42.7,
+    "fi": 3.9,
+    "p": 30.0
+   },
+   "per100": {
+    "kj": 1142.0,
+    "k": 273.0,
+    "f": 13.3,
+    "c": 21.9,
+    "fi": 2.0,
+    "p": 15.4
+   }
+  },
+  {
+   "sku": "UK001531",
+   "name": "Mature Cheddar & Pret Pickle",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 224.1,
+   "serv": {
+    "kj": 2128.0,
+    "k": 508.0,
+    "f": 23.0,
+    "c": 54.7,
+    "fi": 4.8,
+    "p": 18.2
+   },
+   "per100": {
+    "kj": 950.0,
+    "k": 227.0,
+    "f": 10.3,
+    "c": 24.4,
+    "fi": 2.1,
+    "p": 8.1
+   }
+  },
+  {
+   "sku": "UK021288",
+   "name": "New Yorker Club Sandwich",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 306,
+   "serv": {
+    "kj": 3010.0,
+    "k": 719.0,
+    "f": 32.0,
+    "c": 69.5,
+    "fi": 7.1,
+    "p": 34.5
+   },
+   "per100": {
+    "kj": 984.0,
+    "k": 235.0,
+    "f": 10.5,
+    "c": 22.7,
+    "fi": 2.3,
+    "p": 11.3
+   }
+  },
+  {
+   "sku": "UK000716",
+   "name": "Scottish Smoked Salmon",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 157.72,
+   "serv": {
+    "kj": 1744.0,
+    "k": 416.0,
+    "f": 17.4,
+    "c": 40.8,
+    "fi": 3.4,
+    "p": 22.2
+   },
+   "per100": {
+    "kj": 1106.0,
+    "k": 264.0,
+    "f": 11.1,
+    "c": 25.9,
+    "fi": 2.1,
+    "p": 14.1
+   }
+  },
+  {
+   "sku": "UK006783",
+   "name": "Tuna & Cucumber",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Sandwiches",
+   "type": "food",
+   "g": 180.1,
+   "serv": {
+    "kj": 1592.0,
+    "k": 379.0,
+    "f": 13.9,
+    "c": 43.3,
+    "fi": 3.5,
+    "p": 18.5
+   },
+   "per100": {
+    "kj": 884.0,
+    "k": 210.0,
+    "f": 7.7,
+    "c": 24.0,
+    "fi": 1.9,
+    "p": 10.3
+   }
+  },
+  {
+   "sku": "UK006207",
+   "name": "Avo, Olive & Toms Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 236.75,
+   "serv": {
+    "kj": 2355.0,
+    "k": 564.0,
+    "f": 29.6,
+    "c": 57.1,
+    "fi": 8.5,
+    "p": 13.0
+   },
+   "per100": {
+    "kj": 995.0,
+    "k": 238.0,
+    "f": 12.5,
+    "c": 24.1,
+    "fi": 3.6,
+    "p": 5.5
+   }
+  },
+  {
+   "sku": "UK020333",
+   "name": "Avo, Olive & Toms Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 118.38,
+   "serv": {
+    "kj": 1178.0,
+    "k": 282.0,
+    "f": 14.8,
+    "c": 28.6,
+    "fi": 4.2,
+    "p": 6.5
+   },
+   "per100": {
+    "kj": 995.0,
+    "k": 238.0,
+    "f": 12.5,
+    "c": 24.1,
+    "fi": 3.6,
+    "p": 5.5
+   }
+  },
+  {
+   "sku": "UK001040",
+   "name": "Brie, Tomato & Basil Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 188.48,
+   "serv": {
+    "kj": 1844.0,
+    "k": 439.0,
+    "f": 15.2,
+    "c": 56.2,
+    "fi": 3.3,
+    "p": 17.6
+   },
+   "per100": {
+    "kj": 978.0,
+    "k": 233.0,
+    "f": 8.1,
+    "c": 29.8,
+    "fi": 1.7,
+    "p": 9.4
+   }
+  },
+  {
+   "sku": "UK020342",
+   "name": "Chicken Caesar & Bacon Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 109,
+   "serv": {
+    "kj": 1247.0,
+    "k": 298.0,
+    "f": 13.8,
+    "c": 27.2,
+    "fi": 2.2,
+    "p": 15.1
+   },
+   "per100": {
+    "kj": 1144.0,
+    "k": 273.0,
+    "f": 12.7,
+    "c": 24.9,
+    "fi": 2.0,
+    "p": 13.9
+   }
+  },
+  {
+   "sku": "UK006823",
+   "name": "Chicken Caesar Bacon Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 218,
+   "serv": {
+    "kj": 2494.0,
+    "k": 596.0,
+    "f": 27.6,
+    "c": 54.3,
+    "fi": 4.4,
+    "p": 30.3
+   },
+   "per100": {
+    "kj": 1144.0,
+    "k": 273.0,
+    "f": 12.7,
+    "c": 24.9,
+    "fi": 2.0,
+    "p": 13.9
+   }
+  },
+  {
+   "sku": "UK020023",
+   "name": "Chicken Salad Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 224.5,
+   "serv": {
+    "kj": 2491.0,
+    "k": 595.0,
+    "f": 29.5,
+    "c": 57.0,
+    "fi": 2.8,
+    "p": 24.0
+   },
+   "per100": {
+    "kj": 1109.0,
+    "k": 265.0,
+    "f": 13.1,
+    "c": 25.4,
+    "fi": 1.3,
+    "p": 10.7
+   }
+  },
+  {
+   "sku": "UK020642",
+   "name": "Chicken Satay Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 240.5,
+   "serv": {
+    "kj": 2258.0,
+    "k": 537.0,
+    "f": 17.6,
+    "c": 64.8,
+    "fi": 4.4,
+    "p": 27.6
+   },
+   "per100": {
+    "kj": 939.0,
+    "k": 223.0,
+    "f": 7.3,
+    "c": 27.0,
+    "fi": 1.8,
+    "p": 11.5
+   }
+  },
+  {
+   "sku": "UK021423",
+   "name": "Coronation Chicken Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 227.38,
+   "serv": {
+    "kj": 2272.0,
+    "k": 542.0,
+    "f": 21.7,
+    "c": 59.1,
+    "fi": 5.0,
+    "p": 25.0
+   },
+   "per100": {
+    "kj": 999.0,
+    "k": 238.0,
+    "f": 9.5,
+    "c": 26.0,
+    "fi": 2.2,
+    "p": 11.0
+   }
+  },
+  {
+   "sku": "UK021446",
+   "name": "Coronation Chicken Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 113.69,
+   "serv": {
+    "kj": 1136.0,
+    "k": 271.0,
+    "f": 10.8,
+    "c": 29.6,
+    "fi": 2.5,
+    "p": 12.5
+   },
+   "per100": {
+    "kj": 999.0,
+    "k": 238.0,
+    "f": 9.5,
+    "c": 26.0,
+    "fi": 2.2,
+    "p": 11.0
+   }
+  },
+  {
+   "sku": "UK003546",
+   "name": "Italian Prosciutto Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 220,
+   "serv": {
+    "kj": 2287.0,
+    "k": 546.0,
+    "f": 24.7,
+    "c": 54.3,
+    "fi": 4.8,
+    "p": 24.1
+   },
+   "per100": {
+    "kj": 1040.0,
+    "k": 248.0,
+    "f": 11.2,
+    "c": 24.7,
+    "fi": 2.2,
+    "p": 11.0
+   }
+  },
+  {
+   "sku": "UK020335",
+   "name": "Italian Prosciutto Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 110.24,
+   "serv": {
+    "kj": 1146.0,
+    "k": 274.0,
+    "f": 12.4,
+    "c": 27.2,
+    "fi": 2.4,
+    "p": 12.1
+   },
+   "per100": {
+    "kj": 1040.0,
+    "k": 248.0,
+    "f": 11.2,
+    "c": 24.7,
+    "fi": 2.2,
+    "p": 11.0
+   }
+  },
+  {
+   "sku": "UK021424",
+   "name": "Mortadella, Mozzarella & Pistachio Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 263.7,
+   "serv": {
+    "kj": 2985.0,
+    "k": 715.0,
+    "f": 39.8,
+    "c": 54.6,
+    "fi": 5.4,
+    "p": 31.8
+   },
+   "per100": {
+    "kj": 1132.0,
+    "k": 271.0,
+    "f": 15.1,
+    "c": 20.7,
+    "fi": 2.1,
+    "p": 12.1
+   }
+  },
+  {
+   "sku": "UK000962",
+   "name": "Pole & Line Caught Tuna Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 230.32,
+   "serv": {
+    "kj": 2161.0,
+    "k": 515.0,
+    "f": 19.3,
+    "c": 58.8,
+    "fi": 2.6,
+    "p": 25.2
+   },
+   "per100": {
+    "kj": 938.0,
+    "k": 223.0,
+    "f": 8.4,
+    "c": 25.5,
+    "fi": 1.1,
+    "p": 10.9
+   }
+  },
+  {
+   "sku": "UK003816",
+   "name": "Pole & Line Caught Tuna Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 115.16,
+   "serv": {
+    "kj": 1081.0,
+    "k": 257.0,
+    "f": 9.6,
+    "c": 29.4,
+    "fi": 1.3,
+    "p": 12.6
+   },
+   "per100": {
+    "kj": 938.0,
+    "k": 223.0,
+    "f": 8.4,
+    "c": 25.5,
+    "fi": 1.1,
+    "p": 10.9
+   }
+  },
+  {
+   "sku": "UK001921",
+   "name": "Posh Cheddar & Pickle Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 231.62,
+   "serv": {
+    "kj": 2695.0,
+    "k": 643.0,
+    "f": 28.5,
+    "c": 71.9,
+    "fi": 6.6,
+    "p": 21.4
+   },
+   "per100": {
+    "kj": 1163.0,
+    "k": 278.0,
+    "f": 12.3,
+    "c": 31.1,
+    "fi": 2.9,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK003824",
+   "name": "Posh Cheddar & Pickle Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 116.7,
+   "serv": {
+    "kj": 1348.0,
+    "k": 322.0,
+    "f": 14.3,
+    "c": 36.0,
+    "fi": 3.3,
+    "p": 10.7
+   },
+   "per100": {
+    "kj": 1155.0,
+    "k": 276.0,
+    "f": 12.2,
+    "c": 30.8,
+    "fi": 2.9,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK021285",
+   "name": "Pret's Chicken Satay Half Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 120.25,
+   "serv": {
+    "kj": 1129.0,
+    "k": 269.0,
+    "f": 8.8,
+    "c": 32.4,
+    "fi": 2.2,
+    "p": 13.8
+   },
+   "per100": {
+    "kj": 939.0,
+    "k": 223.0,
+    "f": 7.3,
+    "c": 27.0,
+    "fi": 1.8,
+    "p": 11.5
+   }
+  },
+  {
+   "sku": "UK020379",
+   "name": "Smoked Salmon, Egg Mayo & Avo Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 239.62,
+   "serv": {
+    "kj": 2314.0,
+    "k": 552.0,
+    "f": 24.9,
+    "c": 54.6,
+    "fi": 5.7,
+    "p": 24.6
+   },
+   "per100": {
+    "kj": 966.0,
+    "k": 231.0,
+    "f": 10.4,
+    "c": 22.8,
+    "fi": 2.4,
+    "p": 10.3
+   }
+  },
+  {
+   "sku": "UK020214",
+   "name": "Smoked Salmon, Soft Cheese & Dill Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 207.72,
+   "serv": {
+    "kj": 2104.0,
+    "k": 501.0,
+    "f": 19.0,
+    "c": 53.4,
+    "fi": 4.2,
+    "p": 27.0
+   },
+   "per100": {
+    "kj": 1013.0,
+    "k": 241.0,
+    "f": 9.1,
+    "c": 25.7,
+    "fi": 2.0,
+    "p": 13.0
+   }
+  },
+  {
+   "sku": "UK000682",
+   "name": "Wiltshire Cured Ham & Grevé Baguette",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Baguettes",
+   "type": "food",
+   "g": 222.5,
+   "serv": {
+    "kj": 2498.0,
+    "k": 596.0,
+    "f": 25.9,
+    "c": 57.4,
+    "fi": 3.4,
+    "p": 31.5
+   },
+   "per100": {
+    "kj": 1123.0,
+    "k": 268.0,
+    "f": 11.6,
+    "c": 25.8,
+    "fi": 1.5,
+    "p": 14.2
+   }
+  },
+  {
+   "sku": "UK001501",
+   "name": "Avo & Herb Wrap",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 247.36,
+   "serv": {
+    "kj": 2091.0,
+    "k": 502.0,
+    "f": 31.1,
+    "c": 40.0,
+    "fi": 6.0,
+    "p": 12.5
+   },
+   "per100": {
+    "kj": 845.0,
+    "k": 203.0,
+    "f": 12.6,
+    "c": 16.2,
+    "fi": 2.4,
+    "p": 5.0
+   }
+  },
+  {
+   "sku": "UK020002",
+   "name": "Chicken Pesto & Rocket Wrap",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 213.11,
+   "serv": {
+    "kj": 2154.0,
+    "k": 516.0,
+    "f": 29.7,
+    "c": 38.4,
+    "fi": 3.2,
+    "p": 22.1
+   },
+   "per100": {
+    "kj": 1011.0,
+    "k": 242.0,
+    "f": 13.9,
+    "c": 18.0,
+    "fi": 1.5,
+    "p": 10.4
+   }
+  },
+  {
+   "sku": "UK020394",
+   "name": "Chicken Satay Wrap",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 249.7,
+   "serv": {
+    "kj": 1927.0,
+    "k": 460.0,
+    "f": 19.2,
+    "c": 45.0,
+    "fi": 4.6,
+    "p": 24.4
+   },
+   "per100": {
+    "kj": 772.0,
+    "k": 184.0,
+    "f": 7.7,
+    "c": 18.0,
+    "fi": 1.9,
+    "p": 9.8
+   }
+  },
+  {
+   "sku": "UK020422",
+   "name": "Falafel, Avo & Chipotle Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 265.53,
+   "serv": {
+    "kj": 2094.0,
+    "k": 499.0,
+    "f": 19.2,
+    "c": 65.5,
+    "fi": 8.3,
+    "p": 11.9
+   },
+   "per100": {
+    "kj": 789.0,
+    "k": 188.0,
+    "f": 7.2,
+    "c": 24.7,
+    "fi": 3.1,
+    "p": 4.5
+   }
+  },
+  {
+   "sku": "UK020919",
+   "name": "Falafel, Avo & Chipotle Half Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 132.76,
+   "serv": {
+    "kj": 1047.0,
+    "k": 250.0,
+    "f": 9.6,
+    "c": 32.8,
+    "fi": 4.1,
+    "p": 5.9
+   },
+   "per100": {
+    "kj": 789.0,
+    "k": 188.0,
+    "f": 7.2,
+    "c": 24.7,
+    "fi": 3.1,
+    "p": 4.5
+   }
+  },
+  {
+   "sku": "UK007579",
+   "name": "Hoisin Duck Wrap",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 222.7,
+   "serv": {
+    "kj": 1856.0,
+    "k": 442.0,
+    "f": 17.5,
+    "c": 48.2,
+    "fi": 3.8,
+    "p": 21.0
+   },
+   "per100": {
+    "kj": 833.0,
+    "k": 199.0,
+    "f": 7.9,
+    "c": 21.7,
+    "fi": 1.7,
+    "p": 9.4
+   }
+  },
+  {
+   "sku": "UK007506",
+   "name": "Humous & Chipotle Wrap",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 246.03,
+   "serv": {
+    "kj": 1736.0,
+    "k": 414.0,
+    "f": 16.0,
+    "c": 49.2,
+    "fi": 11.3,
+    "p": 12.7
+   },
+   "per100": {
+    "kj": 706.0,
+    "k": 168.0,
+    "f": 6.5,
+    "c": 20.0,
+    "fi": 4.6,
+    "p": 5.2
+   }
+  },
+  {
+   "sku": "UK020421",
+   "name": "Mediterranean Style Tuna Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 264.51,
+   "serv": {
+    "kj": 2105.0,
+    "k": 502.0,
+    "f": 22.2,
+    "c": 49.7,
+    "fi": 3.2,
+    "p": 24.3
+   },
+   "per100": {
+    "kj": 796.0,
+    "k": 190.0,
+    "f": 8.4,
+    "c": 18.8,
+    "fi": 1.2,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK021502",
+   "name": "Mediterranean Style Tuna Half Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 132.25,
+   "serv": {
+    "kj": 1052.0,
+    "k": 251.0,
+    "f": 11.1,
+    "c": 24.9,
+    "fi": 1.6,
+    "p": 12.1
+   },
+   "per100": {
+    "kj": 796.0,
+    "k": 190.0,
+    "f": 8.4,
+    "c": 18.8,
+    "fi": 1.2,
+    "p": 9.2
+   }
+  },
+  {
+   "sku": "UK020424",
+   "name": "Shawarma Spiced Chicken Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 254.88,
+   "serv": {
+    "kj": 1906.0,
+    "k": 453.0,
+    "f": 10.7,
+    "c": 56.7,
+    "fi": 7.8,
+    "p": 28.5
+   },
+   "per100": {
+    "kj": 748.0,
+    "k": 178.0,
+    "f": 4.2,
+    "c": 22.3,
+    "fi": 3.1,
+    "p": 11.2
+   }
+  },
+  {
+   "sku": "UK020918",
+   "name": "Shawarma Spiced Chicken Half Flatbread",
+   "section": "Sandwiches, baguettes, wraps and flatbreads / Wraps and flatbreads",
+   "type": "food",
+   "g": 127.44,
+   "serv": {
+    "kj": 953.0,
+    "k": 226.0,
+    "f": 5.3,
+    "c": 28.4,
+    "fi": 3.9,
+    "p": 14.2
+   },
+   "per100": {
+    "kj": 748.0,
+    "k": 178.0,
+    "f": 4.2,
+    "c": 22.3,
+    "fi": 3.1,
+    "p": 11.2
+   }
+  },
+  {
+   "sku": "UK020114",
+   "name": "Iced Chai Latte",
+   "section": "Cold drinks / Iced favourites",
+   "type": "barista_beverage",
+   "g": 400,
+   "serv": {
+    "kj": 683.0,
+    "k": 162.0,
+    "f": 4.0,
+    "c": 23.3,
+    "fi": 0.0,
+    "p": 8.2
+   },
+   "per100": {
+    "kj": 171.0,
+    "k": 40.0,
+    "f": 1.0,
+    "c": 5.8,
+    "fi": 0.0,
+    "p": 2.1
+   }
+  },
+  {
+   "sku": "UK007724",
+   "name": "Iced Hot Chocolate",
+   "section": "Cold drinks / Iced favourites",
+   "type": "food",
+   "g": 376,
+   "serv": {
+    "kj": 831.0,
+    "k": 197.0,
+    "f": 3.7,
+    "c": 30.5,
+    "fi": 5.3,
+    "p": 7.9
+   },
+   "per100": {
+    "kj": 221.0,
+    "k": 52.0,
+    "f": 1.0,
+    "c": 8.1,
+    "fi": 1.4,
+    "p": 2.1
+   }
+  },
+  {
+   "sku": "UK006892",
+   "name": "Iced Matcha Latte",
+   "section": "Cold drinks / Iced favourites",
+   "type": "barista_beverage",
+   "g": 402,
+   "serv": {
+    "kj": 266.0,
+    "k": 63.0,
+    "f": 1.5,
+    "c": 11.2,
+    "fi": 0.4,
+    "p": 1.0
+   },
+   "per100": {
+    "kj": 66.0,
+    "k": 16.0,
+    "f": 0.4,
+    "c": 2.8,
+    "fi": 0.1,
+    "p": 0.2
+   },
+   "variants": [
+    {
+     "sku": "UK006892",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 266.0,
+      "k": 63.0,
+      "f": 1.5,
+      "c": 11.2,
+      "fi": 0.4,
+      "p": 1.0
+     },
+     "per100": {
+      "kj": 66.0,
+      "k": 16.0,
+      "f": 0.4,
+      "c": 2.8,
+      "fi": 0.1,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK007773",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 399.0,
+      "k": 95.0,
+      "f": 4.3,
+      "c": 5.6,
+      "fi": 1.2,
+      "p": 8.0
+     },
+     "per100": {
+      "kj": 99.0,
+      "k": 24.0,
+      "f": 1.1,
+      "c": 1.4,
+      "fi": 0.3,
+      "p": 2.0
+     }
+    },
+    {
+     "sku": "UK007771",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 325.0,
+      "k": 77.0,
+      "f": 0.7,
+      "c": 10.4,
+      "fi": 0.0,
+      "p": 7.2
+     },
+     "per100": {
+      "kj": 81.0,
+      "k": 19.0,
+      "f": 0.2,
+      "c": 2.6,
+      "fi": 0.0,
+      "p": 1.8
+     }
+    },
+    {
+     "sku": "UK007772",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 432.0,
+      "k": 103.0,
+      "f": 3.5,
+      "c": 10.2,
+      "fi": 0.0,
+      "p": 7.6
+     },
+     "per100": {
+      "kj": 107.0,
+      "k": 26.0,
+      "f": 0.9,
+      "c": 2.5,
+      "fi": 0.0,
+      "p": 1.9
+     }
+    },
+    {
+     "sku": "UK007942",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 422.0,
+      "k": 100.0,
+      "f": 2.7,
+      "c": 17.0,
+      "fi": 1.6,
+      "p": 1.2
+     },
+     "per100": {
+      "kj": 120.0,
+      "k": 28.0,
+      "f": 0.8,
+      "c": 4.8,
+      "fi": 0.5,
+      "p": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK000602",
+   "name": "Caramel Frappé",
+   "section": "Cold drinks / Iced coffee",
+   "type": "food",
+   "g": 506,
+   "serv": {
+    "kj": 1772.0,
+    "k": 423.0,
+    "f": 21.7,
+    "c": 43.0,
+    "fi": 0.4,
+    "p": 13.9
+   },
+   "per100": {
+    "kj": 350.0,
+    "k": 84.0,
+    "f": 4.3,
+    "c": 8.5,
+    "fi": 0.1,
+    "p": 2.7
+   }
+  },
+  {
+   "sku": "UK005078",
+   "name": "Classic Frappe",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 399,
+   "serv": {
+    "kj": 1522.0,
+    "k": 365.0,
+    "f": 23.9,
+    "c": 26.7,
+    "fi": 0.4,
+    "p": 10.6
+   },
+   "per100": {
+    "kj": 381.0,
+    "k": 92.0,
+    "f": 6.0,
+    "c": 6.7,
+    "fi": 0.1,
+    "p": 2.7
+   },
+   "variants": [
+    {
+     "sku": "UK005078",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 1522.0,
+      "k": 365.0,
+      "f": 23.9,
+      "c": 26.7,
+      "fi": 0.4,
+      "p": 10.6
+     },
+     "per100": {
+      "kj": 381.0,
+      "k": 92.0,
+      "f": 6.0,
+      "c": 6.7,
+      "fi": 0.1,
+      "p": 2.7
+     }
+    },
+    {
+     "sku": "UK007418",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1463.0,
+      "k": 350.0,
+      "f": 18.9,
+      "c": 31.3,
+      "fi": 0.4,
+      "p": 13.5
+     },
+     "per100": {
+      "kj": 298.0,
+      "k": 71.0,
+      "f": 3.8,
+      "c": 6.4,
+      "fi": 0.1,
+      "p": 2.7
+     }
+    },
+    {
+     "sku": "UK005321",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1570.0,
+      "k": 376.0,
+      "f": 21.7,
+      "c": 31.1,
+      "fi": 0.4,
+      "p": 13.9
+     },
+     "per100": {
+      "kj": 320.0,
+      "k": 77.0,
+      "f": 4.4,
+      "c": 6.3,
+      "fi": 0.1,
+      "p": 2.8
+     }
+    },
+    {
+     "sku": "UK007442",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1463.0,
+      "k": 350.0,
+      "f": 18.9,
+      "c": 31.3,
+      "fi": 0.4,
+      "p": 13.5
+     },
+     "per100": {
+      "kj": 298.0,
+      "k": 71.0,
+      "f": 3.8,
+      "c": 6.4,
+      "fi": 0.1,
+      "p": 2.7
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK005804",
+   "name": "Frozen Hot Chocolate",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 509,
+   "serv": {
+    "kj": 2105.0,
+    "k": 503.0,
+    "f": 22.8,
+    "c": 54.8,
+    "fi": 5.7,
+    "p": 16.8
+   },
+   "per100": {
+    "kj": 414.0,
+    "k": 99.0,
+    "f": 4.5,
+    "c": 10.8,
+    "fi": 1.1,
+    "p": 3.3
+   },
+   "variants": [
+    {
+     "sku": "UK005804",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 2105.0,
+      "k": 503.0,
+      "f": 22.8,
+      "c": 54.8,
+      "fi": 5.7,
+      "p": 16.8
+     },
+     "per100": {
+      "kj": 414.0,
+      "k": 99.0,
+      "f": 4.5,
+      "c": 10.8,
+      "fi": 1.1,
+      "p": 3.3
+     }
+    },
+    {
+     "sku": "UK007419",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 1998.0,
+      "k": 477.0,
+      "f": 20.0,
+      "c": 55.0,
+      "fi": 5.7,
+      "p": 16.4
+     },
+     "per100": {
+      "kj": 393.0,
+      "k": 94.0,
+      "f": 3.9,
+      "c": 10.8,
+      "fi": 1.1,
+      "p": 3.2
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK000601",
+   "name": "Hazelnut Frappé",
+   "section": "Cold drinks / Iced coffee",
+   "type": "food",
+   "g": 506,
+   "serv": {
+    "kj": 1769.0,
+    "k": 423.0,
+    "f": 21.7,
+    "c": 42.8,
+    "fi": 0.4,
+    "p": 13.9
+   },
+   "per100": {
+    "kj": 350.0,
+    "k": 84.0,
+    "f": 4.3,
+    "c": 8.4,
+    "fi": 0.1,
+    "p": 2.7
+   }
+  },
+  {
+   "sku": "UK005978",
+   "name": "Iced Black Americano",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 380,
+   "serv": {
+    "kj": 7.0,
+    "k": 2.0,
+    "f": 0.2,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 2.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "variants": [
+    {
+     "sku": "UK005978",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 7.0,
+      "k": 2.0,
+      "f": 0.2,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 2.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007424",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 147.0,
+      "k": 35.0,
+      "f": 1.3,
+      "c": 3.4,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 43.2,
+      "k": 10.3,
+      "f": 0.4,
+      "c": 1.0,
+      "p": 0.8
+     }
+    },
+    {
+     "sku": "UK006414",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 147.0,
+      "k": 35.0,
+      "f": 1.3,
+      "c": 3.4,
+      "fi": 0.0,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 43.2,
+      "k": 10.3,
+      "f": 0.4,
+      "c": 1.0,
+      "fi": 0.0,
+      "p": 0.8
+     }
+    },
+    {
+     "sku": "UK007397",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 141.0,
+      "k": 34.0,
+      "f": 1.6,
+      "c": 1.8
+     },
+     "per100": {
+      "kj": 41.5,
+      "k": 10.0,
+      "f": 0.5,
+      "c": 0.5
+     }
+    },
+    {
+     "sku": "UK007398",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 55.9,
+      "k": 13.2,
+      "f": 0.2,
+      "c": 2.8,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007386",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 190.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 208.8,
+      "k": 49.5,
+      "f": 0.8,
+      "c": 10.3,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK007384",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 141.0,
+      "k": 33.0,
+      "f": 1.6,
+      "c": 1.8,
+      "fi": 0.5,
+      "p": 2.8
+     },
+     "per100": {
+      "kj": 154.9,
+      "k": 36.3,
+      "f": 1.8,
+      "c": 2.0,
+      "fi": 0.5,
+      "p": 3.1
+     }
+    },
+    {
+     "sku": "UK007382",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 151.0,
+      "k": 36.0,
+      "f": 1.2,
+      "c": 3.8,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 198.7,
+      "k": 47.4,
+      "f": 1.6,
+      "c": 5.0,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK007380",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     },
+     "per100": {
+      "kj": 0.0,
+      "k": 0.0,
+      "f": 0.0,
+      "c": 0.0,
+      "fi": 0.0,
+      "p": 0.0
+     }
+    },
+    {
+     "sku": "UK007452",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 151.0,
+      "k": 36.0,
+      "f": 1.2,
+      "c": 3.8,
+      "p": 2.6
+     },
+     "per100": {
+      "kj": 198.7,
+      "k": 47.4,
+      "f": 1.6,
+      "c": 5.0,
+      "p": 3.4
+     }
+    },
+    {
+     "sku": "UK007795",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 55.6,
+      "k": 13.2,
+      "f": 0.2,
+      "c": 2.8,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    },
+    {
+     "sku": "UK007794",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 189.0,
+      "k": 45.0,
+      "f": 0.7,
+      "c": 9.4,
+      "fi": 0.2,
+      "p": 0.2
+     },
+     "per100": {
+      "kj": 55.6,
+      "k": 13.2,
+      "f": 0.2,
+      "c": 2.8,
+      "fi": 0.1,
+      "p": 0.1
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK004106",
+   "name": "Iced Latte",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 394,
+   "serv": {
+    "kj": 411.0,
+    "k": 98.0,
+    "f": 3.4,
+    "c": 10.0,
+    "fi": 0.0,
+    "p": 6.8
+   },
+   "per100": {
+    "kj": 104.0,
+    "k": 25.0,
+    "f": 0.9,
+    "c": 2.5,
+    "fi": 0.0,
+    "p": 1.7
+   },
+   "variants": [
+    {
+     "sku": "UK004106",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 411.0,
+      "k": 98.0,
+      "f": 3.4,
+      "c": 10.0,
+      "fi": 0.0,
+      "p": 6.8
+     },
+     "per100": {
+      "kj": 104.0,
+      "k": 25.0,
+      "f": 0.9,
+      "c": 2.5,
+      "fi": 0.0,
+      "p": 1.7
+     }
+    },
+    {
+     "sku": "UK007423",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 504.0,
+      "k": 120.0,
+      "f": 4.4,
+      "c": 11.5,
+      "p": 8.6
+     },
+     "per100": {
+      "kj": 168.0,
+      "k": 40.0,
+      "f": 1.5,
+      "c": 3.8,
+      "p": 2.9
+     }
+    },
+    {
+     "sku": "UK006889",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 636.0,
+      "k": 151.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 152.9,
+      "k": 36.3,
+      "f": 0.6,
+      "c": 7.5,
+      "fi": 0.1,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK006888",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 559.0,
+      "k": 133.0,
+      "f": 4.8,
+      "c": 12.8,
+      "fi": 0.0,
+      "p": 9.6
+     },
+     "per100": {
+      "kj": 134.4,
+      "k": 32.0,
+      "f": 1.2,
+      "c": 3.1,
+      "fi": 0.0,
+      "p": 2.3
+     }
+    },
+    {
+     "sku": "UK006887",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 636.0,
+      "k": 151.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 152.9,
+      "k": 36.3,
+      "f": 0.6,
+      "c": 7.5,
+      "fi": 0.1,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK006903",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 473.0,
+      "k": 113.0,
+      "f": 5.3,
+      "c": 6.1,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 113.7,
+      "k": 27.2,
+      "f": 1.3,
+      "c": 1.5,
+      "fi": 0.4,
+      "p": 2.2
+     }
+    },
+    {
+     "sku": "UK007375",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 473.0,
+      "k": 113.0,
+      "f": 5.3,
+      "c": 6.1,
+      "fi": 1.5,
+      "p": 9.3
+     },
+     "per100": {
+      "kj": 113.7,
+      "k": 27.2,
+      "f": 1.3,
+      "c": 1.5,
+      "fi": 0.4,
+      "p": 2.2
+     }
+    },
+    {
+     "sku": "UK007450",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 494.0,
+      "k": 118.0,
+      "f": 4.3,
+      "c": 11.3,
+      "p": 8.5
+     },
+     "per100": {
+      "kj": 149.7,
+      "k": 35.8,
+      "f": 1.3,
+      "c": 3.4,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK007796",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 631.0,
+      "k": 149.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 191.2,
+      "k": 45.2,
+      "f": 0.7,
+      "c": 9.5,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    },
+    {
+     "sku": "UK007793",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 631.0,
+      "k": 149.0,
+      "f": 2.3,
+      "c": 31.3,
+      "fi": 0.5,
+      "p": 0.8
+     },
+     "per100": {
+      "kj": 191.2,
+      "k": 45.2,
+      "f": 0.7,
+      "c": 9.5,
+      "fi": 0.2,
+      "p": 0.2
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK007725",
+   "name": "Iced Mocha",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 417,
+   "serv": {
+    "kj": 669.0,
+    "k": 159.0,
+    "f": 4.0,
+    "c": 21.4,
+    "fi": 2.8,
+    "p": 8.0
+   },
+   "per100": {
+    "kj": 160.0,
+    "k": 38.0,
+    "f": 1.0,
+    "c": 5.1,
+    "fi": 0.7,
+    "p": 1.9
+   },
+   "variants": [
+    {
+     "sku": "UK007725",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": true,
+     "serv": {
+      "kj": 669.0,
+      "k": 159.0,
+      "f": 4.0,
+      "c": 21.4,
+      "fi": 2.8,
+      "p": 8.0
+     },
+     "per100": {
+      "kj": 160.0,
+      "k": 38.0,
+      "f": 1.0,
+      "c": 5.1,
+      "fi": 0.7,
+      "p": 1.9
+     }
+    },
+    {
+     "sku": "UK007775",
+     "milk": "SOYA",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 669.0,
+      "k": 160.0,
+      "f": 5.3,
+      "c": 18.0,
+      "fi": 2.6,
+      "p": 8.6
+     },
+     "per100": {
+      "kj": 202.7,
+      "k": 48.5,
+      "f": 1.6,
+      "c": 5.5,
+      "fi": 0.8,
+      "p": 2.6
+     }
+    },
+    {
+     "sku": "UK007776",
+     "milk": "NO_MILK",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 803.0,
+      "k": 190.0,
+      "f": 2.9,
+      "c": 38.2,
+      "fi": 1.8,
+      "p": 1.8
+     },
+     "per100": {
+      "kj": 243.3,
+      "k": 57.6,
+      "f": 0.9,
+      "c": 11.6,
+      "fi": 0.5,
+      "p": 0.5
+     }
+    },
+    {
+     "sku": "UK007774",
+     "milk": "SKIMMED",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 604.0,
+      "k": 143.0,
+      "f": 1.7,
+      "c": 23.2,
+      "fi": 1.4,
+      "p": 8.0
+     },
+     "per100": {
+      "kj": 183.0,
+      "k": 43.3,
+      "f": 0.5,
+      "c": 7.0,
+      "fi": 0.4,
+      "p": 2.4
+     }
+    },
+    {
+     "sku": "UK007814",
+     "milk": "SOYA",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 669.0,
+      "k": 160.0,
+      "f": 5.3,
+      "c": 18.0,
+      "fi": 2.6,
+      "p": 8.6
+     },
+     "per100": {
+      "kj": 238.9,
+      "k": 57.1,
+      "f": 1.9,
+      "c": 6.4,
+      "fi": 0.9,
+      "p": 3.1
+     }
+    },
+    {
+     "sku": "UK007815",
+     "milk": "SEMI_SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 701.0,
+      "k": 166.0,
+      "f": 4.3,
+      "c": 23.2,
+      "fi": 1.4,
+      "p": 8.0
+     },
+     "per100": {
+      "kj": 250.4,
+      "k": 59.3,
+      "f": 1.5,
+      "c": 8.3,
+      "fi": 0.5,
+      "p": 2.9
+     }
+    },
+    {
+     "sku": "UK007812",
+     "milk": "NO_MILK",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 803.0,
+      "k": 190.0,
+      "f": 2.9,
+      "c": 38.2,
+      "fi": 1.8,
+      "p": 1.8
+     },
+     "per100": {
+      "kj": 286.8,
+      "k": 67.9,
+      "f": 1.0,
+      "c": 13.6,
+      "fi": 0.6,
+      "p": 0.6
+     }
+    },
+    {
+     "sku": "UK007813",
+     "milk": "SKIMMED",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 604.0,
+      "k": 143.0,
+      "f": 1.7,
+      "c": 23.2,
+      "fi": 1.4
+     },
+     "per100": {
+      "kj": 215.7,
+      "k": 51.1,
+      "f": 0.6,
+      "c": 8.3,
+      "fi": 0.5
+     }
+    },
+    {
+     "sku": "UK007944",
+     "milk": "OAT",
+     "caffeine": "CAFFEINATED",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 679.0,
+      "k": 161.0,
+      "f": 3.7,
+      "c": 28.7,
+      "fi": 2.9,
+      "p": 1.8
+     },
+     "per100": {
+      "kj": 163.0,
+      "k": 39.0,
+      "f": 0.9,
+      "c": 6.9,
+      "fi": 0.7,
+      "p": 0.4
+     }
+    },
+    {
+     "sku": "UK007945",
+     "milk": "OAT",
+     "caffeine": "DECAF",
+     "cupSize": "NONE",
+     "default": false,
+     "serv": {
+      "kj": 794.0,
+      "k": 188.0,
+      "f": 3.0,
+      "c": 37.3,
+      "fi": 0.9,
+      "p": 1.7
+     },
+     "per100": {
+      "kj": 248.1,
+      "k": 58.8,
+      "f": 0.9,
+      "c": 11.7,
+      "fi": 0.3,
+      "p": 0.5
+     }
+    }
+   ]
+  },
+  {
+   "sku": "UK008423",
+   "name": "Mocha Frappé",
+   "section": "Cold drinks / Iced coffee",
+   "type": "food",
+   "g": 508,
+   "serv": {
+    "kj": 1842.0,
+    "k": 440.0,
+    "f": 22.3,
+    "c": 43.0,
+    "fi": 3.1,
+    "p": 15.3
+   },
+   "per100": {
+    "kj": 363.0,
+    "k": 87.0,
+    "f": 4.4,
+    "c": 8.5,
+    "fi": 0.6,
+    "p": 3.0
+   }
+  },
+  {
+   "sku": "UK000600",
+   "name": "Vanilla Frappé",
+   "section": "Cold drinks / Iced coffee",
+   "type": "food",
+   "g": 506,
+   "serv": {
+    "kj": 1784.0,
+    "k": 426.0,
+    "f": 21.7,
+    "c": 43.7,
+    "fi": 0.4,
+    "p": 13.9
+   },
+   "per100": {
+    "kj": 353.0,
+    "k": 84.0,
+    "f": 4.3,
+    "c": 8.6,
+    "fi": 0.1,
+    "p": 2.7
+   }
+  },
+  {
+   "sku": "UK021250",
+   "name": "Vanilla Matcha Frappe",
+   "section": "Cold drinks / Iced coffee",
+   "type": "barista_beverage",
+   "g": 492,
+   "serv": {
+    "kj": 1803.0,
+    "k": 431.0,
+    "f": 21.6,
+    "c": 44.4,
+    "fi": 0.4,
+    "p": 14.5
+   },
+   "per100": {
+    "kj": 367.0,
+    "k": 88.0,
+    "f": 4.4,
+    "c": 9.0,
+    "fi": 0.1,
+    "p": 2.9
+   }
+  },
+  {
+   "sku": "UK005781",
+   "name": "Apple Juice",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 250,
+   "serv": {
+    "kj": 536.0,
+    "k": 126.0,
+    "f": 0.2,
+    "c": 30.7,
+    "fi": 0.0,
+    "p": 0.3
+   },
+   "per100": {
+    "kj": 214.0,
+    "k": 50.0,
+    "f": 0.1,
+    "c": 12.3,
+    "fi": 0.0,
+    "p": 0.1
+   }
+  },
+  {
+   "sku": "UK008511",
+   "name": "Berries & Banana Smoothie",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "barista_beverage",
+   "g": 450,
+   "serv": {
+    "kj": 849.0,
+    "k": 200.0,
+    "f": 0.6,
+    "c": 45.1,
+    "fi": 3.9,
+    "p": 1.7
+   },
+   "per100": {
+    "kj": 189.0,
+    "k": 45.0,
+    "f": 0.1,
+    "c": 10.0,
+    "fi": 0.9,
+    "p": 0.4
+   }
+  },
+  {
+   "sku": "UK008509",
+   "name": "Easy Greens",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 200,
+   "serv": {
+    "kj": 150.0,
+    "k": 35.0,
+    "f": 0.0,
+    "c": 8.8,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 75.0,
+    "k": 18.0,
+    "f": 0.0,
+    "c": 4.4,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK005840",
+   "name": "Ginger Shot",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 110,
+   "serv": {
+    "kj": 234.0,
+    "k": 55.0,
+    "f": 0.3,
+    "c": 11.4,
+    "fi": 1.8,
+    "p": 0.8
+   },
+   "per100": {
+    "kj": 213.0,
+    "k": 50.0,
+    "f": 0.3,
+    "c": 10.4,
+    "fi": 1.6,
+    "p": 0.7
+   }
+  },
+  {
+   "sku": "UK006608",
+   "name": "Hot Shot",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 110,
+   "serv": {
+    "kj": 115.0,
+    "k": 27.0,
+    "f": 0.2,
+    "c": 5.2,
+    "fi": 1.4,
+    "p": 0.4
+   },
+   "per100": {
+    "kj": 104.0,
+    "k": 25.0,
+    "f": 0.2,
+    "c": 4.7,
+    "fi": 1.3,
+    "p": 0.4
+   }
+  },
+  {
+   "sku": "UK008512",
+   "name": "Mango & Peach Smoothie",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "barista_beverage",
+   "g": 450,
+   "serv": {
+    "kj": 807.0,
+    "k": 190.0,
+    "f": 0.4,
+    "c": 43.6,
+    "fi": 2.2,
+    "p": 1.8
+   },
+   "per100": {
+    "kj": 179.0,
+    "k": 42.0,
+    "f": 0.1,
+    "c": 9.7,
+    "fi": 0.5,
+    "p": 0.4
+   }
+  },
+  {
+   "sku": "UK005786",
+   "name": "Mango Smoothie",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "barista_beverage",
+   "g": 250,
+   "serv": {
+    "kj": 602.0,
+    "k": 142.0,
+    "f": 0.7,
+    "c": 31.7,
+    "fi": 1.6,
+    "p": 1.2
+   },
+   "per100": {
+    "kj": 241.0,
+    "k": 57.0,
+    "f": 0.3,
+    "c": 12.7,
+    "fi": 0.6,
+    "p": 0.5
+   }
+  },
+  {
+   "sku": "UK005783",
+   "name": "Orange Juice",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 150,
+   "serv": {
+    "kj": 267.0,
+    "k": 63.0,
+    "f": 0.3,
+    "c": 13.5,
+    "fi": 0.7,
+    "p": 1.2
+   },
+   "per100": {
+    "kj": 178.0,
+    "k": 42.0,
+    "f": 0.2,
+    "c": 9.0,
+    "fi": 0.5,
+    "p": 0.8
+   }
+  },
+  {
+   "sku": "UK005788",
+   "name": "Vitamin Volcano",
+   "section": "Cold drinks / Juices and smoothies",
+   "type": "food",
+   "g": 250,
+   "serv": {
+    "kj": 487.0,
+    "k": 115.0,
+    "f": 0.0,
+    "c": 27.5,
+    "fi": 1.2,
+    "p": 1.2
+   },
+   "per100": {
+    "kj": 195.0,
+    "k": 46.0,
+    "f": 0.0,
+    "c": 11.0,
+    "fi": 0.5,
+    "p": 0.5
+   }
+  },
+  {
+   "sku": "UK001022",
+   "name": "Coke Bottle",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 901.0,
+    "k": 212.0,
+    "f": 0.0,
+    "c": 53.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 180.0,
+    "k": 42.0,
+    "f": 0.0,
+    "c": 10.6,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK000823",
+   "name": "Coke Can",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 595.0,
+    "k": 140.0,
+    "f": 0.0,
+    "c": 35.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 180.0,
+    "k": 42.0,
+    "f": 0.0,
+    "c": 10.6,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK006710",
+   "name": "Coke Zero Bottle",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK006676",
+   "name": "Coke Zero Can",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK006363",
+   "name": "Cranberry, Raspberry & Pomegranate Pret Still",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 511,
+   "serv": {
+    "kj": 486.0,
+    "k": 115.0,
+    "f": 1.1,
+    "c": 24.5,
+    "fi": 2.6,
+    "p": 0.5
+   },
+   "per100": {
+    "kj": 95.0,
+    "k": 22.0,
+    "f": 0.2,
+    "c": 4.8,
+    "fi": 0.5,
+    "p": 0.1
+   }
+  },
+  {
+   "sku": "UK008422",
+   "name": "Cucumber & Mint Seltzer",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK001286",
+   "name": "Diet Coke Bottle",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK000783",
+   "name": "Diet Coke Can",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK007681",
+   "name": "Ginger Kombucha",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 250,
+   "serv": {
+    "kj": 191.0,
+    "k": 45.0,
+    "f": 0.0,
+    "c": 11.2,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 76.0,
+    "k": 18.0,
+    "f": 0.0,
+    "c": 4.5,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK005416",
+   "name": "Green Tea & Peach Pret Still",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 438.0,
+    "k": 104.0,
+    "f": 1.2,
+    "c": 21.5,
+    "fi": 2.5,
+    "p": 0.5
+   },
+   "per100": {
+    "kj": 88.0,
+    "k": 21.0,
+    "f": 0.2,
+    "c": 4.3,
+    "fi": 0.5,
+    "p": 0.1
+   }
+  },
+  {
+   "sku": "UK005413",
+   "name": "Lemon & Ginger Pret Still",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 397.0,
+    "k": 94.0,
+    "f": 1.0,
+    "c": 19.5,
+    "fi": 2.5,
+    "p": 0.5
+   },
+   "per100": {
+    "kj": 79.0,
+    "k": 19.0,
+    "f": 0.2,
+    "c": 3.9,
+    "fi": 0.5,
+    "p": 0.1
+   }
+  },
+  {
+   "sku": "UK008421",
+   "name": "Lime & Raspberry Seltzer",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK006364",
+   "name": "Mango & Passion Fruit Pret Still",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 474.0,
+    "k": 112.0,
+    "f": 1.2,
+    "c": 23.5,
+    "fi": 2.5,
+    "p": 0.5
+   },
+   "per100": {
+    "kj": 95.0,
+    "k": 22.0,
+    "f": 0.2,
+    "c": 4.7,
+    "fi": 0.5,
+    "p": 0.1
+   }
+  },
+  {
+   "sku": "UK020350",
+   "name": "Pret Sparkling Water 500ml",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020347",
+   "name": "Pret Still Water 500ml",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 500,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020348",
+   "name": "Pret Still Water 750ml",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 750,
+   "serv": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 0.0,
+    "k": 0.0,
+    "f": 0.0,
+    "c": 0.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK007676",
+   "name": "Pret's Rhubarb Lemonade",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 454.0,
+    "k": 107.0,
+    "f": 0.0,
+    "c": 26.7,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 138.0,
+    "k": 32.0,
+    "f": 0.0,
+    "c": 8.1,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK007673",
+   "name": "Pret's Sparkling Apple Fizz",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 443.0,
+    "k": 104.0,
+    "f": 0.0,
+    "c": 26.1,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 134.0,
+    "k": 32.0,
+    "f": 0.0,
+    "c": 7.9,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK007674",
+   "name": "Pret's Sparkling Ginger Beer",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 505.0,
+    "k": 119.0,
+    "f": 0.0,
+    "c": 29.7,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 153.0,
+    "k": 36.0,
+    "f": 0.0,
+    "c": 9.0,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK007675",
+   "name": "Pret's Sparkling Grape & Elderflower",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 415.0,
+    "k": 98.0,
+    "f": 0.0,
+    "c": 24.4,
+    "fi": 0.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 126.0,
+    "k": 30.0,
+    "f": 0.0,
+    "c": 7.4,
+    "fi": 0.0,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020923",
+   "name": "poppi Lemon Lime",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 108.0,
+    "k": 26.0,
+    "f": 0.0,
+    "c": 4.9,
+    "fi": 3.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 33.0,
+    "k": 8.0,
+    "f": 0.0,
+    "c": 1.5,
+    "fi": 0.9,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020925",
+   "name": "poppi Orange",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 108.0,
+    "k": 26.0,
+    "f": 0.0,
+    "c": 4.9,
+    "fi": 3.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 33.0,
+    "k": 8.0,
+    "f": 0.0,
+    "c": 1.5,
+    "fi": 0.9,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020924",
+   "name": "poppi Raspberry Rose",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 113.0,
+    "k": 27.0,
+    "f": 0.0,
+    "c": 4.9,
+    "fi": 3.6,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 34.0,
+    "k": 8.0,
+    "f": 0.0,
+    "c": 1.5,
+    "fi": 1.1,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020909",
+   "name": "poppi Strawberry & Lemon",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 114.0,
+    "k": 27.0,
+    "f": 0.0,
+    "c": 5.3,
+    "fi": 3.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 34.0,
+    "k": 8.0,
+    "f": 0.0,
+    "c": 1.6,
+    "fi": 0.9,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020922",
+   "name": "poppi Wild Berry",
+   "section": "Cold drinks / Water and soft drinks",
+   "type": "food",
+   "g": 330,
+   "serv": {
+    "kj": 102.0,
+    "k": 24.0,
+    "f": 0.0,
+    "c": 4.6,
+    "fi": 3.0,
+    "p": 0.0
+   },
+   "per100": {
+    "kj": 31.0,
+    "k": 7.0,
+    "f": 0.0,
+    "c": 1.4,
+    "fi": 0.9,
+    "p": 0.0
+   }
+  },
+  {
+   "sku": "UK020779",
+   "name": "Chipotle Chicken",
+   "section": "Super Plates, salads and protein pots / Super Plates",
+   "type": "food",
+   "g": 533.1,
+   "serv": {
+    "kj": 2968.0,
+    "k": 709.0,
+    "f": 32.0,
+    "c": 48.4,
+    "fi": 13.9,
+    "p": 50.1
+   },
+   "per100": {
+    "kj": 557.0,
+    "k": 133.0,
+    "f": 6.0,
+    "c": 9.1,
+    "fi": 2.6,
+    "p": 9.4
+   }
+  },
+  {
+   "sku": "UK020980",
+   "name": "Korean BBQ Tofu",
+   "section": "Super Plates, salads and protein pots / Super Plates",
+   "type": "food",
+   "g": 451,
+   "serv": {
+    "kj": 1886.0,
+    "k": 449.0,
+    "f": 15.4,
+    "c": 51.0,
+    "fi": 10.4,
+    "p": 21.5
+   },
+   "per100": {
+    "kj": 418.0,
+    "k": 100.0,
+    "f": 3.4,
+    "c": 11.3,
+    "fi": 2.3,
+    "p": 4.8
+   }
+  },
+  {
+   "sku": "UK020776",
+   "name": "Miso Salmon",
+   "section": "Super Plates, salads and protein pots / Super Plates",
+   "type": "food",
+   "g": 510.4,
+   "serv": {
+    "kj": 3167.0,
+    "k": 761.0,
+    "f": 47.1,
+    "c": 43.4,
+    "fi": 12.8,
+    "p": 36.0
+   },
+   "per100": {
+    "kj": 620.0,
+    "k": 149.0,
+    "f": 9.2,
+    "c": 8.5,
+    "fi": 2.5,
+    "p": 7.0
+   }
+  },
+  {
+   "sku": "UK020778",
+   "name": "Shawarma Chicken",
+   "section": "Super Plates, salads and protein pots / Super Plates",
+   "type": "food",
+   "g": 447.35,
+   "serv": {
+    "kj": 2624.0,
+    "k": 628.0,
+    "f": 30.3,
+    "c": 31.1,
+    "fi": 14.9,
+    "p": 50.3
+   },
+   "per100": {
+    "kj": 587.0,
+    "k": 140.0,
+    "f": 6.8,
+    "c": 7.0,
+    "fi": 3.3,
+    "p": 11.2
+   }
+  },
+  {
+   "sku": "UK020900",
+   "name": "Butternut & Humous Mezze Bowl",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 330.75,
+   "serv": {
+    "kj": 1650.0,
+    "k": 395.0,
+    "f": 17.0,
+    "c": 40.4,
+    "fi": 13.5,
+    "p": 13.2
+   },
+   "per100": {
+    "kj": 499.0,
+    "k": 119.0,
+    "f": 5.1,
+    "c": 12.2,
+    "fi": 4.1,
+    "p": 4.0
+   }
+  },
+  {
+   "sku": "UK021539",
+   "name": "Butternut & Humous Side Salad",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 139,
+   "serv": {
+    "kj": 623.0,
+    "k": 149.0,
+    "f": 7.2,
+    "c": 12.7,
+    "fi": 6.0,
+    "p": 5.5
+   },
+   "per100": {
+    "kj": 448.0,
+    "k": 107.0,
+    "f": 5.2,
+    "c": 9.1,
+    "fi": 4.3,
+    "p": 4.0
+   }
+  },
+  {
+   "sku": "UK006282",
+   "name": "Chef's Italian Chicken Salad",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 312.7,
+   "serv": {
+    "kj": 2184.0,
+    "k": 526.0,
+    "f": 41.2,
+    "c": 12.0,
+    "fi": 3.2,
+    "p": 25.3
+   },
+   "per100": {
+    "kj": 698.0,
+    "k": 168.0,
+    "f": 13.2,
+    "c": 3.8,
+    "fi": 1.0,
+    "p": 8.1
+   }
+  },
+  {
+   "sku": "UK021061",
+   "name": "Chicken & Greens Protein Plate",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 272.45,
+   "serv": {
+    "kj": 1198.0,
+    "k": 285.0,
+    "f": 9.0,
+    "c": 14.6,
+    "fi": 4.3,
+    "p": 34.2
+   },
+   "per100": {
+    "kj": 440.0,
+    "k": 105.0,
+    "f": 3.3,
+    "c": 5.4,
+    "fi": 1.6,
+    "p": 12.6
+   }
+  },
+  {
+   "sku": "UK021280",
+   "name": "Classic Green Side Salad",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 138.54,
+   "serv": {
+    "kj": 748.0,
+    "k": 180.0,
+    "f": 13.9,
+    "c": 6.2,
+    "fi": 1.5,
+    "p": 6.8
+   },
+   "per100": {
+    "kj": 540.0,
+    "k": 130.0,
+    "f": 10.0,
+    "c": 4.5,
+    "fi": 1.1,
+    "p": 4.9
+   }
+  },
+  {
+   "sku": "UK020977",
+   "name": "Miso Chicken Rice Bowl",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 321.65,
+   "serv": {
+    "kj": 1613.0,
+    "k": 385.0,
+    "f": 14.5,
+    "c": 34.3,
+    "fi": 7.1,
+    "p": 26.6
+   },
+   "per100": {
+    "kj": 502.0,
+    "k": 120.0,
+    "f": 4.5,
+    "c": 10.7,
+    "fi": 2.2,
+    "p": 8.3
+   }
+  },
+  {
+   "sku": "UK021060",
+   "name": "Smoked Salmon & Egg Protein Plate",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 290,
+   "serv": {
+    "kj": 1718.0,
+    "k": 413.0,
+    "f": 27.3,
+    "c": 7.7,
+    "fi": 3.9,
+    "p": 32.0
+   },
+   "per100": {
+    "kj": 592.0,
+    "k": 142.0,
+    "f": 9.4,
+    "c": 2.7,
+    "fi": 1.3,
+    "p": 11.0
+   }
+  },
+  {
+   "sku": "UK006483",
+   "name": "Tuna Nicoise Salad",
+   "section": "Super Plates, salads and protein pots / Salads",
+   "type": "food",
+   "g": 299.14,
+   "serv": {
+    "kj": 1490.0,
+    "k": 357.0,
+    "f": 22.4,
+    "c": 8.5,
+    "fi": 1.5,
+    "p": 29.6
+   },
+   "per100": {
+    "kj": 498.0,
+    "k": 119.0,
+    "f": 7.5,
+    "c": 2.9,
+    "fi": 0.5,
+    "p": 9.9
+   }
+  },
+  {
+   "sku": "UK020979",
+   "name": "Chicken & Edamame Protein Pot",
+   "section": "Super Plates, salads and protein pots / Protein pots",
+   "type": "food",
+   "g": 129.65,
+   "serv": {
+    "kj": 820.0,
+    "k": 195.0,
+    "f": 6.1,
+    "c": 7.0,
+    "fi": 3.0,
+    "p": 26.6
+   },
+   "per100": {
+    "kj": 632.0,
+    "k": 150.0,
+    "f": 4.7,
+    "c": 5.4,
+    "fi": 2.3,
+    "p": 20.6
+   }
+  },
+  {
+   "sku": "UK005381",
+   "name": "Egg & Spinach Protein Pot",
+   "section": "Super Plates, salads and protein pots / Protein pots",
+   "type": "food",
+   "g": 98.6,
+   "serv": {
+    "kj": 432.0,
+    "k": 103.0,
+    "f": 5.3,
+    "c": 2.3,
+    "fi": 0.3,
+    "p": 11.4
+   },
+   "per100": {
+    "kj": 439.0,
+    "k": 105.0,
+    "f": 5.4,
+    "c": 2.4,
+    "fi": 0.3,
+    "p": 11.6
+   }
+  },
+  {
+   "sku": "UK007084",
+   "name": "Smoked Salmon & Egg Protein Pot",
+   "section": "Super Plates, salads and protein pots / Protein pots",
+   "type": "food",
+   "g": 104.12,
+   "serv": {
+    "kj": 565.0,
+    "k": 136.0,
+    "f": 8.4,
+    "c": 1.9,
+    "fi": 0.5,
+    "p": 12.9
+   },
+   "per100": {
+    "kj": 543.0,
+    "k": 130.0,
+    "f": 8.0,
+    "c": 1.9,
+    "fi": 0.5,
+    "p": 12.4
+   }
+  },
+  {
+   "sku": "UK003038",
+   "name": "Salt & Cider Vinegar Crisps",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 40,
+   "serv": {
+    "kj": 859.0,
+    "k": 206.0,
+    "f": 12.2,
+    "c": 21.3,
+    "fi": 1.7,
+    "p": 1.9
+   },
+   "per100": {
+    "kj": 2148.0,
+    "k": 515.0,
+    "f": 30.5,
+    "c": 53.2,
+    "fi": 4.4,
+    "p": 4.8
+   }
+  },
+  {
+   "sku": "UK003039",
+   "name": "Mature Cheddar & Red Onion Crisps",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 40,
+   "serv": {
+    "kj": 874.0,
+    "k": 210.0,
+    "f": 12.7,
+    "c": 20.5,
+    "fi": 1.8,
+    "p": 2.6
+   },
+   "per100": {
+    "kj": 2186.0,
+    "k": 524.0,
+    "f": 31.6,
+    "c": 51.1,
+    "fi": 4.4,
+    "p": 6.5
+   }
+  },
+  {
+   "sku": "UK004019",
+   "name": "Salted Popcorn",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 29,
+   "serv": {
+    "kj": 567.0,
+    "k": 136.0,
+    "f": 6.9,
+    "c": 14.2,
+    "fi": 3.5,
+    "p": 2.5
+   },
+   "per100": {
+    "kj": 1955.0,
+    "k": 468.0,
+    "f": 23.9,
+    "c": 48.8,
+    "fi": 11.9,
+    "p": 8.6
+   }
+  },
+  {
+   "sku": "UK003037",
+   "name": "Sea Salt Crisps",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 40,
+   "serv": {
+    "kj": 888.0,
+    "k": 213.0,
+    "f": 12.4,
+    "c": 22.0,
+    "fi": 1.7,
+    "p": 2.4
+   },
+   "per100": {
+    "kj": 2220.0,
+    "k": 532.0,
+    "f": 31.0,
+    "c": 55.0,
+    "fi": 4.3,
+    "p": 6.1
+   }
+  },
+  {
+   "sku": "UK006813",
+   "name": "Smoky Chipotle Crisps",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 40,
+   "serv": {
+    "kj": 867.0,
+    "k": 208.0,
+    "f": 12.4,
+    "c": 21.0,
+    "fi": 1.9,
+    "p": 2.2
+   },
+   "per100": {
+    "kj": 2167.0,
+    "k": 519.0,
+    "f": 30.9,
+    "c": 52.5,
+    "fi": 4.8,
+    "p": 5.4
+   }
+  },
+  {
+   "sku": "UK004255",
+   "name": "Sweet & Salt Popcorn",
+   "section": "Sweet and savoury snacks / Crisps and popcorn",
+   "type": "food",
+   "g": 30,
+   "serv": {
+    "kj": 653.0,
+    "k": 157.0,
+    "f": 9.3,
+    "c": 15.2,
+    "fi": 2.4,
+    "p": 1.7
+   },
+   "per100": {
+    "kj": 2175.0,
+    "k": 522.0,
+    "f": 31.1,
+    "c": 50.7,
+    "fi": 8.0,
+    "p": 5.8
+   }
+  },
+  {
+   "sku": "UK020016",
+   "name": "Pastel De Nata",
+   "section": "Sweet and savoury snacks / Pastries",
+   "type": "food",
+   "g": 60,
+   "serv": {
+    "kj": 659.0,
+    "k": 157.0,
+    "f": 6.2,
+    "c": 21.2,
+    "fi": 2.2,
+    "p": 2.9
+   },
+   "per100": {
+    "kj": 1098.0,
+    "k": 262.0,
+    "f": 10.4,
+    "c": 35.3,
+    "fi": 3.7,
+    "p": 4.9
+   }
+  },
+  {
+   "sku": "UK003339",
+   "name": "Choc Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 70,
+   "serv": {
+    "kj": 1583.0,
+    "k": 380.0,
+    "f": 23.5,
+    "c": 37.3,
+    "fi": 3.1,
+    "p": 3.1
+   },
+   "per100": {
+    "kj": 2262.0,
+    "k": 543.0,
+    "f": 33.6,
+    "c": 53.3,
+    "fi": 4.5,
+    "p": 4.5
+   }
+  },
+  {
+   "sku": "UK004206",
+   "name": "Chocolate Brownie Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 65,
+   "serv": {
+    "kj": 1336.0,
+    "k": 321.0,
+    "f": 19.9,
+    "c": 30.0,
+    "fi": 2.8,
+    "p": 4.0
+   },
+   "per100": {
+    "kj": 2056.0,
+    "k": 493.0,
+    "f": 30.6,
+    "c": 46.2,
+    "fi": 4.3,
+    "p": 6.1
+   }
+  },
+  {
+   "sku": "UK005993",
+   "name": "Dark Chocolate Corn Cakes",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 17,
+   "serv": {
+    "kj": 341.0,
+    "k": 82.0,
+    "f": 3.7,
+    "c": 10.4,
+    "fi": 0.8,
+    "p": 1.2
+   },
+   "per100": {
+    "kj": 2008.0,
+    "k": 480.0,
+    "f": 22.0,
+    "c": 61.0,
+    "fi": 4.8,
+    "p": 7.0
+   }
+  },
+  {
+   "sku": "UK020420",
+   "name": "Dark Chocolate with Sea Salt",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 30,
+   "serv": {
+    "kj": 715.0,
+    "k": 172.0,
+    "f": 12.9,
+    "c": 9.5,
+    "fi": 3.9,
+    "p": 2.7
+   },
+   "per100": {
+    "kj": 2382.0,
+    "k": 575.0,
+    "f": 42.9,
+    "c": 31.8,
+    "fi": 12.9,
+    "p": 8.9
+   }
+  },
+  {
+   "sku": "UK001813",
+   "name": "Love Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 70,
+   "serv": {
+    "kj": 1454.0,
+    "k": 348.0,
+    "f": 18.0,
+    "c": 41.2,
+    "fi": 3.0,
+    "p": 3.8
+   },
+   "per100": {
+    "kj": 2077.0,
+    "k": 497.0,
+    "f": 25.7,
+    "c": 58.8,
+    "fi": 4.3,
+    "p": 5.4
+   }
+  },
+  {
+   "sku": "UK020419",
+   "name": "Milk Chocolate Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 30,
+   "serv": {
+    "kj": 717.0,
+    "k": 172.0,
+    "f": 11.8,
+    "c": 13.3,
+    "fi": 1.6,
+    "p": 2.3
+   },
+   "per100": {
+    "kj": 2389.0,
+    "k": 574.0,
+    "f": 39.5,
+    "c": 44.3,
+    "fi": 5.2,
+    "p": 7.8
+   }
+  },
+  {
+   "sku": "UK005559",
+   "name": "Popcorn Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 34,
+   "serv": {
+    "kj": 737.0,
+    "k": 176.0,
+    "f": 8.9,
+    "c": 21.8,
+    "fi": 0.8,
+    "p": 1.7
+   },
+   "per100": {
+    "kj": 2166.0,
+    "k": 518.0,
+    "f": 26.3,
+    "c": 64.0,
+    "fi": 2.3,
+    "p": 5.1
+   }
+  },
+  {
+   "sku": "UK001653",
+   "name": "Pret Bar",
+   "section": "Sweet and savoury snacks / Bars and bites",
+   "type": "food",
+   "g": 64,
+   "serv": {
+    "kj": 1169.0,
+    "k": 279.0,
+    "f": 13.4,
+    "c": 34.6,
+    "fi": 2.6,
+    "p": 4.0
+   },
+   "per100": {
+    "kj": 1826.0,
+    "k": 436.0,
+    "f": 21.0,
+    "c": 54.0,
+    "fi": 4.1,
+    "p": 6.3
+   }
+  },
+  {
+   "sku": "UK004735",
+   "name": "Cranberries in Coats",
+   "section": "Sweet and savoury snacks / Nuts and dried fruit snacks",
+   "type": "food",
+   "g": 50,
+   "serv": {
+    "kj": 988.0,
+    "k": 235.0,
+    "f": 9.5,
+    "c": 36.5,
+    "fi": 0.8,
+    "p": 0.5
+   },
+   "per100": {
+    "kj": 1976.0,
+    "k": 471.0,
+    "f": 19.0,
+    "c": 73.0,
+    "fi": 1.7,
+    "p": 1.1
+   }
+  },
+  {
+   "sku": "UK007204",
+   "name": "Dark Chocolate Salted Almonds",
+   "section": "Sweet and savoury snacks / Nuts and dried fruit snacks",
+   "type": "food",
+   "g": 38,
+   "serv": {
+    "kj": 892.0,
+    "k": 215.0,
+    "f": 15.1,
+    "c": 12.4,
+    "fi": 3.5,
+    "p": 5.5
+   },
+   "per100": {
+    "kj": 2347.0,
+    "k": 565.0,
+    "f": 39.8,
+    "c": 32.7,
+    "fi": 9.2,
+    "p": 14.4
+   }
+  },
+  {
+   "sku": "UK006936",
+   "name": "Nuts, Fruit, Chocolate",
+   "section": "Sweet and savoury snacks / Nuts and dried fruit snacks",
+   "type": "food",
+   "g": 35,
+   "serv": {
+    "kj": 815.0,
+    "k": 196.0,
+    "f": 12.8,
+    "c": 13.4,
+    "fi": 2.2,
+    "p": 5.7
+   },
+   "per100": {
+    "kj": 2330.0,
+    "k": 560.0,
+    "f": 36.5,
+    "c": 38.3,
+    "fi": 6.2,
+    "p": 16.4
+   }
+  },
+  {
+   "sku": "UK005296",
+   "name": "Pret A Mango",
+   "section": "Sweet and savoury snacks / Nuts and dried fruit snacks",
+   "type": "food",
+   "g": 35,
+   "serv": {
+    "kj": 500.0,
+    "k": 118.0,
+    "f": 0.4,
+    "c": 26.9,
+    "fi": 1.8,
+    "p": 0.7
+   },
+   "per100": {
+    "kj": 1430.0,
+    "k": 337.0,
+    "f": 1.2,
+    "c": 77.0,
+    "fi": 5.1,
+    "p": 2.1
+   }
+  },
+  {
+   "sku": "UK004340",
+   "name": "Chocolate Chunk Cookie",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 76,
+   "serv": {
+    "kj": 1381.0,
+    "k": 329.0,
+    "f": 12.5,
+    "c": 48.9,
+    "fi": 2.1,
+    "p": 4.1
+   },
+   "per100": {
+    "kj": 1817.0,
+    "k": 433.0,
+    "f": 16.5,
+    "c": 64.3,
+    "fi": 2.7,
+    "p": 5.3
+   }
+  },
+  {
+   "sku": "UK021545",
+   "name": "Chocolate Hazelnut Praline Cookie",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 90,
+   "serv": {
+    "kj": 1775.0,
+    "k": 424.0,
+    "f": 21.8,
+    "c": 50.4,
+    "fi": 2.2,
+    "p": 5.5
+   },
+   "per100": {
+    "kj": 1972.0,
+    "k": 471.0,
+    "f": 24.2,
+    "c": 56.0,
+    "fi": 2.4,
+    "p": 6.1
+   }
+  },
+  {
+   "sku": "UK001755",
+   "name": "Double Berry Muffin",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 124,
+   "serv": {
+    "kj": 1846.0,
+    "k": 441.0,
+    "f": 21.6,
+    "c": 53.4,
+    "fi": 3.5,
+    "p": 6.6
+   },
+   "per100": {
+    "kj": 1489.0,
+    "k": 356.0,
+    "f": 17.4,
+    "c": 43.1,
+    "fi": 2.8,
+    "p": 5.3
+   }
+  },
+  {
+   "sku": "UK021473",
+   "name": "Loaded Chocolate Chunk Banana Bread",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 130,
+   "serv": {
+    "kj": 2338.0,
+    "k": 560.0,
+    "f": 31.7,
+    "c": 59.3,
+    "fi": 3.5,
+    "p": 7.5
+   },
+   "per100": {
+    "kj": 1798.0,
+    "k": 431.0,
+    "f": 24.4,
+    "c": 45.6,
+    "fi": 2.7,
+    "p": 5.8
+   }
+  },
+  {
+   "sku": "UK020533",
+   "name": "Nutty Pistachio & Almond Loaf Cake",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 130,
+   "serv": {
+    "kj": 2508.0,
+    "k": 604.0,
+    "f": 45.5,
+    "c": 34.7,
+    "fi": 3.1,
+    "p": 12.3
+   },
+   "per100": {
+    "kj": 1930.0,
+    "k": 465.0,
+    "f": 35.0,
+    "c": 26.7,
+    "fi": 2.4,
+    "p": 9.5
+   }
+  },
+  {
+   "sku": "UK004165",
+   "name": "Pret's Gingerbread Biscuit Godfrey",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 43,
+   "serv": {
+    "kj": 840.0,
+    "k": 200.0,
+    "f": 6.3,
+    "c": 33.2,
+    "fi": 0.7,
+    "p": 2.1
+   },
+   "per100": {
+    "kj": 1954.0,
+    "k": 464.0,
+    "f": 14.7,
+    "c": 77.3,
+    "fi": 1.6,
+    "p": 4.9
+   }
+  },
+  {
+   "sku": "UK021543",
+   "name": "Raspberry & White Chocolate Cookie",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 90,
+   "serv": {
+    "kj": 1728.0,
+    "k": 412.0,
+    "f": 18.6,
+    "c": 55.8,
+    "fi": 1.6,
+    "p": 4.5
+   },
+   "per100": {
+    "kj": 1920.0,
+    "k": 458.0,
+    "f": 20.7,
+    "c": 62.0,
+    "fi": 1.8,
+    "p": 5.0
+   }
+  },
+  {
+   "sku": "UK021544",
+   "name": "Triple Chocolate Cookie",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 90,
+   "serv": {
+    "kj": 1733.0,
+    "k": 414.0,
+    "f": 20.0,
+    "c": 51.8,
+    "fi": 2.2,
+    "p": 5.5
+   },
+   "per100": {
+    "kj": 1926.0,
+    "k": 460.0,
+    "f": 22.2,
+    "c": 57.6,
+    "fi": 2.5,
+    "p": 6.1
+   }
+  },
+  {
+   "sku": "UK020534",
+   "name": "Zingy Lemon & Almond Loaf Cake",
+   "section": "Sweet and savoury snacks / Cookies and Cakes",
+   "type": "food",
+   "g": 135,
+   "serv": {
+    "kj": 2464.0,
+    "k": 592.0,
+    "f": 41.2,
+    "c": 44.7,
+    "fi": 2.6,
+    "p": 9.4
+   },
+   "per100": {
+    "kj": 1825.0,
+    "k": 439.0,
+    "f": 30.5,
+    "c": 33.1,
+    "fi": 1.9,
+    "p": 7.0
+   }
+  },
+  {
+   "sku": "UK001528",
+   "name": "Apple",
+   "section": "Fruit and fruit pots / Fresh fruit",
+   "type": "food",
+   "g": 160,
+   "serv": {
+    "kj": 360.0,
+    "k": 85.0,
+    "f": 0.2,
+    "c": 18.9,
+    "fi": 2.9,
+    "p": 0.6
+   },
+   "per100": {
+    "kj": 225.0,
+    "k": 53.0,
+    "f": 0.1,
+    "c": 11.8,
+    "fi": 1.8,
+    "p": 0.4
+   }
+  },
+  {
+   "sku": "UK000831",
+   "name": "Banana",
+   "section": "Fruit and fruit pots / Fresh fruit",
+   "type": "food",
+   "g": 74,
+   "serv": {
+    "kj": 323.0,
+    "k": 76.0,
+    "f": 0.2,
+    "c": 17.2,
+    "fi": 1.0,
+    "p": 0.9
+   },
+   "per100": {
+    "kj": 437.0,
+    "k": 103.0,
+    "f": 0.3,
+    "c": 23.2,
+    "fi": 1.4,
+    "p": 1.2
+   }
+  },
+  {
+   "sku": "UK020164",
+   "name": "Fruit Salad",
+   "section": "Fruit and fruit pots / Fruit pots",
+   "type": "food",
+   "g": 225,
+   "serv": {
+    "kj": 451.0,
+    "k": 107.0,
+    "f": 0.4,
+    "c": 22.7,
+    "fi": 3.1,
+    "p": 1.3
+   },
+   "per100": {
+    "kj": 200.0,
+    "k": 47.0,
+    "f": 0.2,
+    "c": 10.1,
+    "fi": 1.4,
+    "p": 0.6
+   }
+  },
+  {
+   "sku": "UK005229",
+   "name": "Mango & Lime",
+   "section": "Fruit and fruit pots / Fruit pots",
+   "type": "food",
+   "g": 150,
+   "serv": {
+    "kj": 303.0,
+    "k": 72.0,
+    "f": 0.9,
+    "c": 14.1,
+    "fi": 1.5,
+    "p": 1.0
+   },
+   "per100": {
+    "kj": 202.0,
+    "k": 48.0,
+    "f": 0.6,
+    "c": 9.4,
+    "fi": 1.0,
+    "p": 0.7
+   }
+  },
+  {
+   "sku": "UK020165",
+   "name": "Super Fruit",
+   "section": "Fruit and fruit pots / Fruit pots",
+   "type": "food",
+   "g": 170,
+   "serv": {
+    "kj": 370.0,
+    "k": 88.0,
+    "f": 1.0,
+    "c": 17.0,
+    "fi": 2.5,
+    "p": 1.4
+   },
+   "per100": {
+    "kj": 218.0,
+    "k": 52.0,
+    "f": 0.6,
+    "c": 10.0,
+    "fi": 1.5,
+    "p": 0.8
+   }
+  },
+  {
+   "sku": "UK020429",
+   "name": "Kids' Cheese & Tomato Triangles",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 174.48,
+   "serv": {
+    "kj": 1550.0,
+    "k": 369.0,
+    "f": 12.9,
+    "c": 43.2,
+    "fi": 4.1,
+    "p": 17.9
+   },
+   "per100": {
+    "kj": 888.0,
+    "k": 211.0,
+    "f": 7.4,
+    "c": 24.8,
+    "fi": 2.3,
+    "p": 10.3
+   }
+  },
+  {
+   "sku": "UK020366",
+   "name": "Kids' Chicken & Cucumber Triangles",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 172.1,
+   "serv": {
+    "kj": 1600.0,
+    "k": 381.0,
+    "f": 14.7,
+    "c": 41.8,
+    "fi": 3.6,
+    "p": 18.6
+   },
+   "per100": {
+    "kj": 929.0,
+    "k": 221.0,
+    "f": 8.5,
+    "c": 24.3,
+    "fi": 2.1,
+    "p": 10.8
+   }
+  },
+  {
+   "sku": "UK020370",
+   "name": "Kids' Ham Triangles",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 118,
+   "serv": {
+    "kj": 1215.0,
+    "k": 288.0,
+    "f": 7.0,
+    "c": 40.8,
+    "fi": 3.5,
+    "p": 13.9
+   },
+   "per100": {
+    "kj": 1030.0,
+    "k": 244.0,
+    "f": 5.9,
+    "c": 34.6,
+    "fi": 3.0,
+    "p": 11.7
+   }
+  },
+  {
+   "sku": "UK020374",
+   "name": "Kids' Humous & Cucumber Bowl",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 89.4,
+   "serv": {
+    "kj": 347.0,
+    "k": 84.0,
+    "f": 5.9,
+    "c": 3.0,
+    "fi": 3.2,
+    "p": 3.0
+   },
+   "per100": {
+    "kj": 388.0,
+    "k": 94.0,
+    "f": 6.6,
+    "c": 3.4,
+    "fi": 3.6,
+    "p": 3.3
+   }
+  },
+  {
+   "sku": "UK020368",
+   "name": "Kids' Mango & Banana Yogurt Pot",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 99,
+   "serv": {
+    "kj": 422.0,
+    "k": 101.0,
+    "f": 4.3,
+    "c": 9.3,
+    "fi": 0.2,
+    "p": 6.1
+   },
+   "per100": {
+    "kj": 426.0,
+    "k": 102.0,
+    "f": 4.4,
+    "c": 9.3,
+    "fi": 0.2,
+    "p": 6.2
+   }
+  },
+  {
+   "sku": "UK020375",
+   "name": "Kids' Pizza Toastie",
+   "section": "Little Pret Stars  / Little Pret Stars",
+   "type": "food",
+   "g": 138,
+   "serv": {
+    "kj": 1590.0,
+    "k": 379.0,
+    "f": 13.9,
+    "c": 44.3,
+    "fi": 4.4,
+    "p": 16.9
+   },
+   "per100": {
+    "kj": 1152.0,
+    "k": 274.0,
+    "f": 10.1,
+    "c": 32.1,
+    "fi": 3.2,
+    "p": 12.3
+   }
+  },
+  {
+   "sku": "UK008301",
+   "name": "Pret's Organic Classic Blend Ground Coffee 200g",
+   "section": "Pret at Home / Coffee at Home",
+   "type": "food",
+   "g": 0,
+   "serv": {},
+   "per100": {}
+  },
+  {
+   "sku": "UK008302",
+   "name": "Pret's Organic Single Origin Peruvian Ground Coffee 200g",
+   "section": "Pret at Home / Coffee at Home",
+   "type": "food",
+   "g": 0,
+   "serv": {},
+   "per100": {}
+  }
+ ]
+}

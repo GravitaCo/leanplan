@@ -1,0 +1,62 @@
+/**
+ * Studio tokens on native: the web's theme.css values (generated into tokens.generated.ts), light
+ * or dark from the device's appearance setting, as on web. Geist is bundled with the app.
+ */
+import { useColorScheme, type TextStyle } from 'react-native'
+import { dark, light, type Tokens } from './tokens.generated'
+
+export type { Tokens }
+export function useTokens(): Tokens {
+  return useColorScheme() === 'dark' ? dark : light
+}
+
+/**
+ * Every bundled Geist face, for `useFonts(FONTS)` at the root: the one list of what ships. The static
+ * TTFs in assets/fonts, under the SIL Open Font License (assets/fonts/OFL.txt), no package needed.
+ */
+export const FONTS = {
+  Geist_200ExtraLight: require('../assets/fonts/Geist-ExtraLight.ttf'),
+  Geist_300Light: require('../assets/fonts/Geist-Light.ttf'),
+  Geist_400Regular: require('../assets/fonts/Geist-Regular.ttf'),
+  Geist_500Medium: require('../assets/fonts/Geist-Medium.ttf'),
+  Geist_600SemiBold: require('../assets/fonts/Geist-SemiBold.ttf'),
+  Geist_700Bold: require('../assets/fonts/Geist-Bold.ttf'),
+} as const
+
+/** Geist by weight (the bundled static faces; the web uses the variable font). */
+export const GEIST = {
+  200: 'Geist_200ExtraLight',
+  300: 'Geist_300Light',
+  400: 'Geist_400Regular',
+  500: 'Geist_500Medium',
+  600: 'Geist_600SemiBold',
+  700: 'Geist_700Bold',
+} as const
+
+export const font = (w: keyof typeof GEIST = 400): TextStyle => ({ fontFamily: GEIST[w] })
+/** `.num`: tabular figures, no letter spacing */
+export const num: TextStyle = { fontVariant: ['tabular-nums'], letterSpacing: 0 }
+
+/**
+ * Text as the web sets it. `lh` is a line height in pt or, under 4, a multiple of the size, as in CSS.
+ * Tracking: `body`'s -0.01em resolves once, at 17 px, so everything that inherits it is tracked a
+ * fixed -0.17 pt whatever its size (the default here). Text inside a web `<button>` is reset to 0
+ * by the browser: pass `BTN`. A class that sets its own em value (`.ltitle` -0.025em) passes it.
+ */
+export function tx(size: number, w: keyof typeof GEIST = 400, lh: number = 1.3, track?: number): TextStyle {
+  return { fontFamily: GEIST[w], fontSize: size, lineHeight: lh < 4 ? Math.round(size * lh * 10) / 10 : lh, letterSpacing: track === undefined ? BODY_TRACK : track * size }
+}
+/**
+ * For a one-line label whose box is as wide as its words (a button, chip, link or a heading beside
+ * something): 4 pt of room after the last letter, inside the box, given back by the margin so
+ * nothing moves. On Benn's iPhone such labels lost the end of their last letter ("Add fooc",
+ * "Star|t", "This weel", "Check ir"): 2 to 4 pt of a semibold word drawn past the width iOS gave its
+ * box. The cause isn't confirmed yet (the gallery's "Text fit" section measures it on a device); this
+ * keeps every such label whole meanwhile. The words keep their width whether the box hugs, stretches
+ * or wraps; not for a box with its own width or maxWidth (it would lose 4 pt) or text nested in text.
+ */
+export const GLYPH_ROOM: TextStyle = { paddingRight: 4, marginRight: -4 }
+/** body's -0.01em at 17 px, inherited as a length */
+export const BODY_TRACK = -0.17
+/** the tracking of text inside a web `<button>` (the browser's own button style resets it) */
+export const BTN = 0

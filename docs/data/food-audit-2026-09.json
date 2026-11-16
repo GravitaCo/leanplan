@@ -8901,13 +8901,13 @@
    "f": 0
   },
   "ref": {
-   "source": "none",
-   "code": null,
-   "name": null,
-   "k": null,
-   "p": null,
-   "c": null,
-   "f": null
+   "source": "CoFID",
+   "code": "17-377",
+   "name": "Water, distilled",
+   "k": 0.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
   },
   "status": "nomatch",
   "recommend": "keep",
@@ -8917,7 +8917,7 @@
   "flags": [
    "ml-item-cofid-per-100g"
   ],
-  "note": "Zero by definition."
+  "note": "Zero by definition. Re-sourced to CoFID 17-377 (0 kcal) when unverified foods were removed, Sep 2026."
  },
  {
   "n": "Coffee, black",

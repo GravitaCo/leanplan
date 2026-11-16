@@ -1,14 +1,30 @@
 import type { ExerciseMedia } from '@/core/types'
 
 /**
- * Where demo clips are served from. They ship in `public/videos/` for now (same origin, so they
- * work locally and on any preview build). The plan is to move them to Bunny CDN: upload the
- * files there and point this at the pull-zone URL, e.g. 'https://tali.b-cdn.net/exercises/'.
+ * Where a clip given as a bare file name is served from (`public/videos/`). Every clip in DEMOS
+ * now comes from the Bunny Stream library as a full URL, which `mediaUrl` passes through.
  */
 export const VIDEO_BASE = 'videos/'
 
 export function mediaUrl(path: string): string {
   return /^https?:\/\//.test(path) ? path : VIDEO_BASE + path
+}
+
+/** A Bunny Stream clip (`…/{video id}/play_720p.mp4`): the library also serves stills and previews beside it. */
+const BUNNY_STREAM = /^(https:\/\/vz-[^/]+\.b-cdn\.net\/[^/]+\/)play_\d+p\.mp4$/
+
+/**
+ * The images to show for a clip before it plays, best first. `motion` puts Bunny Stream's animated
+ * WebP preview ahead of the still: a few seconds of the move, but only 320×180 with the vertical
+ * clip pillarboxed in the middle, so it suits a small thumbnail (cropped, see `.thumb img.lb`), not
+ * a large poster. The still poster follows, as the fallback.
+ */
+export function previewUrls(m: ExerciseMedia, motion: boolean): { url: string; letterboxed: boolean }[] {
+  const bunny = m.src.match(BUNNY_STREAM)
+  const out: { url: string; letterboxed: boolean }[] = []
+  if (bunny && motion) out.push({ url: bunny[1] + 'preview.webp', letterboxed: true })
+  if (m.poster) out.push({ url: mediaUrl(m.poster), letterboxed: false })
+  return out
 }
 
 /**
@@ -17,10 +33,13 @@ export function mediaUrl(path: string): string {
  * does, so re-time these whenever a clip is replaced.
  */
 export const DEMOS = {
-  // 17.8 s, trimmed to end with arms straight so the loop is seamless
+  // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
+  // which a page always sends, so these play in the app but not as bare links.
+  // 17.8 s, trimmed to end with arms straight so the loop is seamless (re-uploaded on 8 Oct as
+  // 67eda569 after the first trimmed copy was removed; the untrimmed upload has been deleted from Bunny)
   barbellCurl: {
-    src: 'barbell-curl.mp4',
-    poster: 'barbell-curl.jpg',
+    src: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/67eda569-e302-4fc9-8921-160d44c8b27f/thumbnail.jpg',
     durationSec: 17.8,
     tempo: [
       { at: 0, kind: 'ready' },
@@ -35,9 +54,9 @@ export const DEMOS = {
     ],
   },
   romanianDeadlift: {
-    src: 'romanian-deadlift.mp4',
-    poster: 'romanian-deadlift.jpg',
-    durationSec: 20.0,
+    src: 'https://vz-36841ffb-54c.b-cdn.net/9375b37c-96cd-49de-8421-7494c11e9788/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/9375b37c-96cd-49de-8421-7494c11e9788/thumbnail.jpg',
+    durationSec: 20.07,
     tempo: [
       { at: 0, kind: 'ready' },
       { at: 2.6, kind: 'lower', rep: 1 },
@@ -50,8 +69,6 @@ export const DEMOS = {
       { at: 17.3, kind: 'squeeze', rep: 2 },
     ],
   },
-  // Bunny Stream library (MP4 fallback, 720×1280). The library refuses requests with no referrer,
-  // which a page always sends, so these play in the app but not as bare links.
   // One rep: standing, a very slow descent (about 7.5 s), a 1 s pause at about parallel, 3 s up.
   barbellSquat: {
     src: 'https://vz-36841ffb-54c.b-cdn.net/736acf7f-bdde-4175-844a-a01e36e706fb/play_720p.mp4',
@@ -79,6 +96,530 @@ export const DEMOS = {
       { at: 9.3, kind: 'stretch', rep: 2 },
       { at: 12.7, kind: 'lift', rep: 2 },
       { at: 13.75, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Three reps, seated: dumbbells at shoulder height, a press of about 1 s, a short pause at the top, about 2 s down, then a pause at the shoulders. Tracked by the top of the dumbbells at 8 fps.
+  shoulderPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/29092357-d85e-4704-9507-e35ec656b292/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/29092357-d85e-4704-9507-e35ec656b292/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'lift', rep: 1 },
+      { at: 1.5, kind: 'squeeze', rep: 1 },
+      { at: 2.3, kind: 'lower', rep: 1 },
+      { at: 4.5, kind: 'stretch', rep: 1 },
+      { at: 6.2, kind: 'lift', rep: 2 },
+      { at: 7.1, kind: 'squeeze', rep: 2 },
+      { at: 7.8, kind: 'lower', rep: 2 },
+      { at: 9.75, kind: 'stretch', rep: 2 },
+      { at: 10.8, kind: 'lift', rep: 3 },
+      { at: 11.8, kind: 'squeeze', rep: 3 },
+      { at: 12.6, kind: 'lower', rep: 3 },
+      { at: 14.6, kind: 'stretch', rep: 3 },
+    ],
+  },
+  // Two reps holding a chair, one side shown: a slow lowering of about 5.5 s, a pause near the bottom, about 2 s up. Tracked by the top of the head at 8 fps.
+  splitSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/31719b54-423d-454a-9d3e-941e50ea2e53/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/31719b54-423d-454a-9d3e-941e50ea2e53/thumbnail.jpg',
+    durationSec: 20.07,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lower', rep: 1 },
+      { at: 5.9, kind: 'stretch', rep: 1 },
+      { at: 8.6, kind: 'lift', rep: 1 },
+      { at: 10.8, kind: 'squeeze', rep: 1 },
+      { at: 12.7, kind: 'lower', rep: 2 },
+      { at: 16.3, kind: 'stretch', rep: 2 },
+      { at: 17.1, kind: 'lift', rep: 2 },
+      { at: 19.1, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Two reps: about 2 s up, a 2 s squeeze at the top, about 2.5 s down, a rest on the floor. Ends partway down rep 2, so the loop jumps slightly. Tracked by hip height at 8 fps.
+  gluteBridge: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/ffc84847-66a7-4efc-94fb-f4e164b8da47/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/ffc84847-66a7-4efc-94fb-f4e164b8da47/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'lift', rep: 1 },
+      { at: 2.5, kind: 'squeeze', rep: 1 },
+      { at: 4.75, kind: 'lower', rep: 1 },
+      { at: 7.25, kind: 'stretch', rep: 1 },
+      { at: 9.4, kind: 'lift', rep: 2 },
+      { at: 11.5, kind: 'squeeze', rep: 2 },
+      { at: 13.3, kind: 'lower', rep: 2 },
+    ],
+  },
+  // Two reps, hands on a bench, legs straight: about 2.5 s down, a pause at the bottom, about 1.7 s up, a pause with arms straight. Tracked by head height at 8 fps.
+  inclinePushUp: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/0f94c2e0-2b5e-4c82-b8be-e77d26446f97/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/0f94c2e0-2b5e-4c82-b8be-e77d26446f97/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.4, kind: 'lower', rep: 1 },
+      { at: 2.9, kind: 'stretch', rep: 1 },
+      { at: 4.6, kind: 'lift', rep: 1 },
+      { at: 6.3, kind: 'squeeze', rep: 1 },
+      { at: 8.5, kind: 'lower', rep: 2 },
+      { at: 10.7, kind: 'stretch', rep: 2 },
+      { at: 12.0, kind: 'lift', rep: 2 },
+      { at: 13.6, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Two reps from a chair, arms crossed: about 2 s to stand (the lean forward counts), a 2 s pause
+  // standing tall, about 1.7 s to sit, a seated pause before the next rep. Starts and ends seated, so
+  // the loop is seamless. The top of the head leaves the frame when she stands, so it was tracked by
+  // the centre of the body's mass at 8 fps.
+  sitToStand: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/5b34fdf0-cf42-44fa-a28f-6e5dd1c225c1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/5b34fdf0-cf42-44fa-a28f-6e5dd1c225c1/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 2.1, kind: 'lift', rep: 1 },
+      { at: 4.4, kind: 'squeeze', rep: 1 },
+      { at: 6.2, kind: 'lower', rep: 1 },
+      { at: 7.9, kind: 'ready', rep: 2 },
+      { at: 10.0, kind: 'lift', rep: 2 },
+      { at: 11.3, kind: 'squeeze', rep: 2 },
+      { at: 12.5, kind: 'lower', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
+  // A hold, right knee down, still throughout: no reps to time, so one phase for the whole clip.
+  halfKneelingHipFlexor: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/13668949-cd93-4b58-a352-ef0628225da3/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/13668949-cd93-4b58-a352-ef0628225da3/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'stretch',
+    tempo: [{ at: 0, kind: 'stretch' }],
+  },
+  // A hold on the forearm, bottom knee down, still until the hips ease down in the last second.
+  sidePlankKnees: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8dde7844-9e5f-4143-9b05-51b70a6839aa/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8dde7844-9e5f-4143-9b05-51b70a6839aa/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Two reps on one side: about 1 s to reach the arm and opposite leg out, a 4 s hold (3 s on rep
+  // 2), about 2 s back, then a pause on all fours. Tracked by how far each frame differs from the
+  // start, at 8 fps.
+  birdDog: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/28383feb-9988-436c-8ee2-579450e898c5/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/28383feb-9988-436c-8ee2-579450e898c5/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'lift', rep: 1 },
+      { at: 1.1, kind: 'squeeze', rep: 1 },
+      { at: 5.25, kind: 'lower', rep: 1 },
+      { at: 7.2, kind: 'ready', rep: 2 },
+      { at: 9.1, kind: 'lift', rep: 2 },
+      { at: 10.0, kind: 'squeeze', rep: 2 },
+      { at: 13.0, kind: 'lower', rep: 2 },
+      { at: 14.2, kind: 'ready' },
+    ],
+  },
+  // Two reps on one side, hands on the wall: about 2 s to bring the knee forward to the wall, a
+  // pause there (about 1.7 s, then 2 s), about 1.7 s back, a pause. Ends where it starts. Tracked by
+  // the front of the knee at full resolution, 8 fps.
+  kneeToWall: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/e7138db7-2d22-431a-920d-cd9cc1ccb7b9/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/e7138db7-2d22-431a-920d-cd9cc1ccb7b9/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.2, kind: 'lower', rep: 1 },
+      { at: 3.3, kind: 'stretch', rep: 1 },
+      { at: 5.0, kind: 'lift', rep: 1 },
+      { at: 6.7, kind: 'ready', rep: 2 },
+      { at: 8.4, kind: 'lower', rep: 2 },
+      { at: 10.0, kind: 'stretch', rep: 2 },
+      { at: 12.1, kind: 'lift', rep: 2 },
+      { at: 14.5, kind: 'ready' },
+    ],
+  },
+  // An easy march facing the camera, arms swinging, all the way through: a move done for time.
+  marchOnTheSpot: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/013b8f18-10da-4462-b0ed-4d8b2d6b86c1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/013b8f18-10da-4462-b0ed-4d8b2d6b86c1/thumbnail.jpg',
+    durationSec: 15.08,
+    hold: 'move',
+    tempo: [{ at: 0, kind: 'ready' }],
+  },
+  // Two rolls, side-on: about 1.5 s up towards the ears, 1.5 s back (shoulder blades drawn
+  // together), 2.3 s down, then a pause. Measured by optical flow on the shoulder, every frame (24 fps).
+  shoulderRolls: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/abbffae3-4006-4a70-b277-b1df1a1c0bf3/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/abbffae3-4006-4a70-b277-b1df1a1c0bf3/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.1, kind: 'lift', rep: 1 },
+      { at: 2.8, kind: 'squeeze', rep: 1 },
+      { at: 4.3, kind: 'lower', rep: 1 },
+      { at: 6.6, kind: 'ready', rep: 2 },
+      { at: 8.4, kind: 'lift', rep: 2 },
+      { at: 9.8, kind: 'squeeze', rep: 2 },
+      { at: 11.5, kind: 'lower', rep: 2 },
+      { at: 13.9, kind: 'ready' },
+    ],
+  },
+  // One full rep with a single handle (the move is the same with a rope): the clip opens as the
+  // handle comes back up, a slow 5 s push down, a squeeze with arms straight, about 3.8 s back
+  // up, then a second push the clip cuts off (from 12.7 s it shows as "Get set", not counted as a rep). Tracked by
+  // the handle, every frame (24 fps).
+  tricepsPushdown: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/db9a8075-ac2c-4cad-a2e5-7e42885dbfda/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 2.3, kind: 'lower', rep: 1 },
+      { at: 7.6, kind: 'squeeze', rep: 1 },
+      { at: 8.9, kind: 'lift', rep: 1 },
+      { at: 12.7, kind: 'ready' },
+    ],
+  },
+  // Generated with Seedance 2.5 (demonstrator W9). Two reps, side-on: a quick press of about
+  // 1 s, a pause at the top (2.7 s, then 1.9 s), about 3 s down to the chest, a short pause.
+  // Starts and ends at the chest, so the loop is seamless. Tracked by the dumbbell, every frame.
+  dbBenchPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/c3115e41-e7ce-4578-b3ce-b390003d1b5f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/c3115e41-e7ce-4578-b3ce-b390003d1b5f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.2, kind: 'lift', rep: 1 },
+      { at: 2.2, kind: 'squeeze', rep: 1 },
+      { at: 4.9, kind: 'lower', rep: 1 },
+      { at: 8.2, kind: 'stretch', rep: 1 },
+      { at: 8.9, kind: 'lift', rep: 2 },
+      { at: 9.75, kind: 'squeeze', rep: 2 },
+      { at: 11.6, kind: 'lower', rep: 2 },
+      { at: 14.4, kind: 'stretch', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W9). Two reps, left foot forward, whole body in frame: about 3.7 s
+  // down, a pause just above the floor, about 1.7 s up, a pause at the top. Tracked by the head.
+  dbSplitSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/cf04a486-a45e-4970-bee4-22e4daf14fd5/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/cf04a486-a45e-4970-bee4-22e4daf14fd5/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lower', rep: 1 },
+      { at: 4.0, kind: 'stretch', rep: 1 },
+      { at: 4.9, kind: 'lift', rep: 1 },
+      { at: 6.6, kind: 'squeeze', rep: 1 },
+      { at: 8.5, kind: 'lower', rep: 2 },
+      { at: 11.4, kind: 'stretch', rep: 2 },
+      { at: 11.9, kind: 'lift', rep: 2 },
+      { at: 13.5, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2). Two reps from the front, to about halfway down: about 3 s
+  // down, a short pause, about 1.7 s up, a pause standing. Ends where it starts. Tracked by the head.
+  gobletSquat: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/97700dd2-efbb-40a9-95a4-1db7ce863027/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/97700dd2-efbb-40a9-95a4-1db7ce863027/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.6, kind: 'lower', rep: 1 },
+      { at: 3.6, kind: 'stretch', rep: 1 },
+      { at: 4.35, kind: 'lift', rep: 1 },
+      { at: 6.1, kind: 'ready', rep: 2 },
+      { at: 8.45, kind: 'lower', rep: 2 },
+      { at: 11.4, kind: 'stretch', rep: 2 },
+      { at: 12.15, kind: 'lift', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W8). Two reps, side-on: a quick lift of about 0.8 s, a squeeze at
+  // the top of about 2.5 to 3 s, about 1 s down, a rest at the bottom. Timed by optical flow on the hips.
+  hipThrust: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/b3c11705-361f-4b61-a11d-1157939cba2c/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/b3c11705-361f-4b61-a11d-1157939cba2c/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 2.4, kind: 'lift', rep: 1 },
+      { at: 3.2, kind: 'squeeze', rep: 1 },
+      { at: 6.1, kind: 'lower', rep: 1 },
+      { at: 7.3, kind: 'ready', rep: 2 },
+      { at: 10.0, kind: 'lift', rep: 2 },
+      { at: 10.6, kind: 'squeeze', rep: 2 },
+      { at: 13.1, kind: 'lower', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W1). Front view: she walks from the back of the room towards the
+  // camera with a dumbbell in each hand, stops, and puts them down with a flat back. A carry has no
+  // reps to time, so it plays as a move with no counter; the loop jumps back to the far end.
+  farmerCarry: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8fd6dda5-e216-482a-8e80-da9511889564/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8fd6dda5-e216-482a-8e80-da9511889564/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'move',
+    tempo: [{ at: 0, kind: 'ready' }],
+  },
+  // Seedance 2.5 (demonstrator W8, Benn's upload). Two reps, side-on: about 1.9 s pulling the rope to
+  // the forehead, a 1.7 s squeeze, about 2 s back to straight arms, a pause. Tracked by the hand.
+  facePull: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/6d5a1fa4-3116-4c4d-898c-3f780abcf4a0/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/6d5a1fa4-3116-4c4d-898c-3f780abcf4a0/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.9, kind: 'pull', rep: 1 },
+      { at: 2.85, kind: 'squeeze', rep: 1 },
+      { at: 4.6, kind: 'return', rep: 1 },
+      { at: 6.6, kind: 'ready', rep: 2 },
+      { at: 8.0, kind: 'pull', rep: 2 },
+      { at: 9.85, kind: 'squeeze', rep: 2 },
+      { at: 11.5, kind: 'return', rep: 2 },
+      { at: 13.75, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W5, Benn's upload). Two reps: about 1.6 s pulling down to the
+  // upper chest, a squeeze, about 3 s back up to straight arms, a stretch at the top. Tracked by the hands.
+  latPulldown: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/9d104b30-692a-4ae7-bffd-37daea2b9047/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/9d104b30-692a-4ae7-bffd-37daea2b9047/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.9, kind: 'pull', rep: 1 },
+      { at: 3.5, kind: 'squeeze', rep: 1 },
+      { at: 5.4, kind: 'return', rep: 1 },
+      { at: 8.8, kind: 'stretch', rep: 1 },
+      { at: 9.9, kind: 'pull', rep: 2 },
+      { at: 11.5, kind: 'squeeze', rep: 2 },
+      { at: 12.7, kind: 'return', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W10, Benn's upload). Two reps, front three-quarter: starts pressed up,
+  // about 2.5 s down to the chest, a pause, about 1.4 s up, a hold at the top. Tracked by a dumbbell.
+  inclineDbPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/01693135-76ab-4831-89d7-f59d8f8bf8a1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/01693135-76ab-4831-89d7-f59d8f8bf8a1/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'lower', rep: 1 },
+      { at: 2.5, kind: 'stretch', rep: 1 },
+      { at: 4.2, kind: 'lift', rep: 1 },
+      { at: 5.6, kind: 'squeeze', rep: 1 },
+      { at: 8.5, kind: 'lower', rep: 2 },
+      { at: 11.2, kind: 'stretch', rep: 2 },
+      { at: 13.2, kind: 'lift', rep: 2 },
+      { at: 14.2, kind: 'squeeze', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 with Benn's photo of a compact plate-loaded leg press as the machine reference
+  // (demonstrator W11). The footplate is fixed and the seat slides on the rails. Two reps: about 3 s down to
+  // knees at about 90 degrees, a pause, about 1.8 s up, a pause. Tracked by the seat's plate.
+  legPress: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/7d511341-162a-42ab-a97e-d1922cdb25ef/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/7d511341-162a-42ab-a97e-d1922cdb25ef/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'lower', rep: 1 },
+      { at: 3.5, kind: 'stretch', rep: 1 },
+      { at: 5.5, kind: 'lift', rep: 1 },
+      { at: 7.4, kind: 'ready', rep: 2 },
+      { at: 9.0, kind: 'lower', rep: 2 },
+      { at: 11.6, kind: 'stretch', rep: 2 },
+      { at: 12.8, kind: 'lift', rep: 2 },
+      { at: 14.4, kind: 'ready' },
+    ],
+  },
+  // Benn's Seedance clip of a seated hip abduction machine (weight stack), filmed side-on. Two reps: knees push out
+  // over about 2 s, a hold, about 2 s back in, a pause. Timed by optical flow on the near foot.
+  hipAbduction: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/1a7e5fdb-55e1-4859-9aee-6174df1294f6/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/1a7e5fdb-55e1-4859-9aee-6174df1294f6/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.4, kind: 'push', rep: 1 },
+      { at: 2.4, kind: 'squeeze', rep: 1 },
+      { at: 4.0, kind: 'return', rep: 1 },
+      { at: 6.0, kind: 'ready', rep: 2 },
+      { at: 8.0, kind: 'push', rep: 2 },
+      { at: 10.0, kind: 'squeeze', rep: 2 },
+      { at: 11.55, kind: 'return', rep: 2 },
+      { at: 14.0, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W5). Left arm, braced on the right hand with feet staggered (the cue covers this).
+  // Two rows: about 1.7 s up, a squeeze at the hip, about 2 s down, a hang. Tracked by the dumbbell.
+  oneArmDbRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/fb1a3be2-2521-4662-9a4c-a425147ac3da/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/fb1a3be2-2521-4662-9a4c-a425147ac3da/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.5, kind: 'pull', rep: 1 },
+      { at: 2.2, kind: 'squeeze', rep: 1 },
+      { at: 5.1, kind: 'return', rep: 1 },
+      { at: 7.3, kind: 'ready', rep: 2 },
+      { at: 9.15, kind: 'pull', rep: 2 },
+      { at: 10.8, kind: 'squeeze', rep: 2 },
+      { at: 13.0, kind: 'return', rep: 2 },
+      { at: 14.8, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W8). Two pulls, side-on: about 1.6 s in, a long squeeze at the ribs, about 2 s back
+  // to straight arms. The cable runs from a column off frame. Tracked by the handle.
+  seatedCableRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8529995f-f44a-4557-8cdc-ad60a443c3a1/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8529995f-f44a-4557-8cdc-ad60a443c3a1/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.45, kind: 'pull', rep: 1 },
+      { at: 2.05, kind: 'squeeze', rep: 1 },
+      { at: 4.85, kind: 'return', rep: 1 },
+      { at: 7.0, kind: 'ready', rep: 2 },
+      { at: 8.4, kind: 'pull', rep: 2 },
+      { at: 9.95, kind: 'squeeze', rep: 2 },
+      { at: 12.85, kind: 'return', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2). Left leg working, side-on: about 1.5 s up onto the step, a pause standing tall,
+  // a slow step back down to the floor. Her head leaves the top of the frame while she stands on the step. Tracked by a dumbbell.
+  stepUp: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/5690a1c0-41da-4bf8-9e2d-4024cf44c431/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/5690a1c0-41da-4bf8-9e2d-4024cf44c431/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lift', rep: 1 },
+      { at: 1.8, kind: 'squeeze', rep: 1 },
+      { at: 4.4, kind: 'lower', rep: 1 },
+      { at: 5.9, kind: 'ready', rep: 2 },
+      { at: 8.6, kind: 'lift', rep: 2 },
+      { at: 9.9, kind: 'squeeze', rep: 2 },
+      { at: 12.2, kind: 'lower', rep: 2 },
+      { at: 13.4, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 from an approved still (demonstrator W6), side-on. Only the held part of Benn's upload
+  // (57893f03, 5.5 to 10.9 s), played forwards then backwards so the loop is seamless: she stays in the pose
+  // the whole time, settling very slightly. A hold, so one phase.
+  chairPose: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/a7471b0c-e531-4c68-9119-0bafbcf6d6bd/thumbnail.jpg',
+    durationSec: 10.79,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Seedance 2.5 from two pose stills (demonstrator W4; Benn's reference photo for the cat and cow shapes),
+  // side-on. Opens in cow, then two slow rounds of about 4 s a shape: cat (back rounds up), cow (belly drops).
+  // Her face reaches the left edge in cow; Benn accepted the framing. Phases from fitness-workouts' review.
+  catCow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/8595906f-0a6c-40b3-8320-3105683e071f/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.3, kind: 'lift', rep: 1 },
+      { at: 5.0, kind: 'lower', rep: 1 },
+      { at: 9.0, kind: 'lift', rep: 2 },
+      { at: 12.3, kind: 'lower', rep: 2 },
+    ],
+  },
+  // Seedance 2.5 from a checked still (demonstrator W6), front three-quarter. Two slow extensions: about 2.3 s
+  // up, a squeeze, about 2.7 s down. Her feet leave the frame at full extension. Phases from fitness-workouts.
+  legExtension: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/fa7d30b9-b855-4ca0-838d-52752f0be210/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'lift', rep: 1 },
+      { at: 2.6, kind: 'squeeze', rep: 1 },
+      { at: 3.8, kind: 'lower', rep: 1 },
+      { at: 6.5, kind: 'ready', rep: 2 },
+      { at: 8.7, kind: 'lift', rep: 2 },
+      { at: 10.7, kind: 'squeeze', rep: 2 },
+      { at: 11.8, kind: 'lower', rep: 2 },
+      { at: 14.5, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 from a still copied from Benn's reference photo (demonstrator W7), side-on: chest on the incline
+  // pad, feet on the floor. Two rows to the hips. Her hips are cut at the left edge. Phases from fitness-workouts.
+  chestSupportedRow: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/344a03d7-ea79-41eb-8f69-fda1153a7249/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/344a03d7-ea79-41eb-8f69-fda1153a7249/thumbnail.jpg',
+    durationSec: 15.04,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.3, kind: 'pull', rep: 1 },
+      { at: 1.75, kind: 'squeeze', rep: 1 },
+      { at: 3.25, kind: 'return', rep: 1 },
+      { at: 6.2, kind: 'ready', rep: 2 },
+      { at: 8.8, kind: 'pull', rep: 2 },
+      { at: 10.75, kind: 'squeeze', rep: 2 },
+      { at: 12.3, kind: 'return', rep: 2 },
+      { at: 14.75, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W4), front-on. The take ended with her arms up, so rep 2 is followed by rep 1's real
+  // lowering (spliced, 3-frame crossfade) and the loop ends where it starts. Benn's raw upload (09b202ea) is not used.
+  lateralRaise: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/2f17ce31-7e47-4c77-ba31-04a61a5b158c/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/2f17ce31-7e47-4c77-ba31-04a61a5b158c/thumbnail.jpg',
+    durationSec: 19.58,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 1.1, kind: 'lift', rep: 1 },
+      { at: 3.2, kind: 'squeeze', rep: 1 },
+      { at: 5.1, kind: 'lower', rep: 1 },
+      { at: 8.4, kind: 'ready', rep: 2 },
+      { at: 10.8, kind: 'lift', rep: 2 },
+      { at: 13.0, kind: 'squeeze', rep: 2 },
+      { at: 14.2, kind: 'lower', rep: 2 },
+      { at: 17.5, kind: 'ready' },
+    ],
+  },
+  // Seedance 2.5 (demonstrator W2), side-on: a straight-arm plank held still for the whole clip (Benn kept it; the
+  // cue covers forearms or straight arms). A hold, so one phase.
+  plank: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/451d5867-189d-45d9-b72b-3a9c445a2602/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/451d5867-189d-45d9-b72b-3a9c445a2602/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Seedance 2.5 from a still copied from Benn's reference photo (demonstrator W10), front-on: already in
+  // tree pose, foot high on the inner thigh above the knee, arms overhead, still for the whole clip. A hold.
+  treePose: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/66fcb75a-26be-4acf-8ebe-40b6dd67d575/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/66fcb75a-26be-4acf-8ebe-40b6dd67d575/thumbnail.jpg',
+    durationSec: 15.04,
+    hold: 'position',
+    tempo: [{ at: 0, kind: 'squeeze' }],
+  },
+  // Benn's upload (titled "Concentration curl"): a standing single-handle cable curl from a low pulley.
+  // One slow rep from the top: about 4.9 s down, a pause with straight arms, about 7.4 s up. Timed by
+  // frame-to-frame motion over the arm (24 fps). Benn kept the muscular build (Tilo includes all body types)
+  // and accepted the brief hand glitch at the bottom (about 5.5 to 7 s, the hand opens on the handle).
+  cableCurl: {
+    src: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/play_720p.mp4',
+    poster: 'https://vz-36841ffb-54c.b-cdn.net/c2c09c2c-290f-4b72-acc2-9a4e3aadb508/thumbnail.jpg',
+    durationSec: 15.08,
+    tempo: [
+      { at: 0, kind: 'ready' },
+      { at: 0.25, kind: 'lower', rep: 1 },
+      { at: 5.1, kind: 'stretch', rep: 1 },
+      { at: 7.0, kind: 'lift', rep: 1 },
+      { at: 14.4, kind: 'squeeze', rep: 1 },
     ],
   },
 } satisfies Record<string, ExerciseMedia>

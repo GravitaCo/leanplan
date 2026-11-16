@@ -5,63 +5,155 @@
  */
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { enableMapSet } from 'immer'
+import { current, enableMapSet, isDraft } from 'immer'
 import type {
   CheckIn,
+  MindPrefs,
+  NotifyKind,
+  Pillar,
+  SkillId,
+  ThingKey,
   DayLog,
   Food,
   IfThenPlan,
+  PlanWeek,
   LoggedFood,
   MealSlot,
   Recipe,
+  RoutineEffort,
+  PlanPhase,
+  TrainingPlan,
+  RoutineSlot,
   Workout,
-  WorkoutType,
   Supplement,
   MacroTarget,
   Profile,
   Session as TrainingSession,
+  Effort,
+  Schedule,
 } from '@/core/types'
 import { WORKOUTS } from '@/core/data/workouts'
-import { mirrorOf, sessionsOf } from '@/core/domain/sessions'
-import { todayStr, shiftDay, r1 } from '@/core/domain/date'
+import { builtinId, keptOnSave, mirrorOf, sessionsOf } from '@/core/domain/sessions'
+import { activePlan, cleanPhases, keptAfterEdit, positionOn, scheduleMirror, supersededPlans, weekToKeep, weekToPutBack } from '@/core/domain/plans'
+import { canBuild, deriveEffort, estMins, headlineModality, normaliseRx, slotsOf } from '@/core/domain/routines'
+import { shorterPrescription } from '@/core/domain/dayOptions'
+import { checkinOrNull, mergeCheckin, withSkill, validMindPrefs, NOTIFY_KINDS, PILLARS, MIND_HEALTH_KEYS, SKILL_IDS } from '@/core/domain/checkin'
+import { thingByKey } from '@/core/data/skills'
+import { hardDay, isLowMood, lowMoodDue, recentCheckins } from '@/core/domain/mind'
+import { daysUsing, mayMarkSeen, type AskCtx, type AskPick } from '@/core/domain/asks'
+import { markActivityShown } from '@/core/domain/activity'
+import { EXERCISE_BY_ID } from '@/core/data/exercises'
+import { todayStr, r1 } from '@/core/domain/date'
 import { recipePerServing } from '@/core/domain/nutrition'
+import { withSharedFigures } from '@/core/domain/sharedProduct'
 import { CAPTURE_ERR, scaleEntry } from '@/core/domain/estimate'
-import { relog } from '@/core/domain/insights'
-import { loadState, loadStateFrom, saveState, ensureMeta, loadMode, saveMode, requestPersistentStorage, type PersistedState, type SyncMeta } from '@/data/persistence'
-import { pushDirty, pullAll, type SyncStatus } from '@/data/sync'
-import { supabase, setSession, uuid, nowIso } from '@/data/supabase'
+import { entriesToRepeat, latestWeight } from '@/core/domain/insights'
+import { markDifferent, mergeFoods, nameAfterUpdate, updatedFood } from '@/core/domain/duplicates'
+import { loadState, stateFromBackup, unloadImportSkipped, ownerCheck, keepForAccount, freshForAccount, freshForDevice, sameAccount, saveState, ensureMeta, loadMode, saveMode, loadKitchen, saveKitchen, requestPersistentStorage, unsyncedCount, type PersistedState, type SyncMeta } from '@/data/persistence'
+import { easeOffFields, startsMaintain, targetAfter, type RangeChange } from '@/core/domain/maintenanceLoop'
+import { pushDirty, pullAll, accountRows, clearCloudLog, type SyncStatus } from '@/data/sync'
+import { withTimeout } from '@/data/timeout'
+import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
+import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
-import { subscribePush, unsubscribePush } from '@/data/push'
+import { askPushPermission, pushPermission, pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
+import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
+import { exportBackup } from '@/data/backup'
+import { connectionState, type ConnectionState } from '@/core/domain/connection'
+import type { GeneratedPlan } from '@/core/domain/engine/generate'
+import { replacementFor } from '@/core/domain/firstSession'
+import { clearDraft, clearPendingDeletion, markPendingDeletion, pendingDeletion, showSetupCard, underAgeNext, underAgeRetryDue, underAgeUid, underAgeWipesDevice } from '@/data/onboardingDraft'
+import { answerFoodOptInIn, type FoodOptInAnswer } from '@/core/domain/foodMode'
+import { clearHealthAnswerIn, confirmPregnancyIn, setHealthAnswerIn, snoozePregnancyIn, type ChangeableAnswer, type HealthAnswerKind, type PregnancyStatus } from '@/core/domain/onboarding'
+import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
+import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
+import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
+import { stampFields, type MergedField } from '@/core/domain/profileMerge'
+import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
+import { MIND_REVIEWED } from '@/data/wellbeingFlag'
+import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
+import type { ShareToken } from '../../supabase/functions/_shared/shared-product'
+import { DELETE } from '@/copy/account'
 
 enableMapSet()
 
-export type Tab = 'today' | 'food' | 'train' | 'plan' | 'profile'
+export type Tab = 'today' | 'mind' | 'food' | 'train' | 'plan' | 'profile'
+/** a pushed view inside the Mind tab (wellbeing Phase 1), opened from the Skills list or from
+ *  elsewhere (a one-thing chip); Unload is a sheet, the others are screens */
+export type MindView = 'reset' | 'unload' | 'wind-down' | 'outside'
+/** openTrain's hand-off for Get outside's "Easy walk" Start (B13): Train's "Log a session" sheet,
+ *  set to an Easy walk; never a workout key */
+export const TRAIN_LOG_WALK = '@log-easy-walk'
 
-interface StoreState {
+/**
+ * Where an under-18 age came from (Tilo is strictly 18+). 'profile': typed on Profile and not
+ * saved; 'import': in a backup that wasn't loaded; 'sync': pulled from the account; 'launch': in
+ * this device's saved data. Only 'sync' and 'launch' mean an under-18 age is stored.
+ */
+export type UnderAgeSource = 'profile' | 'import' | 'sync' | 'launch'
+
+export interface StoreState {
   data: PersistedState
   cur: string
   tab: Tab
   /** one-shot: the Profile section to open on arrival (UI only, never persisted) */
   profileOpen: string | null
+  /** the weekly review is open over Summary (UI only; a review reminder opens the app here) */
+  reviewOpen: boolean
+  openReview: () => void
+  closeReview: () => void
+  /** the review was opened today: it stops being "waiting" on Summary, and a missed week reads as welcome back */
+  markReviewOpened: () => void
+  /** "For next week" (ml-a1, ml-a4): the choice, which option for "Change one thing", and Ease off's shorter sessions */
+  chooseNextWeek: (choice: NonNullable<Profile['loopChoice']>['choice'], option?: string) => void
+  /** a range change the person chose (ml-a5, ml-b1, ml-c3): never applied without their tap */
+  applyRangeChange: (rc: RangeChange) => void
+  /** "Make this my new starting point" (ml-c3) */
+  setSteadyStart: (kg: number) => void
+  /** a pattern line was shown: the same pair waits 4 weeks */
+  notePatternShown: (code: string) => void
   sync: SyncStatus
   email: string | null
   authReady: boolean
   signedIn: boolean
-  /** true only when a real Supabase session exists (not guest/local-only mode) */
+  /** true only when a real Supabase session exists (not offline-paused or while asking whose data) */
   authed: boolean
   /** signed-in account opened without a live session (offline): data saves locally, sync waits */
   syncPaused: boolean
   /** why the sign-in screen is showing, when it wasn't the user's choice */
   authNotice: string | null
+  /** signed in, but this device's data may belong to another account: nothing shows or syncs
+   *  until the user picks keep or start fresh (see ownerCheck) */
+  ownerAsk: { uid: string; email: string | null; checking?: boolean } | null
+  /** "I have…" snapshot for meal suggestions (device-only) */
+  kitchen: string[]
+  setKitchen: (have: string[]) => void
   toast: string | null
+  /** the full consent screen opened from Profile (agreeing after a "Not now" or never asked) */
+  consentOpen: boolean
+  setConsentOpen: (open: boolean) => void
+  /** an action on the current toast ("Undo"); cleared with the toast */
+  toastAction: { label: string; run: () => void } | null
+  /** one-shot hand-offs between tabs (UI only, never persisted): Plan's "Do this today" opens
+   *  Train's preview for a workout; Train's "Edit in Plan" opens Plan's workout view */
+  /** a workout to open: a built-in's type or the id of one of the user's own (WorkoutKey) */
+  trainOpen: string | null
+  planOpen: string | null
+  /** a Mind view to open on arrival (a one-thing chip with a skill: Reset), UI only */
+  mindOpen: MindView | null
+  openTrain: (w: string) => void
+  openPlan: (w: string) => void
+  /** switch to the Mind tab, optionally opening one of its views (cleared by clearOpen) */
+  openMind: (view?: MindView) => void
+  clearOpen: () => void
 
   // navigation
   setTab: (t: Tab) => void
   openProfile: (section: string) => void
   clearProfileOpen: () => void
   setDate: (d: string) => void
-  shiftDate: (n: number) => void
-  showToast: (msg: string) => void
+  showToast: (msg: string, action?: { label: string; run: () => void }) => void
 
   // food
   /** log one or more entries on the current day (e.g. a food plus its cooking fat) */
@@ -76,46 +168,251 @@ interface StoreState {
   /** save (or update by name) a custom food definition; returns the saved food */
   saveCustomFood: (def: Omit<Food, 'id'>) => Food
   removeCustomFood: (index: number) => void
+  /** give a saved food a barcode (a scan matched it by name); returns the updated food */
+  linkBarcode: (id: string, barcode: string) => Food | null
+  /** take new figures into a saved food, keeping its id (boards dup-1, dup-2): with a new name its
+   *  logs and usuals follow it, numbers as logged. Returns the updated food */
+  updateCustomFood: (id: string, next: Omit<Food, 'id'>, keepName?: boolean) => Food | null
+  /** merge two saved foods that are the same (dup-4): the other's logs move to the kept one */
+  mergeCustomFoods: (keepId: string, dropId: string, takeBarcode: boolean) => void
+  /** "They're different" (dup-4): never pair these two again */
+  markFoodsDifferent: (aId: string, bId: string) => void
   saveRecipe: (r: { id?: string; name: string; servings: number; items: Recipe['items'] }) => void
   deleteRecipe: (index: number) => void
   logRecipe: (recipe: Recipe, servings: number, meal: MealSlot) => void
 
   // wellbeing & plans
-  setCheckin: (c: CheckIn | null) => void
-  savePlan: (p: { id?: string; when: string; then: string; cope?: string }) => void
+  /** merge a patch into the day's check-in (a 0, '' or undefined answer removes it; core/domain/checkin
+   *  mergeCheckin), so logging a skill never wipes mood; null clears the whole check-in */
+  setCheckin: (patch: Partial<CheckIn> | null) => void
+  /** `kind: 'mind'` files it under "Mind plans" (health data by inference: refused, false, while
+   *  health logging is off). Editing keeps a plan's kind unless one is given. `toast` replaces
+   *  "Plan saved" (B9.17). */
+  savePlan: (p: { id?: string; when: string; then: string; cope?: string; kind?: 'mind' }, opts?: { toast?: string }) => boolean
+
+  // wellbeing Phase 1 (build plan WP4). Data actions are not flag-gated (ground rule 3); the
+  // screens that call them are. None of them opens or counts Support: it has no action at all.
+  /**
+   * Mind settings (profile.mind; B1, B11). A key set to undefined or null removes it; `notify` and
+   * `halved` merge into what's there (a kind set to undefined is removed). Stamps each touched
+   * `mind.*` path for the per-field merge. Refused (false, nothing saved) when it would switch off
+   * all three pillars or a value is malformed; the wake and wind-down times (health data) are left
+   * out while health logging is off. Turning a reminder on records the device's time zone. Never
+   * touches `gentle` or food mode (mental-performance rule 5).
+   */
+  setMindPrefs: (patch: { [K in keyof MindPrefs]?: MindPrefs[K] | null }) => boolean
+  /** a skill used now (id and time only) into today's check-in; mood and the rest are kept.
+   *  False (with the health-off toast) while health logging is off. */
+  logSkill: (id: SkillId) => boolean
+  /** today's one thing (a THINGS key, never text); picking again replaces it and its done mark */
+  pickThing: (key: ThingKey) => boolean
+  /** mark today's one thing done (B9.5); false when none is picked */
+  doneThing: () => boolean
+  /** remove today's one thing (B9.6 "Change" before a new pick) */
+  clearThing: () => void
+  /**
+   * Unload notes (device only, never synced). Only screens/mind/unloadNotes.ts imports the notes
+   * accessors (deviceOnly.ts NOTE_ACCESSORS), so it passes one in:
+   * `writeNotes((s, ctx) => addUnloadNote(s, input, ctx))` or `deleteUnloadNote(s, id, ctx)`.
+   * Runs it on the store's data with the session facts (selectNotesContext: signedIn, never
+   * authed, so it works offline), then saves on this device only: no dirty flag, no sync.
+   * `stored` is false when the device refused the save (storage full).
+   */
+  writeNotes: <R>(write: (s: PersistedState, ctx: NotesContext) => R) => { result: R; stored: boolean }
+  /** the low-mood signpost showed today (device only, once per 30 days); false when not stored */
+  markLowMoodShown: () => boolean
+  /** "More about sleep" left open or closed (device only) */
+  setSleepMore: (open: boolean) => boolean
+  /** the one-time medical re-ask showed (device only) */
+  markMedicalReasked: () => boolean
+  /**
+   * Reminder delivery events read from the service worker's IndexedDB (WP17 reads and empties it):
+   * kept in the device log; a reminder type ignored twice in a row starts its back-off
+   * (profile.mind.halved, synced). Returns the types that newly backed off.
+   */
+  ingestNotifyLog: (events: unknown[]) => NotifyKind[]
+  /** "Back to usual" (B11.16): that type's back-off ends and its run of ignored reminders restarts */
+  backToUsual: (kind: NotifyKind) => void
+  /**
+   * A Mind reminder type on or off (Profile › Notifications, B11; security-data L7). On needs a
+   * current health yes ('consent') and notification permission ('denied' / 'unsupported'), asked
+   * here, in the tap. The setting saves on this device first; the push subscription is made now
+   * when online and signed in, or on the next connection (`_meta.pushPending`). Off ends the
+   * subscription only when no other reminder uses it. The time zone is recorded (setMindPrefs).
+   */
+  setMindReminder: (kind: NotifyKind, on: boolean) => Promise<true | 'unsaved' | 'consent' | 'denied' | 'unsupported'>
+  /** The back-off notice (B11.14) closed: hidden on this device until that type backs off again */
+  dismissBackoff: (kind: NotifyKind) => void
+  /**
+   * The activity-level suggestion showed: record the day, as TodayScreen did with setPrefs. With
+   * the asks budget (`pick`), only when it actually showed (mayMarkSeen; nutrition-accuracy: a
+   * held suggestion is never marked). Returns whether it recorded.
+   */
+  noteActivityShown: (pick: AskPick | null) => boolean
   deletePlan: (id: string) => void
   reviewPlans: (outcomes: Record<string, IfThenPlan['reviews'][number]['r']>) => void
 
   // supplements / weight / workout
   toggleSupp: (id: string) => void
   setWeight: (kg: number) => void
-  saveWorkout: (type: WorkoutType, ex: NonNullable<Workout['ex']>, option?: Workout['option']) => void
+  /** save a built-in lift (again = an edit). `extra`: the guided player's per-set quiet saves and
+   *  its finish sheet (effort, note, minutes); what isn't given keeps the earlier save's value */
+  /** save a workout's session for the day: a built-in lift or one of the user's own (by id) */
+  saveWorkout: (type: string, ex: NonNullable<Workout['ex']>, option?: Workout['option'], extra?: { quiet?: boolean; effort?: Effort | null; note?: string; mins?: number; toast?: string; open?: boolean; warmup?: TrainingSession['warmup'] }) => void
   saveCardio: (cardioType: string, mins: string, option?: Workout['option']) => void
+  /** the user's own workouts (plan P4): create or edit (returns its id), archive, log */
+  saveRoutine: (r: { id?: string; name: string; slots: RoutineSlot[]; effort?: RoutineEffort; baseId?: string }) => string | null
+  archiveRoutine: (id: string) => void
   /** add a session (any modality) to the current day, alongside any others */
   addSession: (x: Omit<TrainingSession, 'id' | 'at'>) => void
   removeSession: (id: string) => void
+  /** put back a session removed a moment ago (Undo), on the day it came from */
+  restoreSession: (date: string, x: TrainingSession) => void
 
   // plan / settings
-  setScheduleDay: (idx: number, value: WorkoutType | 'Rest') => void
+  /** replace the whole weekly schedule (swap two days, undo) */
+  setSchedule: (s: Schedule, quiet?: boolean) => void
+  /** weekly plans (plan P5): start one (any active one is put away), edit it, finish it */
+  startPlan: (p: { name: string; phases: PlanPhase[]; source: TrainingPlan['source']; baseTemplateId?: string; clonedFromId?: string; startedAt?: string }) => string
+  updatePlan: (id: string, patch: { name?: string; phases?: PlanPhase[] }) => void
+  finishPlan: (id: string, reflection?: { good?: string; change?: string }, state?: 'completed' | 'archived') => void
+  /** "Keep going without a plan": the last week repeats at the full version, open-ended, until another plan */
+  carryOn: (id: string, reflection?: { good?: string; change?: string }) => void
+  /** after a plan: maintenance, its own week (or the plan's last build week) on the shorter version, open-ended */
+  startMaintenance: (id: string, week?: PlanWeek) => void
+  /** keep a plan as one of the person's own, to start again later (a template) */
+  savePlanCopy: (id: string, name?: string) => string | null
+  /** keep a plan's look back without finishing it (its next plan starts later) */
+  notePlan: (id: string, reflection: { good?: string; change?: string }) => void
+  /** keep the weekly schedule in step with the active plan's current week (phases change by week) */
+  syncPlanMirror: () => void
   saveTargets: (t: MacroTarget, rangeWidth?: number) => void
-  saveProfileMetrics: (patch: Partial<Profile>) => void
+  /** false when nothing was saved: an under-18 age (the stop screen then shows; nothing changes or syncs) */
+  saveProfileMetrics: (patch: Partial<Profile>) => boolean
   /** quiet profile update for preferences (accuracy, display, hands…) */
   setPrefs: (patch: Partial<Profile>) => void
   addSupplement: (name: string, time: string) => void
   updateSupplement: (id: string, name: string, time: string) => void
   removeSupplement: (id: string) => void
   updateEmail: (email: string) => Promise<string | null>
-  setNotifications: (enabled: boolean) => Promise<boolean>
-  importBackup: (state: PersistedState) => void
+  /** true when on/off took effect; 'unsaved' when it did but this device couldn't store the setting */
+  setNotifications: (enabled: boolean) => Promise<boolean | 'unsaved'>
+  /** the weekly review reminder (ml-d1, ml-e4): switched on separately, on the same push subscription */
+  setReviewPush: (enabled: boolean) => Promise<boolean>
+  /** "Keep the weekly reminder?" after 3 unopened (ml-d2): yes counts afresh from today, no turns it off */
+  keepReviewPush: (keep: boolean) => Promise<void>
+  /** false when refused: a backup with an under-18 age is never loaded (the stop screen shows) */
+  importBackup: (state: PersistedState) => boolean
 
   // sync / auth
   initAuth: () => Promise<void>
-  continueAsGuest: () => void
   runSync: () => Promise<void>
   scheduleSync: () => void
-  signOut: () => Promise<void>
+  /** `remove`: also remove this device's log (shared phones), leaving an empty state. */
+  signOut: (opts?: { remove?: boolean }) => Promise<void>
   /** Call before a sign-in or sign-up attempt from the sign-in screen. */
   beginSignIn: () => void
+  /** Answer ownerAsk: keep this device's data in the account, start fresh, or sign out. */
+  resolveOwner: (choice: 'keep' | 'fresh' | 'cancel') => Promise<void>
+
+  // consent (onboarding plan §8): recorded on this device first, synced when online
+  /** the device says it has a connection (navigator.onLine, kept current by initAuth) */
+  online: boolean
+  /** record a yes for a consent type at its current version (see CONSENT_VERSIONS) */
+  grantConsent: (type: ConsentType) => void
+  /** send unsynced consent records now (before a call the server gates on consent); true when none are left */
+  flushConsents: () => Promise<boolean>
+  /** record a no; for 'health' this also clears the health data (consent.ts HEALTH_FIELDS) here
+   *  and, through sync, on the server */
+  withdrawConsent: (type: ConsentType) => void
+  hasConsent: (type: ConsentType) => boolean
+  /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
+   *  the reads waiting to be sent */
+  setShareProducts: (on: boolean) => void
+  /** queue a signed label read for Tilo's shared list (only with a yes to sharing); it's sent
+   *  later, after a random delay, never on this save path */
+  queueSharedProduct: (t: ShareToken) => boolean
+  /** "Share this product" on a saved food (sp-9): queue its signed label read (as
+   *  queueSharedProduct), then the food takes the read's figures and keeps its name. Null when
+   *  nothing could be queued (the food is left as it was) */
+  shareSavedFood: (id: string, def: Omit<Food, 'id'>, t: ShareToken) => Food | null
+  /** Open Food Facts already has a saved food's product (sp-8a): its share row goes. On this
+   *  device only (Food.shareDone) */
+  markFoodInOff: (id: string) => void
+  /** this saved food's label read is queued for the shared list: its "Share this product" row
+   *  goes (device-only, like markFoodInOff). Returns the marked food */
+  markFoodShared: (id: string) => Food | null
+  /** send the queued reads now, if signed in as their owner, online and consented */
+  sendSharedProducts: () => Promise<void>
+  /** "Not now" on the existing-user health sheet: health data stays here, its sync pauses
+   *  (a second "Not now", at the one re-ask, keeps it paused) */
+  notNowHealth: () => void
+  /** "Not now" on first-run consent (onboarding): recorded as a no for that type */
+  declineConsent: (type: ConsentType) => void
+  /** the questionnaire's guard: false until a local health consent says yes */
+  canSaveHealth: () => boolean
+  /** save onboarding health answers (weight, limitations …); refused (false) without health consent */
+  saveHealthAnswers: (patch: Partial<Profile>) => boolean
+  /** step 1 of withdrawing health consent: what will be cleared, the backup JSON taken before
+   *  anything is cleared, and the prompt ("Download a copy first?") */
+  prepareHealthWithdrawal: () => { summary: HealthDataSummary; backup: string; prompt: string }
+  /** step 2, when the person says yes: download that copy (the usual backup file) */
+  downloadBeforeWithdrawal: () => void
+
+  // first-run onboarding (behind ONBOARDING_ENABLED)
+  /** the setup card opened on its own (Build my plan on Plan, Finish your setup on Today) */
+  setupOpen: boolean
+  openSetup: (open: boolean) => void
+  /** Profile's "Redo setup": the first run again, prefilled with the current answers */
+  redoOpen: boolean
+  openRedo: (open: boolean) => void
+  /**
+   * The summary's Start: the answers into the profile (outcomes only), today's weigh-in, the
+   * targets, and the generated plan into the person's plans. Refused (false) for health answers
+   * without a local health consent. `plan` null keeps the current plan.
+   */
+  finishOnboarding: (x: { profile: Profile; plan: GeneratedPlan | null; target: MacroTarget | null; weightKg: number | null }) => boolean
+  /** under 18 (§14; the wizard's age stop is 18+ for now): this device's data goes now; the account is deleted now, or on the next connection */
+  deleteUnderAge: () => Promise<DeleteResult>
+  /** Profile's "Health check answers" (UI not built yet): remove one stored answer, as if skipped */
+  clearHealthAnswer: (kind: HealthAnswerKind) => boolean
+  /** Profile's "Change" for conditions and food and weight; false without a local health yes */
+  setHealthAnswer: (a: ChangeableAnswer) => boolean
+  /** Onboarding 9: an answer to the day-14 or week-4 food ask, or its one-tap undo in Profile */
+  answerFoodOptIn: (a: FoodOptInAnswer) => boolean
+  /** the 12-week "Does this still apply?" answer; false when a yes can't be kept (no local health yes) */
+  confirmPregnancy: (status: PregnancyStatus) => boolean
+  /** re-run the plan and targets after a health answer changed (the engine loads on demand) */
+  rerunHealthAnswers: () => Promise<void>
+  /** "Ask me later" on the re-ask: asked again in 2 weeks */
+  snoozePregnancyReask: () => boolean
+  /** a thumbs up or down on a generated workout's exercise (ob5-3); down swaps it quietly, with Undo */
+  rateExercise: (routineId: string, slot: number, rating: 'up' | 'down') => void
+
+  // account deletion (onboarding plan §8)
+  /** a deletion is under way (the confirm UI shows progress and blocks a second tap) */
+  deletingAccount: boolean
+  /** needs a connection; wipes this device and signs out only after the server confirms */
+  deleteAccount: (reason?: 'under-age', appleCode?: string) => Promise<DeleteResult>
+  /** how this account signs in, for the re-confirm step ('email' = password, 'google') */
+  authProvider: string | null
+
+  // 18+ (Benn, Sept 2026)
+  /**
+   * An under-18 age came in (see UnderAgeSource): the app shows only the stop screen, nothing
+   * syncs and AI label reading can't be reached. Never persisted: a launch finds a stored age again.
+   */
+  underAge: { source: UnderAgeSource; inWizard?: boolean } | null
+  /** "I typed my age wrong" on the stop screen: back to Profile (a stored under-18 age is cleared, a
+   *  synced edit); from the redo wizard's stop (`inWizard`), back to its age question */
+  underAgeMistake: () => void
+  /** Redo setup's age stop (an existing account): the app stop's rules (no sync, reminders held),
+   *  shown by the wizard itself so "I typed my age wrong" returns to its age question */
+  raiseUnderAge: (source: UnderAgeSource, opts?: { inWizard?: boolean }) => void
+  /** deletion needs a sign-in from the last 5 minutes: true when this session's is older */
+  deleteNeedsReauth: () => boolean
+  /** re-confirm identity: the password (email accounts) or a fresh Google sign-in (leaves the page) */
+  reauthForDeletion: (how: { password: string } | { google: true }) => Promise<ReauthResult>
 }
 
 function ensureDay(s: PersistedState, d: string): DayLog {
@@ -123,26 +420,183 @@ function ensureDay(s: PersistedState, d: string): DayLog {
   return s.days[d]
 }
 
+/**
+ * With an active plan, the weekly schedule mirrors its current week (plan P5): older installs and
+ * one-workout readers see it; nothing reads it back while the plan is active. `mark` sends the
+ * settings to sync when something changed: only for a person's own edit, or on a copy freshly
+ * pulled in runSync, so a stale device never uploads its old target or profile over newer ones
+ * (security-data). Returns whether the schedule changed.
+ */
+function mirrorPlan(s: PersistedState, mark: boolean): boolean {
+  const today = todayStr()
+  // a plan chosen to start later has now started: the one it replaces is finished
+  const done = supersededPlans(s, today)
+  for (const old of done) { old.state = 'completed'; old.completedAt = nowIso(); old._dirty = true; old._u = nowIso() }
+  const p = activePlan(s, today)
+  const pos = p ? positionOn(p, today) : null
+  if (!pos) return done.length > 0
+  const next = scheduleMirror(pos.planWeek, s.routines)
+  let changed = false
+  for (let d = 0; d < 7; d++) if (s.schedule[d] !== next[d]) { s.schedule[d] = next[d]; changed = true }
+  if (changed && mark) ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+  return changed || done.length > 0
+}
+
+/** Plans all stopped: the weekly schedule from before them comes back, and is forgotten. */
+function putBackWeek(s: PersistedState): void {
+  const prev = weekToPutBack(s)
+  if (!prev) return
+  for (let d = 0; d < 7; d++) s.schedule[d] = prev[d] ?? 'Rest'
+  delete s.profile.weekBeforePlan
+  ensureMeta(s, false).settings = { u: nowIso(), dirty: true }
+}
+
 /** Write a day's sessions and the single-workout mirror older installs read (plan §2.5). */
+
 function setSessions(day: DayLog, list: TrainingSession[]): void {
   day.sessions = list
   day.workout = mirrorOf(list)
 }
 
 /**
- * Save a built-in session (Legs/Push/Pull or the Cardio card): it replaces an earlier save from
+ * Save a session from a card (a built-in or one of the user's own workouts): it replaces an earlier save from
  * the same card that day, since saving again is an edit; other sessions stay.
  */
-function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>): void {
+function putBuiltin(day: DayLog, date: string, x: Omit<TrainingSession, 'id' | 'at'>, keep: ('effort' | 'note' | 'mins')[] = []): void {
   const list = sessionsOf(day, date)
   const i = list.findIndex((y) => y.routineId === x.routineId)
   const prev = i >= 0 ? list[i] : null
-  const next: TrainingSession = { ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
+  // fields the caller didn't set carry over from the earlier save (a later edit keeps the effort)
+  const kept: Partial<TrainingSession> = {}
+  for (const k of keep) if (prev?.[k] !== undefined && (x as Partial<TrainingSession>)[k] === undefined) (kept as Record<string, unknown>)[k] = prev[k]
+  // the warm-up, once done, stays with the session through later saves of its sets
+  if (prev?.warmup && !x.warmup) kept.warmup = prev.warmup
+  const next: TrainingSession = { ...kept, ...x, id: prev?.id && !prev.id.startsWith('legacy') ? prev.id : uuid(), at: prev?.at || nowIso() }
   setSessions(day, i >= 0 ? list.map((y, j) => (j === i ? next : y)) : [...list, next])
+}
+
+/**
+ * A generated plan (engine output) into the person's plans, on the summary's confirm only: its
+ * workouts join `routines`, the plan starts today, and whatever plan was running is finished or
+ * put away, as startPlan does. The week before plans is kept for when plans stop.
+ */
+function acceptGenerated(s: PersistedState, gen: GeneratedPlan): void {
+  const now = nowIso()
+  const today = todayStr()
+  if (!Array.isArray(s.routines)) s.routines = []
+  if (!Array.isArray(s.trainingPlans)) s.trainingPlans = []
+  const keep = weekToKeep(s)
+  if (keep) s.profile.weekBeforePlan = keep
+  for (const p of s.trainingPlans) {
+    if (p.state !== 'active') continue
+    p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
+    if (p.state === 'completed') p.completedAt = now
+    p._dirty = true; p._u = now
+  }
+  for (const r of gen.routines) {
+    const i = s.routines.findIndex((x) => x.id === r.id)
+    const row = { ...structuredClone(r), _dirty: true, _u: now }
+    if (i >= 0) s.routines[i] = row; else s.routines.push(row)
+  }
+  const plan = structuredClone(gen.trainingPlan)
+  const i = s.trainingPlans.findIndex((x) => x.id === plan.id)
+  const row = { ...plan, phases: cleanPhases(plan.phases), startedAt: today, _dirty: true, _u: now }
+  if (i >= 0) s.trainingPlans[i] = row; else s.trainingPlans.push(row)
+  mirrorPlan(s, true)
+}
+
+/**
+ * A health answer changed from Profile or the 12-week check-in (ob7): re-run the targets and,
+ * for a plan built from the answers, the plan with its guardrails (rerunForAnswers). The plan is
+ * replaced where it stands (same id and start, so the week carries on); its old workouts are put
+ * away. Targets change only when routing gives a number (a hidden one keeps what's stored).
+ */
+function answerChanged(s: PersistedState): void {
+  // routing and targets at once (main bundle, offline too); the plan rebuild needs the engine
+  const today = todayStr()
+  const t = answerTargets(s.profile, latestWeight(s, today), consented(s, 'health'))
+  if (t) s.target = { ...s.target, ...t }
+  if (planFromAnswers(activePlan(s, today))) ensureMeta(s, false).rerunAnswers = true
+}
+
+function rerunAnswers(s: PersistedState, rerunForAnswers: typeof RerunFn): void {
+  const today = todayStr()
+  const active = activePlan(s, today)
+  const r = rerunForAnswers(s.profile, active, { healthConsent: consented(s, 'health'), kg: latestWeight(s, today), days: s.days })
+  if (r.target) s.target = { ...s.target, ...r.target }
+  if (!r.plan || !active) return
+  const now = nowIso()
+  const oldRefs = JSON.stringify(active.phases)
+  const keep = new Set(r.plan.routines.map((x) => x.id))
+  for (const x of s.routines || []) {
+    if (x.source === 'recommended' && !keep.has(x.id) && !x.archived && oldRefs.includes(x.id)) { x.archived = true; x._dirty = true; x._u = now }
+  }
+  if (!Array.isArray(s.routines)) s.routines = []
+  for (const x of r.plan.routines) {
+    const i = s.routines.findIndex((y) => y.id === x.id)
+    const row = { ...structuredClone(x), _dirty: true, _u: now }
+    if (i >= 0) s.routines[i] = row; else s.routines.push(row)
+  }
+  const i = s.trainingPlans.findIndex((x) => x.id === active.id)
+  const plan = structuredClone(r.plan.trainingPlan)
+  s.trainingPlans[i] = { ...plan, id: active.id, phases: cleanPhases(plan.phases), startedAt: active.startedAt, _dirty: true, _u: now }
+  mirrorPlan(s, true)
+}
+
+/** The keys profile.mind may hold (MindPrefs); anything else in a patch is ignored. */
+const MIND_KEYS: Record<keyof MindPrefs, true> = { off: true, asks: true, wakeAt: true, windDownAt: true, notify: true, halved: true, tz: true, routine: true, lockNames: true }
+const isEmptyPref = (v: unknown): boolean =>
+  v === undefined || (Array.isArray(v) ? !v.length : !!v && typeof v === 'object' && !Object.keys(v).length)
+
+/** This device's IANA time zone, if the browser says. */
+function deviceTimeZone(): string | undefined {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined } catch { return undefined }
+}
+
+/** What a notes write returns, made safe to keep after the Immer draft it came from is finished. */
+function plainResult<R>(r: R): R {
+  if (isDraft(r)) return current(r as object) as R
+  if (r && typeof r === 'object' && !Array.isArray(r)) {
+    const o = r as Record<string, unknown>
+    for (const k of Object.keys(o)) if (isDraft(o[k])) o[k] = current(o[k])
+  }
+  return r
+}
+
+/**
+ * Reminder back-off (security-data H3; judgement call, plan §7.3 and C16): a reminder counts as
+ * ignored when it was swiped away, or when the next one of its type arrived, without an open in
+ * between; an open ends the run. Two ignored in a row halve that type. Each device keeps its own
+ * log (accepted). Supplement reminders aren't a NotifyKind, so they never back off.
+ */
+export const IGNORED_TO_HALVE = 2
+
+/** How many reminders of `kind` were ignored in a row, up to the latest event of that kind. */
+export function ignoredInARow(log: readonly NotifyEvent[], kind: string): number {
+  let run = 0, open = false
+  for (const e of [...log].filter((x) => x.kind === kind).sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
+    if (e.ev === 'opened') { run = 0; open = false }
+    else if (e.ev === 'closed') { if (open) run++; open = false }
+    else { if (open) run++; open = true }
+  }
+  return run
+}
+
+/** A Mind reminder type is on (profile.mind.notify). */
+export function mindRemindersOn(p: Pick<Profile, 'mind'> | null | undefined): boolean {
+  return NOTIFY_KINDS.some((k) => p?.mind?.notify?.[k] === true)
+}
+
+/** Any reminder that needs this browser's push subscription is on. */
+export function remindersOn(p: Pick<Profile, 'mind' | 'notificationsEnabled' | 'reviewPush'> | null | undefined): boolean {
+  return !!p?.notificationsEnabled || !!p?.reviewPush || mindRemindersOn(p)
 }
 
 /** Lowest calorie target the app will set without medical support. */
 const KCAL_FLOOR = 1200
+
+/** Consent refusals from the server in a row (sync backs off after two). */
+let consentRefusals = 0
 
 function meta(s: PersistedState): SyncMeta {
   return ensureMeta(s, false)
@@ -157,20 +611,109 @@ function clearSavedSession() {
 
 /** Set by an explicit sign-out; cleared when the user starts signing in again. */
 let signingOut = false
+/** shared-list sends that left reads waiting, this app session: a few more tries, then the next save or reconnect */
+let shareRetries = 0
+const GUEST_GONE_MSG = 'Tilo now needs an account. When you’re online, sign in or create one: the log on this phone moves into it.'
+/** Shown when a weigh-in or check-in isn't saved because health consent was withdrawn. */
+const HEALTH_OFF_MSG = 'Not saved: health data is off. Turn it back on in Profile, then Privacy.'
+/** Shown when a height isn't kept because health consent was withdrawn. */
+export const HEIGHT_OFF_MSG = 'Height isn’t kept while health data is off. Turn it back on in Profile, then Privacy.'
 const SIGNED_OUT_MSG = 'You’ve been signed out. Sign in to sync: your log is still on this phone.'
+/** An under-age deletion that stopped trying by itself (register item 37): a fresh sign-in finishes it. */
+export const UNDER_AGE_SIGN_IN_MSG = 'Please sign in again to finish removing your account.'
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let syncing = false
+/** Set while an account deletion runs: no sync may start, so nothing re-uploads rows the server
+ *  function is deleting (the JWT stays valid for a while after the login is gone). */
+let deleting = false
+/** When an under-18 deletion was last retried (runSync). */
+let underAgeTried = 0
+/** Set by initAuth: make a Supabase session this device's live session. */
+let applySession: ((s: Session) => void) | null = null
 
 export const useStore = create<StoreState>()(
   immer((set, get) => {
     // helper to persist after any mutation
     // Tell the user once if the device refuses to save, instead of losing data silently.
     let storageWarned = false
-    const persist = () => {
-      if (saveState(get().data)) { storageWarned = false; return }
+    /** Save on this device; false (and a one-off warning) when storage is full. */
+    const persist = (): boolean => {
+      if (saveState(get().data)) { storageWarned = false; return true }
       if (!storageWarned) { storageWarned = true; get().showToast('Couldn’t save on this device. Storage may be full: export a backup in Profile.') }
+      return false
+    }
+
+    /** After a change: save it on this device, queue the sync, then confirm it (when there's a message). */
+    const saved = (toast?: string) => {
+      persist(); get().scheduleSync()
+      if (toast !== undefined) get().showToast(toast)
+    }
+
+    /** An age that must not be saved: raise the stop instead. True when refused. */
+    const refuseUnderAge = (age: unknown, source: UnderAgeSource): boolean => {
+      if (!isUnderAge(age as number | string | null | undefined)) return false
+      set((st) => { st.underAge ??= { source } })
+      void settleReminders()
+      return true
+    }
+    /**
+     * Reminders follow the stop (reminderAction): while it shows, this device's push subscription
+     * ends (best-effort, in the background: the stop never waits on it; retried on a later launch
+     * or connection); once it's gone without a deletion, they're registered again without asking,
+     * or, if that can't be done, the setting turns off so Profile says what's true.
+     */
+    /** A Mind reminder was turned on: register this browser for pushes once online and signed in
+     *  (permission was asked in the tap; resubscribePush never asks). Retried on the next
+     *  connection and launch until it works. */
+    let subscribing = false
+    const subscribeIfPending = async (): Promise<void> => {
+      const s = get()
+      if (!s.data._meta?.pushPending || subscribing || s.underAge) return
+      if (!remindersOn(s.data.profile)) { set((st) => { delete ensureMeta(st.data, false).pushPending }); persist(); return }
+      if (!s.authed || !navigator.onLine || !consentLetsSync(s.data)) return
+      subscribing = true
+      try {
+        const ok = await withTimeout(resubscribePush(), 8000, false)
+        if (ok) { set((st) => { delete ensureMeta(st.data, false).pushPending }); persist() }
+      } finally {
+        subscribing = false
+      }
+    }
+    let restoring = false
+    const settleReminders = async (): Promise<void> => {
+      const s = get()
+      const a = reminderAction({ stopped: !!s.underAge, enabled: !!s.data.profile?.notificationsEnabled, held: !!s.data._meta?.pushHeld })
+      if (!a) return
+      if (a === 'hold') { set((st) => { ensureMeta(st.data, false).pushHeld = true }); persist() }
+      if (a !== 'restore') { await withTimeout(unsubscribePush(), 5000, undefined); return }
+      if (restoring) return
+      restoring = true
+      try {
+        set((st) => { delete ensureMeta(st.data, false).pushHeld })
+        persist()
+        if (!get().data.profile.notificationsEnabled) return
+        const can = get().authed && navigator.onLine && consentLetsSync(get().data)
+        const ok = can ? await withTimeout(resubscribePush(), 8000, false) : false
+        if (restoreTurnsOff({ registered: ok, stopped: !!get().underAge, pushSupported: pushSupported(), keepWithoutPush: KEEP_REMINDERS_WITHOUT_PUSH })) {
+          set((st) => { st.data.profile.notificationsEnabled = false; markSettingsDirty(st.data) })
+          saved()
+        }
+      } finally {
+        restoring = false
+      }
+    }
+    /**
+     * After the saved data was replaced (a pull, an owner choice, a wipe): a stored under-18 age
+     * raises the stop; a stop that came from stored data ends once that age is gone.
+     */
+    const recheckStoredAge = (source: 'sync' | 'launch') => {
+      const stored = isUnderAge(get().data.profile?.age)
+      const cur = get().underAge
+      if (stored && !cur) set((st) => { st.underAge = { source } })
+      else if (!stored && cur && (cur.source === 'sync' || cur.source === 'launch')) set((st) => { st.underAge = null })
+      void settleReminders()
     }
 
     const markSettingsDirty = (s: PersistedState) => {
@@ -180,11 +723,44 @@ export const useStore = create<StoreState>()(
       meta(s).days[d] = { u: nowIso(), dirty: true }
     }
 
+    /**
+     * Merge a patch into a day's check-in (core/domain/checkin mergeCheckin, then the "empty
+     * becomes null" rule): the one path for the check-in sheet, skills and the one thing, so none
+     * of them wipes another's answers. Refused (false, with the health-off toast) while health
+     * logging is off; null always clears.
+     */
+    const writeCheckin = (day: string, patch: Partial<CheckIn> | null, toast?: string): boolean => {
+      const s0 = get()
+      const c = patch ? checkinOrNull(mergeCheckin(s0.data.days[day]?.checkin, patch)) : null
+      if (c && !healthLoggingAllowed(s0.data)) { s0.showToast(HEALTH_OFF_MSG); return false }
+      set((st) => {
+        ensureDay(st.data, day).checkin = c
+        markDayDirty(st.data, day)
+      })
+      saved(toast)
+      return true
+    }
+
+    /**
+     * A change to the device-only store (deviceOnly.ts): made through the Immer set on `st.data`,
+     * so a sync that started earlier sees the data changed and drops its copy rather than writing
+     * over it (runSync's `get().data !== src` checks); saved on this device only, with no dirty
+     * flag and no sync (security-data). Returns whether the device stored it.
+     */
+    const deviceWrite = (write: (s: PersistedState) => void): boolean => {
+      set((st) => { write(st.data) })
+      return persist()
+    }
+
+    // the launch check reads this device's data only: it never waits on the network
+    const initial = loadState()
     return {
-      data: loadState(),
+      data: initial,
+      underAge: isUnderAge(initial.profile?.age) ? { source: 'launch' } : null,
       cur: todayStr(),
       tab: 'today',
       profileOpen: null,
+      reviewOpen: false,
       sync: 'idle',
       email: null,
       authReady: false,
@@ -192,18 +768,73 @@ export const useStore = create<StoreState>()(
       authed: false,
       syncPaused: false,
       authNotice: null,
+      ownerAsk: null,
+      online: typeof navigator === 'undefined' || navigator.onLine !== false,
+      deletingAccount: false,
+      authProvider: null,
+      kitchen: loadKitchen(),
+      setKitchen: (have) => { saveKitchen(have); set((st) => { st.kitchen = have }) },
       toast: null,
+      consentOpen: false,
+      setConsentOpen: (open) => set((st) => { st.consentOpen = open }),
+      toastAction: null,
+      trainOpen: null,
+      planOpen: null,
+      mindOpen: null,
+      openTrain: (w) => set((st) => { st.tab = 'train'; st.trainOpen = w }),
+      openPlan: (w) => set((st) => { st.tab = 'plan'; st.planOpen = w }),
+      openMind: (view) => set((st) => { st.tab = 'mind'; st.mindOpen = view ?? null }),
+      clearOpen: () => set((st) => { st.trainOpen = null; st.planOpen = null; st.mindOpen = null }),
 
       setTab: (t) => set((st) => { st.tab = t }),
       openProfile: (section) => set((st) => { st.tab = 'profile'; st.profileOpen = section }),
       clearProfileOpen: () => set((st) => { st.profileOpen = null }),
+      openReview: () => set((st) => { st.tab = 'today'; st.reviewOpen = true }),
+      closeReview: () => set((st) => { st.reviewOpen = false }),
+      markReviewOpened: () => {
+        const today = todayStr()
+        if (get().data.profile.lastReviewAt === today) return
+        set((st) => { st.data.profile.lastReviewAt = today; markSettingsDirty(st.data) })
+        persist()
+      },
+      chooseNextWeek: (choice, option) => {
+        const today = todayStr()
+        const health = healthLoggingAllowed(get().data)
+        set((st) => {
+          // the choice follows from the log, so it's health data: not kept while health consent is withdrawn
+          if (health) st.data.profile.loopChoice = { d: today, choice, ...(option ? { option } : {}) }
+          if (choice === 'ease-off' || choice === 'ease-back') Object.assign(st.data.profile, easeOffFields(today))
+          markSettingsDirty(st.data)
+        })
+        saved()
+      },
+      applyRangeChange: (rc) => {
+        set((st) => {
+          st.data.target = targetAfter(st.data.target, rc)
+          st.data.profile.targetSetAt = todayStr()
+          markSettingsDirty(st.data)
+        })
+        saved('Your range is updated. You can change it back any time in Profile.')
+      },
+      setSteadyStart: (kg) => {
+        if (!healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
+        set((st) => { st.data.profile.steadyRef = { kg: Math.round(kg * 10) / 10, from: todayStr() }; markSettingsDirty(st.data) })
+        saved('Your steady range is centred on where you are now.')
+      },
+      notePatternShown: (code) => {
+        if (!healthLoggingAllowed(get().data)) return
+        const today = todayStr()
+        if (get().data.profile.patternShown?.[code] === today) return
+        set((st) => { st.data.profile.patternShown = { ...st.data.profile.patternShown, [code]: today }; markSettingsDirty(st.data) })
+        persist()
+      },
       setDate: (d) => set((st) => { st.cur = d }),
-      shiftDate: (n) => set((st) => { st.cur = shiftDay(st.cur, n) }),
 
-      showToast: (msg) => {
-        set((st) => { st.toast = msg })
+      showToast: (msg, action) => {
+        set((st) => { st.toast = msg; st.toastAction = action ?? null })
         if (toastTimer) clearTimeout(toastTimer)
-        toastTimer = setTimeout(() => set((st) => { st.toast = null }), 1600)
+        // an Undo needs time to be read and reached
+        toastTimer = setTimeout(() => set((st) => { st.toast = null; st.toastAction = null }), action ? 5000 : 1600)
       },
 
       logEntries: (entries, toast) => {
@@ -212,7 +843,7 @@ export const useStore = create<StoreState>()(
           ensureDay(st.data, st.cur).foods.push(...entries)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(toast ?? entries[0].n + ' added')
+        saved(toast ?? entries[0].n + ' added')
       },
 
       updateEntry: (index, mult, meal) => {
@@ -223,7 +854,7 @@ export const useStore = create<StoreState>()(
           d.foods[index] = { ...scaleEntry(x, mult), meal: meal ?? x.meal }
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       confirmEntry: (index) => {
@@ -233,7 +864,7 @@ export const useStore = create<StoreState>()(
           x.ok = true
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks, noted')
+        saved('Thanks, noted')
       },
 
       removeFood: (index) => {
@@ -242,19 +873,24 @@ export const useStore = create<StoreState>()(
           d.foods.splice(index, 1)
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       repeatYesterday: (meal) => {
         const { data, cur } = get()
-        const prev = (data.days[shiftDay(cur, -1)]?.foods || []).filter((x) => x.meal === meal)
-        if (!prev.length) return
-        get().logEntries(prev.map((x) => ({ ...relog(x, meal), how: x.how })), 'Copied from yesterday')
+        // the same entries the Summary's "Same as yesterday" row adds up (insights.entriesToRepeat;
+        // nutrition-accuracy R2), so its kcal is exactly what this adds. Foods no longer in Tilo
+        // (removed as unverified) aren't copied, nor their cooking fat
+        const { entries, gone } = entriesToRepeat(data, cur, meal)
+        if (!entries.length && !gone) return
+        const note = gone ? ` · ${gone} food${gone > 1 ? 's' : ''} no longer in Tilo, not copied` : ''
+        if (!entries.length) { get().showToast(`Not copied: ${gone > 1 ? 'those foods are' : 'that food is'} no longer in Tilo`); return }
+        get().logEntries(entries, 'Copied from yesterday' + note)
       },
 
       saveCustomFood: (def) => {
         const existing = get().data.customFoods.find((x) => x.n.toLowerCase() === def.n.toLowerCase())
-        const id = existing?.id ?? uuid('f')
+        const id = existing?.id ?? uuid()
         const food: Food = { ...def, g: Math.round(def.g), id }
         set((st) => {
           if (!Array.isArray(st.data.customFoods)) st.data.customFoods = []
@@ -262,8 +898,60 @@ export const useStore = create<StoreState>()(
           if (cur) Object.assign(cur, food, { _dirty: true, _u: nowIso() })
           else st.data.customFoods.push({ ...food, _dirty: true, _u: nowIso() })
         })
-        persist(); get().scheduleSync(); get().showToast('Food saved')
+        saved('Food saved')
         return food
+      },
+
+      linkBarcode: (id, barcode) => {
+        if (!get().data.customFoods.some((x) => x.id === id)) return null
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (cur) Object.assign(cur, { barcode, _dirty: true, _u: nowIso() })
+        })
+        saved()
+        const food = get().data.customFoods.find((x) => x.id === id)!
+        get().showToast(`Barcode linked to your “${food.n}”`)
+        return food
+      },
+
+      updateCustomFood: (id, next, keepName = false) => {
+        const old = get().data.customFoods.find((x) => x.id === id)
+        if (!old) return null
+        // a name another saved food has stays as it was (the server holds one food per name); a new
+        // name keeps the old one as an alias, so its logs still count. No day is rewritten.
+        const food = updatedFood(old, next, nameAfterUpdate(get().data.customFoods, old, next, keepName))
+        set((st) => {
+          const cur = st.data.customFoods.find((x) => x.id === id)
+          if (!cur) return
+          for (const k of Object.keys(cur) as (keyof Food)[]) delete cur[k]
+          Object.assign(cur, food, { _dirty: true, _u: nowIso() })
+        })
+        saved('Food updated')
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      mergeCustomFoods: (keepId, dropId, takeBarcode) => {
+        set((st) => {
+          // the other's names become the kept food's aliases: no day is rewritten, so another
+          // device's newer logs can't be overwritten and logged numbers never change
+          const r = mergeFoods(st.data, keepId, dropId, takeBarcode)
+          if (!r) return
+          meta(st.data).foodDeletes.push(r.removed)
+          const keep = st.data.customFoods.find((x) => x.id === keepId)
+          if (keep) Object.assign(keep, { _dirty: true, _u: nowIso() })
+        })
+        saved()
+      },
+
+      markFoodsDifferent: (aId, bId) => {
+        set((st) => {
+          const a = st.data.customFoods.find((x) => x.id === aId)
+          const b = st.data.customFoods.find((x) => x.id === bId)
+          if (!a || !b) return
+          markDifferent(a, b)
+          for (const f of [a, b]) Object.assign(f, { _dirty: true, _u: nowIso() })
+        })
+        saved()
       },
 
       removeCustomFood: (index) => {
@@ -271,7 +959,7 @@ export const useStore = create<StoreState>()(
           const gone = st.data.customFoods.splice(index, 1)[0]
           if (gone?.id) meta(st.data).foodDeletes.push(gone.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Removed from saved')
+        saved('Removed from saved')
       },
 
       saveRecipe: (input) => {
@@ -279,15 +967,17 @@ export const useStore = create<StoreState>()(
           if (!Array.isArray(st.data.recipes)) st.data.recipes = []
           let r: Recipe | undefined
           if (input.id) r = st.data.recipes.find((x) => x.id === input.id)
+          // renaming onto another recipe's name would leave two with one name (the server allows one)
+          if (r && st.data.recipes.some((x) => x !== r && x.name.toLowerCase() === input.name.toLowerCase())) return
           if (!r) r = st.data.recipes.find((x) => x.name.toLowerCase() === input.name.toLowerCase())
           if (r) {
             r.name = input.name; r.servings = input.servings; r.items = input.items
             r._dirty = true; r._u = nowIso()
           } else {
-            st.data.recipes.push({ id: uuid('r'), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
+            st.data.recipes.push({ id: uuid(), name: input.name, servings: input.servings, items: input.items, _dirty: true, _u: nowIso() })
           }
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe saved')
+        saved('Recipe saved')
       },
 
       deleteRecipe: (index) => {
@@ -297,7 +987,7 @@ export const useStore = create<StoreState>()(
           st.data.recipes.splice(index, 1)
           if (r.id) meta(st.data).recipeDeletes.push(r.id)
         })
-        persist(); get().scheduleSync(); get().showToast('Recipe deleted')
+        saved('Recipe deleted')
       },
 
       logRecipe: (recipe, servings, meal) => {
@@ -309,23 +999,22 @@ export const useStore = create<StoreState>()(
         }], recipe.name + ' added')
       },
 
-      setCheckin: (c) => {
-        set((st) => {
-          ensureDay(st.data, st.cur).checkin = c
-          markDayDirty(st.data, st.cur)
-        })
-        persist(); get().scheduleSync(); get().showToast('Check-in saved')
-      },
+      setCheckin: (patch) => { writeCheckin(get().cur, patch, 'Check-in saved') },
 
-      savePlan: ({ id, when, then, cope }) => {
+      savePlan: ({ id, when, then, cope, kind }, opts) => {
+        const plans0 = get().data.profile.plans ?? []
+        const was = id ? plans0.find((p) => p.id === id) : undefined
+        // a Mind plan is health data by inference (security-data M5): not kept while health is off
+        if ((kind ?? was?.kind) && !healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return false }
         set((st) => {
           const plans = (st.data.profile.plans ??= [])
           const existing = id ? plans.find((p) => p.id === id) : undefined
-          if (existing) Object.assign(existing, { when, then, cope })
-          else plans.push({ id: uuid('p'), when, then, cope, created: todayStr(), reviews: [] })
+          if (existing) Object.assign(existing, { when, then, cope }, kind ? { kind } : {})
+          else plans.push({ id: uuid(), when, then, cope, created: todayStr(), reviews: [], ...(kind ? { kind } : {}) })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Plan saved')
+        saved(opts?.toast ?? 'Plan saved')
+        return true
       },
 
       deletePlan: (id) => {
@@ -333,7 +1022,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.plans = (st.data.profile.plans ?? []).filter((p) => p.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       reviewPlans: (outcomes) => {
@@ -347,7 +1036,178 @@ export const useStore = create<StoreState>()(
           }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Thanks for checking in')
+        saved('Thanks for checking in')
+      },
+
+      setMindPrefs: (patch) => {
+        const data = get().data
+        const before = data.profile.mind ?? {}
+        const next = structuredClone(before) as Record<string, unknown>
+        const touched: (keyof MindPrefs)[] = []
+        for (const [k, v] of Object.entries(patch) as [keyof MindPrefs, unknown][]) {
+          if (!(k in MIND_KEYS)) continue
+          // the wake and wind-down times and the wind-down routine are health data: not kept while
+          // health logging is off
+          if (v != null && (MIND_HEALTH_KEYS as readonly string[]).includes(k) && !healthLoggingAllowed(data)) continue
+          touched.push(k)
+          if (v == null) { delete next[k]; continue }
+          if (k === 'notify' || k === 'halved') {
+            // merged into what's there; a kind set to undefined is removed
+            const obj: Record<string, unknown> = { ...(next[k] as Record<string, unknown> | undefined) }
+            for (const [kk, vv] of Object.entries(v as Record<string, unknown>)) { if (vv == null) delete obj[kk]; else obj[kk] = vv }
+            next[k] = obj
+          } else next[k] = structuredClone(v)
+        }
+        if (!touched.length) return false
+        // all three pillars off is never allowed (B1.9): refused, nothing saved
+        if (Array.isArray(next.off) && PILLARS.every((x) => (next.off as Pillar[]).includes(x))) return false
+        // saving reminder settings (a type, or the times) while a reminder is on records this
+        // device's time zone, so reminders follow its clock (B11)
+        const anyOn = NOTIFY_KINDS.some((x) => (next.notify as MindPrefs['notify'])?.[x] === true)
+        const reminderSave = touched.some((k) => k === 'notify' || k === 'wakeAt' || k === 'windDownAt')
+        const tz = anyOn && reminderSave ? deviceTimeZone() : undefined
+        if (tz && !('tz' in patch) && next.tz !== tz) { next.tz = tz; touched.push('tz') }
+        const clean = validMindPrefs(next) ?? {}
+        // a malformed value is refused, never saved as a removal
+        // (an emptied list or object is a removal, not a malformed value)
+        for (const k of touched) if (!isEmptyPref(next[k]) && clean[k] === undefined) return false
+        // a routine with anything but known-shaped keys in it (text, repeats) is refused whole, never trimmed
+        if (touched.includes('routine') && Array.isArray(next.routine) && (clean.routine?.length ?? -1) !== next.routine.length) return false
+        const changed = touched.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(clean[k]))
+        if (!changed.length) return true
+        set((st) => {
+          if (Object.keys(clean).length) st.data.profile.mind = clean; else delete st.data.profile.mind
+          stampFields(st.data.profile, changed.map((k) => ('mind.' + k) as MergedField), nowIso())
+          markSettingsDirty(st.data)
+        })
+        saved()
+        // supplement names turned off: sync the settings straight away rather than after the
+        // debounce, so the server stops naming them as soon as it can (security-data L2). Not
+        // awaited: the save above is already local, and runSync does nothing offline or signed out.
+        if (before.lockNames === true && clean.lockNames !== true) {
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          void get().runSync()
+        }
+        return true
+      },
+
+      logSkill: (id) => {
+        if (!SKILL_IDS.includes(id)) return false
+        const day = todayStr()
+        return writeCheckin(day, withSkill(get().data.days[day]?.checkin, id, nowIso()))
+      },
+
+      pickThing: (key) => {
+        if (!thingByKey(key)) return false
+        return writeCheckin(todayStr(), { thing: { key } })
+      },
+
+      doneThing: () => {
+        const day = todayStr()
+        const t = get().data.days[day]?.checkin?.thing
+        if (!t) return false
+        return writeCheckin(day, { thing: { key: t.key, done: nowIso() } })
+      },
+
+      clearThing: () => {
+        const day = todayStr()
+        if (!get().data.days[day]?.checkin?.thing) return
+        writeCheckin(day, { thing: undefined })
+      },
+
+      writeNotes: (write) => {
+        let result!: ReturnType<typeof write>
+        const stored = deviceWrite((d) => {
+          const r = write(d, selectNotesContext(get()))
+          result = plainResult(r)
+        })
+        return { result, stored }
+      },
+
+      markLowMoodShown: () => {
+        const day = todayStr()
+        if (lowMoodShownOn(get().data) === day) return true
+        return deviceWrite((d) => markLowMoodShownIn(d, day))
+      },
+
+      setSleepMore: (open) => deviceWrite((d) => setSleepMoreOpen(d, open)),
+
+      markMedicalReasked: () => deviceWrite((d) => markMedicalReaskedIn(d)),
+
+      ingestNotifyLog: (events) => {
+        if (!Array.isArray(events) || !events.length) return []
+        deviceWrite((d) => recordNotifyEvents(d, events))
+        const log = notifyLog(get().data)
+        const mind = get().data.profile.mind
+        const halve = NOTIFY_KINDS.filter((k) => !mind?.halved?.[k] && ignoredInARow(log, k) >= IGNORED_TO_HALVE)
+        if (halve.length) {
+          const at = nowIso()
+          set((st) => {
+            const m = (st.data.profile.mind ??= {})
+            m.halved = { ...m.halved, ...Object.fromEntries(halve.map((k) => [k, at])) }
+            stampFields(st.data.profile, ['mind.halved'], at)
+            markSettingsDirty(st.data)
+          })
+          saved()
+        }
+        return halve
+      },
+
+      backToUsual: (kind) => {
+        const had = !!get().data.profile.mind?.halved?.[kind]
+        set((st) => {
+          // the run of ignored reminders restarts (device log), so the next ingest doesn't halve again at once
+          const d = st.data.deviceOnly
+          if (d?.notify) { d.notify = d.notify.filter((e) => e.kind !== kind); if (!d.notify.length) delete d.notify; if (!Object.keys(d).length) delete st.data.deviceOnly }
+          if (!had) return
+          const m = st.data.profile.mind!
+          const h = { ...m.halved }
+          delete h[kind]
+          if (Object.keys(h).length) m.halved = h; else delete m.halved
+          if (!Object.keys(m).length) delete st.data.profile.mind
+          stampFields(st.data.profile, ['mind.halved'], nowIso())
+          markSettingsDirty(st.data)
+        })
+        if (had) saved(); else persist()
+      },
+
+      setMindReminder: async (kind, on) => {
+        if (!NOTIFY_KINDS.includes(kind)) return 'unsupported'
+        if (on) {
+          // reminders read the profile on the server: never before the health yes (B11 [C])
+          if (!consentLetsSync(get().data)) return 'consent'
+          if (!pushSupported()) return 'unsupported'
+          const perm = pushPermission()
+          if (perm === 'denied') return 'denied'
+          if (perm !== 'granted' && (await askPushPermission()) !== 'granted') return 'denied'
+        }
+        if (!get().setMindPrefs({ notify: { [kind]: on } })) return 'unsaved'
+        if (on) {
+          set((st) => { ensureMeta(st.data, false).pushPending = true })
+          const stored = persist()
+          void subscribeIfPending()
+          return stored ? true : 'unsaved'
+        }
+        if (!remindersOn(get().data.profile)) {
+          set((st) => { delete ensureMeta(st.data, false).pushPending })
+          persist()
+          void withTimeout(unsubscribePush(), 5000, undefined)
+        }
+        return true
+      },
+
+      dismissBackoff: (kind) => {
+        const at = get().data.profile.mind?.halved?.[kind]
+        if (!at) return
+        deviceWrite((d) => dismissBackoffIn(d, kind, at))
+      },
+
+      noteActivityShown: (pick) => {
+        const { data, cur } = get()
+        if (pick && !mayMarkSeen(pick, 'activity')) return false
+        if (!markActivityShown(data, cur)) return false
+        get().setPrefs({ activityShown: cur })
+        return true
       },
 
       toggleSupp: (id) => {
@@ -356,36 +1216,86 @@ export const useStore = create<StoreState>()(
           d.supps[id] = !d.supps[id]
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       setWeight: (kg) => {
+        if (!healthLoggingAllowed(get().data)) { get().showToast(HEALTH_OFF_MSG); return }
         set((st) => {
           ensureDay(st.data, st.cur).weight = kg
           markDayDirty(st.data, st.cur)
+          // Profile shows latestWeight, so this is its weight too; profile.weight isn't rewritten,
+          // which would upload the whole settings record on every weigh-in
         })
-        persist(); get().scheduleSync(); get().showToast('Weight saved')
+        saved('Weight saved')
       },
 
-      saveWorkout: (type, ex, option) => {
+      saveWorkout: (type, ex, option, extra) => {
         set((st) => {
-          putBuiltin(ensureDay(st.data, st.cur), st.cur, { modality: 'strength', title: WORKOUTS[type].title, routineId: 'builtin-' + type, ex, ...(option ? { option } : {}) })
+          const more: Partial<TrainingSession> = {}
+          if (extra?.effort) more.effort = extra.effort
+          if (extra?.note) more.note = extra.note
+          if (extra?.mins != null && Number.isFinite(extra.mins)) more.mins = Math.max(1, Math.round(extra.mins))
+          if (extra?.open) more.open = true
+          if (extra?.warmup) more.warmup = extra.warmup
+          // one of the user's own workouts: its kind and name, and its time estimate standing in for
+          // minutes that weren't logged (plan §2.9; a shorter day's from the shorter prescriptions)
+          const own = WORKOUTS[type] ? undefined : (st.data.routines || []).find((r) => r.id === type)
+          if (!WORKOUTS[type] && !own) return
+          const base = own
+            ? { modality: own.modality, title: own.name, routineId: own.id,
+                estMins: estMins(slotsOf(own).map((x) => (option === 'shorter' ? { ...x, rx: shorterPrescription(x.rx || EXERCISE_BY_ID[x.exId]?.defaultRx || '') } : x))) }
+            : { modality: 'strength' as const, title: WORKOUTS[type].title, routineId: builtinId(type) }
+          putBuiltin(ensureDay(st.data, st.cur), st.cur, { ...base, ex, ...(option ? { option } : {}), ...more },
+            // what the caller didn't set carries over; an explicit null effort or empty note clears it
+            keptOnSave(extra))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(type + ' session saved')
+        saved()
+        const ownName = WORKOUTS[type] ? null : (get().data.routines || []).find((r) => r.id === type)?.name
+        if (!extra?.quiet) get().showToast(extra?.toast ?? (ownName ? ownName + ' saved' : type + ' session saved'))
+      },
+
+      saveRoutine: (input) => {
+        if (!canBuild(get().data.profile) || !input.slots.length) return null
+        let id: string | null = null
+        set((st) => {
+          if (!Array.isArray(st.data.routines)) st.data.routines = []
+          const name = input.name.trim().slice(0, 120) || 'My workout'
+          // sets and reps in the app's notation, so estimates and "Shorter" read them
+          const slots = input.slots.map((x) => { const rx = normaliseRx(x.rx); return { exId: x.exId, ...(rx ? { rx } : {}), ...(x.note ? { note: x.note } : {}) } })
+          const body = {
+            name, modality: headlineModality(slots), effort: input.effort ?? deriveEffort(slots),
+            blocks: [{ id: 'main', kind: 'sets' as const, slots }], estMins: estMins(slots),
+          }
+          const r = input.id ? st.data.routines.find((x) => x.id === input.id) : undefined
+          if (r) Object.assign(r, body, { archived: false, _dirty: true, _u: nowIso() })
+          else st.data.routines.push({ id: uuid(), ...body, source: 'custom', ...(input.baseId ? { baseId: input.baseId } : {}), _dirty: true, _u: nowIso() })
+          id = r?.id ?? st.data.routines[st.data.routines.length - 1].id
+        })
+        persist(); get().scheduleSync(); get().showToast('Workout saved')
+        return id
+      },
+
+      archiveRoutine: (id) => {
+        set((st) => {
+          const r = (st.data.routines || []).find((x) => x.id === id)
+          if (r) { r.archived = true; r._dirty = true; r._u = nowIso() }
+        })
+        persist(); get().scheduleSync(); get().showToast('Workout removed')
       },
 
       saveCardio: (cardioType, mins, option) => {
         set((st) => {
           const typed = parseFloat(mins)
           putBuiltin(ensureDay(st.data, st.cur), st.cur, {
-            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: 'builtin-Cardio',
+            modality: cardioType === 'Mobility' ? 'mobility' : 'cardio', title: cardioType, routineId: builtinId('Cardio'),
             // blank minutes mean the Cardio card's default of 25, for Mobility too (as the box shows)
             ...(Number.isFinite(typed) ? { mins: typed } : cardioType === 'Mobility' ? { mins: 25 } : {}), cardio: { key: cardioType }, ...(option ? { option } : {}),
           })
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Cardio saved')
+        saved('Cardio saved')
       },
 
       addSession: (x) => {
@@ -394,7 +1304,17 @@ export const useStore = create<StoreState>()(
           setSessions(day, [...sessionsOf(day, st.cur), { ...x, id: uuid(), at: nowIso() }])
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast(x.title + ' saved')
+        saved(x.title + ' saved')
+      },
+
+      restoreSession: (date, x) => {
+        set((st) => {
+          const day = ensureDay(st.data, date)
+          const list = sessionsOf(day, date).filter((y) => y.id !== x.id)
+          setSessions(day, [...list, x].sort((a, b) => (a.at || '').localeCompare(b.at || '')))
+          markDayDirty(st.data, date)
+        })
+        saved()
       },
 
       removeSession: (id) => {
@@ -403,15 +1323,135 @@ export const useStore = create<StoreState>()(
           setSessions(day, sessionsOf(day, st.cur).filter((y) => y.id !== id))
           markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Session removed')
+        saved('Session removed')
       },
 
-      setScheduleDay: (idx, value) => {
+      setSchedule: (sch, quiet) => {
         set((st) => {
-          st.data.schedule[idx] = value
+          for (let d = 0; d < 7; d++) st.data.schedule[d] = sch[d] || 'Rest'
+          const kept = keptAfterEdit(st.data, st.data.schedule, todayStr())
+          if (kept) st.data.profile.weekBeforePlan = kept
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Schedule updated')
+        saved(quiet ? undefined : 'Schedule updated')
+      },
+
+      startPlan: (input) => {
+        const id = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          const today = todayStr()
+          const start = input.startedAt ?? today
+          // the person's own week, kept before the first plan's mirror writes over it
+          const keep = weekToKeep(st.data)
+          if (keep) { st.data.profile.weekBeforePlan = keep; ensureMeta(st.data, false).settings = { u: nowIso(), dirty: true } }
+          // one plan in charge: the one in progress is finished (or put away if it never started).
+          // A plan chosen to start later leaves it running until then (mirrorPlan finishes it).
+          for (const p of st.data.trainingPlans) {
+            if (p.state !== 'active') continue
+            if (start > today && p.startedAt && p.startedAt <= today) continue
+            p.state = p.startedAt && p.startedAt < today ? 'completed' : 'archived'
+            if (p.state === 'completed') p.completedAt = nowIso()
+            p._dirty = true; p._u = nowIso()
+          }
+          st.data.trainingPlans.push({
+            id, name: input.name.trim().slice(0, 120) || 'My plan', source: input.source, state: 'active',
+            phases: cleanPhases(input.phases), startedAt: input.startedAt ?? today,
+            ...(input.baseTemplateId ? { baseTemplateId: input.baseTemplateId } : {}), ...(input.clonedFromId ? { clonedFromId: input.clonedFromId } : {}),
+            _dirty: true, _u: nowIso(),
+          })
+          mirrorPlan(st.data, true)
+        })
+        saved('Plan started')
+        return id
+      },
+
+      updatePlan: (id, patch) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          if (patch.name != null) p.name = patch.name.trim().slice(0, 120) || p.name
+          if (patch.phases) p.phases = cleanPhases(patch.phases)
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Plan updated')
+      },
+
+      carryOn: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Carrying on', weeks: 1, after: true, full: true, since: todayStr(), week: {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Your last week carries on')
+      },
+
+      startMaintenance: (id, week) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p || p.state !== 'active' || p.phases.some((x) => x.after)) return
+          p.phases = cleanPhases([...p.phases, { id: uuid(), name: 'Maintenance', weeks: 1, after: true, since: todayStr(), week: week ?? {} }])
+          p._dirty = true; p._u = nowIso()
+          mirrorPlan(st.data, true)
+        })
+        saved('Maintenance started')
+      },
+
+      savePlanCopy: (id, name) => {
+        const src = (get().data.trainingPlans || []).find((x) => x.id === id)
+        if (!src) return null
+        const nid = uuid()
+        set((st) => {
+          if (!Array.isArray(st.data.trainingPlans)) st.data.trainingPlans = []
+          st.data.trainingPlans.push({
+            id: nid, name: [...(name ?? src.name).trim()].slice(0, 120).join('') || 'My plan', source: 'custom', state: 'template',
+            phases: cleanPhases(src.phases.filter((x) => !x.after)), clonedFromId: src.id,
+            ...(src.baseTemplateId ? { baseTemplateId: src.baseTemplateId } : {}), _dirty: true, _u: nowIso(),
+          })
+        })
+        saved('Saved to your plans')
+        return nid
+      },
+
+      notePlan: (id, reflection) => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          const good = reflection.good?.trim().slice(0, 500), change = reflection.change?.trim().slice(0, 500)
+          if (!good && !change) return
+          p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+        })
+        saved()
+      },
+
+      finishPlan: (id, reflection, state = 'completed') => {
+        set((st) => {
+          const p = (st.data.trainingPlans || []).find((x) => x.id === id)
+          if (!p) return
+          p.state = state
+          if (state === 'completed') p.completedAt = nowIso()
+          const good = reflection?.good?.trim().slice(0, 500), change = reflection?.change?.trim().slice(0, 500)
+          if (good || change) p.reflection = { at: nowIso(), ...(good ? { good } : {}), ...(change ? { change } : {}) }
+          p._dirty = true; p._u = nowIso()
+          // no plan left running: the week the person had before plans comes back (the mirror only
+          // holds one ready-made workout a day, so keeping it would turn Tilo's plan workouts into cardio)
+          putBackWeek(st.data)
+        })
+        saved(state === 'completed' ? 'Plan finished' : 'Plan put away')
+      },
+
+      syncPlanMirror: () => {
+        const snap = () => JSON.stringify([get().data.schedule, (get().data.trainingPlans || []).map((p) => p.state)])
+        const before = snap()
+        // local only (launch, back to the app): the next sync mirrors again on fresh data and uploads
+        set((st) => { mirrorPlan(st.data, false) })
+        if (snap() !== before) persist()
       },
 
       saveTargets: (t, rangeWidth) => {
@@ -420,36 +1460,58 @@ export const useStore = create<StoreState>()(
         const macroKcal = t.p * 4 + t.c * 4 + t.f * 9
         const c = floored && macroKcal < KCAL_FLOOR ? t.c + Math.round((KCAL_FLOOR - macroKcal) / 4) : t.c
         set((st) => {
-          st.data.target = { ...t, c, kcal: Math.max(KCAL_FLOOR, t.kcal) }
+          const kcal = Math.max(KCAL_FLOOR, t.kcal)
+          // the weigh-in check skips the 14 days after a target change (maintenance-numbers rules)
+          if (kcal !== st.data.target.kcal) st.data.profile.targetSetAt = todayStr()
+          st.data.target = { ...t, c, kcal }
           if (rangeWidth != null && rangeWidth >= 0) st.data.profile.rangeWidth = Math.min(400, Math.round(rangeWidth))
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
         get().showToast(floored ? `Kept at 1,200 kcal${c !== t.c ? ', with carbs raised to match' : ''}. Going lower needs medical support.` : 'Targets saved')
       },
 
       saveProfileMetrics: (patch) => {
+        // Tilo is 18+: an under-18 age saves nothing (no change, no dirty flag, no sync), it stops
+        if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return false
+        // health consent withdrawn: the health fields (weight, body fat, height …) aren't saved, the
+        // rest is; a height that isn't kept says so rather than vanishing quietly (Benn's copy)
+        const dropped = !healthLoggingAllowed(get().data) && patch.height != null
+        if (!healthLoggingAllowed(get().data)) patch = withoutHealth(patch)
+        // a missing weight (an empty field) never clears the stored one
+        patch = withoutMissingWeight(patch)
         set((st) => {
+          // a new weight on Profile is today's entry (Profile has no date); an unchanged one logs nothing
+          const today = todayStr()
+          if (patch.weight && patch.weight !== latestWeight(st.data, today)) {
+            ensureDay(st.data, today).weight = patch.weight
+            markDayDirty(st.data, today)
+          }
           Object.assign(st.data.profile, patch)
-          if (patch.weight) ensureDay(st.data, st.cur).weight = patch.weight
           markSettingsDirty(st.data)
-          if (patch.weight) markDayDirty(st.data, st.cur)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved(dropped ? HEIGHT_OFF_MSG : 'Saved')
+        return true
       },
 
       setPrefs: (patch) => {
-        set((st) => { Object.assign(st.data.profile, patch); markSettingsDirty(st.data) })
-        persist(); get().scheduleSync()
+        if ('age' in patch && refuseUnderAge(patch.age, 'profile')) return
+        set((st) => {
+          // picking "Keep it steady" starts the steady range's clock and clears an old reference
+          if (startsMaintain(st.data.profile.goal, patch)) { st.data.profile.maintainFrom = todayStr(); delete st.data.profile.steadyRef }
+          Object.assign(st.data.profile, patch)
+          markSettingsDirty(st.data)
+        })
+        saved()
       },
 
       addSupplement: (name, time) => {
         set((st) => {
           if (!Array.isArray(st.data.profile.supplements)) st.data.profile.supplements = []
-          st.data.profile.supplements.push({ id: uuid('s'), name, time })
+          st.data.profile.supplements.push({ id: uuid(), name, time })
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       updateSupplement: (id, name, time) => {
@@ -458,7 +1520,7 @@ export const useStore = create<StoreState>()(
           if (s) { s.name = name; s.time = time }
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync(); get().showToast('Saved')
+        saved('Saved')
       },
 
       removeSupplement: (id) => {
@@ -466,7 +1528,7 @@ export const useStore = create<StoreState>()(
           st.data.profile.supplements = (st.data.profile.supplements || []).filter((x: Supplement) => x.id !== id)
           markSettingsDirty(st.data)
         })
-        persist(); get().scheduleSync()
+        saved()
       },
 
       updateEmail: async (email) => {
@@ -475,43 +1537,146 @@ export const useStore = create<StoreState>()(
       },
 
       setNotifications: async (enabled) => {
+        // registering for reminders writes to the account: not before the health answer
+        if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
         if (enabled) {
           const ok = await subscribePush()
           if (!ok) return false
-        } else {
+        } else if (!get().data.profile.reviewPush && !mindRemindersOn(get().data.profile)) {
+          // the subscription is shared with the weekly review reminder and the Mind reminders:
+          // kept while any of those is on
           await unsubscribePush()
         }
         set((st) => {
           st.data.profile.notificationsEnabled = enabled
-          meta(st.data).settings = { u: nowIso(), dirty: true }
+          markSettingsDirty(st.data)
         })
-        saveState(get().data)
+        const stored = persist()
+        get().scheduleSync()
+        return stored || 'unsaved'
+      },
+
+      setReviewPush: async (enabled) => {
+        if (enabled && !consentLetsSync(get().data)) { get().showToast('Reminders start once you’ve agreed in Profile, then Privacy.'); return false }
+        if (enabled) {
+          if (!(await subscribePush())) return false
+        } else if (!get().data.profile.notificationsEnabled && !mindRemindersOn(get().data.profile)) {
+          await unsubscribePush()
+        }
+        set((st) => {
+          const p = st.data.profile
+          p.reviewPush = enabled
+          if (enabled) { p.reviewPushFrom = todayStr(); p.reviewPushTime ??= '09:00' }
+          markSettingsDirty(st.data)
+        })
+        persist()
         get().scheduleSync()
         return true
       },
+      keepReviewPush: async (keep) => {
+        if (!keep) { await get().setReviewPush(false); return }
+        set((st) => { st.data.profile.reviewPushFrom = todayStr(); markSettingsDirty(st.data) })
+        saved('The weekly reminder stays on.')
+      },
 
       importBackup: (incoming) => {
-        const fresh = loadStateFrom(incoming)
-        ensureMeta(fresh, true)
+        // a backup with an under-18 age is never loaded: nothing on this device changes
+        if (refuseUnderAge(incoming?.profile?.age, 'import')) return false
+        // Unload notes past the cap that this restore can't keep: said, never dropped silently
+        let skipped = 0
+        try { skipped = unloadImportSkipped(incoming, get().data) } catch { /* a malformed file: none */ }
+        const fresh = stateFromBackup(structuredClone(incoming), structuredClone(get().data))
+        if (refuseUnderAge(fresh.profile?.age, 'import')) return false
+        // health consent withdrawn: a restored backup must not bring the health fields back (or sync them)
+        if (!healthLoggingAllowed(get().data)) clearHealthData(fresh, ensureMeta(fresh, false))
         set((st) => { st.data = fresh })
-        saveState(get().data)
+        const stored = persist()
         set((st) => { st.cur = todayStr() })
-        get().showToast('Backup loaded')
+        // one message at a time: say here if the device couldn't keep it (it still syncs)
+        get().showToast(!stored ? 'Backup loaded, but this device couldn’t save it. Storage may be full.'
+          : skipped ? `Backup loaded. ${skipped} older note${skipped > 1 ? 's' : ''} didn’t fit: this phone keeps up to ${UNLOAD_MAX_NOTES}.` : 'Backup loaded')
         get().scheduleSync()
+        return true
       },
 
       initAuth: async () => {
         requestPersistentStorage()
         const mode = loadMode()
+        // Migration: flag local-only data dirty on first run so it uploads once signed in. Runs
+        // first, before any session is applied (which records the owner and so creates _meta).
+        set((st) => {
+          const d = st.data
+          const migrate =
+            !d._meta &&
+            (Object.keys(d.days || {}).length > 0 ||
+              (d.customFoods || []).length > 0 ||
+              (d.recipes || []).length > 0 ||
+              (d.routines || []).length > 0 ||
+              (d.trainingPlans || []).length > 0)
+          ensureMeta(d, migrate)
+        })
+        saveState(get().data)
+        // the old device-only label-photo consent becomes a consent record (once); the old flag
+        // goes only after the record is safely saved
+        let legacyStore: Storage | null = null
+        try { legacyStore = localStorage } catch { /* blocked */ }
+        const copy = structuredClone(get().data) as PersistedState
+        if (migrateLabelConsent(copy, legacyStore)) {
+          set((st) => { st.data = copy })
+          if (saveState(get().data)) removeLegacyLabelFlag(legacyStore)
+        } else if (copy.consents?.records.some((r) => r.type === 'label-photo')) removeLegacyLabelFlag(legacyStore)
+
         const live = (s: Session) => {
-          setSession(s.access_token, s.user.id)
+          const uid = s.user.id
+          if (get().ownerAsk?.uid === uid) return // still waiting on the user's choice (a token refresh)
+          // A different account's data must not show or sync until the user chooses. Until then
+          // the session isn't applied and the mode isn't saved, so a reload asks again.
+          const check = ownerCheck(get().data, uid, loadMode() === 'account')
+          if (check === 'ask' || check === 'verify') {
+            setSession(null, null)
+            // not 'account' until the user chooses, so an offline reload can't open this data
+            // as a signed-in account
+            saveMode(null)
+            const checking = check === 'verify'
+            set((st) => { st.ownerAsk = { uid, email: s.user.email ?? null, checking }; st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null })
+            if (checking) {
+              // Data an older version synced without recording whose it was: if it matches this
+              // account's rows it's theirs, so carry on without a question (and without marking
+              // it all to upload over newer server data). Any doubt, including no connection: ask.
+              withTimeout(accountRows(uid, s.access_token).then((rows) => sameAccount(get().data, rows)), 6000, false)
+                .catch(() => false)
+                .then(async (same) => {
+                  const still = () => !signingOut && get().ownerAsk?.uid === uid && !!get().ownerAsk?.checking
+                  if (!still()) return // answered, cancelled or signed out meanwhile
+                  if (!same) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
+                  // the token may have been refreshed while this ran: apply the current session
+                  const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
+                  const now = r?.data.session
+                  if (!still()) return
+                  if (!now || now.user.id !== uid) { set((st) => { if (st.ownerAsk) st.ownerAsk.checking = false }); return }
+                  set((st) => { ensureMeta(st.data, false).owner = uid; st.ownerAsk = null })
+                  saveState(get().data)
+                  live(now)
+                  get().runSync()
+                })
+            }
+            return
+          }
+          if (check === 'claim') {
+            set((st) => { ensureMeta(st.data, false).owner = uid })
+            saveState(get().data)
+          }
+          setSession(s.access_token, uid)
           saveMode('account')
-          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.email = s.user.email ?? null })
+          // reads queued by another account on this phone are never sent as this one
+          reconcileOutbox(uid, consented(get().data, 'shared-products') && consented(get().data, 'health'))
+          set((st) => { st.signedIn = true; st.authed = true; st.syncPaused = false; st.authNotice = null; st.ownerAsk = null; st.email = s.user.email ?? null; st.authProvider = (s.user.app_metadata?.provider as string | undefined) ?? null })
         }
+        applySession = live
         const toSignIn = (msg?: string) => {
           setSession(null, null)
           saveMode(null)
-          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = msg ?? null })
+          set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.authNotice = msg ?? null })
         }
 
         // Listen before restoring, so a sign-out the server forces during startup (password
@@ -533,15 +1698,16 @@ export const useStore = create<StoreState>()(
         // Launch must never depend on the network: restoring a session can stall offline while
         // it retries a token refresh, so give it a few seconds, then open with local data.
         // `definite` = the server answered (no session), as opposed to no connection.
-        const r = await Promise.race([
+        const r = await withTimeout(
           supabase.auth.getSession()
             .then((x) => ({ session: x.data.session, definite: !x.error || !isAuthRetryableFetchError(x.error) }))
             .catch(() => ({ session: null, definite: false })),
-          new Promise<{ session: null; definite: false }>((z) => setTimeout(() => z({ session: null, definite: false }), 4000)),
-        ])
+          4000, { session: null, definite: false })
         const session = r.session
         if (session) live(session)
-        else if (mode === 'guest') get().continueAsGuest()
+        // mode 'guest' (the old "continue without an account"): there is no guest mode any more, so
+        // it opens the sign-in screen; the log stays and moves into the account on first sign-in
+        else if (mode === 'guest') { saveMode(null); set((st) => { st.authNotice = GUEST_GONE_MSG }) }
         else if (mode === 'account') {
           if ((r.definite || serverSignedOut) && navigator.onLine) {
             // signed out on the server: say so and ask to sign in, rather than quietly not syncing
@@ -553,21 +1719,23 @@ export const useStore = create<StoreState>()(
           }
         }
         set((st) => { st.authReady = true })
-
-        // Migration: flag local-only data dirty on first run so it uploads once signed in.
-        set((st) => {
-          const d = st.data
-          const migrate =
-            !d._meta &&
-            (Object.keys(d.days || {}).length > 0 ||
-              (d.customFoods || []).length > 0 ||
-              (d.recipes || []).length > 0)
-          ensureMeta(d, migrate)
-        })
-        saveState(get().data)
+        // reminders and the 18+ stop: held while it shows (a launch with a stored under-18 age), or
+        // restored after one that went; never waited on
+        void settleReminders()
+        void subscribeIfPending()
 
         if (session) get().runSync()
+        window.addEventListener('offline', () => set((st) => { st.online = false }))
+        // a health answer changed while the engine couldn't load (offline): re-run it now
+        void get().rerunHealthAnswers()
         window.addEventListener('online', async () => {
+          set((st) => { st.online = true })
+          // back online: an under-18 deletion still to do retries straight away (runSync)
+          underAgeTried = 0
+          void settleReminders()
+          void subscribeIfPending()
+          // shared-list reads waiting: sent after a random delay, not with the reconnect
+          if (SHARED_PRODUCTS_ENABLED && readOutbox()?.items.length) scheduleSend(() => void get().sendSharedProducts())
           if (get().syncPaused) {
             const res = await supabase.auth.getSession().catch(() => null)
             if (res?.data.session) live(res.data.session)
@@ -579,66 +1747,676 @@ export const useStore = create<StoreState>()(
           }
           get().runSync()
         })
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) get().runSync() })
-      },
-
-      continueAsGuest: () => {
-        // Local-only mode: no account, data stays on this device only. Cloud sync is
-        // disabled (authed stays false) so we never touch the database without a real
-        // authenticated session — the database is locked to auth.uid() by RLS.
-        saveMode('guest')
-        set((st) => { st.signedIn = true; st.authed = false; st.email = null; st.authNotice = null })
+        onForeground(() => { get().syncPlanMirror(); get().runSync() })
+        get().syncPlanMirror()
       },
 
       runSync: async () => {
-        // Only sync with a real authenticated session. Guests are local-only; the
-        // database rejects anything without a JWT matching the row's user_id.
+        // Only sync with a real authenticated session (none while offline or while asking whose
+        // data this is); the database rejects anything without a JWT matching the row's user_id.
         if (!get().authed) return
-        if (syncing) return
+        // a Mind reminder turned on while offline or signed out: register for pushes now
+        void subscribeIfPending()
+        if (syncing || deleting) return
+        // an under-18 account still to delete (onboarding §14): nothing syncs, the deletion retries
+        // (at most once a minute: a failed deletion schedules a sync of its own)
+        const pend = pendingDeletion()
+        // only this account's: another account signed in on the device syncs as normal
+        if (pend && pend.uid === getUid()) {
+          // backed off after a failure (underAgeNext); at most once a minute either way
+          if (navigator.onLine && Date.now() - underAgeTried > 60_000 && underAgeRetryDue(pend, Date.now())) { underAgeTried = Date.now(); void get().deleteUnderAge() }
+          return
+        }
+        // an under-18 age is on screen (the stop): nothing goes to or comes from the account
+        if (get().underAge) return
         if (!navigator.onLine) { set((st) => { st.sync = 'offline' }); return }
+        // Nothing of the log reaches the cloud without a yes to health data (UK GDPR Art. 9(2)(a)):
+        // not before an answer, not during a "Not now", not after a withdrawal. Until then only the
+        // consent records sync (an answer given on another device counts here), and after a
+        // withdrawal the account's copy of the log is deleted.
+        if (!consentLetsSync(get().data)) {
+          syncing = true
+          // data changed while the pull ran (e.g. Continue was tapped): run again afterwards, since
+          // that tap's own scheduled sync was dropped while this one was in flight
+          let again = false
+          try {
+            const src = get().data
+            const uid0 = getUid()
+            const d = structuredClone(src) as PersistedState
+            consentRefusals = 0
+            await pushConsents(d)
+            await pullConsents(d)
+            const m = ensureMeta(d, false)
+            // a withdrawal made on another device: this device's health data is cleared too (once)
+            applyHealthWithdrawal(d, m)
+            // the latest answer is a no that's on the server, and this device hasn't seen its clear
+            // done: ask the server to delete the account's copy (it re-checks the latest answer
+            // itself, in one transaction, so a yes given on another phone meanwhile is kept)
+            const owed = pendingCloudClear(d)
+            let cleared: string | null = null
+            if (owed && get().authed && getUid() === uid0 && (await clearCloudLog())) cleared = owed.id
+            if (cleared) {
+              // reminders were deleted with the log: say so on this phone
+              d.consents!.cloudClearedFor = cleared
+              d.profile.notificationsEnabled = false
+              void withTimeout(unsubscribePush(), 2000, undefined)
+            }
+            if (get().data !== src) {
+              // something changed meanwhile: keep that, and still record the clear so it isn't lost
+              if (cleared) { set((st) => { consentLog(st.data).cloudClearedFor = cleared!; st.data.profile.notificationsEnabled = false }); persist() }
+              again = true
+              return
+            }
+            if (!get().authed || getUid() !== uid0) return
+            // a yes that came in from another device ends this device's pause here
+            if (consentLetsSync(d)) resumeAfterYes(d)
+            saveState(d)
+            set((st) => { st.data = d })
+            again = consentLetsSync(d)
+          } catch (e) {
+            console.warn('consent check failed:', e)
+          } finally {
+            syncing = false
+            if (again) get().scheduleSync()
+          }
+          return
+        }
         syncing = true
+        let rerun = false
         set((st) => { st.sync = 'syncing' })
         try {
           // Work on a plain mutable clone — the store's live data is frozen by Immer,
           // and the sync engine mutates records in place.
-          const d = structuredClone(get().data) as PersistedState
+          const src = get().data
+          const uid0 = getUid()
+          const d = structuredClone(src) as PersistedState
           const m = ensureMeta(d, false)
-          await pushDirty(d, m)
+          // consent first: a no (or a pause) made on another device must be known before any of the
+          // log moves, or this phone would upload over, or pull away, what that answer protects
+          await pushConsents(d)
+          await pullConsents(d)
+          if (!consentLetsSync(d)) {
+            if (get().data === src && get().authed && getUid() === uid0) { saveState(d); set((st) => { st.data = d }) }
+            set((st) => { st.sync = 'idle' })
+            rerun = true // the consent-only path takes over
+            return
+          }
+          // a yes after a withdrawal: the account's copy was deleted, so the whole log goes up
+          const re = needsReupload(d)
+          if (re) {
+            // marked on the live state and saved first, so a run that stops part-way doesn't mark
+            // it all again; the next run (with the consent records this one pulled) uploads it
+            if (get().data !== src || !get().authed || getUid() !== uid0) { rerun = true; return }
+            const synced = d.consents!.records
+            set((st) => {
+              const log = consentLog(st.data)
+              for (const r of synced) if (!log.records.some((x) => x.id === r.id)) log.records.push(r)
+              markReupload(st.data, meta(st.data), re)
+            })
+            persist()
+            // the account's reminders went with its copy of the log: register this phone again
+            if (d.profile.notificationsEnabled) void withTimeout(resubscribePush(), 5000, false)
+            set((st) => { st.sync = 'idle' })
+            rerun = true
+            return
+          }
+          let failed: string[]
+          try {
+            failed = await pushDirty(d, m)
+            consentRefusals = 0
+          } catch (e) {
+            // the server says there's no current yes (a no from another phone arrived meanwhile):
+            // drop this copy without pulling (the account's copy may be being cleared, and a pull
+            // would take this phone's own foods, recipes and workouts away with it); live records
+            // stay dirty, and the consent-only path takes over
+            if (!(e instanceof ConsentRequiredError)) throw e
+            set((st) => { st.sync = 'idle' })
+            // straight away once; if the server still refuses, wait for the next edit, focus or
+            // connection rather than asking every 800 ms
+            rerun = ++consentRefusals < 2
+            return
+          }
           await pullAll(d, m)
+          // the same check after the pull: a clear only follows a no the server has, so if the
+          // answer is still a yes here, the pull read the account before any clear
+          await pullConsents(d)
+          if (!consentLetsSync(d)) { set((st) => { st.sync = 'idle' }); rerun = true; return }
+          // a health withdrawal made on another device clears this one's health data too (once)
+          if (applyHealthWithdrawal(d, m)) rerun = true
+          // an answer given on another device ends a "Not now" pause here (a yes uploads what was held)
+          if (settleHealthPause(d, m)) rerun = true
+          // the plan's week moved on (a new phase) while settings were current: upload the mirror next run
+          if (mirrorPlan(d, true)) rerun = true
+          // Data changed while we were on the network (an edit, a backup import): writing this
+          // copy back would lose that change. Drop it; live records are still dirty, so the
+          // next run pushes them again and pulls afresh.
+          if (get().data !== src) { rerun = true; return }
+          // signed out, or another account's session held back, while this ran: its requests may
+          // have gone out without this account's token (an anon read returns no rows), so drop it
+          if (!get().authed || getUid() !== uid0) return
           saveState(d)
+          // Rejected records stay dirty on the device and retry next time; the rest synced.
+          if (failed.length) console.warn('sync: some records were rejected:', failed)
           // Replace data wholesale so selectors see fresh references and re-render.
-          set((st) => { st.data = d; st.sync = 'synced' })
+          set((st) => { st.data = d; st.sync = failed.length ? 'error' : 'synced' })
+          // a profile pulled with an under-18 age (set on another device): the stop, and no more sync
+          recheckStoredAge('sync')
         } catch (e) {
           console.warn('sync failed:', e)
           set((st) => { st.sync = 'error' })
         } finally {
           syncing = false
+          if (rerun) get().scheduleSync()
         }
       },
 
       scheduleSync: () => {
         if (syncTimer) clearTimeout(syncTimer)
+        if (deleting) return
         syncTimer = setTimeout(() => get().runSync(), 800)
       },
 
-      /** Back to the sign-in screen. Local data stays on the device (guests keep their log). */
+      /** Call before a sign-in attempt: ends the post-sign-out wait for late session events. */
       beginSignIn: () => {
         signingOut = false
       },
 
-      signOut: async () => {
+      resolveOwner: async (choice) => {
+        const ask = get().ownerAsk
+        if (!ask) return
+        if (choice === 'cancel') { await get().signOut(); return }
+        const next = choice === 'keep' ? keepForAccount(structuredClone(get().data) as PersistedState, ask.uid) : freshForAccount(ask.uid)
+        if (choice === 'fresh') get().setKitchen([])
+        // either way the service worker's reminder log was the previous account's (security-data H3)
+        clearNotifyStore()
+        // the browser's push subscription still belongs to the previous account: end it
+        await withTimeout(unsubscribePush(), 2000, undefined)
+        saveState(next)
+        set((st) => { st.data = next; st.cur = todayStr(); st.ownerAsk = null })
+        recheckStoredAge('launch')
+        // the session was held back while asking; it comes from local storage, so this works offline
+        // raced like at launch: getSession can stall offline while it retries a token refresh
+        const r = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
+        const session = r?.data.session
+        if (session && session.user.id === ask.uid && applySession) {
+          applySession(session)
+          get().runSync()
+        } else {
+          set((st) => { st.signedIn = false; st.authNotice = SIGNED_OUT_MSG })
+        }
+      },
+
+      grantConsent: (type) => {
+        // a yes to health also uploads what a "Not now" held back on this device
+        set((st) => { if (type === 'health') grantHealth(st.data, meta(st.data)); else recordConsent(st.data, type, true) })
+        saved()
+      },
+
+      flushConsents: async () => {
+        // only the consent records, independent of the debounced sync (which skips a run while one
+        // is in flight); re-sending one is harmless, the server ignores duplicates by id
+        const d = structuredClone(get().data) as PersistedState
+        const waiting = (d.consents?.records || []).filter((r) => r._dirty).map((r) => r.id)
+        if (!waiting.length) return true
+        if (!get().authed || !navigator.onLine || get().underAge) return false
+        try { await pushConsents(d) } catch { /* left for the next sync */ }
+        const sent = new Set(waiting.filter((id) => !d.consents?.records.find((r) => r.id === id)?._dirty))
+        if (sent.size) {
+          set((st) => { for (const r of st.data.consents?.records || []) if (sent.has(r.id)) delete r._dirty })
+          persist()
+        }
+        return sent.size === waiting.length
+      },
+
+      notNowHealth: () => {
+        set((st) => { pauseHealthSync(st.data) })
+        saved()
+      },
+
+      declineConsent: (type) => {
+        // nothing to clear for someone new, but withdraw() also covers anything logged meanwhile
+        set((st) => { withdraw(st.data, meta(st.data), type) })
+        if (type === 'health' || type === 'shared-products') dropOutbox()
+        saved()
+      },
+
+      withdrawConsent: (type) => {
+        set((st) => { withdraw(st.data, meta(st.data), type) })
+        // no more sharing: reads waiting to be sent go too
+        if (type === 'health' || type === 'shared-products') dropOutbox()
+        saved()
+      },
+
+      hasConsent: (type) => consented(get().data, type),
+
+      setShareProducts: (on) => {
+        if (on) get().grantConsent('shared-products')
+        else get().withdrawConsent('shared-products')
+      },
+
+      queueSharedProduct: (t) => {
+        const d = get().data
+        // the account whose data this is (signed in, or offline since launch): kept on the device only
+        const owner = get().authed ? getUid() : d._meta?.owner
+        if (!SHARED_PRODUCTS_ENABLED || !owner || !consented(d, 'shared-products') || !consented(d, 'health')) return false
+        queueShare(t, owner)
+        scheduleSend(() => void get().sendSharedProducts())
+        return true
+      },
+
+      shareSavedFood: (id, def, t) => {
+        const cur = get().data.customFoods.find((x) => x.id === id)
+        if (!cur || !get().queueSharedProduct(t)) return null
+        const food = withSharedFigures(cur, def)
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) { for (const k of Object.keys(f) as (keyof Food)[]) delete f[k]; Object.assign(f, food, { _dirty: true, _u: nowIso() }) }
+        })
+        saved()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      markFoodInOff: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          // device-only: not marked dirty, nothing to upload
+          if (f) f.shareDone = 'in-off'
+        })
+        persist()
+      },
+
+      markFoodShared: (id) => {
+        set((st) => {
+          const f = st.data.customFoods.find((x) => x.id === id)
+          if (f) f.shareDone = 'shared'
+        })
+        persist()
+        return get().data.customFoods.find((x) => x.id === id) ?? null
+      },
+
+      sendSharedProducts: async () => {
+        const ok = () => canSendOutbox({ authed: get().authed, online: navigator.onLine, uid: get().authed ? getUid() : null, health: consented(get().data, 'health'), shared: consented(get().data, 'shared-products'), underAge: !!get().underAge }, readOutbox())
+        if (!ok()) return
+        // the server checks the shared-products yes itself: send one given moments ago first
+        if (!(await get().flushConsents()) || !ok()) return
+        const r = await sendOutbox(getUid(), { still: ok })
+        if (r.sent) shareRetries = 0
+        // something stayed (the server busy, or the connection dropped): a few more tries later
+        if (r.kept && navigator.onLine && ++shareRetries <= 3) scheduleSend(() => void get().sendSharedProducts())
+      },
+
+      canSaveHealth: () => canSaveHealthAnswers(get().data),
+
+      saveHealthAnswers: (patch) => {
+        if (!canSaveHealthAnswers(get().data)) return false
+        get().setPrefs(patch)
+        return true
+      },
+
+      setupOpen: false,
+      openSetup: (open) => set((st) => { st.setupOpen = open }),
+      redoOpen: false,
+      openRedo: (open) => set((st) => { st.redoOpen = open }),
+
+      finishOnboarding: ({ profile, plan, target, weightKg }) => {
+        // a backstop: the wizard stops under-18s before the summary
+        if (refuseUnderAge(profile.age, 'profile')) return false
+        const consent = canSaveHealthAnswers(get().data)
+        set((st) => {
+          // no health consent: nothing health-related is kept (the wizard didn't ask it either)
+          st.data.profile = consent ? profile : { ...st.data.profile, ...withoutHealth(profile) }
+          if (consent && weightKg) {
+            const today = todayStr()
+            // the wizard's weight is today's weigh-in (as a weight saved on Profile is)
+            if (st.data.days[today]?.weight !== weightKg) { ensureDay(st.data, today).weight = weightKg; markDayDirty(st.data, today) }
+          }
+          if (target) { st.data.target = target; st.data.profile.targetSetAt = todayStr() }
+          if (profile.goal === 'maintain') st.data.profile.maintainFrom = todayStr()
+          markSettingsDirty(st.data)
+          if (plan) acceptGenerated(st.data, plan)
+        })
+        clearDraft()
+        saved()
+        return consent
+      },
+
+      deleteUnderAge: async () => {
+        underAgeTried = Date.now()
+        const owner = get().data._meta?.owner
+        // offline (no live session) the device's owner is the account, or on a new device the
+        // saved session's; with none, nothing is wiped or recorded and the stop screen stays
+        const uid = underAgeUid(get().authed ? getUid() : null, owner, savedSessionUid())
+        // no account to delete: nothing is recorded or wiped and the stop screen stays, but the
+        // wizard's draft (device only) goes, so "We haven't kept any of your answers" holds (register 37b)
+        if (!uid) { clearDraft(); return { status: 'no-session' } }
+        const prev = pendingDeletion()
+        const pend = prev && prev.uid === uid ? prev : { uid, at: nowIso() }
+        markPendingDeletion(pend)
+        // this device's data goes now, whatever the connection; the account follows (plan §14).
+        // Its own data or nobody's yet (a new device), never another account's (underAgeWipesDevice)
+        if (underAgeWipesDevice(owner, uid)) {
+          clearDraft()
+          clearNotifyStore()
+          const next = freshForAccount(uid)
+          saveState(next)
+          set((st) => { st.data = next; st.cur = todayStr(); st.kitchen = []; st.underAge = null })
+          get().setKitchen([])
+        }
+        let res = await get().deleteAccount('under-age')
+        // a 401: maybe the server already deleted it and the reply was lost. One token refresh
+        // tells: "user not found" means the account is gone, so this is done; a dead refresh token
+        // proves nothing (delete-account signs out globally first), so it's the sign-in stage,
+        // keeping the record; a working refresh retries once with the new token
+        let gone = false, dead = false
+        if (res.status === 'no-session' && res.rejected) {
+          const r = await refreshForRetry()
+          if (r === 'gone') gone = true
+          else if (r === 'dead') dead = true
+          else if (r === 'ok') res = await get().deleteAccount('under-age')
+        }
+        const step = gone ? { kind: 'done' as const } : underAgeNext(dead ? 'reauth' : res.status, pend, Date.now())
+        if (gone) {
+          // nothing left on the server: sign this dead session out, and wipe the device when it's
+          // that account's (never another's)
+          signingOut = true
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          setSession(null, null)
+          await defaultDeleteDeps.signOut()
+          clearSavedSession()
+          saveMode(null)
+          const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
+          if (wipe) wipeDevice()
+          set((st) => {
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+          })
+        }
+        if (step.kind === 'done') clearPendingDeletion()
+        else if (step.kind === 'wait') markPendingDeletion(step.pending)
+        else {
+          // stop trying by itself (the server refused re-auth for an account over 24 hours old, it
+          // kept failing, or this device's session can't be renewed): sign this device out, wipe it, and ask for a fresh sign-in, which passes
+          // re-auth and finishes the deletion (runSync). Another account's data is never touched.
+          signingOut = true
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          await withTimeout(unsubscribePush(), 2000, undefined)
+          setSession(null, null)
+          await defaultDeleteDeps.signOut()
+          clearSavedSession()
+          saveMode(null)
+          const wipe = underAgeWipesDevice(get().data._meta?.owner, pend.uid)
+          if (wipe) wipeDevice()
+          // the wipe keeps the pending record (wipeStorage); this one says to wait for a sign-in
+          markPendingDeletion(step.pending)
+          underAgeTried = 0
+          set((st) => {
+            if (wipe) { st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null }
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            st.authNotice = UNDER_AGE_SIGN_IN_MSG
+          })
+        }
+        return res
+      },
+
+      clearHealthAnswer: (kind) => {
+        // removing is always allowed (no consent needed to delete); the clear is stamped to sync,
+        // and the plan and targets follow straight away (ob7-1 footer)
+        let changed = false
+        set((st) => { changed = clearHealthAnswerIn(st.data.profile, kind, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
+        if (changed) { saved(); void get().rerunHealthAnswers() }
+        return changed
+      },
+
+      setHealthAnswer: (a) => {
+        // a new answer is health data: only with the local health yes
+        if (!canSaveHealthAnswers(get().data)) return false
+        let changed = false
+        set((st) => { changed = setHealthAnswerIn(st.data.profile, a, nowIso()); if (changed) { answerChanged(st.data); markSettingsDirty(st.data) } })
+        if (changed) { saved(); void get().rerunHealthAnswers() }
+        return true
+      },
+
+      answerFoodOptIn: (a) => {
+        // the answer is health data (register item 34b): saved only with the local health yes
+        if (!canSaveHealthAnswers(get().data)) return false
+        let changed = false
+        set((st) => { changed = answerFoodOptInIn(st.data.profile, a, todayStr(), nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
+        return true
+      },
+
+      confirmPregnancy: (status) => {
+        // "still applies" keeps a health answer: only with the local health yes; "no longer" removes it
+        if (status === 'still-applies' && !canSaveHealthAnswers(get().data)) return false
+        set((st) => {
+          confirmPregnancyIn(st.data.profile, status, todayStr(), nowIso())
+          // "still" only re-dates it: nothing to re-run
+          if (status === 'no-longer') answerChanged(st.data)
+          markSettingsDirty(st.data)
+        })
+        saved()
+        if (status === 'no-longer') void get().rerunHealthAnswers()
+        return true
+      },
+
+      rerunHealthAnswers: async () => {
+        if (!get().data._meta?.rerunAnswers) return
+        // the plan rebuild: the engine is a chunk of its own (kept off the main bundle, prefetched
+        // while online by App). The answer, routing and targets are already applied; if the chunk
+        // can't load (offline, never fetched) the rebuild stays pending for the next launch or connection
+        let mod: typeof import('@/core/domain/wizard')
+        try { mod = await import('@/core/domain/wizard') } catch { window.addEventListener('online', () => void get().rerunHealthAnswers(), { once: true }); return }
+        set((st) => { rerunAnswers(st.data, mod.rerunForAnswers); delete ensureMeta(st.data, false).rerunAnswers })
+        persist()
+        get().scheduleSync()
+      },
+
+      snoozePregnancyReask: () => {
+        let changed = false
+        set((st) => { changed = snoozePregnancyIn(st.data.profile, todayStr(), nowIso()); if (changed) markSettingsDirty(st.data) })
+        if (changed) saved()
+        return changed
+      },
+
+      rateExercise: (routineId, slot, rating) => {
+        const before = get().data
+        const r = (before.routines || []).find((x) => x.id === routineId)
+        const sl = r?.blocks[0]?.slots[slot]
+        if (!r || !sl) return
+        const exId = sl.exId
+        let swapped: string | null = null
+        set((st) => {
+          const t = (st.data.profile.training ??= {})
+          const prefs = (t.exPrefs ??= {})
+          const liked = new Set(prefs.liked ?? []), disliked = new Set(prefs.disliked ?? [])
+          if (rating === 'up') { if (liked.has(exId)) liked.delete(exId); else { liked.add(exId); disliked.delete(exId) } }
+          else {
+            disliked.add(exId); liked.delete(exId)
+            const rr = (st.data.routines || []).find((x) => x.id === routineId)!
+            const all = rr.blocks.flatMap((b) => b.slots.map((x) => x.exId))
+            swapped = replacementFor(exId, { ...t, exPrefs: { liked: [...liked], disliked: [...disliked] } }, all)
+            if (swapped) {
+              const target = rr.blocks[0].slots[slot]
+              rr.blocks[0].slots[slot] = { ...target, exId: swapped, why: [{ code: 'disliked', about: 'exercise', data: { exId: swapped, alt: exId } }] }
+              rr._dirty = true; rr._u = nowIso()
+            }
+          }
+          prefs.liked = [...liked]; prefs.disliked = [...disliked]
+          markSettingsDirty(st.data)
+        })
+        saved()
+        if (rating === 'down') {
+          const prevPrefs = before.profile.training?.exPrefs
+          get().showToast('Got it. We’ll pick something else.', { label: 'Undo', run: () => {
+            set((st) => {
+              const t = (st.data.profile.training ??= {})
+              t.exPrefs = structuredClone(prevPrefs ?? {})
+              const rr = (st.data.routines || []).find((x) => x.id === routineId)
+              if (rr && swapped) { rr.blocks[0].slots[slot] = structuredClone(sl); rr._dirty = true; rr._u = nowIso() }
+              markSettingsDirty(st.data)
+            })
+            saved()
+          } })
+        }
+      },
+
+      prepareHealthWithdrawal: () => {
+        const { json, summary } = healthWithdrawalBackup(get().data)
+        return { summary, backup: json, prompt: HEALTH_WITHDRAW_PROMPT }
+      },
+
+      downloadBeforeWithdrawal: () => exportBackup(get().data),
+
+      underAgeMistake: () => {
+        const u = get().underAge
+        if (!u) return
+        // an under-18 age that was stored (a launch or a pull) is cleared: a normal edit, synced
+        // once the stop is gone; from Profile or a refused backup nothing was stored
+        const stored = isUnderAge(get().data.profile.age)
+        set((st) => {
+          // stamped, so the per-field merge (profileMerge) keeps this clear over the account's older age
+          if (stored) { st.data.profile.age = null; stampFields(st.data.profile, ['age'], nowIso()); markSettingsDirty(st.data) }
+          st.underAge = null
+          // the redo wizard's stop goes back to its own age question
+          if (!u.inWizard) { st.tab = 'profile'; st.profileOpen = 'metrics' }
+        })
+        if (stored) saved()
+        // reminders come back as they were (or off, if they can't without asking)
+        void settleReminders()
+      },
+
+      raiseUnderAge: (source, opts) => {
+        if (get().underAge) return
+        set((st) => { st.underAge = { source, ...(opts?.inWizard ? { inWizard: true } : {}) } })
+        void settleReminders()
+      },
+
+      deleteNeedsReauth: () => !sessionSignedInRecently(getToken()),
+
+      reauthForDeletion: async (how) => {
+        const email = get().email
+        if ('google' in how) return email ? reauthWithGoogle(email, getUid()) : 'error'
+        if (!email) return 'error'
+        const r = await reauthWithPassword(email, how.password)
+        if (r !== 'ok') return r
+        // the new session arrives through onAuthStateChange; make sure it's the one applied
+        const now = await withTimeout(supabase.auth.getSession().catch(() => null), 4000, null)
+        if (now?.data.session && applySession) applySession(now.data.session)
+        return 'ok'
+      },
+
+      deleteAccount: async (reason, appleCode) => {
+        if (deleting) return { status: 'busy' }
+        // whose account this is, for the pending under-age record after it's gone
+        const goneUid = getUid()
+        if (!navigator.onLine) return { status: 'offline' }
+        if (!get().authed) return { status: 'no-session' }
+        deleting = true
+        let failed = false
+        set((st) => { st.deletingAccount = true })
+        try {
+          if (syncTimer) { clearTimeout(syncTimer); syncTimer = null }
+          // let a sync already in flight finish, so none is mid-upload while rows are deleted
+          for (let i = 0; syncing && i < 50; i++) await new Promise((r) => setTimeout(r, 200))
+          if (syncing) { failed = true; return { status: 'busy' } }
+          const res = await deleteAccountData({
+            ...defaultDeleteDeps,
+            hasSession: () => get().authed,
+            accountMatches: () => tokenMatchesOwner(getToken(), get().data._meta?.owner, !!get().ownerAsk),
+            signOut: async () => {
+              // late session events from here on are ignored, as after a sign-out
+              signingOut = true
+              // the browser's push subscription ends here (its row went with the account)
+              await withTimeout(unsubscribePush(), 2000, undefined)
+              setSession(null, null)
+              await defaultDeleteDeps.signOut()
+              clearSavedSession()
+            },
+          }, reason, appleCode)
+          if (res.status !== 'ok') { failed = true; return res }
+          // the wipe keeps a pending under-age record (wipeStorage); this account's is done now.
+          // Another account's stays, so that one still gets deleted
+          if (goneUid && pendingDeletion()?.uid === goneUid) clearPendingDeletion()
+          // in memory too: nothing of the account stays on screen (not saved: the device stays empty)
+          set((st) => {
+            st.data = freshForDevice(); st.cur = todayStr(); st.kitchen = []; st.underAge = null; st.redoOpen = false; st.setupOpen = false
+            st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.ownerAsk = null; st.sync = 'idle'
+            // the sign-in screen's banner: Apple couldn't be told, so the person can remove Tilo there
+            st.authNotice = res.appleKept ? DELETE.appleKept : null
+          })
+          return res
+        } finally {
+          deleting = false
+          set((st) => { st.deletingAccount = false })
+          // nothing was deleted: the sync that was held back runs again
+          if (failed) get().scheduleSync()
+        }
+      },
+
+      signOut: async (opts) => {
         // Supabase keeps the saved session if its sign-out call can't reach the server
         // (offline), which would sign the user straight back in: clear it locally as well, and
         // ignore late session events (see onAuthStateChange). A refresh already in flight can
         // re-save the session, so clear again once the sign-out call settles.
         signingOut = true
+        // Stop this device's reminders for this account while its token can still delete the row;
+        // otherwise they keep arriving for the next person on a shared phone. Never waits long.
+        await withTimeout(unsubscribePush(), 2000, undefined)
         const out = supabase.auth.signOut().catch(() => {}).finally(() => { if (signingOut) clearSavedSession() })
-        await Promise.race([out, new Promise((r) => setTimeout(r, 3000))])
+        await withTimeout(out, 3000, undefined)
         clearSavedSession()
+        get().setKitchen([]) // shared phones: the next person doesn't see this kitchen
         setSession(null, null)
         saveMode(null)
-        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null })
+        if (opts?.remove) {
+          // shared phones: the next person finds an empty device, not this log. The wizard's draft
+          // and the setup-card choice go with it; a pending under-age deletion stays (register 37c)
+          clearDraft()
+          showSetupCard()
+          // and the service worker's reminder log (security-data H3)
+          clearNotifyStore()
+          const next = freshForDevice()
+          saveState(next)
+          set((st) => { st.data = next; st.cur = todayStr(); st.underAge = null })
+        }
+        set((st) => { st.signedIn = false; st.authed = false; st.syncPaused = false; st.email = null; st.authNotice = null; st.ownerAsk = null })
       },
     }
   }),
 )
+
+/**
+ * Who may read and write Unload notes (deviceOnly.ts NotesContext; security-data): a signed-in
+ * device (signedIn, never authed, so notes work offline with sync paused), no "whose data is
+ * this?" question pending, and a current answer to health consent that is a yes.
+ */
+export function selectNotesContext(st: Pick<StoreState, 'signedIn' | 'ownerAsk' | 'data'>): NotesContext {
+  return { signedIn: st.signedIn, ownerAsk: !!st.ownerAsk, healthAllowed: healthLoggingAllowed(st.data) && healthConsentAnswered(st.data) }
+}
+
+/**
+ * The facts the asks budget needs for today (core/domain/asks pickAsks), from the store alone:
+ * Fewer prompts, a hard day, a Rough or Low mood, the low-mood signpost (only with MIND_REVIEWED;
+ * still "today" once marked shown), and days since the person started. The screen adds what is due.
+ */
+export function selectAskCtx(st: Pick<StoreState, 'data'>, today = todayStr()): AskCtx {
+  const days = st.data.days
+  const c = days[today]?.checkin
+  const shown = lowMoodShownOn(st.data)
+  const signpostToday = MIND_REVIEWED && (shown === today || lowMoodDue(days, today, shown))
+  return {
+    asks: st.data.profile.mind?.asks,
+    hard: hardDay(c, recentCheckins(days, today)),
+    lowMood: isLowMood(c),
+    signpostToday,
+    daysUsing: daysUsing(Object.keys(days), today),
+  }
+}
+
+/** The header indicator's state (onboarding plan §7), derived from the store alone. */
+export function selectConnection(st: Pick<StoreState, 'signedIn' | 'authed' | 'syncPaused' | 'ownerAsk' | 'online' | 'sync' | 'data'>): ConnectionState {
+  return connectionState({
+    signedIn: st.signedIn, authed: st.authed, syncPaused: st.syncPaused, ownerAsk: !!st.ownerAsk,
+    online: st.online, sync: st.sync, pending: unsyncedCount(st.data), phoneOnly: !consentLetsSync(st.data),
+  })
+}

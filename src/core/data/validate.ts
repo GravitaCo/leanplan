@@ -5,7 +5,7 @@
  */
 import type { Food } from '@/core/types'
 import { checkPer100 } from '@/core/domain/checks'
-import { scaleFood } from '@/core/domain/nutrition'
+import { scaleStored } from '@/core/domain/nutrition'
 import { SOURCES } from './sources'
 
 /** Published macros are given to 0.1 g, so the app may differ by no more than that. */
@@ -18,7 +18,8 @@ const MACRO_TOL = 0.1 + 1e-9
  */
 export function refMismatches(f: Food): string[] {
   if (!f.ref) return []
-  const s = scaleFood(f, f.ref.g)
+  // the stored values themselves, not the published figure scaleFood substitutes at this amount
+  const s = scaleStored(f, f.ref.g)
   const out: string[] = []
   // the default serving is what users tap: it must be the published amount itself, unless the
   // name states a pack size ("…500ml") and the serving is that size. A rounded portion
@@ -59,7 +60,7 @@ export function validateFoods(foods: Food[]): FoodReport {
       const s = SOURCES[f.src.split(':')[0]]
       if (!s) errors.push(`${id}: unknown source "${f.src}"`)
       // menu-label sources publish per-portion or per-item figures: those must be recorded
-      else if (s.err && !f.ref) errors.push(`${id}: ${s.label} food has no published figure (ref) to check against`)
+      else if (s.err && !s.estimate && !s.perHundred && !f.ref) errors.push(`${id}: ${s.label} food has no published figure (ref) to check against`)
     } else unsourced.push(id)
     for (const m of refMismatches(f)) errors.push(`${id}: doesn't match its source: ${m}`)
     for (const c of checkPer100(f, { k: true, macros: true }, !!f.each)) {

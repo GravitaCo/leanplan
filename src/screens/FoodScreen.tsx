@@ -1,23 +1,31 @@
-/** Food: the day against its range (with an honest ± margin), then meals as grouped lists. */
+/**
+ * Food (Studio): the day against its range (with an honest ± margin), then meals as grouped
+ * lists, then the quicker ways to log.
+ */
 import { useState } from 'react'
 import { useStore } from '@/store/store'
-import type { LoggedFood, MealSlot, RecipeItem } from '@/core/types'
-import { fmt, shiftDay } from '@/core/domain/date'
-import { dayTotals } from '@/core/domain/nutrition'
-import { dayMargin, frac, isEstimate, portionText } from '@/core/domain/estimate'
-import { MEALS, MEAL_LABEL, dayOf, energyStatus, mealEntries, mealNow, rangeFor, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
-import { PageHeader } from '@/ui/primitives'
+import type { MealSlot, RecipeItem } from '@/core/types'
+import { fmt } from '@/core/domain/date'
+import { frac, isEstimate, portionText } from '@/core/domain/estimate'
+import { FOOD9 } from './onboarding/copyApp'
+import { MEALS, MEAL_LABEL, mealNow, recipeItemsFrom, recipeServing, recipesByUse } from '@/core/domain/insights'
+import { foodDay, mealKcal, mealNames, type LoggedRow } from './food/foodModel'
+import { FOOD } from '@/copy/food'
+import { PageHeader, Sheet } from '@/ui/primitives'
 import { Icon, Chevron } from '@/ui/icons'
-import { RangeBar, MacroCol } from '@/ui/charts'
+import { KcalBar, MacroTrio } from '@/ui/charts'
 import { DayNav } from '@/ui/WeekStrip'
 import { AddFoodSheet } from './food/AddFoodSheet'
 import { MealsSheet } from './food/MealsSheet'
 import { EditEntrySheet } from './food/EditEntrySheet'
 import { MarginSheet } from './food/MarginSheet'
+import { SuggestSheet } from './food/SuggestSheet'
+import { RecipeLogView } from './food/RecipeLogView'
 
 type SheetKind =
   | { k: 'add'; meal?: MealSlot; view?: 'quick' | 'create' }
-  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | null
+  | { k: 'recipes'; draft?: { name: string; items: RecipeItem[] } } | { k: 'edit'; i: number } | { k: 'margin' } | { k: 'suggest' } | { k: 'logRecipe'; ri: number }
+  | { k: 'pickYesterday' } | { k: 'pickRecipe' } | null
 
 export function FoodScreen() {
   const data = useStore((s) => s.data)
@@ -25,55 +33,75 @@ export function FoodScreen() {
   const repeatYesterday = useStore((s) => s.repeatYesterday)
   const logRecipe = useStore((s) => s.logRecipe)
   const [sheet, setSheet] = useState<SheetKind>(null)
+  const [logMeal, setLogMeal] = useState<MealSlot>(mealNow())
 
-  const gentle = !!data.profile.gentle
-  const day = dayOf(data, cur)
-  const t = dayTotals(day)
-  const tg = data.target
-  const r = rangeFor(data, cur)
-  const st = energyStatus(t.k, r)
-  const margin = dayMargin(day.foods)
+  // the day card, the meal groups and the shortcuts (foodModel, shared with native)
+  const fd = foodDay(data, cur)
+  const { gentle, fv, noKcal, totals: t, target: tg, range: r, status: st, margin, words: mw, proteinRange: pRange, groups } = fd
+  const yes = fd.card === 'yes'
+  const some = fd.card === 'sometimes'
 
-  const groups: Record<MealSlot | 'other', (LoggedFood & { _i: number })[]> = { breakfast: [], lunch: [], dinner: [], snack: [], other: [] }
-  day.foods.forEach((x, i) => { (x.meal ? groups[x.meal] : groups.other).push({ ...x, _i: i }) })
-  const yesterday = shiftDay(cur, -1)
+  // shortcuts that act on one meal: offered only when a meal qualifies, and when more than one
+  // does, a small chooser asks which
+  const { sameAsYesterday, saveable } = fd
+  const saveRecipe = (m: MealSlot) => setSheet({ k: 'recipes', draft: { name: '', items: recipeItemsFrom(groups[m]) } })
 
-  const row = (x: LoggedFood & { _i: number }) => (
+  const row = (x: LoggedRow) => (
     <button className="li" key={x._i} onClick={() => setSheet({ k: 'edit', i: x._i })}>
-      <div className="m"><div className="t">{x.n}</div><div className="s">{portionText(x)}</div></div>
-      {!gentle && <div className="tr num">{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</div>}
-      <Chevron />
+      <div className="m"><div className="t">{x.n}</div><div className="s num">{portionText(x)}</div></div>
+      {!noKcal && <div className="tr num kc">{isEstimate(x) ? '≈ ' : ''}{fmt(x.k)}</div>}
     </button>
   )
 
   return (
     <div className="screen">
-      <PageHeader eyebrow={<DayNav />} title="Food"
-        right={<button className="roundbtn" aria-label="Add food" onClick={() => setSheet({ k: 'add' })}><Icon name="plus" stroke={2.6} /></button>} />
+      <PageHeader eyebrow={<DayNav />} title={FOOD.title}
+        right={<button className="roundbtn" aria-label={FOOD.addFood} onClick={() => setSheet({ k: 'add' })}><Icon name="plus" size={22} stroke={2.4} /></button>} />
 
-      <div className="card">
-        {gentle ? (
-          <div className="big" style={{ fontSize: 24 }}>{st.gentle}</div>
-        ) : (
+      <section className="card pcard" aria-label={FOOD.daySoFar}>
+        {yes ? (
+          // Yes: totals in words; a range only after "Show a range" (ob9-4), never a target
+          <div className="f9">
+            <div className="kbig w">{FOOD9.meals(mw.slots.length)}</div>
+            <div className="f9-s">{mw.slots.length ? FOOD9.withProtein(mw.withProtein, mw.slots.length) : FOOD9.empty}</div>
+            {fv.rangeOnFood && <>
+              <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+              <div className="pline num split"><span>{FOOD9.range(r.lo, r.hi)}</span></div>
+              <div className="pline">{FOOD9.yesRangeS}</div>
+            </>}
+          </div>
+        ) : some ? (
+          // Sometimes: the range, never a single number; protein as a range
           <>
-            <div className="big num">{fmt(t.k)}<small>kcal</small>
-              {t.k > 0 && <button className="pm num" aria-label="About this estimate" onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
+            <div className="ph">
+              <div className="kbig"><span className="num">{fmt(t.k)}</span><small>{FOOD.kcalEaten}</small></div>
+              {t.k > 0 && <button className="linkbtn num" aria-label={FOOD.aboutEstimate} onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
             </div>
-            <div className="sub" style={{ marginTop: 2 }}>{st.word} · range <span className="num">{fmt(r.lo)}–{fmt(r.hi)}</span></div>
+            <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+            <div className="pline num split"><span>{FOOD9.range(r.lo, r.hi)}</span><span>{st.gentle}</span></div>
+            {pRange && <div className="pline num">{FOOD9.proteinRange(Math.round(t.p), pRange.low, pRange.high)}</div>}
           </>
+        ) : <>
+        {gentle ? (
+          <div className="kbig w">{st.gentle}</div>
+        ) : (
+          <div className="ph">
+            <div className="kbig"><span className="num">{fmt(t.k)}</span><small>{FOOD.kcalEaten}</small></div>
+            {t.k > 0 && <button className="linkbtn num" aria-label={FOOD.aboutEstimate} onClick={() => setSheet({ k: 'margin' })}>± {margin}</button>}
+          </div>
         )}
-        <RangeBar k={t.k} lo={r.lo} hi={r.hi} />
-        <div className="macro3">
-          <MacroCol label="Protein" value={t.p} goal={tg.p} color="protein" />
-          <MacroCol label="Carbs" value={t.c} goal={tg.c} color="carbs" />
-          <MacroCol label="Fat" value={t.f} goal={tg.f} color="fat" />
-        </div>
-      </div>
+        <KcalBar k={t.k} lo={r.lo} hi={r.hi} />
+        {!gentle && (
+          <div className="pline num split"><span>{FOOD.range(fmt(r.lo), fmt(r.hi))}</span><span>{st.word}</span></div>
+        )}
+        <MacroTrio p={t.p} c={t.c} f={t.f} tp={tg.p} tc={tg.c} tf={tg.f} />
+        </>}
+      </section>
 
       {data.recipes.length > 0 && (
-        <>
-          <div className="grp-h"><span>Your recipes</span>
-            <button className="navbtn" style={{ fontSize: 15 }} onClick={() => setSheet({ k: 'recipes' })}>Manage</button></div>
+        <section className="meal">
+          <div className="grp-h"><span>{FOOD.yourRecipes}</span>
+            <button className="linkbtn" onClick={() => setSheet({ k: 'recipes' })}>{FOOD.manage}</button></div>
           <div className="list">
             {recipesByUse(data).slice(0, 4).map((ri) => {
               const r = data.recipes[ri]
@@ -81,65 +109,101 @@ export function FoodScreen() {
               return (
                 <button className="li" key={r.id} onClick={() => logRecipe(r, serv, mealNow())}>
                   <div className="m"><div className="t">{r.name}</div>
-                    <div className="s">{frac(serv)} serving{serv !== 1 ? 's' : ''} · adds to {MEAL_LABEL[mealNow()].toLowerCase()}</div></div>
+                    <div className="s">{FOOD.servings(frac(serv), serv)} · {FOOD.addsTo(MEAL_LABEL[mealNow()])}</div></div>
                   <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
                 </button>
               )
             })}
           </div>
-        </>
+        </section>
       )}
 
       {MEALS.map((m) => {
         const items = groups[m]
-        const kcal = items.reduce((s, x) => s + x.k, 0)
-        const yd = items.length ? [] : mealEntries(data, yesterday, m)
+        const kcal = mealKcal(items)
+        if (!items.length) {
+          return (
+            <button key={m} className="dash-add" onClick={() => setSheet({ k: 'add', meal: m })}>
+              <Icon name="plus" size={18} stroke={2.6} />{MEAL_LABEL[m]}
+            </button>
+          )
+        }
         return (
-          <div key={m}>
-            <div className="grp-h"><span>{MEAL_LABEL[m]}</span><small className="num">{items.length && !gentle ? fmt(kcal) + ' kcal' : ''}</small></div>
+          <section className="meal" key={m} aria-label={MEAL_LABEL[m]}>
+            <div className="grp-h"><span>{MEAL_LABEL[m]}</span><small className="num">{noKcal ? '' : fmt(kcal) + ' kcal'}</small></div>
             <div className="list">
               {items.map(row)}
-              {yd.length > 0 && (
-                <button className="li act" onClick={() => repeatYesterday(m)}>
-                  <Icon name="book" size={17} />
-                  <div className="m"><div className="t">Same as yesterday</div>
-                    <div className="s">{yd.slice(0, 3).map((x) => x.n).join(', ')}{yd.length > 3 ? '…' : ''}</div></div>
-                </button>
-              )}
-              <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} /><span>Add food</span></button>
-              {items.length > 1 && (
-                <button className="li act" onClick={() => setSheet({ k: 'recipes', draft: { name: '', items: recipeItemsFrom(items) } })}>
-                  <Icon name="book" size={17} /><div className="m"><div className="t">Save as recipe</div>
-                    <div className="s">Log all of this in one tap next time</div></div>
-                </button>
-              )}
+              <button className="li act" onClick={() => setSheet({ k: 'add', meal: m })}><Icon name="plus" size={17} stroke={2.4} /><span>{FOOD.addTo(MEAL_LABEL[m])}</span></button>
             </div>
-          </div>
+          </section>
         )
       })}
       {groups.other.length > 0 && (
-        <>
-          <div className="grp-h"><span>Other</span></div>
+        <section className="meal">
+          <div className="grp-h"><span>{FOOD.other}</span></div>
           <div className="list">{groups.other.map(row)}</div>
-        </>
+        </section>
       )}
 
-      <div className="list icons" style={{ marginTop: 26 }}>
+      <div className="lbl" style={{ paddingTop: 26 }}>{FOOD.quicker}</div>
+      <div className="list">
+        {sameAsYesterday.length > 0 && (
+          <button className="li" onClick={() => sameAsYesterday.length === 1 ? repeatYesterday(sameAsYesterday[0].m) : setSheet({ k: 'pickYesterday' })}>
+            <div className="m"><div className="t">{FOOD.sameAsYesterday}</div>
+              <div className="s">{sameAsYesterday.length === 1
+                ? `${MEAL_LABEL[sameAsYesterday[0].m]}: ${mealNames(sameAsYesterday[0].yd)}`
+                : FOOD.copyAMeal}</div></div>
+            <Chevron />
+          </button>
+        )}
         <button className="li" onClick={() => setSheet({ k: 'recipes' })}>
-          <span className="ico" style={{ background: 'var(--activity)' }}><Icon name="book" size={18} /></span>
-          <div className="m"><div className="t">Recipes</div></div><span className="tr num">{data.recipes.length || ''}</span><Chevron />
+          <div className="m"><div className="t">{FOOD.yourRecipes}</div></div><span className="tr num">{data.recipes.length || ''}</span><Chevron />
+        </button>
+        <button className="li" onClick={() => setSheet({ k: 'suggest' })}>
+          <div className="m"><div className="t">{FOOD.whatCanIMake}</div><div className="s">{FOOD.whatCanIMakeS}</div></div><Chevron />
         </button>
         <button className="li" onClick={() => setSheet({ k: 'add', view: 'quick' })}>
-          <span className="ico" style={{ background: 'var(--mind)' }}><Icon name="bolt" size={18} /></span>
-          <div className="m"><div className="t">Quick estimate</div></div><Chevron />
+          <div className="m"><div className="t">{FOOD.quickEstimate}</div><div className="s">{FOOD.quickEstimateS}</div></div><Chevron />
         </button>
         <button className="li" onClick={() => setSheet({ k: 'add', view: 'create' })}>
-          <span className="ico" style={{ background: 'var(--energy)' }}><Icon name="plus" size={18} /></span>
-          <div className="m"><div className="t">Create a food</div></div><Chevron />
+          <div className="m"><div className="t">{FOOD.createFood}</div></div><Chevron />
         </button>
+        {saveable.length > 0 && (
+          <button className="li" onClick={() => saveable.length === 1 ? saveRecipe(saveable[0]) : setSheet({ k: 'pickRecipe' })}>
+            <div className="m"><div className="t">{FOOD.saveAsRecipe}</div>
+              <div className="s">{saveable.length === 1 ? FOOD.saveAsRecipeOne(MEAL_LABEL[saveable[0]]) : FOOD.saveAsRecipeMany}</div></div>
+            <Chevron />
+          </button>
+        )}
       </div>
-      <div className="foot">Numbers marked ≈ are estimates. Your day total shows a ± margin so it stays honest about what it knows.</div>
+      <div className="foot">{FOOD.foot}</div>
 
+      {sheet?.k === 'pickYesterday' && (
+        <Sheet title={FOOD.sameAsYesterday} onClose={() => setSheet(null)}>
+          <div className="list">
+            {sameAsYesterday.map(({ m, yd }) => (
+              <button className="li" key={m} onClick={() => { repeatYesterday(m); setSheet(null) }}>
+                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{mealNames(yd)}</div></div>
+                <span className="addc"><Icon name="plus" size={16} stroke={2.8} /></span>
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
+      {sheet?.k === 'pickRecipe' && (
+        <Sheet title={FOOD.saveAsRecipe} onClose={() => setSheet(null)}>
+          <div className="list">
+            {saveable.map((m) => (
+              <button className="li" key={m} onClick={() => saveRecipe(m)}>
+                <div className="m"><div className="t">{MEAL_LABEL[m]}</div><div className="s">{mealNames(groups[m])}</div></div>
+                <Chevron />
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
+      {sheet?.k === 'suggest' && <SuggestSheet onClose={() => setSheet(null)} onLog={(ri) => { setLogMeal(mealNow()); setSheet({ k: 'logRecipe', ri }) }} onRecipes={() => setSheet({ k: 'recipes' })} />}
+      {sheet?.k === 'logRecipe' && <RecipeLogView index={sheet.ri} meal={logMeal} setMeal={setLogMeal} onBack={() => setSheet({ k: 'suggest' })} onClose={() => setSheet(null)} animate={false} />}
       {sheet?.k === 'add' && <AddFoodSheet initialMeal={sheet.meal} initialView={sheet.view} onClose={() => setSheet(null)} />}
       {sheet?.k === 'recipes' && <MealsSheet initialDraft={sheet.draft} onClose={() => setSheet(null)} />}
       {sheet?.k === 'edit' && <EditEntrySheet index={sheet.i} onClose={() => setSheet(null)} />}

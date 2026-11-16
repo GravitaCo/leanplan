@@ -1,0 +1,183 @@
+import { LEGAL_URLS, MIN_AGE, fact, type LegalDoc } from './index'
+
+/**
+ * Interim, website-only versions of the three documents, published on www.tilo.fit while
+ * the app is in testing (decided 2026-09-24). They describe only what the Webflow site does
+ * today: the early-access form, Cloudflare and Webflow. The full app + website versions
+ * (privacy.ts, terms.ts, cookies.ts) replace them at go-live, once the app on main has the
+ * consent screen and account deletion. Render with `npm run legal:html -- --site`.
+ */
+const who = () => fact('controller', 'legal name')
+const email = () => fact('contactEmail', 'contact email')
+const company = () =>
+  `${who()}, a company registered in England and Wales, company number ${fact('companyNumber', 'company number')}, ` +
+  `registered office ${fact('address', 'address')}`
+
+export function sitePrivacy(): LegalDoc {
+  return {
+    title: 'Privacy policy',
+    updated: '2026-11-05',
+    intro:
+      `This explains how we handle personal data on the Tilo website (www.tilo.fit), including the early access list. ` +
+      `Tilo was called Tali until November 2026, at www.tali.fit. ` +
+      `The Tilo app is still in testing and will have its own, fuller privacy policy here before it opens to the public.`,
+    sections: [
+      {
+        h: 'Who we are',
+        p: [`Tilo is run by ${company()} ("we", "us"). We are the controller of your personal data. Questions and requests: ${email()}.`],
+      },
+      {
+        h: 'What we collect',
+        ul: [
+          `Early access: your email address, if you join the list.`,
+          `Technical: like any website, the servers that deliver this site see your IP address, browser and the time of each request, which our providers keep for a short time under their own retention periods, for security.`,
+          `Bot protection: pages with the sign-up form load Cloudflare Turnstile when they open. It checks technical signals from your browser to tell people from bots, whether or not you use the form.`,
+        ],
+      },
+      {
+        h: 'Why we use it, and our legal basis',
+        ul: [
+          `To invite you to try Tilo early access. Basis: your consent, given when you join the list. We use your email for nothing else.`,
+          `To keep the site secure and free of spam. Basis: our legitimate interest in running a secure website.`,
+          `To answer your requests and meet legal duties. Basis: legal obligation.`,
+        ],
+      },
+      {
+        h: '',
+        p: [`You don't have to give us your email. Without it, we can't invite you to early access.`],
+      },
+      {
+        h: 'Who else handles it',
+        p: [`Service providers who handle data for us:`],
+        ul: [
+          `Webflow: hosts this website and stores early access sign-ups. It uses Cloudflare to deliver the site and run the bot check, and Amazon CloudFront for some of the site's page code.`,
+          `Google Workspace: our email, used to send invitations and to receive your messages.`,
+        ],
+      },
+      {
+        h: '',
+        p: [`We never sell your data or share it for marketing. There are no ads or analytics on this site.`],
+      },
+      {
+        h: 'International transfers',
+        p: [
+          `Some of these providers are based in, or may access data from, the United States. Where personal data leaves the UK or EU, we rely on the safeguards the law provides, ` +
+            `such as the UK International Data Transfer Addendum, the EU Standard Contractual Clauses or the UK-US and EU-US Data Privacy Framework. Contact us for details.`,
+        ],
+      },
+      {
+        h: 'How long we keep it',
+        ul: [
+          `Early access emails: until we've invited you and early access has ended, or until you ask to be removed, whichever is sooner.`,
+          `Emails you send us: only as long as needed to deal with them.`,
+        ],
+      },
+      {
+        h: 'Your rights',
+        p: [
+          `You can ask for a copy of your data (including in a portable format), to correct or delete it, and to restrict or object to how we use it. ` +
+            `You can withdraw consent at any time; this doesn't affect anything we did before you withdrew it. ` +
+            `To leave the early access list or use any of these rights, email ${email()}. We reply within one month, and it's free.`,
+          `If you're unhappy with how we handle your data, please tell us first so we can put it right. You can also complain to the Information Commissioner's Office (ico.org.uk, 0303 123 1113) or, in the EU, to your local data protection authority.`,
+        ],
+      },
+      {
+        h: 'Age',
+        p: [`Early access is for people aged ${MIN_AGE} and over. Please don't join the list if you're younger.`],
+      },
+      {
+        h: 'Cookies',
+        p: [`This site sets one security cookie and no tracking cookies. Our cookie policy has the details: ${LEGAL_URLS.cookies}.`],
+      },
+      {
+        h: 'Changes',
+        p: [`We'll update this policy when what we do changes, including when the app opens, and show the new date at the top. The current version is always at ${LEGAL_URLS.privacy}.`],
+      },
+    ],
+  }
+}
+
+export function siteCookies(): LegalDoc {
+  return {
+    title: 'Cookie policy',
+    updated: '2026-11-05',
+    intro:
+      `This explains the cookies and similar technology used on the Tilo website (www.tilo.fit). The short version: only what's needed to deliver the site and keep it safe. ` +
+      `No advertising cookies, no analytics, no tracking. The site is run by ${who()}.`,
+    sections: [
+      {
+        h: 'What the site uses',
+        ul: [
+          `_cfuvid: a cookie set by Cloudflare, which delivers the site, to protect it from abuse and excessive requests. It is deleted when you close your browser.`,
+          `Cloudflare Turnstile: pages with the early access form load this bot check when they open. It checks technical signals from your browser to tell people from bots and keep the form free of spam. We use it only for that.`,
+        ],
+      },
+      {
+        h: '',
+        p: [`At the time of writing, the site sets no other cookies.`],
+      },
+      {
+        h: 'Why there is no cookie banner',
+        p: [
+          `The law (the Privacy and Electronic Communications Regulations) lets a website use cookies and similar technology that are strictly necessary to provide it securely without asking first. ` +
+            `If we ever add anything that isn't, such as analytics, we will ask for your permission before using it.`,
+        ],
+      },
+      {
+        h: 'Your choices',
+        p: [
+          `You can block or delete cookies in your browser settings. Blocking them may stop the sign-up form working.`,
+          `The Tilo app will have its own section here before it opens to the public. Questions: ${email()}. How we handle personal data: ${LEGAL_URLS.privacy}.`,
+        ],
+      },
+    ],
+  }
+}
+
+export function siteTerms(): LegalDoc {
+  return {
+    title: 'Terms and conditions',
+    updated: '2026-11-05',
+    intro:
+      `These terms cover your use of the Tilo website (www.tilo.fit). It is run by ${company()} ("we", "us"). ` +
+      `The Tilo app is still in testing and will have its own, fuller terms here before it opens to the public.`,
+    sections: [
+      {
+        h: 'Early access',
+        p: [
+          `Joining the early access list is free and doesn't commit you to anything. It's an invitation to try a test version when places are available, not a promise of access, features or a launch date. ` +
+            `You must be ${MIN_AGE} or over to join.`,
+        ],
+      },
+      {
+        h: 'Not medical advice',
+        p: [
+          `Tilo offers general wellness information. It is not a medical device and does not diagnose, treat or prevent any condition. ` +
+            `Nothing on this site is a substitute for advice from a doctor, dietitian or other qualified professional.`,
+        ],
+      },
+      {
+        h: 'Using the site',
+        p: [
+          `Please don't misuse the site: no attempts to disrupt it, get around its security, or submit other people's details. ` +
+            `The name Tilo, the design and the content belong to us, and you may not copy them except to share a link or for your own reference.`,
+        ],
+      },
+      {
+        h: 'Our responsibility to you',
+        p: [
+          `We work to keep the site accurate and available but can't promise it always will be. ` +
+            `Nothing in these terms limits our liability for death or personal injury caused by our negligence, for fraud, or for anything else the law does not allow us to limit. Your legal rights as a consumer are not affected.`,
+        ],
+      },
+      {
+        h: 'Changes and law',
+        p: [
+          `We may update these terms and will show the new date at the top. The current version is always at ${LEGAL_URLS.terms}. ` +
+            `These terms are governed by the law of ${fact('jurisdiction', 'governing law')}. If you live elsewhere in the UK or in the EU, you keep the protection of your local consumer law.`,
+          `Questions: ${email()}.`,
+        ],
+      },
+    ],
+  }
+}

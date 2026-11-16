@@ -1,0 +1,115 @@
+/* Wellbeing Phase 1 styles (build plan, ground rule 5). Owned by WP6; later packages append their
+   own block under a "WPn" heading so rebases merge cleanly. Tokens only (theme.css). Nothing here
+   applies until a Mind screen renders, and those sit behind WELLBEING_ENABLED. */
+
+/* ===================== WP6: Mind page (B5), Support sheet (B6) ===================== */
+.mind .lbl.mind-lbl-first { padding-top: 4px; }
+/* Today: the check-in in short pairs, 2 by 2 (B5.5): 13 px labels, 17 px values */
+.card.mind-today { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.mind-g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.mind-g2 .k { font-size: 13px; color: var(--label2); }
+.mind-g2 .v { font-size: 17px; font-weight: 500; margin-top: 1px; }
+.mind-ask { font-size: 17px; font-weight: 500; }
+.mind-ask-sub { font-size: 13px; color: var(--label2); margin-top: 2px; }
+/* the board's "Update" and "Check in" are 44 px tall (deck 0.3: 44 px targets), not the 36 px .btn.sm */
+.card.mind-today .btn.sm { align-self: flex-start; height: 44px; border-radius: 22px; padding: 0 18px; }
+/* skill rows: the one-line sub may wrap to a second line rather than be cut off (B5.9) */
+.mind-skills .li .t, .mind-skills .li .s { display: block; }
+.mind-skills .li .s { white-space: normal; line-height: 1.35; }
+.mind .mind-plans .li .m { flex: 1 1 auto; }
+.mind-wellness { text-align: center; padding: 6px 4px 0; }
+
+/* ===================== WP13: Unload (B8) ===================== */
+.unload .ul-lead { margin: 2px 4px 14px; font-size: 17px; line-height: 1.4; }
+/* one "On my mind" and "Next step" pair: a card, fields on the page colour (board wp-b8) */
+.unload .card.ul-pair { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 8px; }
+.unload .ul-pair label { font-size: 13px; color: var(--label2); margin: 0 2px; }
+.unload .ul-pair textarea, .unload .ul-pair input, .unload .ul-ok input { background: var(--bg); border-radius: 12px; padding: 11px 14px; }
+.unload .ul-pair textarea { display: block; min-height: 88px; resize: none; line-height: 1.35; }
+/* "Next step" (B8): two rows, so its hint wraps instead of being cut off */
+.unload .ul-pair textarea.ul-next { min-height: 68px; }
+.unload .foot { padding: 0 4px; margin-bottom: 8px; line-height: 1.4; }
+.unload .foot .linkbtn.inl { font-size: 13px; }
+.unload .ul-support { margin-top: 4px; }
+/* Earlier notes: the whole note shows, newest first, each with Delete (board wp-b8-more) */
+.unload .ul-notes .li .t, .unload .ul-notes .li .s { display: block; }
+.unload .ul-notes .li .s { white-space: normal; line-height: 1.35; }
+.unload .ul-notes .linkbtn { flex: none; min-height: 44px; padding: 10px 0 10px 8px; }
+
+/* ===================== WP11: weekly reflection (B4, on the Mind page under B5.16) ===================== */
+.mind .lbl.mind-week-h { display: flex; justify-content: space-between; gap: 8px; }
+.card.mind-week { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.mind-week-count { font-size: 17px; font-weight: 600; }
+.mind-week-k { font-size: 13px; font-weight: 600; color: var(--label2); }
+.mind-week-v { font-size: 17px; margin-top: 1px; }
+/* the five sleep bands, the most common filled in the neutral --band; decorative (the words carry it) */
+.mind-bands { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.mind-band { height: 8px; border-radius: 4px; background: var(--fill); }
+.mind-band.on { background: var(--band); }
+.mind-band-l { font-size: 11px; color: var(--label2); text-align: center; }
+.mind-week-later { font-size: 15px; color: var(--label2); line-height: 1.4; }
+.card.mind-week .linkbtn.mind-week-link { align-self: flex-start; min-height: 44px; padding: 0; font-size: 15px; text-align: left; }
+.mind-obs { display: flex; gap: 14px; border-top: 1px solid var(--sep); padding-top: 14px; }
+.mind-obs-sq { width: 36px; height: 36px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--mind-fill); color: var(--mind-ink); }
+.mind-obs-h { margin: 0; font-size: 13px; font-weight: 600; color: var(--mind-ink); }
+.mind-obs-t { font-size: 15px; line-height: 1.45; margin-top: 2px; }
+.mind-obs-s { font-size: 13px; color: var(--label2); margin-top: 4px; }
+
+/* ===================== WP17: Profile › Notifications (B11) ===================== */
+/* the back-off notice (B11.14): a .banner, its button under the text, a 44 px dismiss target */
+.banner.nf-back > .m { flex: 1; min-width: 0; }
+.banner.nf-back .btn.sm { margin-top: 10px; height: 44px; border-radius: 22px; padding: 0 18px; }
+.banner.nf-back .nf-x { margin: -8px -8px 0 auto; background: none; border: 0; width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--label2); padding: 0; }
+.banner.nf-back .nf-x > span { width: 28px; height: 28px; border-radius: 50%; background: var(--fill); display: flex; align-items: center; justify-content: center; }
+/* "Your times" (B11.9 to B11.11): the time on the right, in --label2 as drawn */
+.list.nf-times .frow label { flex: 1; }
+.list.nf-times .frow input { flex: none; width: auto; min-width: 0; color: var(--label2); }
+/* the reminder rows' subs wrap rather than cut off, as drawn (B11.3, B11.5, B11.7) */
+.list.nf-rows .li .s { white-space: normal; line-height: 1.35; }
+.list.nf-rows .li .m { flex: 1 1 auto; min-width: 0; max-width: none; }
+.list.nf-rows .li .tr { flex: none; overflow: visible; }
+/* ===================== WP15: low-mood signpost on Summary (B6 frame 2) ===================== */
+/* a mind-coloured note, never a warning: the info icon on a --mind-fill square, never --red */
+.lm-banner { line-height: 1.38; }
+.lm-banner .lm-sq { width: 36px; height: 36px; border-radius: 11px; background: var(--mind-fill); color: var(--mind-ink); }
+.lm-banner .lm-body { flex: 1; min-width: 0; }
+.lm-banner .lm-body .btn.sm { margin-top: 10px; height: 44px; padding: 0 18px; border-radius: 22px; }
+/* Dismiss: a 44 px target around the 28 px circle drawn on the board */
+.lm-banner .x { margin: -8px -8px 0 auto; background: none; width: 44px; height: 44px; border-radius: 0; padding: 0; }
+.lm-banner .x > span { width: 28px; height: 28px; border-radius: 50%; background: var(--fill); display: flex; align-items: center; justify-content: center; }
+
+/* ===================== B12 Wind down, B13 Get outside (pushed card screens, like Reset) ===================== */
+/* the board's .main: a column with 10 px gaps; labels sit 10 px above their list */
+.wd-main { display: flex; flex-direction: column; gap: 10px; padding-top: 6px; }
+.wd-main > .card { margin: 0; }
+.wd-main > .foot { padding: 0 4px; line-height: 1.4; }
+.wd-main > .lbl { padding: 10px 4px 0; }
+.wd-sub { font-size: 17px; color: var(--label2); margin: 2px 4px 4px; }
+.wd-main > .foot.wd-wellness { text-align: center; padding-top: 6px; }
+/* "Your routine" with "From 22:30" on the right (B12) */
+.lbl.wd-lbl { display: flex; justify-content: space-between; gap: 8px; }
+/* step rows: name and sub each on their own line; the sub wraps rather than cut off */
+.wd-steps .li .t, .wd-steps .li .s { display: block; }
+.wd-steps .li .s { white-space: normal; line-height: 1.35; }
+.wd-steps .li.act { gap: 12px; }
+/* the sheet: the lead line, then the steps with their toggles, then the time line */
+.wd-lead { font-size: 15px; line-height: 1.4; padding: 0 4px 12px; }
+.wd-pick + .foot.wd-time, .wd-pick + .list.wd-set { margin-top: 8px; }
+.foot.wd-time { padding: 0 4px; line-height: 1.4; }
+/* Get outside (B13): the lead card and the walk row, 56 px squares in move tokens */
+.card.go-lead { display: flex; flex-direction: row; align-items: flex-start; gap: 14px; padding: 16px; }
+.go-sq { flex: none; display: flex; align-items: center; justify-content: center; }
+.go-sq.lg { width: 56px; height: 56px; border-radius: 14px; }
+.go-text { font-size: 17px; line-height: 1.4; }
+.li.go-walk { min-height: 76px; }
+.li.go-walk .t { display: block; font-weight: 600; }
+.li.go-walk .s { display: block; }
+/* Start: the board's 44 px ink pill (deck 0.3: 44 px targets), not the 36 px .btn.sm */
+.li.go-walk .btn.sm { flex: none; height: 44px; border-radius: 22px; padding: 0 18px; }
+/* card screens with no tab bar, as Reset (section 9, B7): the Back button and the avatar stay */
+.app-shell:has(.screen.wind-down) > .tabbar, .app-shell:has(.screen.outside) > .tabbar { display: none; }
+.app-shell:has(.screen.wind-down), .app-shell:has(.screen.outside) { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+/* B11b: "Show supplement names in reminders", a sub-row under Supplement reminders: no icon, its
+   text lined up with the rows' labels (the board's .li.sub, 58 px in); the label wraps */
+.list.icons .li.nf-sub { padding-left: 58px; }
+.list.icons .li.nf-sub .t { white-space: normal; line-height: 1.3; }

@@ -1,31 +1,81 @@
 /** `npm test` — unit tests for the accuracy checks and unit maths (core/, no DOM). */
+import { feedbackEmail, feedbackMailto, hasFeedback } from '@/core/domain/feedback'
+import { withTimeout } from '@/data/timeout'
 import { checkPer100, checkRecipe, isCookedState } from '@/core/domain/checks'
 import { rankByName } from '@/core/domain/search'
 import { FOODS } from '@/core/data/foods'
 import { SOURCES } from '@/core/data/sources'
-import { buildEntry, scaleEntry } from '@/core/domain/estimate'
+import { buildEntry, scaleEntry, CAPTURE_ERR } from '@/core/domain/estimate'
 import { refMismatches } from '@/core/data/validate'
-import { entryAmount, relog } from '@/core/domain/insights'
+import { entryAmount, queryWords, relog, usuals } from '@/core/domain/insights'
+import { dietFit, partsOf, swapsFor } from '@/core/domain/diet'
+import { isStaple, suggestRecipes } from '@/core/domain/suggest'
 import LIVE from './fixtures-live-servings.json'
+import LEGAL_ONBOARDING from './fixtures-legal-onboarding.json'
+import { privacyPolicy } from '@/core/legal/privacy'
+import { termsOfUse } from '@/core/legal/terms'
+import { cookiePolicy } from '@/core/legal/cookies'
+import { ONBOARDING_ENABLED } from '@/data/onboardingFlag'
 import { DEFAULT_PROFILE } from '@/core/data/constants'
 import { suggestedTargets, PROTEIN_PER_KG } from '@/core/domain/nutrition'
 import { DEMOS } from '@/core/data/media'
 import { WORKOUTS } from '@/core/data/workouts'
 import { tempoAt } from '@/core/domain/tempo'
-import { lowSignals, offerLighter, shorterPrescription, shorterSets } from '@/core/domain/dayOptions'
+import { dayTypeOf, lowSignals, offerLighter, roughNight, roughNightPlan, shorterPrescription, shorterSets, showRoughNightNote, swapFor } from '@/core/domain/dayOptions'
 import { SWAPS } from '@/core/data/workouts'
 import { catchUp, daysMovedThisWeek, welcomeBack, easyUntil } from '@/core/domain/training'
 import { activitySuggestion, bandFor, trainingWeeks, onOrAfterBreak } from '@/core/domain/activity'
 import { isTrainingSession } from '@/core/domain/workout'
 import { shiftDay } from '@/core/domain/date'
-import { sessionsOf, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession } from '@/core/domain/sessions'
+import { sessionsOf, workoutsOf, warmupOnly, fromLegacy, mirrorOf, sessionBurn, sessionNetBurn, isHardSession, isTrainingSess, builtinId, builtinType, isBuiltin, isBuiltinLift, sessionMetMins, keptOnSave } from '@/core/domain/sessions'
 import { loadSignals, showLoadNote } from '@/core/domain/load'
 import { MODALITY_MET } from '@/core/data/modalities'
-import { rangeFor, showBurnNote, ensureBurnSwitch } from '@/core/domain/insights'
+import { rangeFor, showBurnNote, ensureBurnSwitch, dayStat } from '@/core/domain/insights'
 import { workoutBurn, workoutNetBurn } from '@/core/domain/workout'
 import { CARDIO_MET, CARDIO_OPTIONS, LEGACY_CARDIO_MET, MET_SOURCES } from '@/core/data/constants'
 import { existsSync } from 'node:fs'
+import { keptAfterEdit, weekToKeep, weekToPutBack, eatingLine, fits, fitsFirst, isEaseIn, activePlan, maintainOn, nextSuggestions, planStart, weekSource, upcomingPlan, supersededPlans, timeline, phaseRows, withLighterWeek, withEasierStart, catalogue, filterCatalogue, maintenanceWeekOf, workoutsDone, phasesOf, afterPhase, planWeekNotes, plannedKeys, positionOn, scheduleMirror, totalWeeks, cleanPhases, weekFromSchedule, PLAN_TEMPLATES } from '@/core/domain/plans'
+import { aboutMins, isBuiltinKey, routineFor, isTaliKey, taliWorkouts, builderNotes, builtinSlots, deriveEffort, estMins, headlineModality, normaliseRx, routineTemplate, warmupForKey, isEngineKey, routineEstMins, slotsOf as routineSlotsOf } from '@/core/domain/routines'
+import { buildWarmup, warmupKindOf, warmupMinutesFor, warmupStartAt, SESSION_RANGES, PLAN_WARMUP_MINUTES, type WarmupBlock } from '@/core/domain/warmup'
+import { SUMMARY } from '@/screens/onboarding/copy'
+import { warmupNote } from '@/screens/train/WarmupCard'
+import { WARMUP_CUES } from '@/core/data/warmups'
+import { buildPlan as buildPlanW } from '@/core/domain/engine'
+import { rangeEngineMinutes as rangeEngineMinutesW } from '@/core/domain/warmup'
+import { warmupFor as warmupForW } from '@/core/domain/wizard'
+import { backupSummary, ensureMeta, freshForAccount, freshForDevice, keepForAccount, ownerCheck, sameAccount, stateFromBackup, unsyncedCount, type PersistedState } from '@/data/persistence'
+import { pushDirty, pullAll, accountRows } from '@/data/sync'
+import { uuid, UUID_RE, LOCAL_USER } from '@/data/supabase'
+import { EXERCISES, EXERCISE_BY_ID } from '@/core/data/exercises'
+import { alternativesFor, fmtSet, holdAt, holdLabel, holdTarget, lastLogged, setHasData, stepOf } from '@/core/domain/library'
+import { coverage, coverageGate, usableWith } from '@/core/domain/libraryCoverage'
 import { scaleFood, recipeTotals, amountText, roundAmount } from '@/core/domain/nutrition'
+import { buildLogged, findWeightAim, findWeightStep, fmtClock, lastTime, later, parseRx, plannedSets, readyToStepUp, restFor, restHint, rirFor, sameRange, setCount, setsLine, SHORTER_RIR, slotsOf, splitLogged, stintMins, swapInto, targetFor, USUAL_RIR, warmupSlot } from '@/core/domain/guided'
+import { plannedOn, swapDays, weekWarnings } from '@/core/domain/week'
+import { loadStateFrom } from '@/data/persistence'
+import { checkDigitOk, classifyProduct, confirmLiveRead, draftFromOff, expandUpcE, findByBarcode, foodFromConfirmed, guessCategory, isPer100ml, normalizeBarcode, productName, checkLabel, servingNotes, isMealProduct, isVagueName, servingIsWholePack, packFromQuantity, multipackUnit, isUsLabel, staleYear, linkableFood, MAX_NAME, OFF_FIELDS, type LabelValues, type OffProduct } from '@/core/domain/barcode'
+import { lookupProduct } from '@/data/products'
+import { cellId, draftFromLabel, emptyLabelDraft, frontName, labelIssues, parseCell, parseServing, servingRef, suggestFix, textsFromRead, validateLabelRead, variants, SERVING_NEEDED, type LabelRead } from '@/core/domain/label'
+import { scaleFood as scaleFoodRef } from '@/core/domain/nutrition'
+import { LABEL_SCAN_ENABLED } from '@/data/labelReader'
+import { measureFrame, qualityIssue, toGray } from '@/core/domain/labelQuality'
+import { LABEL_ROWS, LABEL_SCHEMA } from '../supabase/functions/_shared/label-read'
+import { sharedProductsSuite } from './test-shared-products'
+import { ingredientsFirst, isMadeFood, kitchenCandidates } from '@/core/domain/suggest'
+import { isMenuSource, sourceErr, sourceOf } from '@/core/data/sources'
+import { CUSTOM_FOOD_META, fromServerFood, toServerFood } from '@/data/sync'
+import type { Food } from '@/core/types'
+import { consentSuite } from './test-consent'
+import { onboardingSuite } from './test-onboarding'
+import { engineSuite } from './test-engine'
+import { wizardSuite } from './test-wizard'
+import { wizardAnswersSuite } from './test-wizard-answers'
+import { summaryModelSuite } from './test-summary-model'
+import { wellbeingSuite } from './test-wellbeing'
+import { loopSuite } from './test-loop'
+import { planSuite } from './test-plan'
+import { duplicatesSuite } from './test-duplicates'
+import { foodModelSuite } from './test-food-model'
 const G = { k: true, macros: true }
 const lv = (v: any, g = G) => checkPer100(v, g).map((c) => c.level + (c.fix ? ':' + c.fix.k : '')).join(',')
 const cases: [string, string, string][] = [
@@ -62,16 +112,145 @@ const extra: [string, string, string][] = [
   ['search: berries keeps Strawberries', rankByName(['Mixed berries', 'Strawberries'], (x) => x, ['berries']).join('|'), 'Mixed berries|Strawberries'],
   ['search: peas keeps Chickpeas (no pea->pear)', rankByName(['Pear', 'Peach', 'Chickpeas, cooked'], (x) => x, ['peas']).join('|'), 'Chickpeas, cooked'],
   ['search: eggs -> egg, not Greggs', rankByName(['Greggs BLT', 'Egg, whole', 'Greggs Free Range Egg Pot'], (x) => x, ['eggs']).join('|'), 'Egg, whole|Greggs Free Range Egg Pot'],
+  ['search: brand name isn\'t the dish', rankByName(['Pizza Hut Fries', 'Pizza, cheese & tomato'], (x) => x, ['pizza'])[0], 'Pizza, cheese & tomato'],
+  ['search: eggs finds eggs when a dish says Eggs', rankByName(['Greggs BLT', 'PizzaExpress Eggs Benedict', 'Egg, whole'], (x) => x, ['eggs'])[0], 'Egg, whole'],
+  ['search: carvery finds the carvery dish before the brand', rankByName(['Toby Carvery Tomato Soup', 'Toby Carvery Carvery meat, average portion (Sunday)'], (x) => x, ['carvery'])[0], 'Toby Carvery Carvery meat, average portion (Sunday)'],
+  ['search: kashmiri korma isn\'t the Kashmiri Aroma brand', rankByName(['Kashmiri Aroma chicken korma', 'Aagrah Kashmiri korma'], (x) => x, ['kashmiri', 'korma'])[0], 'Aagrah Kashmiri korma'],
   ['search: ties keep db order', rankByName(['Chicken breast, cooked', 'Chicken soup'], (x) => x, ['chicken'])[0], 'Chicken breast, cooked'],
+  ['search: accents fold both ways', [rankByName(['Caffè Nero Latte Regular (oat)', 'Oat milk'], (x) => x, ['caffe', 'latte']).join('|'), rankByName(['Creme egg'], (x) => x, ['crème']).join('|')].join(' / '), 'Caffè Nero Latte Regular (oat) / Creme egg'],
+  // the generic Indian takeaway dish comes first in the real database, ahead of restaurant versions
+  ...([
+    ['chicken pakora', 'Chicken pakora'], ['lamb bhuna', 'Lamb bhuna'], ['garlic naan', 'Garlic naan'],
+    ['pilau rice', 'Pilau rice'], ['chicken madras', 'Chicken madras'], ['saag aloo', 'Saag aloo'],
+  ] as const).map(([q, want]): [string, unknown, unknown] => [`search (full db): ${q}`, rankByName(FOODS, (f) => f.n, q.split(' '))[0]?.n, want]),
 ]
 for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', n, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want)) }
+// Chinese takeaway: the dish words people type find the generic dish first, in the real database
+// and with the app's own query splitting (AddFoodSheet)
+for (const [q, want] of [
+  ['special fried rice', 'Special fried rice'],
+  ['special chow mein', 'Special chow mein (takeaway)'],
+  ['singapore rice', 'Singapore fried rice'],
+  ['singapore noodles', 'Singapore noodles (Singapore vermicelli)'],
+  ['kung pao', 'Kung pao chicken (kung po)'],
+  ['kung po', 'Kung pao chicken (kung po)'],
+  ['salt and pepper chicken', 'Salt and pepper chicken'],
+  ['crispy chilli beef', 'Crispy chilli beef'],
+  // the Chopstix menu doesn't push the generic dishes down
+  ['egg fried rice', 'Egg fried rice'],
+  ['chow mein', 'Chow mein'],
+] as const) {
+  const got = rankByName(FOODS, (f) => f.n, queryWords(q))[0]?.n
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', `search (database): ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+// Indian takeaway searches, through the app's real path (queryWords, and each food's `aka`)
+{
+  const top = (q: string, k: number) => rankByName(FOODS, (f) => f.n, queryWords(q), (f) => f.aka).slice(0, k).map((f) => f.n)
+  const cases: [string, string, number][] = [
+    // [query, dish, must be within the top k]
+    ['lamb curry', 'Lamb rogan josh', 1],
+    ['dhal', 'Tarka dal', 1],
+    ['dal', 'Tarka dal', 1],
+    ['dahl', 'Tarka dal', 1],
+    // the generic Indian takeaway curry, above the Chinese and Thai ones
+    ['chicken curry', 'Chicken curry, Indian (takeaway)', 1],
+    // the takeaway dish above the retail "Chicken tikka masala" (CoFID 19-296, a stable name)
+    ['chicken tikka masala', 'Chicken tikka masala (takeaway)', 1],
+    ['tikka masala', 'Chicken tikka masala (takeaway)', 1],
+    ['palak paneer', 'Saag paneer', 1],
+    ['matar paneer', 'Mattar paneer', 1],
+  ]
+  for (const [q, dish, k] of cases) {
+    const got = top(q, k)
+    const ok = got.includes(dish); if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search indian: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(dish))
+  }
+  // the retail tikka masala is still found, right after the takeaway one
+  const ctm = top('chicken tikka masala', 2)
+  const ok = ctm[1] === 'Chicken tikka masala'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'search indian: retail tikka masala second', JSON.stringify(ctm))
+  // aliases: an exact alias pins; a partial alias match ranks after any name match
+  const items = [{ n: 'Mung dal, dried' }, { n: 'Tarka dal', aka: ['dhal', 'dal'] }, { n: 'Lentil soup', aka: ['dal soup'] }]
+  const r = (q: string) => rankByName(items, (x) => x.n, queryWords(q), (x) => x.aka).map((x) => x.n).join('|')
+  const got = [r('dal'), r('dhal'), r('soup')].join(' / ')
+  const want = 'Tarka dal|Mung dal, dried|Lentil soup / Tarka dal / Lentil soup'
+  const ok2 = got === want; if (!ok2) bad++
+  console.log(ok2 ? 'PASS' : 'FAIL', 'search: aliases pin on an exact query, else rank after names', JSON.stringify(got), ok2 ? '' : 'want ' + JSON.stringify(want))
+}
+
+// Popeyes: the chicken itself (on the bone, tenders, boneless, wings, chicken sandwiches) shows
+// before the breakfast rolls that only mention a chicken patty, within the 50 results the app lists
+// (searchFoods). Done in the data (brand-prefixed `aka`), so plain "fried chicken" or "nuggets"
+// still find the generic dish first.
+{
+  const top = (q: string) => rankByName(FOODS, (f) => f.n, queryWords(q), (f) => f.aka).slice(0, 50).map((f) => f.n)
+  const breakfast = (n: string) => /Breakfast|Muffin|Hash Brown/.test(n)
+  const chicken = ['Popeyes Signature Louisiana Chicken piece', 'Popeyes Signature Louisiana Chicken (6 pieces)', 'Popeyes Classic Tender',
+    'Popeyes Boneless Plain (4 pieces)', 'Popeyes Hot Wings (2 pieces)', 'Popeyes Chicken Sandwich Classic', 'Popeyes Spicy Chicken Wrap']
+  for (const q of ['popeyes chicken', 'popeyes fried chicken']) {
+    const got = top(q)
+    const firstB = got.findIndex(breakfast)
+    const missing = chicken.filter((n) => !got.includes(n) || (firstB >= 0 && got.indexOf(n) > firstB))
+    const ok = got[0] === 'Popeyes Signature Louisiana Chicken piece' && !missing.length; if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: ${q}: the chicken before breakfast`, ok ? '' : JSON.stringify({ first: got[0], missing }))
+  }
+  const wings = top('popeyes wings')
+  const okW = wings[0] === 'Popeyes Hot Wings (2 pieces)' && wings.includes('Popeyes Hot Wings (20 pieces)') && !wings.some(breakfast); if (!okW) bad++
+  console.log(okW ? 'PASS' : 'FAIL', 'search popeyes: wings', JSON.stringify(wings.slice(0, 3)))
+  for (const [q, want] of [['10 boneless', 'Popeyes Boneless Plain (10 pieces)'], ['12 hot wings', 'Popeyes Hot Wings (12 pieces)'], ['popeyes nuggets', 'Popeyes Boneless Plain (4 pieces)'],
+    ['classic shatter crunch wrap', 'Popeyes Classic Chicken Wrap'], ['fried chicken', 'Fried chicken and chips (takeaway)'], ['nuggets', 'Chicken nuggets, cooked']] as const) {
+    const got = top(q)[0]
+    const ok = got === want; if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  }
+  // an alias with a short word ("on") once matched whole while generic foods only had it inside
+  // "bone", so the generic foods were dropped and only Popeyes was listed
+  for (const q of ['chicken on the bone', 'chicken on bone', 'on the bone']) {
+    const got = top(q)
+    const ok = (q === 'on the bone' || (got.includes('Fried chicken, coated, off the bone (takeaway)') && got.includes('Chicken drumstick, roasted, with skin, weighed with bone')))
+      && got.length > 0 && !got.every((n) => n.startsWith('Popeyes'))
+    if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search popeyes: "${q}" keeps the generic foods`, JSON.stringify(got.slice(0, 4)))
+  }
+  // foods no longer on popeyesuk.com keep their figures and cite the import they came from
+  const gone = FOODS.filter((f) => f.src === 'popeyes-uk-2026-09').map((f) => f.n)
+  const wantGone = ['Popeyes Spicy Tender', 'Popeyes Double Chocolate Cookie', 'Popeyes Ghost Pepper Sandwich', 'Popeyes Bacon Roll - Plain', 'Popeyes Ghost Pepper Big Dip']
+  const okG = gone.length === 20 && wantGone.every((n) => gone.includes(n)) && !!SOURCES['popeyes-uk-2026-09']
+    && !FOODS.some((f) => f.src === 'popeyes-uk' && gone.includes(f.n))
+  if (!okG) bad++
+  console.log(okG ? 'PASS' : 'FAIL', 'popeyes: no-longer-listed foods cite popeyes-uk-2026-09', okG ? '' : JSON.stringify(gone))
+}
+
+// Common UK takeaway searches find a generic dish first, never a chain's, and the takeaway dish
+// itself in the top two (an older generic food can hold the top spot on a tie: ties keep db order).
+{
+  const top = (q: string, k: number) => rankByName(FOODS, (f) => f.n, queryWords(q)).slice(0, k).map((f) => f.n)
+  const cases: [string, string, string[]][] = [
+    ['fish and chips', 'Fish and chips, cod or haddock (takeaway)', []],
+    ['cod and chips', 'Fish and chips, cod or haddock (takeaway)', []],
+    ['doner kebab', 'Doner kebab (takeaway)', ['Doner kebab meat']],
+    ['chips small', 'Chips, small (takeaway)', []],
+    ['pepperoni pizza', 'Pepperoni pizza, 10-inch, whole (takeaway)', ['Pizza, pepperoni']],
+    ['pad thai', 'Pad thai, chicken (takeaway)', []],
+    ['green curry', 'Thai green curry, chicken (takeaway)', []],
+  ]
+  for (const [q, dish, generic] of cases) {
+    const got = top(q, 2)
+    const ok = (got[0] === dish || generic.includes(got[0])) && got.includes(dish)
+    if (!ok) bad++
+    console.log(ok ? 'PASS' : 'FAIL', `search takeaway: ${q}`, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(dish))
+  }
+}
 // Chain foods: one serving, through the app's real logging path, must show exactly the kcal the
 // data implies (the importers separately assert that equals the chain's published per-portion kcal).
 {
   const chain = FOODS.filter((f) => f.src && SOURCES[f.src.split(':')[0]]?.err)
   const off = chain.filter((f) => {
     const e = buildEntry(f, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE as never, { custom: false, fat: null, askFat: false }).entry
-    return Math.round(e.k) !== Math.round((f.k * f.g) / (f.each ? 1 : 100))
+    // an entry keeps kcal to 0.1 (buildEntry), so x.45-x.5 shows as the next whole kcal: compare the same way
+    return Math.round(e.k) !== Math.round(Math.round((f.k * f.g) / (f.each ? 1 : 100) * 10) / 10)
   })
   const ok = off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', `chain servings match their data (${chain.length} foods)`, ok ? '' : off.map((f) => f.n).join(', '))
@@ -143,6 +322,18 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const small = { n: 'x', k: 100, p: 0, c: 0, f: 0, g: 10 }
   const ok5 = entryAmount({ n: 'x', grams: 12.5, k: 12.5, p: 0, c: 0, f: 0, src: 'db', serv: 1.3 }, small) === 12.5; if (!ok5) bad++
   console.log(ok5 ? 'PASS' : 'FAIL', 'edited small serving keeps 12.5 g')
+  // a food that became per item re-logs as items at the chain's figure (KFC Original: 380 -> 241)
+  const orig = relog({ n: 'KFC Original Recipe Chicken piece', grams: 152, k: 380, p: 30, c: 12, f: 23, src: 'db', how: 'serv', err: 0.2, serv: 1 }, 'lunch')
+  const okO = orig.unit === 'item' && orig.grams === 1 && Math.round(orig.k) === Math.round(FOODS.find((f) => f.n === 'KFC Original Recipe Chicken piece')!.k); if (!okO) bad++
+  console.log(okO ? 'PASS' : 'FAIL', 'relog: per-100 g KFC Original becomes 1 item at KFC\'s figure', orig.unit, orig.grams, Math.round(orig.k))
+  // removed (unverified) foods are never re-offered as usuals
+  {
+    const day = (d: string) => ({ [d]: { foods: [{ n: 'Oat milk', grams: 200, k: 90, p: 2, c: 13, f: 3, meal: 'breakfast', src: 'db' }, { n: 'Onion', grams: 50, k: 18, p: 0.6, c: 4, f: 0.1, meal: 'breakfast', src: 'db' }], supps: {}, weight: null, workout: null } })
+    const st = { days: { ...day('2026-09-20'), ...day('2026-09-21'), ...day('2026-09-22') } } as never
+    const u = usuals(st, '2026-09-23', 'breakfast').map((x) => x.n).join('|')
+    const okU = u === 'Onion'; if (!okU) bad++
+    console.log(okU ? 'PASS' : 'FAIL', 'usuals skip removed foods', u)
+  }
   const ok3 = off.length === 0; if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'live-era entries (as actually stored) re-log and reopen to the published figure, x0.5-x3', off.slice(0, 5).join(', '))
 }
@@ -168,16 +359,19 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
 // demo clips: every attached clip exists, its tempo is ordered and fits the clip, and the counter
 // reads the phase on screen
 {
-  const clips = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [[e.n, e.video] as const] : [])))
+  const inWorkouts = Object.values(WORKOUTS).flatMap((w) => w.ex.flatMap((e) => (e.video ? [e.video] : [])))
+  const known = Object.values(DEMOS) as unknown[]
+  const clips = Object.entries(DEMOS) as [string, (typeof DEMOS)[keyof typeof DEMOS]][]
   const off = clips.flatMap(([n, m]) => {
     const why: string[] = []
     if (m.tempo[0]?.at !== 0) why.push('tempo must start at 0')
     m.tempo.forEach((p, i) => { if (i && p.at <= m.tempo[i - 1].at) why.push('phase ' + i + ' out of order') })
     if (m.tempo[m.tempo.length - 1].at >= m.durationSec) why.push('last phase starts after the clip ends')
+    if ('hold' in m && m.hold && m.tempo.some((p) => 'rep' in p)) why.push('a hold clip counts no reps')
     for (const f of [m.src, m.poster]) if (f && !/^https?:/.test(f) && !existsSync('public/videos/' + f)) why.push('missing public/videos/' + f)
     return why.map((w) => n + ': ' + w)
   })
-  const ok = clips.length === 4 && off.length === 0; if (!ok) bad++
+  const ok = clips.length >= 8 && inWorkouts.length === 14 && inWorkouts.every((v) => known.includes(v)) && off.length === 0; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'demo clips', clips.length, off.join('; '))
   const at = (t: number) => { const s = tempoAt(DEMOS.romanianDeadlift, t); return [s.kind, s.rep, s.reps, s.count].join(':') }
   const got = [at(0), at(3.7), at(7.5), at(99)].join(' ')
@@ -256,6 +450,46 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok3 = SWAPS.mobility.ex.length === 7 && SWAPS.mobility.cardioType === 'Mobility' && CARDIO_MET[SWAPS.walk.cardioType] === 3.0
   if (!ok3) bad++
   console.log(ok3 ? 'PASS' : 'FAIL', 'swap routines use sourced cardio keys')
+}
+// hard-day Train choices (wellbeing plan §7.5, B3): the day-matched swap, the rough-night shorter
+// version and the easier effort target
+{
+  const X = (id: string) => EXERCISE_BY_ID[id]
+  const of = (ids: string[]) => ids.map(X)
+  const builtinDays = (['Legs', 'Push', 'Pull', 'Cardio'] as const).map((k) => k + ':' + swapFor(dayTypeOf(WORKOUTS[k].ex.map((e) => X(e.id!))))).join(' ')
+  const days = [
+    dayTypeOf(of(['goblet-squat', 'push-up', 'one-arm-db-row', 'romanian-deadlift'])), // 2 lower, 2 upper
+    dayTypeOf(of(['back-squat', 'leg-curl', 'calf-raise', 'push-up'])),                // 3 lower, 1 upper: mostly lower
+    dayTypeOf(of(['back-squat', 'push-up', 'one-arm-db-row'])),                         // 1 lower, 2 upper: full
+    dayTypeOf(of(['childs-pose', 'cat-cow', 'hundred'])),                               // mind-body
+    dayTypeOf(of(['cardio-run', 'childs-pose'])),                                       // cardio with a cool-down
+    dayTypeOf([undefined]),                                                             // nothing known
+  ].join(' ')
+  const lower = SWAPS['mobility-lower'], upper = SWAPS['mobility-upper']
+  const matOnly = (w: typeof lower) => w.ex.every((e) => !!X(e.id!) && X(e.id!).cue === e.cue && X(e.id!).impact !== 'high' && !X(e.id!).equipment.some((q) => q !== 'mat' && q !== 'bodyweight'))
+  const plan = roughNightPlan(of(['cardio-run', 'goblet-squat', 'db-sl-rdl', 'mountain-climber', 'cardio-intervals', 'tree-pose']))
+  const nothing = roughNightPlan(WORKOUTS.Legs.ex.map((e) => X(e.id!)))
+  const steadyAll = EXERCISES.filter((e) => e.steadier).map((e) => e.id + '>' + e.steadier).sort().join(' ')
+  const L = { name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '10' }, { w: '40', reps: '9', feel: 'struggle' }] } as any
+  const easy = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i, [], { shorter: 'easier' })?.reps).join(',')
+  const keep = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i, [], { shorter: 'maintain' })?.reps).join(',')
+  const usual = [0, 1, 2].map((i) => targetFor('weight-reps', '3 × 10–12', L, i)?.reps).join(',')
+  const checks: [string, boolean][] = [
+    ['swap: built-ins Legs, Push, Pull, Cardio', builtinDays === 'Legs:mobility-lower Push:mobility-upper Pull:mobility-upper Cardio:mobility'],
+    ['swap: day type from the exercises', days === 'full lower upper mind-body cardio full' && swapFor('full') === 'mobility' && swapFor('mind-body') === 'walk'],
+    ['swap: lower and upper are ~10 min, 7 library moves each, mat or nothing, cues word for word', lower.ex.length === 7 && upper.ex.length === 7 && matOnly(lower) && matOnly(upper) && lower.mins === '10' && upper.mins === '10' && lower.cardioType === 'Mobility' && upper.cardioType === 'Mobility'],
+    ['swap: notes never say "skip"', Object.values(SWAPS).every((w) => !/skip/i.test(w.note ?? ''))],
+    ['rough night: sleep among the low signals', roughNight(['sleep', 'energy']) && !roughNight(['stress', 'energy'])],
+    ['rough night: steadier swaps, intervals with none left out, balance poses kept', JSON.stringify(plan) === JSON.stringify({ swaps: { 0: 'cardio-walk', 2: 'romanian-deadlift', 4: 'cardio-bike' }, leaveOut: [3] })],
+    ['rough night: Legs & Core is unchanged', Object.keys(nothing.swaps).length === 0 && nothing.leaveOut.length === 0],
+    ['rough night: the 8 steadier mappings', steadyAll === 'bulgarian-split-squat>split-squat cardio-intervals>cardio-bike cardio-jump-rope>cardio-walk cardio-run>cardio-walk db-bulgarian-split-squat>db-split-squat db-sl-rdl>romanian-deadlift step-up>goblet-squat walking-lunge>split-squat'],
+    ['rough night: the note shows only with something to change', showRoughNightNote(['sleep', 'energy'], of(['cardio-run'])) && !showRoughNightNote(['sleep', 'energy'], WORKOUTS.Legs.ex.map((e) => X(e.id!))) && !showRoughNightNote(['stress', 'energy'], of(['cardio-run']))],
+    ['effort: 3–4 to spare on an easier day, 2–3 otherwise and in maintenance', JSON.stringify(rirFor('easier')) === JSON.stringify(SHORTER_RIR) && SHORTER_RIR.lo === 3 && SHORTER_RIR.hi === 4 && rirFor('maintain') === USUAL_RIR && rirFor() === USUAL_RIR && USUAL_RIR.lo === 2],
+    ['effort: an easier day aims for last time\'s reps, no +1', easy === '12,10,9'],
+    ['effort: maintenance and no kind keep the usual +1', keep === '12,11,9' && usual === keep],
+    ['effort: an easier day never raises the weight', [0, 1, 2].every((i) => targetFor('weight-reps', '2 × 10–12', L, i, [], { shorter: 'easier' })?.w === '40')],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'hard day:', n) }
 }
 // plans slide (plan §0.3, §0.4): catch-up picks at most one session, never edits the schedule,
 // ignores days before the person started, and "welcome back" is asked once per 10+ day break
@@ -397,6 +631,7 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const blank = { type: 'Cardio', cardioType: '', mins: '' } as any
   const round = (wk: any) => { const m = mirrorOf([fromLegacy(wk, D)]); delete (m as any)._mirror; return JSON.stringify(m) === JSON.stringify(wk) }
   const same = (wk: any) => sessionNetBurn(fromLegacy(wk, D), 70) === workoutNetBurn(wk, 70) && sessionBurn(fromLegacy(wk, D), 70) === workoutBurn(wk, 70)
+    && isTrainingSess(fromLegacy(wk, D)) === isTrainingSession(wk)
   const day = (x: any) => ({ foods: [], supps: {}, weight: null, workout: null, ...x })
   const yoga = { id: 'y1', modality: 'yoga', title: 'Evening yoga', mins: 30 } as any
   const got = [
@@ -461,4 +696,1480 @@ for (const [n, got, want] of extra) { const ok = got === want; if (!ok) bad++; c
   const ok = got === want && morning === 'true'; if (!ok) bad++
   console.log(ok ? 'PASS' : 'FAIL', 'load guardrail', morning, JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
 }
-process.exit(bad ? 1 : 0)
+// exercise library in use (P3): hold targets and timer, set words, "last time" by id or old name,
+// swaps that keep the slot, and every demo clip reachable from the library
+{
+  const got = [
+    JSON.stringify(holdTarget('3 × 20–40 sec')), JSON.stringify(holdTarget('45 sec each side')), JSON.stringify(holdTarget('1 × 60 sec')), String(holdTarget('5 slow breaths')),
+    JSON.stringify(holdAt(12.7, { lo: 20, hi: 40 })), JSON.stringify(holdAt(47, { lo: 45, hi: 45 }, true)), JSON.stringify(holdAt(30, { lo: 45, hi: 45 }, true)).includes('"logSec":30'),
+    fmtSet({ w: '40', reps: '8' }, 'weight-reps'), fmtSet({ w: '20', reps: '6', assist: true }, 'reps'), fmtSet({ w: '10', reps: '8' }, 'reps'), fmtSet({ w: '', reps: '30' }, 'hold'), fmtSet({ w: '', reps: '', sec: '25' }, 'hold'),
+    [setHasData({ w: '', reps: '' }, 'weight-reps'), setHasData({ w: '', reps: '', sec: '20' }, 'hold'), setHasData({ w: '', reps: '', done: true }, 'check')].join(','),
+  ].join(' ')
+  const want = '{"lo":20,"hi":40} {"lo":45,"hi":45} {"lo":60,"hi":60} null {"side":1,"sec":12,"reached":false,"switchNow":false,"logSec":12} {"side":2,"sec":2,"reached":false,"switchNow":true,"logSec":2} true 40 kg × 8 6 reps (assisted 20 kg) 8 reps (+10 kg) 30 sec 25 sec false,true,true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library: holds and set words', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+  // the hold timer's words, shared by the sheet and the timer over a hold clip
+  const T = { lo: 30, hi: 45 }
+  const words = [holdLabel(holdAt(5, T, true), T, true), holdLabel(holdAt(31, T, true), T, true), holdLabel(holdAt(40, T, true), T, true),
+    holdLabel(holdAt(10, T), T), holdLabel(holdAt(35, T), T), holdLabel(holdAt(50, T), T), holdLabel(holdAt(8, null), null), holdLabel(holdAt(8, null), null, false, true)].join(', ')
+  const wantWords = 'First side, Switch sides, Second side, Holding, In your range, Good place to stop, Holding, Keep going'
+  if (words !== wantWords) bad++
+  console.log(words === wantWords ? 'PASS' : 'FAIL', 'library: hold timer words', JSON.stringify(words))
+}
+{
+  const S = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', routineId: 'builtin-Legs', ex }] }) as any
+  const days = {
+    '2026-09-01': S([{ name: 'Leg press', sets: [{ w: '80', reps: '10' }] }]),                                  // before ids: by name
+    '2026-09-05': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }]),
+    '2026-09-08': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [] }]),                                 // no sets: skipped
+    '2026-09-20': S([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '50', reps: '8' }] }]),           // on or after the day: not "last time"
+  }
+  const got = [
+    lastLogged(days, '2026-09-10', 'back-squat', 'Barbell squat')?.sets[0].w, lastLogged(days, '2026-09-10', 'leg-press', 'Leg press')?.sets[0].w,
+    String(lastLogged(days, '2026-09-03', 'back-squat', 'Barbell squat')),
+  ].join(' ')
+  const sq = EXERCISE_BY_ID['back-squat'], bench = EXERCISE_BY_ID['barbell-bench-press']
+  const altSq = alternativesFor(sq).similar.map((x) => x.id), altBench = alternativesFor(bench).similar.map((x) => x.id)
+  const push = EXERCISE_BY_ID['push-up']
+  const chainOk = stepOf(push, -1)?.id === 'incline-push-up' && stepOf(push, 1)?.id === 'decline-push-up'
+  const dd = EXERCISE_BY_ID['downward-dog']
+  const gentlerFirst = alternativesFor(dd).similar[0]?.id === dd.gentler
+  // every swap keeps the slot: same pattern and main muscle for resistance work
+  const slotOk = EXERCISES.filter((e) => e.modality === 'strength' || e.modality === 'calisthenics').every((e) => alternativesFor(e).similar.every((x) => x.id === e.gentler || (x.pattern === e.pattern && x.primary === e.primary)))
+  // every named gentler option is reachable from the Swap sheet
+  const gentlerOk = EXERCISES.filter((e) => e.gentler).every((e) => { const a = alternativesFor(e); return a.similar.some((x) => x.id === e.gentler) || a.easier?.id === e.gentler })
+  const clips = Object.values(DEMOS).every((m) => EXERCISES.some((e) => e.video === m))
+  const ok = got === '40 80 null' && altSq.includes('leg-press') && altBench.includes('chest-press') && chainOk && gentlerFirst && slotOk && gentlerOk && clips; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library: last time, swaps, chains, clips', JSON.stringify(got), altSq.includes('leg-press'), altBench.includes('chest-press'), chainOk, gentlerFirst, slotOk, gentlerOk, clips)
+}
+// engine library attributes (training engine §4.2): kit profiles, household props, the coverage gate
+{
+  const X = EXERCISE_BY_ID
+  const kitOk = usableWith(X['bulgarian-split-squat'], 'none') && !usableWith(X['back-squat'], 'dumbbells') && usableWith(X['goblet-squat'], 'dumbbells')
+    && usableWith(X['face-pull'], 'bands') && !usableWith(X['face-pull'], 'none') && usableWith(X['back-squat'], 'gym') && !usableWith(X['pull-up'], 'none')
+  const cells = coverage(EXERCISES)
+  const gate = coverageGate(EXERCISES)
+  const shapeOk = cells.length === 8 * 4 * 3 && gate.ok === (gate.gaps.length === 0) && gate.gaps.every((c) => c.ids.length < 2)
+  // mobility and cardio buckets never carry a primary muscle, so they never count as volume
+  const noVolume = EXERCISES.filter((e) => e.pattern === 'mobility' || e.pattern === 'cardio').every((e) => !e.primary)
+  const ok = kitOk && shapeOk && noVolume; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'library coverage: kit profiles, props, gate shape, no volume from stretches', kitOk, shapeOk, noVolume)
+}
+// Diet rules: conservative tags, swaps from the database, meals never hidden
+{
+  const P = (n: string, c?: string) => partsOf(n, c as never).sort().join('+')
+  const cases: [string, string, string][] = [
+    ['raw chicken is meat', P('Chicken breast, raw, skinless', 'meat'), 'meat'],
+    ['oat milk is not dairy', P('Oat milk', 'drinks'), ''],
+    ['peanut butter is plant', P('Peanut butter', 'fats'), ''],
+    ['butter beans are plant', P('Butter beans, canned, drained', 'eggs'), ''],
+    ['kidney beans are not kidney', P('Kidney beans, cooked', 'eggs'), ''],
+    ['Quorn contains egg', P('Quorn mince', 'meat'), 'egg'],
+    ['vegan-labelled has no animal parts', P('Greggs Vegan Roll Pork-Free', 'fastfood'), ''],
+    ['Worcestershire contains fish', P('Worcestershire sauce', 'sauces'), 'fish'],
+    ['Greggs is not egg', P('Greggs Baguette', 'fastfood'), ''],
+    ['Quorn: vegetarian fits, vegan conflicts', dietFit({ n: 'Quorn mince', cat: 'meat' as never }, 'vegetarian') + '/' + dietFit({ n: 'Quorn mince', cat: 'meat' as never }, 'vegan'), 'fits/conflict'],
+    ['unknown ready meal is check', dietFit({ n: 'Lasagne', cat: 'ready' }, 'vegetarian'), 'check'],
+    ['veggie pizza: vegetarian fits, vegan never fits', dietFit({ n: 'Greggs Veggie Feast Pizza', cat: 'fastfood' }, 'vegetarian') + '/' + dietFit({ n: 'Greggs Veggie Feast Pizza', cat: 'fastfood' }, 'vegan'), 'fits/check'],
+    ['pesto not vegan', dietFit({ n: 'Pesto', cat: 'sauces' }, 'vegan'), 'conflict'],
+    ['gravy is check', dietFit({ n: 'Gravy (made)', cat: 'sauces' }, 'vegetarian'), 'check'],
+    ['soy sauce fits vegan', dietFit({ n: 'Soy sauce (tbsp ~16g)', cat: 'sauces' }, 'vegan'), 'fits'],
+  ]
+  for (const [n, got, want] of cases) { const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'diet:', n, ok ? '' : `${got} vs ${want}`) }
+  const items = [{ n: 'Beef mince, extra lean (about 5% fat), raw', k: 1, p: 1, c: 1, f: 1, grams: 500 }, { n: 'Onion', k: 1, p: 1, c: 1, f: 1, grams: 100 }, { n: 'Milk, semi-skimmed', k: 1, p: 1, c: 1, f: 1, grams: 100 }]
+  const MAP = new Map(FOODS.map((f) => [f.n, f]))
+  const sw = (d: 'vegetarian' | 'vegan', its = items) => swapsFor(its as never, d, MAP).map((w) => `${w.from.split(',')[0]}>${w.to?.n ?? '-'}`).join('|')
+  const stocky = [{ n: 'Chicken stock, ready-made', k: 12, p: 1, c: 1, f: 0.5, grams: 250 }, { n: 'Lard', k: 891, p: 0, c: 0, f: 99, grams: 10 }, { n: 'Worcestershire sauce', k: 65, p: 1, c: 15, f: 0, grams: 5 }, { n: 'Greggs Sausage Roll', k: 337, p: 8.8, c: 23, f: 23, grams: 103 }]
+  for (const [n, got, want] of [
+    ['vegetarian swaps (sourced Quorn pieces)', sw('vegetarian'), 'Beef mince>Quorn pieces'],
+    ['vegan swaps (no Quorn: egg; soya milk)', sw('vegan'), 'Beef mince>Tofu, firm|Milk>Soya milk'],
+    ['stock, lard, sauces and dishes never swap to a whole protein', sw('vegetarian', stocky as never), 'Chicken stock>-|Lard>-|Worcestershire sauce>-|Greggs Sausage Roll>-'],
+    ['vegan cheese swap on a ham pizza still conflicts', dietFit({ n: 'PizzaExpress Piccolo Ham & Mushrooms Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan') + '/' + dietFit({ n: 'PizzaExpress Piccolo Pollo Vegan Mozz Alternative', cat: 'fastfood' }, 'vegetarian'), 'conflict/conflict'],
+    ['vegan cheese swap alone is check, not dairy', dietFit({ n: 'PizzaExpress Piccolo Margherita Vegan Mozz Alternative', cat: 'fastfood' }, 'vegan'), 'check'],
+    ['oat drink is plant, macchiato is milk', dietFit({ n: 'Latte (oat drink)', cat: 'drinks' }, 'vegan') + '/' + dietFit({ n: 'Macchiato', cat: 'drinks' }, 'vegan'), 'fits/conflict'],
+    ['tea with no milk is vegan', dietFit({ n: 'Tea, no milk', cat: 'drinks' }, 'vegan'), 'fits'],
+    ['tuna steak fits pescatarian', dietFit({ n: 'Tuna steak, raw', cat: 'fish' }, 'pescatarian'), 'fits'],
+    ['parmesan not vegetarian', dietFit({ n: 'Parmesan', cat: 'dairy' }, 'vegetarian'), 'conflict'],
+    ['mashed potato not vegan', dietFit({ n: 'Mashed potato', cat: 'potato' }, 'vegan'), 'conflict'],
+    ['wine is check', dietFit({ n: 'Red wine', cat: 'drinks' }, 'vegetarian'), 'check'],
+    ['scotch egg / fish fingers never swap whole', sw('vegetarian', [{ n: 'Scotch egg', k: 1, p: 1, c: 1, f: 1, grams: 120 }, { n: 'Fish fingers, cooked (3)', k: 1, p: 1, c: 1, f: 1, grams: 90 }] as never), 'Scotch egg>-|Fish fingers>-'],
+    ['sausage roll and bone-in weights never swap whole', sw('vegetarian', [{ n: 'Sausage roll', k: 1, p: 1, c: 1, f: 1, grams: 60 }, { n: 'Chicken thigh or drumstick, raw, with skin, weighed with bone', k: 1, p: 1, c: 1, f: 1, grams: 200 }] as never), 'Sausage roll>-|Chicken thigh or drumstick>-'],
+    ['babybel is check for vegetarians', dietFit({ n: 'Babybel', cat: 'dairy' }, 'vegetarian'), 'check'],
+    ['muesli is check for vegans', dietFit({ n: 'Muesli', cat: 'grains' }, 'vegan'), 'check'],
+    ['cream crackers not dairy', dietFit({ n: 'Cream cracker', cat: 'snacks' }, 'vegan'), 'check'],
+  ] as const) {
+    const ok = got === want; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'diet:', n, ok ? '' : got)
+  }
+  const sug = suggestRecipes([{ id: 'r', name: 'Chilli', servings: 4, items: items as never }], [0], ['Onion', 'Quorn pieces'], 'vegetarian', FOODS)[0]
+  const okS = sug.missing.join('|') === 'Milk, semi-skimmed'; if (!okS) bad++
+  console.log(okS ? 'PASS' : 'FAIL', 'suggest: a vegetarian with Quorn is only missing the milk', sug.missing.join('|'))
+  const staples = [['Salt', 'sauces'], ['Olive oil (tbsp ~14g)', 'fats'], ['Cumin, ground', 'sauces'], ['Pasta, dried, uncooked', 'grains'], ['Sugar snap peas', 'veg'], ['Dried apricots', 'fruit']].map(([n, c]) => isStaple(n, c as never) ? 'y' : 'n').join('')
+  const ok = staples === 'yyynnn'; if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'staples assumed only for basics', staples)
+}
+
+// Backup restore: an exported-then-imported state is fully dirty, so the next sync uploads it
+// before pulling, and a stale server can't overwrite or drop what was restored.
+async function backupRestore(): Promise<void> {
+  const day = (kcal: number) => ({ foods: [{ n: 'Toast', k: kcal, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: 70, workout: null })
+  const F1 = '11111111-1111-4111-8111-111111111111', R1 = '22222222-2222-4222-8222-222222222222'
+  const GONE = '33333333-3333-4333-8333-333333333333', RGONE = '44444444-4444-4444-8444-444444444444', HERE = '55555555-5555-4555-8555-555555555555'
+  const live = stateFromBackup({ days: {} } as never)
+  live.profile.burnSwitch = '2026-09-10'
+  live.profile.notificationsEnabled = true
+  live.days = { '2026-09-01': day(100), '2026-09-02': day(120) } as never
+  live.customFoods = [{ id: F1, n: 'My flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }]
+  live.recipes = [{ id: R1, name: 'Chilli', servings: 4, items: [] }]
+  const m = ensureMeta(live, true)
+  m.foodDeletes = [F1, GONE, 'f1727000000abc']
+  m.recipeDeletes = [RGONE]
+  // after a sync everything is clean; that is what exportBackup writes out
+  m.settings.dirty = false
+  Object.values(m.days).forEach((x) => (x.dirty = false))
+  live.customFoods.forEach((f) => (f._dirty = false))
+  live.recipes.forEach((r) => (r._dirty = false))
+  const file = JSON.parse(JSON.stringify(live)) as PersistedState
+  const device = stateFromBackup({ days: {} } as never)
+  device.profile.burnSwitch = '2026-09-05'
+  device.profile.notificationsEnabled = false
+  device._meta!.foodDeletes = [HERE, F1]
+  device._meta!.recipeDeletes = [R1]
+  const got = stateFromBackup(file, device)
+  const gm = got._meta!
+  const checks: [string, boolean][] = [
+    ['settings dirty', gm.settings.dirty],
+    ['every day dirty', Object.keys(got.days).length === 2 && Object.keys(got.days).every((d) => gm.days[d]?.dirty)],
+    ['custom foods dirty', got.customFoods.every((f) => f._dirty && !!f._u)],
+    ['recipes dirty', got.recipes.every((r) => r._dirty && !!r._u)],
+    ['earliest D5 switch date kept', got.profile.burnSwitch === '2026-09-05'],
+    ["this device's reminders setting kept", got.profile.notificationsEnabled === false],
+    ['queued deletes kept except restored and non-UUID ids', gm.foodDeletes.join('|') === [GONE, HERE].join('|') && gm.recipeDeletes.join('|') === RGONE],
+  ]
+  // a stale server: different day 1, no foods or recipes; push then pull as runSync does
+  const server: Record<string, any[]> = { settings: [], custom_foods: [], recipes: [], routines: [], training_plans: [], consents: [], day_logs: [{ log_date: '2026-09-01', ...day(999), updated_at: 'x' }] }
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
+    const table = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
+    if (o.method === 'POST') {
+      for (const row of JSON.parse(String(o.body))) {
+        const k = table === 'day_logs' ? 'log_date' : table === 'settings' ? 'user_id' : 'id'
+        server[table] = [...server[table].filter((x) => x[k] !== row[k]), { ...row, updated_at: 'y' }]
+      }
+    }
+    return new Response(o.method ? null : JSON.stringify(server[table]), { status: o.method ? 204 : 200 })
+  }) as typeof fetch
+  try {
+    await pushDirty(got, gm)
+    await pullAll(got, gm)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  checks.push(
+    ['restored day survives the pull', got.days['2026-09-01'].foods[0].k === 100],
+    ['restored food and recipe survive the pull', got.customFoods.some((f) => f.id === F1) && got.recipes.some((r) => r.id === R1)],
+    ['restored data reached the server', server.custom_foods.length === 1 && server.recipes.length === 1 && server.day_logs.length === 2 && server.settings.length === 1],
+  )
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'backup import:', n) }
+}
+
+/** A fake PostgREST that behaves like production: RLS lets a user touch only their own rows
+ *  (403 on an upsert that would update someone else's), the (user_id, lower(name)) unique index
+ *  on custom_foods and recipes (409), uuid id columns (400) and tables whose writes can be broken. */
+function fakeServer(rows: Record<string, any[]>, broken: string[] = []) {
+  const uid = LOCAL_USER
+  const keyOf = (t: string) => (t === 'day_logs' ? ['user_id', 'log_date'] : t === 'settings' ? ['user_id'] : ['id'])
+  const same = (t: string, a: any, b: any) => keyOf(t).every((k) => a[k] === b[k])
+  const calls: string[] = []
+  const res = (status: number, body?: unknown) => new Response(body === undefined ? null : JSON.stringify(body), { status })
+  const fetchFn = (async (url: string, o: RequestInit = {}) => {
+    const [path, q = ''] = String(url).split('/rest/v1/')[1].split('?')
+    const t = path.replace(/^\//, '')
+    const params = new URLSearchParams(q)
+    calls.push((o.method || 'GET') + ' ' + t)
+    if (o.method && broken.includes(t)) return res(500)
+    const mine = (rows[t] || []).filter((r) => r.user_id === uid)
+    if (!o.method) {
+      const id = params.get('id')
+      return res(200, id ? mine.filter((r) => 'eq.' + r.id === id) : mine)
+    }
+    // the server's clear after a withdrawal (docs/migrations/2026-09-28-health-consent-server.sql):
+    // only while the latest health answer is a no, all log tables at once, consents kept
+    if (t === 'rpc/clear_log_after_withdrawal') {
+      const hs = (rows.consents || []).filter((r) => r.user_id === uid && r.type === 'health').sort((a, b) => String(a.recorded_at).localeCompare(String(b.recorded_at)))
+      const last = hs[hs.length - 1]
+      if (!last || last.granted) return res(200, { cleared: false })
+      for (const x of ['day_logs', 'custom_foods', 'recipes', 'routines', 'training_plans', 'push_subscriptions', 'settings']) rows[x] = (rows[x] || []).filter((r) => r.user_id !== uid)
+      return res(200, { cleared: true })
+    }
+    if (o.method === 'DELETE') {
+      // a whole account's rows of one table (the cloud clear after a health withdrawal)
+      if (params.get('user_id') && !params.get('id')) {
+        if (params.get('user_id') !== 'eq.' + uid) return res(403)
+        rows[t] = (rows[t] || []).filter((r) => r.user_id !== uid)
+        return res(204)
+      }
+      const id = (params.get('id') || '').replace(/^eq\./, '')
+      if (!UUID_RE.test(id)) return res(400)
+      rows[t] = (rows[t] || []).filter((r) => !(r.id === id && r.user_id === uid))
+      return res(204)
+    }
+    const next = [...(rows[t] || [])]
+    for (const row of JSON.parse(String(o.body))) {
+      if ('id' in row && !UUID_RE.test(row.id)) return res(400)
+      const cur = next.find((r) => same(t, r, row))
+      if (cur && cur.user_id !== uid) return res(403)
+      if ((t === 'custom_foods' || t === 'recipes') && next.some((r) => r.user_id === uid && r.id !== row.id && r.name.toLowerCase() === row.name.toLowerCase())) return res(409)
+      const i = next.findIndex((r) => same(t, r, row))
+      // merge-duplicates updates only the columns sent
+      if (i >= 0) next[i] = { ...next[i], ...row, updated_at: 'y' }; else next.push({ ...row, updated_at: 'y' })
+    }
+    rows[t] = next
+    return res(201)
+  }) as typeof fetch
+  return { fetchFn, calls }
+}
+
+// Sync resilience: one rejected record (name clash, someone else's id, a broken table) never
+// blocks the log, the other records or the pull.
+async function syncResilience(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const other = '99999999-9999-4999-8999-999999999999'
+  const ids = Array.from({ length: 200 }, uuid)
+  checks.push(['uuid() is always v4', ids.every((x) => UUID_RE.test(x) && x[14] === '4' && '89ab'.includes(x[19])) && new Set(ids).size === 200])
+
+  const S1 = uuid(), S2 = uuid(), THEIRS = uuid(), L1 = uuid(), L2 = uuid(), R1 = uuid()
+  const rows: Record<string, any[]> = {
+    settings: [],
+    day_logs: [],
+    custom_foods: [
+      { id: S1, user_id: LOCAL_USER, name: 'My Flapjack', kcal: 1 }, // same name, other id: 409
+      { id: S2, user_id: LOCAL_USER, name: 'Oat bar', kcal: 1 }, // deleted then re-created: 409 unless the delete goes first
+      { id: THEIRS, user_id: other, name: 'Theirs', kcal: 1 }, // another account's id: 403
+    ],
+    recipes: [],
+  }
+  const s = stateFromBackup({ days: { '2026-09-20': { foods: [{ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null } } } as never)
+  s.customFoods = [
+    { id: L1, n: 'my flapjack', k: 410, p: 5, c: 50, f: 20, g: 100, _dirty: true },
+    { id: L2, n: 'Oat bar', k: 200, p: 5, c: 30, f: 8, g: 100, _dirty: true },
+    { id: THEIRS, n: 'Borrowed soup', k: 50, p: 2, c: 6, f: 2, g: 100, _dirty: true },
+    { id: 'f1727000000abc', n: 'Old id', k: 90, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+  ]
+  s.recipes = [{ id: R1, name: 'Chilli', servings: 4, items: [], _dirty: true }]
+  const m = ensureMeta(s, false)
+  m.foodDeletes = [S2, 'f-never-uploaded']
+  const f = fakeServer(rows, ['recipes'])
+  const realFetch = globalThis.fetch
+  globalThis.fetch = f.fetchFn
+  let failed: string[] = []
+  try {
+    failed = await pushDirty(s, m)
+    await pullAll(s, m)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  const food = (n: string) => s.customFoods.find((x) => x.n === n)
+  const srv = (n: string) => rows.custom_foods.filter((x) => x.name === n)
+  checks.push(
+    ['the day reaches the server despite a broken table', rows.day_logs.length === 1 && !m.days['2026-09-20'].dirty],
+    ['settings reach the server', rows.settings.length === 1 && !m.settings.dirty],
+    ['409: adopts the server id for the same name and overwrites it', food('my flapjack')?.id === S1 && rows.custom_foods.filter((x) => x.id === S1).map((x) => x.name + x.kcal).join() === 'my flapjack410'],
+    ['a delete goes before the re-create of the same name', srv('Oat bar').length === 1 && srv('Oat bar')[0].id === L2 && m.foodDeletes.length === 0],
+    ["403: another account's id gets a new one; their row is untouched", food('Borrowed soup')?.id !== THEIRS && srv('Borrowed soup').length === 1 && rows.custom_foods.find((x) => x.id === THEIRS)?.name === 'Theirs'],
+    ['an old non-UUID id is replaced and uploads', UUID_RE.test(food('Old id')?.id || '') && srv('Old id').length === 1],
+    ['the broken table is reported and its record stays dirty', failed.length === 1 && failed[0].startsWith('recipes') && s.recipes[0]._dirty === true],
+    ['the pull still ran', m.lastPull !== null],
+  )
+
+  // a rejection the repairs can't fix leaves the record exactly as it was
+  const rows2: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [] }
+  const s2 = stateFromBackup({ days: {} } as never)
+  const KEEP = uuid()
+  s2.customFoods = [{ id: KEEP, n: 'Fine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true }]
+  const m2 = ensureMeta(s2, false)
+  const f2 = fakeServer(rows2)
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => (o.method === 'POST' && String(url).includes('custom_foods') ? new Response(null, { status: 403 }) : f2.fetchFn(url, o))) as typeof fetch
+  try {
+    failed = await pushDirty(s2, m2)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+  checks.push(['an unfixable 403 keeps the id and the dirty flag', s2.customFoods[0].id === KEEP && s2.customFoods[0]._dirty === true && failed.length === 1])
+
+  // a 409 never adopts an id another local record holds: renaming R1 onto R2's name must not
+  // overwrite R2 (the pull would keep only one of the two)
+  const RA = uuid(), RB = uuid()
+  const rows4: Record<string, any[]> = { settings: [], day_logs: [], custom_foods: [], recipes: [{ id: RB, user_id: LOCAL_USER, name: 'Curry', items: [], servings: 2 }] }
+  const s4 = stateFromBackup({ days: {} } as never)
+  s4.recipes = [{ id: RA, name: 'curry', servings: 4, items: [], _dirty: true }, { id: RB, name: 'Curry', servings: 2, items: [], _dirty: false }]
+  const m4 = ensureMeta(s4, false)
+  m4.settings.dirty = false
+  globalThis.fetch = fakeServer(rows4).fetchFn
+  try { failed = await pushDirty(s4, m4) } finally { globalThis.fetch = realFetch }
+  checks.push(["a 409 never takes another local record's id", s4.recipes[0].id === RA && s4.recipes[0]._dirty === true && rows4.recipes.length === 1 && rows4.recipes[0].servings === 2 && failed.length === 1])
+
+  // a refused request (503, 401) is not retried per record: one request per table, all still dirty
+  for (const status of [503, 401]) {
+    const s5 = stateFromBackup({ days: Object.fromEntries(Array.from({ length: 50 }, (_, i) => ['2026-08-' + String(i % 28 + 1).padStart(2, '0') + (i >= 28 ? 'x' : ''), { foods: [], supps: {}, weight: null, workout: null }])) } as never)
+    s5.customFoods = [{ id: uuid(), n: 'A', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true }]
+    const m5 = ensureMeta(s5, true)
+    let n = 0
+    globalThis.fetch = (async () => { n++; return new Response(null, { status }) }) as typeof fetch
+    let f5: string[] = []
+    try { f5 = await pushDirty(s5, m5) } finally { globalThis.fetch = realFetch }
+    // days, settings, custom foods: 3 requests, not 50 + 1 + 1
+    checks.push([`a ${status} makes one request per table and leaves everything dirty`, f5.length === 3 && n === 3 && Object.values(m5.days).every((x) => x.dirty) && m5.settings.dirty && s5.customFoods[0]._dirty === true])
+  }
+
+  // no connection: throws, nothing marked clean
+  const s3 = stateFromBackup({ days: { '2026-09-21': { foods: [], supps: {}, weight: null, workout: null } } } as never)
+  const m3 = ensureMeta(s3, false)
+  globalThis.fetch = (async () => { throw new TypeError('Failed to fetch') }) as typeof fetch
+  let threw = false
+  try { await pushDirty(s3, m3) } catch { threw = true } finally { globalThis.fetch = realFetch }
+  checks.push(['offline throws and leaves everything dirty', threw && m3.days['2026-09-21'].dirty && m3.settings.dirty])
+
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'sync:', n) }
+}
+
+
+// Import keeps what the backup doesn't hold: this device's other days, foods and recipes, with
+// their own sync flags; the backup wins where both have the same day, id or name.
+function importCarryOver(): void {
+  const dayOf = (k: number) => ({ foods: [{ n: 'Toast', k, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null })
+  const A = uuid(), B = uuid(), C = uuid(), R = uuid(), R2 = uuid()
+  const device = stateFromBackup({ days: {} } as never)
+  device.days = { '2026-09-01': dayOf(1), '2026-09-22': dayOf(2), '2026-09-23': dayOf(3) } as never
+  const dm = device._meta!
+  dm.days = { '2026-09-01': { u: 'a', dirty: true }, '2026-09-22': { u: 'b', dirty: true }, '2026-09-23': { u: 'c', dirty: false } }
+  device.customFoods = [
+    { id: A, n: 'Only here', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+    { id: B, n: 'SYNCED HERE', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false },
+    { id: C, n: 'flapjack', k: 999, p: 1, c: 1, f: 1, g: 100, _dirty: true },
+  ]
+  device.recipes = [{ id: R2, name: 'Soup', servings: 2, items: [], _dirty: true }]
+  dm.foodDeletes = [uuid()]
+  const backup = JSON.parse(JSON.stringify({
+    days: { '2026-09-01': dayOf(100) }, customFoods: [{ id: uuid(), n: 'Flapjack', k: 400, p: 5, c: 50, f: 20, g: 100 }],
+    recipes: [{ id: R, name: 'Chilli', servings: 4, items: [] }], target: device.target, schedule: device.schedule, profile: device.profile,
+    _meta: { settings: { u: '', dirty: false }, days: { '2026-09-01': { u: '', dirty: false } }, foodDeletes: [A], recipeDeletes: [], lastPull: null },
+  })) as PersistedState
+  const summary = JSON.stringify(backupSummary(backup))
+  const got = stateFromBackup(backup, structuredClone(device))
+  const gm = got._meta!
+  const food = (n: string) => got.customFoods.filter((f) => f.n === n)
+  const checks: [string, boolean][] = [
+    ['the backup wins on a shared day', got.days['2026-09-01'].foods[0].k === 100 && gm.days['2026-09-01'].dirty],
+    ["this device's unsynced day stays and still uploads", got.days['2026-09-22'].foods[0].k === 2 && gm.days['2026-09-22'].dirty],
+    ["this device's synced day stays and doesn't upload again", got.days['2026-09-23'].foods[0].k === 3 && gm.days['2026-09-23'].dirty === false],
+    ["this device's own foods stay with their flags", food('Only here')[0]?._dirty === true && food('SYNCED HERE')[0]?._dirty === false],
+    ['a food with the same name as the backup one: the backup wins', food('flapjack').length === 0 && food('Flapjack')[0]?.k === 400],
+    ["this device's own recipe stays", got.recipes.map((r) => r.name).sort().join() === 'Chilli,Soup'],
+    ["a queued delete of a food that stays is dropped; this device's own is kept", !gm.foodDeletes.includes(A) && gm.foodDeletes.join() === dm.foodDeletes.join()],
+    ['summary counts the backup', summary === JSON.stringify({ days: 1, first: '2026-09-01', last: '2026-09-01', foods: 1, recipes: 1, workouts: 0, plans: 0, unloadNotes: 0 })],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'import keeps:', n) }
+}
+
+
+// Shared devices: data recorded as another account's is never merged silently on sign-in;
+// guest data still moves into the first account.
+function accountOwner(): void {
+  const A = uuid(), B = uuid()
+  const day = { foods: [{ n: 'Toast', k: 100, p: 1, c: 1, f: 1, grams: 40 }], supps: {}, weight: null, workout: null }
+  const withData = (lastPull: string | null, owner?: string) => {
+    const s = stateFromBackup({ days: { '2026-09-20': structuredClone(day) } } as never)
+    s.customFoods = [{ id: uuid(), n: 'Mine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false }]
+    const m = s._meta!
+    m.lastPull = lastPull
+    m.days['2026-09-20'].dirty = false
+    m.settings.dirty = false
+    m.foodDeletes = [uuid()]
+    if (owner) m.owner = owner
+    return s
+  }
+  const synced = withData('2026-09-23T10:00:00Z', A)
+  const kept = keepForAccount(structuredClone(synced), B)
+  const km = kept._meta!
+  const fresh = freshForAccount(B)
+  const dev = withData('x', A)
+  const legacy = withData('2026-09-01T00:00:00Z')
+  const afterImport = stateFromBackup(JSON.parse(JSON.stringify(withData(null))), legacy)
+  const restored = stateFromBackup(JSON.parse(JSON.stringify({ ...withData('x', B), days: {} })), dev)
+  const checks: [string, boolean][] = [
+    ['same account: carry on', ownerCheck(synced, A, false) === 'same'],
+    ['another account: ask', ownerCheck(synced, B, false) === 'ask' && ownerCheck(synced, B, true) === 'ask'],
+    ['guest data never synced: moves into the first account', ownerCheck(withData(null), B, false) === 'claim'],
+    ['synced by an older version, still signed in: claim', ownerCheck(withData('x'), B, true) === 'claim'],
+    ['synced by an older version, after a sign-out: verify against the account first', ownerCheck(withData('x'), B, false) === 'verify'],
+    ['keep: owner is the new account and everything uploads', km.owner === B && km.settings.dirty && km.days['2026-09-20'].dirty && kept.customFoods.every((f) => f._dirty) && km.lastPull === null],
+    ["keep: the other account's queued deletes are dropped", km.foodDeletes.length === 0],
+    ['fresh: nothing from the device is left', fresh._meta!.owner === B && Object.keys(fresh.days).length === 0 && fresh.customFoods.length === 0 && fresh.recipes.length === 0 && !fresh._meta!.settings.dirty],
+    ["a backup never changes whose device it is", restored._meta!.owner === A],
+    ['an import keeps lastPull, so synced data still asks after a sign-out', ownerCheck(afterImport, B, false) === 'verify'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'owner:', n) }
+}
+
+
+// Older installs (no owner recorded), removing the log at sign-out, and the retired guest mode.
+function legacyAndGuest(): void {
+  const day = { foods: [], supps: {}, weight: null, workout: null }
+  const F = uuid(), R = uuid()
+  const legacy = stateFromBackup({ days: { '2026-09-01': day, '2026-09-02': day } } as never)
+  const m = legacy._meta!
+  m.lastPull = '2026-09-10T00:00:00Z'
+  m.days['2026-09-01'] = { u: '2026-09-01T08:00:00.123456+00:00', dirty: false }
+  m.days['2026-09-02'] = { u: 'local', dirty: true }
+  m.settings.dirty = false
+  legacy.customFoods = [{ id: F, n: 'Mine', k: 1, p: 1, c: 1, f: 1, g: 100, _dirty: false }]
+  legacy.recipes = [{ id: R, name: 'Chilli', servings: 1, items: [], _dirty: true }]
+  const none = { days: [], foods: [], recipes: [] }
+  const checks: [string, boolean][] = [
+    ['same account: synced day timestamps and food ids all this account\'s', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }], foods: [{ id: F }] })],
+    ['same account: a day edited elsewhere since still counts if a food id matches', sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: 'later' }], foods: [{ id: F }] })],
+    ['not proof: a day edited since and no id match', !sameAccount({ ...legacy, customFoods: [] }, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-05T00:00:00+00:00' }] })],
+    ["not proof: an unsynced local record's id or date", !sameAccount(legacy, { days: [{ log_date: '2026-09-02', updated_at: 'local' }], foods: [], recipes: [{ id: R }] })],
+    ['not proof: an account with nothing', !sameAccount(legacy, none)],
+    // an older version left B's days plus A's leftover days (dates B has no row for): neither
+    // account passes, so both are asked
+    ['not proof: a leftover synced day this account has no row for', (() => {
+      const mixed = structuredClone(legacy)
+      mixed.days['2026-08-15'] = structuredClone(day)
+      mixed._meta!.days['2026-08-15'] = { u: '2026-08-15T09:00:00+00:00', dirty: false }
+      const forB = { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }], foods: [{ id: F }] }
+      const forA = { ...none, days: [{ log_date: '2026-08-15', updated_at: '2026-08-15T09:00:00+00:00' }], foods: [{ id: F }] }
+      return !sameAccount(mixed, forB) && !sameAccount(mixed, forA)
+    })()],
+    ['not proof: a synced food this account does not hold', !sameAccount(legacy, { ...none, days: [{ log_date: '2026-09-01', updated_at: '2026-09-01T08:00:00.123456+00:00' }] })],
+    ['counts unsynced changes', unsyncedCount(legacy) === 2],
+    ['removed at sign-out: empty, no one\'s, and moves into whoever signs in next', (() => { const g = freshForDevice(); return !g._meta!.owner && !g._meta!.lastPull && ownerCheck(g, uuid(), false) === 'claim' && Object.keys(g.days).length === 0 && unsyncedCount(g) === 0 })()],
+    ['a log from the retired guest mode moves into the first account', ownerCheck(stateFromBackup({ days: { '2026-09-01': day } } as never), uuid(), false) === 'claim'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legacy/device:', n) }
+}
+
+// own workouts (P4): estimates pinned to hand-worked examples, effort, headline kind, notes, and
+
+// the warm-up block (s-ob8 point 4; core/domain/warmup): length by range, never zero, kit swaps, one-sided moves
+{
+  const total = (b: WarmupBlock) => b.moves.reduce((a, m) => a + m.sec, 0) + b.gapSec * (b.moves.length - 1)
+  const KINDS = ['legs', 'push', 'pull', 'full', 'mind-body', 'cardio'] as const
+  const MOVES_BY_MINS: Record<number, number> = { 4: 3, 5: 4, 6: 5, 8: 6, 10: 7 }
+  const checks: [string, boolean, string?][] = []
+  const lens = SESSION_RANGES.map((r) => warmupMinutesFor(r)).join(',')
+  checks.push(['length by range: 4, 5, 6, 8, 10', lens === '4,5,6,8,10', lens])
+  checks.push(['never zero: skipped length and 10 engine minutes still warm up', warmupMinutesFor() === 5 && warmupMinutesFor(undefined, 10) === 4 && warmupMinutesFor(undefined, 60) === 10 && PLAN_WARMUP_MINUTES === 6])
+  let exact = true, counts = true, pulse = true, cues = true, sided = true, det = true
+  const why: string[] = []
+  for (const kind of KINDS) for (const r of SESSION_RANGES) for (const kit of [[], ['band']] as const) {
+    const b = buildWarmup({ kind, range: r, kit, activity: kind === 'cardio' ? 'cardio-run' : undefined })
+    if (b.mins !== warmupMinutesFor(r) || total(b) !== b.mins * 60) { exact = false; why.push(`${kind} ${r} ${total(b)}`) }
+    if (kind !== 'cardio' && b.moves.length !== MOVES_BY_MINS[b.mins]) { counts = false; why.push(`${kind} ${r} ${b.moves.length} moves`) }
+    if (kind !== 'cardio' && (b.moves[0].sec < 60 || b.moves[0].sec > 120)) { pulse = false; why.push(`${kind} ${r} pulse ${b.moves[0].sec}`) }
+    for (const m of b.moves.slice(1)) {
+      if (!/comfortabl/.test(m.cue)) { cues = false; why.push(`${m.id} cue`) }
+      if (m.perSide && m.sec % 10) { sided = false; why.push(`${m.id} ${m.sec}`) }
+      if (m.sec < 30) { exact = false; why.push(`${m.id} too short`) }
+    }
+    if (JSON.stringify(b) !== JSON.stringify(buildWarmup({ kind, range: r, kit, activity: kind === 'cardio' ? 'cardio-run' : undefined }))) det = false
+  }
+  checks.push(['moves and gaps add up to exactly the minutes, every move 30 s or more', exact, why.join('; ')])
+  checks.push(['3 to 7 moves by length (4 → 3 … 10 → 7)', counts, why.join('; ')])
+  checks.push(['the pulse raiser runs 1 to 2 minutes', pulse, why.join('; ')])
+  checks.push(['every warm-up cue says to stay within a comfortable range', cues && Object.values(WARMUP_CUES).every((c) => /comfortabl/.test(c) && !/—/.test(c)), why.join('; ')])
+  checks.push(['one-sided moves split into whole 5 s halves', sided, why.join('; ')])
+  checks.push(['deterministic: the same inputs give the same block', det])
+  const noBand = buildWarmup({ kind: 'push', mins: 10 }), band = buildWarmup({ kind: 'push', mins: 10, kit: ['band'] })
+  const ids = (b: WarmupBlock) => b.moves.map((m) => m.id)
+  /** the warm-up block on (it ships behind the onboarding switch; the screens pass it in) */
+  const ON = { warmup: true } as const
+  checks.push(['kit swap: no band, no band pull-apart (a wall slide instead), and no repeats', !ids(noBand).includes('band-pull-apart') && ids(noBand).includes('scapular-wall-slide') && new Set(ids(noBand)).size === ids(noBand).length && ids(band).includes('band-pull-apart'), ids(noBand).join(',')])
+  const legs = buildWarmup({ kind: 'legs', mins: 5 })
+  const ls = legs.moves.find((m) => m.id === 'leg-swings')
+  checks.push(['one-sided: leg swings switch sides, a squat doesn’t', !!ls?.perSide && legs.moves.find((m) => m.id === 'bodyweight-squat')?.perSide === false])
+  const yoga = buildWarmup({ kind: 'mind-body', mins: 6, avoid: ['half-sun-salutation', 'cat-cow'] })
+  checks.push(['a move the session already has isn’t repeated in its warm-up', !ids(yoga).includes('half-sun-salutation') && !ids(yoga).includes('cat-cow'), ids(yoga).join(',')])
+  const walk = buildWarmup({ kind: 'cardio', mins: 5, activity: 'cardio-walk' }), run = buildWarmup({ kind: 'cardio', mins: 6, activity: 'cardio-run' })
+  checks.push(['cardio: the activity at an easy pace, then leg swings and hip circles (a walk isn’t only more walking)', ids(walk).join() === 'cardio-walk,leg-swings,hip-circles' && ids(run)[0] === 'cardio-run' && ids(run).includes('leg-swings') && ids(run).includes('hip-circles'), ids(walk).join()])
+  // ship-critic 1: Tilo's plan workouts and Push/Pull/Legs get exactly 6, whatever the person's session length
+  {
+    const t = { sessionRange: '20-30', minutesPerSession: 30 } as never
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const off = keys.filter((k) => {
+      const b = warmupForKey(k, [], t)
+      const slots = isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)
+      const fromEst = estMins(slots, ON) - estMins(slots, { warmup: true, mins: 0 })
+      const row = isBuiltinKey(k) ? fromEst : routineEstMins(routineFor(k, [])!, [], t, true)! - estMins(slots, { warmup: true, mins: 0 })
+      return !(b?.mins === 6 && fromEst === 6 && row === 6 && SUMMARY.warmLine(PLAN_WARMUP_MINUTES).includes(`${b.mins}-minute`) && !isEngineKey(k, []))
+    })
+    checks.push(['Tilo plans and Push/Pull/Legs: block = estMins’ warm-up = the Summary line = 6, at a 5-minute session length', !off.length, off.join(', ')])
+    const gen = { id: 'b4d5f1e2-0000-4000-8000-000000000001', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const own = { id: 'b4d5f1e2-0000-4000-8000-000000000002', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', estMins: 10, blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat', rx: '3 × 10' }] }] } as never
+    const sl = [{ exId: 'goblet-squat', rx: '3 × 10' }]
+    checks.push(['only the engine’s own stored workouts follow the session length', isEngineKey((gen as { id: string }).id, [gen]) && !isEngineKey((own as { id: string }).id, [own]) && !isEngineKey('tali-full-body-a', [gen]) && warmupForKey((gen as { id: string }).id, [gen], t)?.mins === 5 && warmupForKey((own as { id: string }).id, [own], t)?.mins === 6])
+    // ship-critic 5: list rows work the minutes out from the slots, never the stale stored estMins
+    checks.push(['row estimates come from the slots and the warm-up, not the stored estMins', routineEstMins(own, [own], t, true) === estMins(sl, ON) && routineEstMins(gen, [gen], t, true) === estMins(sl, { warmup: true, mins: 5 }) && routineEstMins(own, [own], t, true) !== 10 && routineEstMins({ ...(own as object), blocks: [] } as never, [], t, true) === null])
+    // the warm-up waits behind the onboarding switch: off, rows read the stored estMins as before
+    checks.push(['switch off: row estimates are the stored estMins, as before the warm-up', routineEstMins(own, [own], t) === 10 && routineEstMins(gen, [gen], t, false) === 10 && routineEstMins({ ...(own as object), estMins: undefined } as never, [], t) === null])
+  }
+  // ship-critic 2: no move in both the block and the session, for every Tilo and Push/Pull/Legs workout
+  {
+    const keys: string[] = [...taliWorkouts().map((r) => r.id), 'Push', 'Pull', 'Legs', 'Cardio']
+    const both: string[] = []
+    for (const k of keys) for (const t of [undefined, { sessionRange: '60+', minutesPerSession: 60, equipment: ['band'] }] as never[]) {
+      const b = warmupForKey(k, [], t)!
+      const sess = new Set((isBuiltinKey(k) ? builtinSlots(k as never) : routineSlotsOf(routineFor(k, [])!)).map((x) => x.exId))
+      for (const m of b.moves) if (sess.has(m.id) && !(b.kind === 'cardio' && m === b.moves[0])) both.push(`${k}: ${m.id}`)
+    }
+    const bm = warmupForKey('tali-balance-mobility', [], undefined)!
+    checks.push(['no move is in both the warm-up and the session (Balance & Mobility’s march stays in the session)', !both.length && bm.moves[0].id !== 'march-on-the-spot', both.join(', ') + ' / ' + bm.moves[0].id])
+    const pulse = (avoid: string[], kind: 'legs' | 'mind-body' = 'legs', mins = 6) => buildWarmup({ kind, mins, avoid }).moves[0].id
+    checks.push(['the pulse raiser respects avoid: march → step jacks, and back', pulse(['march-on-the-spot']) === 'step-jacks' && pulse(['step-jacks'], 'legs', 8) === 'march-on-the-spot' && pulse(['half-sun-salutation', 'march-on-the-spot'], 'mind-body') === 'step-jacks' && pulse([]) === 'march-on-the-spot'])
+  }
+  // ship-critic 3: a resume picks the block up where it was left
+  {
+    const b = buildWarmup({ kind: 'push', mins: 6 })
+    const a0 = warmupStartAt(b, 0), a1 = warmupStartAt(b, b.moves[0].sec + 10), aEnd = warmupStartAt(b, 6 * 60)
+    checks.push(['resume: from 0 is the first move whole; part-way lands inside the right move with the time kept', a0.i === 0 && a0.left === b.moves[0].sec * 1000 && a0.spent === 0 && a1.i === 1 && a1.left === (b.moves[1].sec - 10) * 1000 && a1.spent === (b.moves[0].sec + 10) * 1000 && aEnd.i === b.moves.length - 1, JSON.stringify([a0, a1, aEnd])])
+  }
+  // ship-critic 4: the note promises a how-to, never a demo there isn't
+  checks.push(['the warm-up note says each move has a short how-to, not that it shows how', [buildWarmup({ kind: 'legs' }), walk].every((x) => warmupNote(x).includes('Each move has a short how-to.') && !/shows how/.test(warmupNote(x))) && Object.keys(WARMUP_CUES).every((id) => !!WARMUP_CUES[id])])
+  const k = (ids: string[]) => warmupKindOf(ids).kind
+  checks.push(['kind from the exercises: Legs, Push, Pull, full body, yoga, cardio', [k(builtinSlots('Legs').map((x) => x.exId)), k(builtinSlots('Push').map((x) => x.exId)), k(builtinSlots('Pull').map((x) => x.exId)), k(['goblet-squat', 'push-up', 'db-bent-over-row']), k(['half-sun-salutation', 'cat-cow']), k(['cardio-walk'])].join() === 'legs,push,pull,full,mind-body,cardio'])
+  const ppl = warmupForKey('Push', [], undefined)
+  checks.push(['Push/Pull/Legs get the 6-minute block', ppl?.mins === 6 && warmupForKey('Legs', [], undefined)?.kind === 'legs'])
+  // estMins: the block and the lighter sets are in every estimate
+  checks.push(['estMins: 6-minute warm-up, +1.5 with a weighted lift, given minutes win, nothing for no slots',
+    estMins([{ exId: 'push-up', rx: '3 × 10' }], ON) === 14 && estMins([{ exId: 'back-squat', rx: '3 × 10' }], ON) === 15 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: true, mins: 10 }) === 18 && estMins([], ON) === 1])
+  checks.push(['estMins, switch off: the slots alone, as before the warm-up (no block, no lighter sets, minutes ignored)',
+    estMins([{ exId: 'push-up', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'back-squat', rx: '3 × 10' }]) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { mins: 10 }) === 8 && estMins([{ exId: 'push-up', rx: '3 × 10' }], { warmup: false }) === 8 && estMins([]) === 1])
+  {
+    // builderNotes' long-workout note: off, the slots alone decide it (as before); on, the warm-up counts
+    const long = Array.from({ length: 10 }, () => ({ exId: 'push-up', rx: '3 × 10' }))
+    const offM = estMins(long), onM = estMins(long, ON)
+    const note = (n: string[]) => n.some((x) => x.startsWith('This one runs about'))
+    checks.push(['builderNotes: the long-workout note follows the switch', offM <= 75 && onM > 75 && !note(builderNotes(long)) && note(builderNotes(long, ON)), `${offM} ${onM}`])
+  }
+  // the engine: warm-up minutes first, main work in what's left, cardio and mind-body too
+  const base = { goal: 'build-muscle', experience: 'intermediate', daysPerWeek: 3, minutes: 60, place: ['gym'], readiness: 'clear', lately: { sleep: 'good', stress: 'low', room: 'plenty' }, ageBand: '18-54' } as never
+  const p8 = buildPlanW(base, undefined, 'w', { sessionRange: '45-60' }).plan, p10 = buildPlanW(base, undefined, 'w', { sessionRange: '60+' }).plan
+  const work = (p: typeof p8) => p.sessions.reduce((a, s) => a + estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 0 }), 0)
+  checks.push(['engine: every session fits its minutes with the warm-up in', [...p8.sessions, ...p10.sessions].every((s) => s.mins <= 60) && p10.sessions.every((s) => estMins(s.slots.map((x) => ({ exId: x.exId, rx: x.rx })), { warmup: true, mins: 10 }) <= 60)])
+  checks.push(['engine: a longer warm-up leaves no more main work (60+ vs 45–60)', work(p10) <= work(p8), `${work(p10)} vs ${work(p8)}`])
+  const fl = buildPlanW({ ...(base as object), goal: 'lose-fat', daysPerWeek: 4, minutes: 30, enjoy: ['cardio', 'strength'] } as never, undefined, 'w', { sessionRange: '20-30' }).plan
+  const c = fl.sessions.find((s) => s.kind === 'cardio')
+  checks.push(['engine: a cardio session keeps its warm-up (its minutes leave room for it)', !!c && c.mins <= 30 && (c.slots[0].reps?.hi ?? 99) <= 25, c ? `${c.mins} ${c.slots[0].rx}` : 'no cardio'])
+  // setup's promise: the minutes onboarding shows (warmupFor) are the minutes a generated session runs
+  const promise = SESSION_RANGES.every((r) => {
+    const t = { sessionRange: r, minutesPerSession: rangeEngineMinutesW(r) }
+    const gen = { id: 'g', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat' }] }] } as never
+    return warmupForKey('g', [gen], t as never)?.mins === warmupForW({ sessionRange: r, minutes: rangeEngineMinutesW(r) })
+  }) && warmupForKey('g', [{ id: 'g', name: 'G', modality: 'strength', effort: 'hard', source: 'recommended', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'goblet-squat' }] }] } as never], {})?.mins === warmupForW({})
+  checks.push(['the minutes setup promises are the minutes the session delivers, for every range and when skipped', promise])
+  // stored: "warm-up done" with its minutes, malformed dropped
+  const st = loadStateFrom({ days: { '2026-10-01': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'x', warmup: { mins: 9, of: 6 } }, { id: 'b', modality: 'strength', title: 'y', warmup: { mins: 'x', of: 6 } }] } } } as never)
+  const ss = st.days['2026-10-01'].sessions!
+  // a warm-up on its own is movement, not a workout done
+  {
+    const wu = { id: 'w', modality: 'strength', title: 'Push', routineId: 'builtin-Push', warmup: { mins: 6, of: 6 }, ex: [{ name: 'Bench press', sets: [] }] }
+    const real = { ...wu, id: 'r', ex: [{ name: 'Bench press', sets: [{ w: 40, reps: 10 }] }] }
+    const wset = { ...wu, id: 'x', ex: [{ name: 'Bench press', sets: [{ w: 20, reps: 10, warmup: true }] }] }
+    const dayW = (sessions: unknown[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions })
+    const sw = loadStateFrom({ days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([real]), '2026-09-30': dayW([wset]) } } as never)
+    checks.push(['warm-up only: warm-up minutes and no set; a working or warm-up set, or no warm-up at all, isn’t', warmupOnly(wu as never) && !warmupOnly(real as never) && !warmupOnly(wset as never) && !warmupOnly({ modality: 'strength' } as never) && !warmupOnly({ ...wu, cardio: { key: 'Walk' } } as never)])
+    checks.push(['warm-up only: kept on the day, but not a workout done, a day moved or a plan workout', sessionsOf(sw.days['2026-09-28'], '2026-09-28').length === 1 && workoutsOf(sw.days['2026-09-28'], '2026-09-28').length === 0 && daysMovedThisWeek(sw, '2026-10-01') === 2 && !dayStat(sw, '2026-09-28').done && dayStat(sw, '2026-09-29').done && workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30') === 2, `${daysMovedThisWeek(sw, '2026-10-01')} ${workoutsDone(sw, { startedAt: '2026-09-28' }, '2026-09-30')}`])
+    const mm = sessionMetMins(wu as never)
+    checks.push(['warm-up only: its own minutes count as movement (easy stretching MET), never the 45-minute default', mm.mins === 6 && mm.met === 2.3 && sessionBurn(wu as never, 70) === Math.round(2.3 * 70 * 0.1) && sessionMetMins({ ...wu, warmup: { mins: 3, of: 6 }, mins: 20 } as never).mins === 3 && !isTrainingSess(wu as never), JSON.stringify(mm)])
+    // the planned Push on Monday, only warmed up for, is still offered to pick up on Tuesday
+    const sc = loadStateFrom({ schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, days: { '2026-09-28': dayW([wu]), '2026-09-29': dayW([]) } } as never)
+    const cu = catchUp(sc, '2026-09-29')
+    checks.push(['warm-up only: the planned workout is still there to pick up, and it isn’t a hard session for the load note', cu?.type === 'Push' && cu.d === '2026-09-28' && loadSignals(sw, '2026-09-30').hard7 === 2, JSON.stringify(cu) + ' ' + loadSignals(sw, '2026-09-30').hard7])
+  }
+  checks.push(['a stored warm-up is kept (capped at its block) and a malformed one dropped', ss[0].warmup?.mins === 6 && ss[0].warmup?.of === 6 && ss[1].warmup === undefined, JSON.stringify(ss.map((x) => x.warmup))])
+  for (const [t, ok, d] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'warm-up: ' + t, ok ? '' : d ?? '') }
+}
+// the local data handling (malformed rows dropped, ownership evidence, backup merge, unsynced count)
+{
+  const push = builtinSlots('Push'), legs = builtinSlots('Legs')
+  // Push: 3 + 3 + 3 + 2.5 + 2.5 = 14 sets × 2.5 min = 35 (plan P4: 13–15 sets, about 33–38 min)
+  // Legs: 3 + 3 + 2.5 + 3 = 11.5 sets × 2.5 = 28.75, plus plank 3 × (30 + 20) s = 2.5 → 31
+  // (with the warm-up block on, + 6 and 1.5 of lighter sets: 42.5 → 43 and 39)
+  const S = (...ids: string[]) => ids.map((exId) => ({ exId }))
+  const got = [
+    estMins(push), estMins(legs), estMins(push, { warmup: true }), estMins(legs, { warmup: true }),
+    deriveEffort(push), deriveEffort(S('downward-dog', 'childs-pose')), deriveEffort(S('cardio-walk')), deriveEffort(S('cardio-intervals')), deriveEffort(S('push-up')),
+    headlineModality([...push, ...S('supine-hamstring-stretch')]), headlineModality(S('downward-dog', 'cat-cow', 'push-up')),
+    builderNotes(S('lateral-raise', 'barbell-bench-press')).length, builderNotes(S('barbell-bench-press', 'lateral-raise')).length,
+    builderNotes(S('plank', 'plank')).join('|'), builderNotes(S('downward-dog', 'back-squat')).length,
+  ].join(' ')
+  const tpl = routineTemplate({ id: 'r', name: 'Mine', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'leg-press', rx: '4 × 8' }, { exId: 'gone-from-library' }, { exId: 'plank' }] }] })
+  const tplOk = tpl.title === 'Mine' && tpl.ex.map((e) => e.id + ':' + e.t).join(',') === 'leg-press:4 × 8,plank:' + EXERCISE_BY_ID.plank.defaultRx
+  const want = '35 31 43 39 hard light light hard hard strength calisthenics 1 0 Plank is in here twice. Keep it if you meant to. 1'  // by minutes: push-ups 7.5 outweigh two short poses
+  const ok = got === want && tplOk; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: estimates, effort, notes', JSON.stringify(got), tplOk, ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const R = (id: string, extra = {}) => ({ id, name: 'W ' + id, modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'plank' }] }], ...extra })
+  const a = '11111111-1111-4111-8111-111111111111', b = '22222222-2222-4222-8222-222222222222'
+  const loaded = stateFromBackup({ days: {}, routines: [R(a), null, { name: 'no blocks' }, 'x'] } as never)
+  const kept = loaded.routines.map((r) => r.id).join(',')
+  const device = stateFromBackup({ days: {}, routines: [R(b)] } as never)
+  const merged = stateFromBackup({ days: {}, routines: [R(a)] } as never, device).routines.map((r) => r.id).sort().join(',')
+  const synced = { days: {}, customFoods: [], recipes: [], routines: [{ ...R(a), _dirty: false }], _meta: { days: {}, settings: { u: '', dirty: false }, foodDeletes: [], recipeDeletes: [], lastPull: 'x' } } as never as PersistedState
+  const rows = (ids: string[]) => ({ days: [], foods: [], recipes: [], routines: ids.map((id) => ({ id })) })
+  const own = [sameAccount(synced, rows([a])), sameAccount(synced, rows([b]))].join(',')
+  const dirty = unsyncedCount({ ...synced, routines: [{ ...R(a), _dirty: true }] } as never)
+  const summary = backupSummary({ days: {}, routines: [R(a), R(b, { archived: true })] } as never).workouts
+  const got = [kept, merged, own, dirty, summary].join(' ')
+  const want = `${a} ${a},${b} true,false 1 1`
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: local data, backup, ownership', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+// own workouts, typed prescriptions and the load note (mental-performance must-fixes)
+{
+  const typed = ['3x10', '3 X 10', '3*10', '3-4 × 8', '20-40 sec', ' 3 ×10 ', '', 'max effort'].map((x) => String(normaliseRx(x))).join('|')
+  const est = estMins([{ exId: 'back-squat', rx: normaliseRx('3x10') }])
+  const short = shorterPrescription(normaliseRx('3x10')!)
+  const rounded = [aboutMins(7.4), aboutMins(37), aboutMins(33)].join(',')
+  const T = '2026-09-24'
+  const pilatesId = '33333333-3333-4333-8333-333333333333'
+  const mixed = [{ exId: 'hundred' }, { exId: 'roll-up' }, { exId: 'swimming' }, { exId: 'side-lying-leg-series' }, { exId: 'goblet-squat', rx: '1 × 8' }]
+  const S = (n: number) => Array.from({ length: n }, (_, i) => ({ id: 'p' + i, modality: 'pilates', title: 'Mat mix', routineId: pilatesId }))
+  const st = (effort: string) => ({ profile: {}, routines: [{ id: pilatesId, name: 'Mat mix', modality: 'pilates', effort, source: 'custom', blocks: [] }],
+    days: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [shiftDay(T, -i), { foods: [], supps: {}, weight: null, workout: null, sessions: S(1) }])) }) as any
+  // an own workout's estimate stands in for unlogged minutes (plan §2.9); logged minutes win
+  const mm = [sessionMetMins({ modality: 'yoga', estMins: 15 } as any).mins, sessionMetMins({ modality: 'yoga', estMins: 15, mins: 40 } as any).mins, sessionMetMins({ modality: 'yoga' } as any).mins].join(',')
+  const got = [typed, est, short, rounded, headlineModality(mixed), deriveEffort(mixed), loadSignals(st('hard'), T).hard7, loadSignals(st('light'), T).hard7, mm].join(' ')
+  const want = '3 × 10|3 × 10|3 × 10|3–4 × 8|20–40 sec|3 × 10|undefined|max effort 8 2 × 10 7,35,35 pilates hard 7 0 15,40,30'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: typed sets and reps, rounding, hard ones count for the load note', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+// P4 deploy order (security-data): before the routines table exists, sync still pulls the log and
+// keeps local workouts; the ownership check reads no workouts
+async function routinesMissing(): Promise<void> {
+  const W = '44444444-4444-4444-8444-444444444444'
+  const s = { target: {}, schedule: {}, profile: {}, days: {}, customFoods: [], recipes: [], routines: [{ id: W, name: 'Mine', modality: 'yoga', effort: 'light', source: 'custom', blocks: [], _dirty: true }] } as never as PersistedState
+  const m = ensureMeta(s, false)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (async (url: string, o: RequestInit = {}) => {
+    const t = String(url).split('/rest/v1/')[1].split('?')[0].replace(/^\//, '')
+    if (t === 'routines' || t === 'training_plans') return new Response('{"message":"relation does not exist"}', { status: 404 })
+    if (o.method) return new Response(null, { status: 204 })
+    return new Response(JSON.stringify(t === 'day_logs' ? [{ log_date: '2026-09-20', foods: [], supps: {}, weight: 70, workout: null, updated_at: 'z' }] : []), { status: 200 })
+  }) as typeof fetch
+  let failed: string[] = [], pulled = false, rows: any = null
+  try {
+    failed = await pushDirty(s, m)
+    await pullAll(s, m); pulled = true
+    rows = await accountRows(LOCAL_USER, 't')
+  } catch (e) { console.error(e) } finally { globalThis.fetch = realFetch }
+  const ok = pulled && s.days['2026-09-20']?.weight === 70 && s.routines.length === 1 && s.routines[0]._dirty === true && failed.some((f) => f.startsWith('workouts')) && Array.isArray(rows?.routines) && rows.routines.length === 0 && Array.isArray(rows?.plans) && rows.plans.length === 0
+  if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'own workouts: a missing routines table never stops the log syncing', pulled, JSON.stringify(failed), s.routines.length)
+}
+
+
+// ---------- guided session (Train redesign, stage 4): targets, last time, rest, week ----------
+{
+  const EX = (id: string) => EXERCISE_BY_ID[id]
+  const day = (ex: any[]) => ({ foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 's-' + Math.random(), modality: 'strength', title: 'Legs & Core', routineId: 'builtin-Legs', ex }] }) as any
+  const sq = (sets: any[], rx?: string) => ({ name: 'Barbell squat', exId: 'back-squat', log: 'weight-reps', ...(rx ? { rx } : {}), sets })
+  const days: any = {
+    '2026-09-10': day([sq([{ w: '35', reps: '12' }, { w: '35', reps: '12' }], '3 × 10–12')]),
+    '2026-09-14': day([sq([{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '10' }, { w: '40', reps: '10', feel: 'struggle' }, { w: '40', reps: '9' }], '3 × 10–12')]),
+    '2026-09-16': day([sq([{ w: '60', reps: '5' }], '5 × 5')]),
+  }
+  const last = lastTime(days, '2026-09-18', 'back-squat', 'Barbell squat', '3 × 10–12')
+  const t0 = targetFor('weight-reps', '3 × 10–12', last, 0)
+  const t1 = targetFor('weight-reps', '3 × 10–12', last, 1)
+  const t2 = targetFor('weight-reps', '3 × 10–12', last, 2)
+  const top = targetFor('weight-reps', '3 × 10–12', { name: 'x', sets: [{ w: '40', reps: '12' }] }, 0)
+  const first = targetFor('weight-reps', '3 × 10–12', null, 0)
+  const firstNext = targetFor('weight-reps', '3 × 10–12', null, 1, [{ w: '30', reps: '12' }])
+  const changed = targetFor('weight-reps', '3 × 10–12', last, 1, [{ w: '42.5', reps: '10' }])
+  const checks: [string, boolean][] = [
+    ['parseRx: sets and rep range', JSON.stringify(parseRx('2–3 × 12')) === JSON.stringify({ sets: { lo: 2, hi: 3 }, reps: { lo: 12, hi: 12 }, unit: 'reps' })],
+    ['parseRx: timed holds', parseRx('3 × 20–40 sec').unit === 'sec' && parseRx('3 × 20–40 sec').reps!.hi === 40],
+    ['parseRx: minutes with no sets', parseRx('20–30 min').sets === null && parseRx('20–30 min').unit === 'min'],
+    ['sameRange ignores set count (shorter day)', sameRange('2 × 10–12', '3 × 10–12') && !sameRange('5 × 5', '3 × 10–12')],
+    ['plannedSets: top of the range, shorter ~60%', plannedSets('2–3 × 12') === 3 && plannedSets('3 × 10–12', true) === 2],
+    ['setCount: Legs & Core is 14–15 sets', setCount(WORKOUTS.Legs.ex) === '14–15 sets'],
+    ['last time: skips a different rep range (5 × 5) and drops warm-ups', !!last && last.sets.length === 3 && last.sets[0].w === '40'],
+    ['last time: nothing in range → null', lastTime(days, '2026-09-12', 'back-squat', 'Barbell squat', '5 × 5') === null],
+    ['last time: logs from before rx count as the same range', !!lastTime({ '2026-09-01': day([sq([{ w: '30', reps: '10' }])]) }, '2026-09-18', 'back-squat', 'Barbell squat', '3 × 10–12')],
+    ['target: last reps + 1 at last weight', t0?.w === '40' && t0?.reps === '11'],
+    ['target: no +1 after "a real struggle"', t1?.reps === '10'],
+    ['target: 9 last time → 10', t2?.reps === '10'],
+    ['target: capped at the top of the range', top?.reps === '12'],
+    ['target: nothing logged before → null (opens Adjust)', first === null],
+    ['target: first session, set 2 repeats set 1', firstNext?.w === '30' && firstNext?.reps === '12'],
+    ['target: a weight changed mid-session carries on, reps stay on target', changed?.w === '42.5' && changed?.reps === '10'],
+    ['target: never raises the weight by itself', [t0, t1, t2, top].every((t) => t?.w === '40')],
+    ['target: holds aim for the bottom of the range with nothing logged', targetFor('hold', '3 × 20–40 sec', null, 0)?.sec === '20'],
+    ['rest: compound 2 min, isolation 90 s, core and holds 60 s', restFor(EX('back-squat')) === 120 && restFor(EX('romanian-deadlift')) === 120 && restFor(EX('leg-extension')) === 90 && restFor(EX('plank')) === 60 && restFor(EX('cable-crunch')) === 60],
+    ['rest: a routine restSec overrides the default', restFor(EX('back-squat'), { restSec: 75 }) === 75],
+    ['rest: unknown exercise 90 s', restFor(undefined) === 90],
+    ['fmtClock', fmtClock(72) === '1:12' && fmtClock(-3) === '0:00' && fmtClock(120) === '2:00'],
+    ['setsLine: same weight compressed, warm-ups left out', setsLine([{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '11' }, { w: '40', reps: '9' }], 'weight-reps') === '40 kg · 11, 9'],
+    ['setsLine: nothing → Not today', setsLine([], 'weight-reps') === 'Not today'],
+    ['later: moves one to the end, today only', JSON.stringify(later([0, 1, 2, 3], 1)) === '[0,2,3,1]' && JSON.stringify(later([0, 1], 1)) === '[0,1]'],
+    ['warm-up slot: the first kg × reps exercise', warmupSlot(['hold', 'weight-reps', 'weight-reps']) === 1],
+    ['builtin ids: stored string unchanged, type read back', builtinId('Legs') === 'builtin-Legs' && builtinType({ routineId: 'builtin-Cardio' }) === 'Cardio' && builtinType({}) === ''],
+    ['builtin ids: lift vs cardio vs custom', isBuiltinLift({ routineId: 'builtin-Push' }) && !isBuiltinLift({ routineId: 'builtin-Cardio' }) && !isBuiltin({ routineId: 'r-123' }) && isBuiltin({ routineId: 'builtin-Cardio' })],
+    ['lastLogged ignores warm-up only entries', lastLogged({ '2026-09-01': day([sq([{ w: '20', reps: '5', warmup: true }])]) }, '2026-09-18', 'back-squat', 'Barbell squat') === null],
+    ['week: the default split never warns', weekWarnings({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).length === 0],
+    ['week: Push then Pull (shared rear delts only) does not warn', weekWarnings({ 0: 'Rest', 1: 'Push', 2: 'Pull', 3: 'Legs', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).length === 0],
+    ['week: the same workout back to back warns', weekWarnings({ 0: 'Rest', 1: 'Push', 2: 'Push', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).some((w) => w.kind === 'back-to-back' && w.days.join() === '1,2')],
+    ['week: Sunday wraps to Monday', weekWarnings({ 0: 'Legs', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' } as any).some((w) => w.days.join() === '0,1')],
+    ['week: no rest day warns', weekWarnings({ 0: 'Cardio', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any).some((w) => w.kind === 'no-rest')],
+    ['week: swapDays', JSON.stringify(swapDays({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any, 1, 3)[1]) === '"Push"'],
+    ['tempo: countOf is the phase count', (() => { const s = tempoAt(DEMOS.barbellSquat, 5); return s.kind === 'lower' && s.countOf === 8 && s.count === 3 })()],
+    ['find your weight: 1 kg steps to 10 kg, then 2.5 kg; never below 0; nothing picked is 0', findWeightStep(null, 'heavier') === 1 && findWeightStep(9, 'heavier') === 10 && findWeightStep(10, 'heavier') === 12.5 && findWeightStep(12.5, 'lighter') === 10 && findWeightStep(10, 'lighter') === 9 && findWeightStep(0.5, 'lighter') === 0 && findWeightStep(null, 'lighter') === 0],
+    ['find your weight: aim for the top reps (10 without a range) with the reps to spare', JSON.stringify(findWeightAim({ reps: { lo: 8, hi: 12 }, rir: { lo: 2, hi: 3 } })) === '{"reps":12,"rirLo":2,"rirHi":3}' && findWeightAim({ reps: null, rir: { lo: 2, hi: 3 } }).reps === 10],
+    ['persistence: guided fields kept, malformed ones dropped', (() => {
+      const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'Legs', note: 5, ex: [{ name: 'x', rx: 3, sets: [{ w: '1', reps: '2', feel: 'meh', warmup: 'yes' }, { w: '1', reps: '2', feel: 'struggle', warmup: true }] }] }] } } } as any)
+      const x: any = st.days['2026-09-20'].sessions![0]
+      return x.note === undefined && x.ex[0].rx === undefined && x.ex[0].sets[0].feel === undefined && x.ex[0].sets[0].warmup === undefined && x.ex[0].sets[1].feel === 'struggle' && x.ex[0].sets[1].warmup === true
+    })()],
+    ['persistence: old logs without the new fields load unchanged', (() => {
+      const old = { foods: [], supps: {}, weight: null, workout: { type: 'Legs', ex: [{ name: 'Barbell squat', sets: [{ w: '40', reps: '10' }] }] } }
+      const st = loadStateFrom({ days: { '2026-09-01': structuredClone(old) } } as any)
+      return JSON.stringify(st.days['2026-09-01']) === JSON.stringify(old) && sessionsOf(st.days['2026-09-01'], '2026-09-01')[0].ex![0].sets.length === 1
+    })()],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'guided:', n) }
+}
+
+
+// ---------- review fixes (ship-critic, fitness-workouts) ----------
+{
+  const L3: any = { name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }, { w: '40', reps: '10' }, { w: '40', reps: '10' }] }
+  const raised = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '45', reps: '9' }, { w: '45', reps: '8' }])
+  const raisedEarly = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '45', reps: '9' }, { w: '40', reps: '11' }])
+  const lowered = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '35', reps: '11' }, { w: '35', reps: '11' }])
+  const same = targetFor('weight-reps', '3 × 10–12', L3, 2, [{ w: '40', reps: '11' }, { w: '40', reps: '11' }])
+  const stopped = targetFor('weight-reps', '3 × 10–12', { name: 'x', sets: [{ w: '40', reps: '7', feel: 'stopped' }] } as any, 0)
+  const legs = slotsOf(WORKOUTS.Legs.ex, {}, false, (id) => EXERCISE_BY_ID[id ?? ''])
+  const legsShort = slotsOf(WORKOUTS.Legs.ex, {}, true, (id) => EXERCISE_BY_ID[id ?? ''])
+  const pull = slotsOf(WORKOUTS.Pull.ex, {}, false, (id) => EXERCISE_BY_ID[id ?? ''])
+  const facePull = pull.find((x) => x.planned.id === 'face-pull')!
+  const curlSlot = pull.find((x) => x.planned.id === 'biceps-curl')!
+  // an old log: the curl saved under a name the workout no longer uses, and no ids
+  const oldPull: any[] = WORKOUTS.Pull.ex.map((e) => ({ name: e.n, sets: [{ w: '10', reps: '10' }] }))
+  oldPull[curlSlot.i] = { name: 'Dumbbell biceps curl', sets: [{ w: '8', reps: '12' }] }
+  const split = splitLogged(oldPull, pull)
+  // a move swapped out after sets were logged: kept as an extra, and found again when swapped back
+  const built = buildLogged(legs, { 0: [{ w: '', reps: '30', sec: '30' }] }, [{ name: 'Old move', sets: [{ w: '5', reps: '5' }] }] as any)
+  const checks: [string, boolean][] = [
+    ['after a raise, later sets keep the new weight and aim for what was just managed', raised?.w === '45' && raised?.reps === '8'],
+    ['a weight change carries past one set (raised on set 1, back on set 2 still counts)', raisedEarly?.w === '40' && raisedEarly?.reps === '11'],
+    ['after lowering, keep the target reps at the lower weight', lowered?.w === '35' && lowered?.reps === '11'],
+    ['no change from last time: the usual target', same?.w === '40' && same?.reps === '11'],
+    ['no +1 after "stopped early"', stopped?.reps === '7'],
+    ['readyToStepUp: every set at the top', readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '12' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: not with a set below the top', !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12' }, { w: '40', reps: '11' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: not after a real struggle or stopping early', !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12', feel: 'struggle' }] } as any, '3 × 10–12') && !readyToStepUp({ name: 'x', sets: [{ w: '40', reps: '12', feel: 'stopped' }] } as any, '3 × 10–12')],
+    ['readyToStepUp: warm-ups ignored, nothing logged is false', readyToStepUp({ name: 'x', sets: [{ w: '20', reps: '5', warmup: true }, { w: '40', reps: '12' }] } as any, '3 × 10–12') && !readyToStepUp(null, '3 × 10–12')],
+    ['setsLo: "2–3 × 12" plans 2 with a third optional', legs.find((x) => x.planned.id === 'leg-extension')!.setsLo === 2 && legs.find((x) => x.planned.id === 'leg-extension')!.sets === 3],
+    ['setsLo equals sets on a shorter day', legsShort.every((x) => x.setsLo === x.sets)],
+    ['restHint wording', restHint(120) === 'Rest about 2 minutes' && restHint(150) === 'Rest about 2:30' && restHint(60) === 'About a minute is plenty here' && restHint(90) === 'Rest about 90 seconds' && restHint(45) === 'Rest about 45 seconds'],
+    ['face pull rests 60 s (routine restSec)', restFor(facePull.x, facePull.shown) === 60],
+    ['old logs load by position when names changed ("Dumbbell biceps curl")', split.bySlot[curlSlot.i]?.[0]?.w === '8' && split.extras.length === 0],
+    ['a swapped-out move is kept as an extra, never dropped', (() => { const sw = slotsOf(WORKOUTS.Legs.ex.slice(0, 1), { 0: 'goblet-squat' }, false, (id) => EXERCISE_BY_ID[id ?? '']); const r = splitLogged([{ name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }] as any, sw); return r.bySlot[0].length === 0 && r.extras.length === 1 && buildLogged(sw, r.bySlot, r.extras).some((e) => e.exId === 'back-squat' && e.sets.length === 1) })()],
+    ['swapped back to the planned move: its sets come back from the extras', (() => { const r = splitLogged([{ name: 'Goblet squat', exId: 'goblet-squat', sets: [{ w: '16', reps: '10' }] }, { name: 'Barbell squat', exId: 'back-squat', sets: [{ w: '40', reps: '10' }] }] as any, legs.slice(0, 1)); return r.bySlot[0][0].w === '40' && r.extras.length === 1 && r.extras[0].exId === 'goblet-squat' })()],
+    ['buildLogged keeps extras after the slots, and hold seconds in reps', built.length === legs.length + 1 && built[built.length - 1].name === 'Old move' && built[0].rx === '3 × 10–12'],
+    ['stintMins: today adds the stint to the earlier minutes', stintMins(20, 15 * 60000, true) === 35 && stintMins(undefined, 30 * 60000, true) === 30],
+    ['stintMins: never from a stint on another day', stintMins(undefined, 30 * 60000, false) === undefined && stintMins(42, 5 * 60000, false) === 42],
+    ['strength with no minutes still uses the default for estimates', sessionMetMins({ id: 'a', modality: 'strength', title: 'x' } as any).mins === 45],
+    ['plannedOn: unknown schedule values read as Rest', plannedOn({ 0: 'Yoga' as any, 1: 'Legs' } as any, 0) === 'Rest' && plannedOn({ 1: 'Legs' } as any, 1) === 'Legs' && plannedOn({} as any, 3) === 'Rest'],
+    ['persistence: open kept only when true', (() => {
+      const st = loadStateFrom({ days: { '2026-09-20': { foods: [], supps: {}, weight: null, workout: null, sessions: [{ id: 'a', modality: 'strength', title: 'x', open: 'yes' }, { id: 'b', modality: 'strength', title: 'y', open: true }] } } } as any)
+      const l: any[] = st.days['2026-09-20'].sessions!
+      return l[0].open === undefined && l[1].open === true
+    })()],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'review:', n) }
+}
+
+
+// ---------- swap X → Y → X keeps X's sets in the slot, once ----------
+{
+  const byId = (id: string | undefined) => EXERCISE_BY_ID[id ?? '']
+  const [x0] = slotsOf(WORKOUTS.Legs.ex.slice(0, 1), {}, false, byId)
+  const xSets: any[] = [{ w: '40', reps: '10' }, { w: '40', reps: '9' }]
+  const toY = swapInto(x0, 'goblet-squat', xSets, [], false, byId)
+  const ySets: any[] = [{ w: '16', reps: '12' }]
+  const toX = swapInto(toY.slot, 'back-squat', ySets, toY.extras, false, byId)
+  const saved = buildLogged([toX.slot], { [x0.i]: toX.sets }, toX.extras)
+  const reload = splitLogged(saved, [toX.slot])
+  const xs = saved.filter((e) => e.exId === 'back-squat')
+  const noSets = swapInto(x0, 'goblet-squat', [], [], false, byId)
+  const checks: [string, boolean][] = [
+    ['swap out: X kept as an extra, Y starts fresh', toY.slot.x?.id === 'goblet-squat' && toY.sets.length === 0 && toY.extras.length === 1 && toY.extras[0].exId === 'back-squat'],
+    ['swap back: X takes its sets back, Y kept as an extra', toX.slot.x?.id === 'back-squat' && !toX.slot.swapped && toX.sets.length === 2 && toX.sets[1].reps === '9' && toX.extras.length === 1 && toX.extras[0].exId === 'goblet-squat'],
+    ['saved: exactly one X entry, with its sets, in the slot', xs.length === 1 && saved[0].exId === 'back-squat' && saved[0].sets.length === 2],
+    ['reloaded: X sets in the slot, Y still kept', reload.bySlot[x0.i].length === 2 && reload.extras.length === 1 && reload.extras[0].exId === 'goblet-squat'],
+    ['swap with nothing logged adds no extra', noSets.extras.length === 0 && noSets.sets.length === 0],
+    ['saving with an empty note clears it; no note given keeps it', keptOnSave({ note: '' }).join() === 'effort,mins' && keptOnSave({ effort: null, note: '' }).join() === 'mins' && keptOnSave({ note: 'x' }).join() === 'effort,note,mins' && keptOnSave(undefined).join() === 'effort,note,mins'],
+    ['splitLogged reports the matched entry\'s own log shape', splitLogged([{ name: 'Barbell squat', exId: 'back-squat', log: 'reps', sets: [{ w: '', reps: '10' }] }] as any, [x0]).logs[x0.i] === 'reps'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'swap:', n) }
+}
+
+
+// ---------- barcode scanning: check digits, OFF mapping, label checks, ingredient vs meal ----------
+async function barcodeScan(): Promise<void> {
+  const checks: [string, boolean][] = []
+  const probs = (v: LabelValues, ml = false) => checkLabel(v, { ml }).map((p) => p.kind + ':' + p.field).join(',')
+  const good: LabelValues = { k: 165, kj: 690, p: 31, c: 0, f: 3.6, sat: 1, sugars: 0, salt: 0.2 }
+  checks.push(
+    ['check digit: EAN-13, EAN-8, UPC-A valid', checkDigitOk('4006381333931') && checkDigitOk('96385074') && checkDigitOk('036000291452')],
+    ['check digit: one digit off fails', !checkDigitOk('4006381333932') && !checkDigitOk('96385075') && !checkDigitOk('123')],
+    ['UPC-E expands to its UPC-A', expandUpcE('04252614') === '042100005264'],
+    ['live read: one frame never counts; the same code twice running does', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      const one = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return one === null && st.confirmed === '5000118203664'
+    })()],
+    ['live read: a partial misread in between starts the count again', (() => {
+      let st = confirmLiveRead(null, '5000118203664')
+      st = confirmLiveRead(st.state, '96385074')
+      const mid = st.confirmed
+      st = confirmLiveRead(st.state, '5000118203664')
+      return mid === null && st.confirmed === null
+    })()],
+    ['live read: an empty frame keeps the count', confirmLiveRead(confirmLiveRead(null, '5000118203664').state, null).state?.n === 1],
+    ['normalize: UPC-A gets the leading 0, keeps the 12-digit spelling as alt', JSON.stringify(normalizeBarcode('036000291452', 'upc_a')) === JSON.stringify({ code: '0036000291452', alt: '036000291452' })],
+    ['normalize: EAN-13 with spaces', normalizeBarcode('4006 3813 3393 1')?.code === '4006381333931'],
+    ['normalize: typed EAN-8 stays 8 digits', normalizeBarcode('96385074')?.code === '96385074'],
+    ['normalize: scanned UPC-E becomes EAN-13', normalizeBarcode('04252614', 'upc_e')?.code === '0042100005264'],
+    ['normalize: a bad check digit is refused', normalizeBarcode('4006381333932') === null && normalizeBarcode('12345') === null && normalizeBarcode('abc') === null],
+  )
+
+  // OFF mapping
+  const beans: OffProduct = {
+    product_name: 'Baked Beanz 415g', brands: 'Heinz, Kraft Heinz', quantity: '415 g', product_quantity: 415, serving_quantity: '207.5',
+    nutriments: { 'energy-kcal_100g': 78, 'energy-kj_100g': 330, proteins_100g: 4.7, carbohydrates_100g: 12.5, fat_100g: 0.2, sugars_100g: 4.7, 'saturated-fat_100g': 0, fiber_100g: 3.8, salt_100g: 0.6 },
+    categories_tags: ['en:plant-based-foods-and-beverages', 'en:legumes', 'en:beans', 'en:baked-beans'],
+  }
+  const d = draftFromOff('5000157024671', beans, ['Heinz Baked Beanz'])
+  checks.push(
+    ['OFF: name is Brand + product, size removed, deduped against existing names', d.name === 'Heinz Baked Beanz (2)'],
+    ['OFF: per-100 g values mapped', d.values.k === 78 && d.values.p === 4.7 && d.values.c === 12.5 && d.values.f === 0.2 && d.values.fibre === 3.8 && d.values.salt === 0.6 && !d.kcalFromKj],
+    ['OFF: beans are an ingredient (veg), grams, serving from serving_quantity', d.kind === 'cook' && d.cat === 'veg' && !d.ml && d.serving.cook === 208 && d.serving.eat === 208],
+    ['OFF: brand already in the name is not repeated', productName({ product_name: 'Heinz Tomato Ketchup', brands: 'Heinz' }) === 'Heinz Tomato Ketchup'],
+    ['OFF: multipack size removed', productName({ product_name: 'Crisps 6 x 25g', brands: 'Walkers' }) === 'Walkers Crisps'],
+  )
+  const kjOnly = draftFromOff('4006381333931', { product_name: 'Oat drink', quantity: '1 l', nutriments: { 'energy-kj_100g': 197, proteins_100g: 1, carbohydrates_100g: 6.6, fat_100g: 1.5 } }, [])
+  checks.push(
+    ['OFF: kJ only → kcal = kJ / 4.184', kjOnly.values.k === 47.1 && kjOnly.kcalFromKj && kjOnly.values.kj === 197],
+    ['OFF: missing fields stay missing, not zero', !('sugars' in kjOnly.values) && !('salt' in kjOnly.values)],
+    ['ml: quantity in litres / cl / ml, or nutrition_data_per 100ml', kjOnly.ml && isPer100ml({ quantity: '33cl' }) && isPer100ml({ quantity: '500 ml' }) && isPer100ml({ nutrition_data_per: '100ml' }) && !isPer100ml({ quantity: '400 g' }) && !isPer100ml({ quantity: '1 kg' })],
+  )
+
+  // ready meal vs ingredient
+  const lasagne = draftFromOff('4006381333931', {
+    product_name: 'Beef Lasagne', brands: 'Tesco', product_quantity: '400',
+    nutriments: { 'energy-kcal_100g': 150, proteins_100g: 8, carbohydrates_100g: 14, fat_100g: 6.5 },
+    categories_tags: ['en:meals', 'en:pasta-dishes', 'en:lasagnas'],
+  }, [])
+  checks.push(
+    ['classify: ready meals, sandwiches, pizzas, soups, meal kits, prepared salads are eat-as-is meals', ['en:meals', 'en:sandwiches', 'en:pizzas', 'en:soups', 'en:meal-kits', 'en:prepared-salads'].map((t) => classifyProduct([t]) === 'eat' && isMealProduct([t])).every(Boolean)],
+    ['classify: pasta, milk, sauces, soup mixes, pizza sauce are for cooking', [['en:pastas'], ['en:milks'], ['en:sauces', 'en:pizza-sauces'], ['en:soup-mixes'], []].map((t) => classifyProduct(t)).every((k) => k === 'cook')],
+    ['classify: lasagne is a meal, default serving = the pack (400 g), 100 g as an ingredient', lasagne.kind === 'eat' && lasagne.meal && lasagne.serving.eat === 400 && lasagne.serving.cook === 100],
+    ['category guess: milk dairy, oil fats, salmon fish, crisps snacks, cola drinks, unknown none', [['en:dairies', 'en:milks'], ['en:vegetable-oils'], ['en:fishes'], ['en:crisps'], ['en:beverages', 'en:sodas'], ['en:something']].map((t) => guessCategory(t) ?? '-').join() === 'dairy,fats,fish,snacks,drinks,-'],
+  )
+  const asMeal = foodFromConfirmed({ barcode: '4006381333931', name: 'Tesco Beef Lasagne', values: lasagne.values, ml: false, kind: 'eat', meal: true, cat: 'grains', g: 400 })
+  const asIngr = foodFromConfirmed({ barcode: '5000157024671', name: ' Heinz Baked Beanz ', values: d.values, ml: false, kind: 'cook', cat: d.cat, g: 208 })
+  checks.push(
+    ['saved ready meal: cat ready, no cook flag, pack serving, off: source and barcode', asMeal.cat === 'ready' && !asMeal.cook && asMeal.g === 400 && asMeal.src === 'off:4006381333931' && asMeal.barcode === '4006381333931'],
+    ['saved ingredient: guessed cat, per-100 values exactly as confirmed, name trimmed', asIngr.cat === 'veg' && asIngr.k === 78 && asIngr.p === 4.7 && asIngr.c === 12.5 && asIngr.f === 0.2 && asIngr.n === 'Heinz Baked Beanz'],
+  )
+
+  // accuracy checks, each naming its field
+  checks.push(
+    ['checks: a consistent label has no problems', probs(good) === ''],
+    ['checks: kJ typed as kcal flags kcal and kJ', probs({ ...good, k: 690 }).includes('odd:k') && probs({ ...good, k: 690 }).includes('odd:kj')],
+    ['checks: kJ vs kcal within 5 kcal / 5% is fine', probs({ ...good, k: 168 }) === ''],
+    ['checks: misread kJ digits flag both', probs({ ...good, kj: 960 }) === 'odd:k,odd:kj'],
+    ['checks: energy the macros can’t explain flags kcal (no kJ given)', probs({ k: 400, p: 31, c: 0, f: 3.6 }) === 'odd:k'],
+    ['checks: fibre (2 kcal/g) counts towards energy', probs({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }) === '' && probs({ k: 150, p: 3, c: 20, f: 2 }) === 'odd:k'],
+    ['checks: alcohol is % vol: a 40% spirit at 222 kcal/100 ml is fine (40 × 0.789 g × 7)', probs({ k: 222, p: 0, c: 0, f: 0, alcohol: 40 }, true) === ''],
+    ['checks: energy well above what 40% alcohol explains is still flagged; a 20% liqueur adds up', probs({ k: 280 + 60, p: 0, c: 15, f: 0, alcohol: 40 }, true) === 'odd:k' && probs({ k: 210, p: 0, c: 25, f: 0, alcohol: 20 }, true) === ''],
+    ['checks: a US label counts fibre inside carbs, so no fibre allowance', checkLabel({ k: 150, p: 3, c: 20, f: 2, fibre: 12 }, { usLabel: true }).some((p) => p.field === 'k')],
+    ['checks: sugars more than carbs flags sugars; within 0.2 g is fine', probs({ k: 40, p: 0, c: 10, f: 0, sugars: 12 }) === 'odd:sugars' && probs({ k: 40, p: 0, c: 10, f: 0, sugars: 10.2 }) === ''],
+    ['checks: saturates more than fat flags saturates', probs({ k: 45, p: 0, c: 0, f: 5, sat: 6 }) === 'odd:sat'],
+    ['checks: more than 100 g in 100 g flags the biggest part', checkLabel({ k: 380, p: 10, c: 60, f: 4, fibre: 30, salt: 1 }).some((p) => p.field === 'c' && /add up to 105 g/.test(p.msg))],
+    ['checks: per 100 ml allows denser liquids (syrup)', probs({ k: 350, p: 0, c: 88, f: 0 }, true) === '' && probs({ k: 560, p: 0, c: 140.5, f: 0 }, true).includes('odd:c')],
+    ['checks: negatives flagged per field', probs({ k: 50, p: -1, c: 12, f: 0.5 }).startsWith('odd:p')],
+    ['checks: missing required fields named, name too', checkLabel({ k: 50, c: 12 }, { name: ' ' }).map((p) => p.kind + ':' + p.field).join() === 'missing:name,missing:p,missing:f'],
+  )
+
+  // local first; source and margin of a saved scan
+  const saved: Food = { ...asIngr, id: uuid() }
+  const entry = buildEntry(saved, { mode: 'serv', serv: 1 }, 'lunch', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  const builtinOff = FOODS.find((f) => f.src?.startsWith('off:'))!
+  checks.push(
+    ['local: a saved scan is found by its barcode; built-in OFF foods by their src', findByBarcode([saved], '5000157024671') === saved && findByBarcode(FOODS, builtinOff.src!.slice(4)) === builtinOff],
+    ['source: a saved scan keeps the Open Food Facts line and the same margin as a typed label', sourceOf(saved)?.text === 'Your pack label (found via Open Food Facts) · 5000157024671' && sourceErr(saved) === sourceErr({ id: 'x', src: 'label' }) && sourceOf({ id: 'x' })?.text === 'Your label' && sourceErr(builtinOff) === 0],
+    ['logging one serving = serving × per-100 values', entry.grams === 208 && entry.k === 162.2 && entry.p === 9.8 && entry.err === +(CAPTURE_ERR.serv + 0.03).toFixed(2)],
+  )
+
+  // ingredient-only: "What can I make?" chips and the recipe builder
+  const menuItem = FOODS.find((f) => isMenuSource(f.src))!
+  const foods: Food[] = [...FOODS, { ...asMeal, id: uuid() }]
+  const cand = kitchenCandidates([{ id: 'r', name: 'R', servings: 1, items: [{ n: 'Tesco Beef Lasagne', k: 1, p: 1, c: 1, f: 1, grams: 1 }, { n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, grams: 1 }] }], [menuItem.n, 'Tesco Beef Lasagne', 'Heinz Baked Beanz'], foods)
+  const ranked = ingredientsFirst([{ n: 'A', cat: 'ready' }, { n: 'B', cat: 'grains' }, { n: 'C', src: menuItem.src }, { n: 'D' }] as Food[], (f) => f)
+  checks.push(
+    ['kitchen chips: no ready meals or chain menu items', cand.join() === 'Heinz Baked Beanz'],
+    ['made food: cat ready/fastfood or a menu source', isMadeFood({ cat: 'ready' }) && isMadeFood({ cat: 'fastfood' }) && isMadeFood({ src: menuItem.src }) && !isMadeFood({ cat: 'grains', src: 'cofid:1' }) && !isMadeFood(undefined)],
+    ['recipe search: ingredients first, made foods after, order kept', ranked.map((f) => f.n).join('') === 'BDAC'],
+  )
+
+  // sync: meta held back until the migration; a pull keeps this device's extra fields
+  const rowOff = toServerFood(saved, LOCAL_USER, false) as Record<string, unknown>
+  {
+    // a stale device copy with a barcode meets a newer server row without meta: after one sync
+    // the server has its newer name and values plus the barcode
+    const srv: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [{ ...toServerFood({ ...saved, n: 'Renamed elsewhere', k: 99 }, LOCAL_USER, false), updated_at: 'z' }] }
+    const q = stateFromBackup({ days: {} } as never)
+    q.customFoods = [{ ...saved, _dirty: false }]
+    const qm = ensureMeta(q, false)
+    const rf = globalThis.fetch
+    globalThis.fetch = fakeServer(srv).fetchFn
+    try { await pushDirty(q, qm); await pullAll(q, qm); await pushDirty(q, qm); await pullAll(q, qm) } finally { globalThis.fetch = rf }
+    const row = srv.custom_foods[0]
+    checks.push(['sync: pre-meta rows get this device\'s barcode without losing the newer server edit', srv.custom_foods.length === 1 && row.name === 'Renamed elsewhere' && row.kcal === 99 && row.meta?.barcode === '5000157024671' && !q.customFoods[0]._dirty])
+  }
+  const rowOn = toServerFood(saved, LOCAL_USER, true) as Record<string, any>
+  const back = fromServerFood({ ...rowOn, updated_at: 'z' })
+  checks.push(
+    ['sync: CUSTOM_FOOD_META is on (migration applied), and off still sends no meta', CUSTOM_FOOD_META === true && !('meta' in rowOff)],
+    ['sync: with the flag on, meta carries src, cat, barcode', rowOn.meta?.src === 'off:5000157024671' && rowOn.meta?.cat === 'veg' && rowOn.meta?.barcode === '5000157024671' && !('ml' in rowOn.meta)],
+    ['sync: meta read back from the server', back.barcode === '5000157024671' && back.src === 'off:5000157024671' && back.cat === 'veg'],
+  )
+  const rows: Record<string, any[]> = { settings: [], day_logs: [], recipes: [], custom_foods: [] }
+  const s = stateFromBackup({ days: {} } as never)
+  s.customFoods = [{ ...saved, _dirty: true }]
+  const m = ensureMeta(s, false)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = fakeServer(rows).fetchFn
+  try { await pushDirty(s, m); await pullAll(s, m) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: after push + pull the scan keeps barcode, src and cat (meta on the server)', rows.custom_foods.length === 1 && rows.custom_foods[0].meta?.barcode === '5000157024671' && s.customFoods[0].barcode === '5000157024671' && s.customFoods[0].src === 'off:5000157024671' && s.customFoods[0].cat === 'veg' && !s.customFoods[0]._dirty])
+  const back2 = stateFromBackup(JSON.parse(JSON.stringify(s)))
+  checks.push(['persistence and backup JSON: barcode survives a round trip', back2.customFoods[0].barcode === '5000157024671'])
+
+  // review fixes: per-serving values, multipacks, units, US labels, stale data, bad data, links
+  const perServ = draftFromOff('4006381333931', { product_name: 'Granola', serving_quantity: 45, nutrition_data_per: 'serving', nutriments: { 'energy-kcal_100g': 450, proteins_100g: 10, carbohydrates_100g: 60, fat_100g: 18 } }, [])
+  const sameLines = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150, proteins_100g: 2, proteins_serving: 2, carbohydrates_100g: 18, carbohydrates_serving: 18, fat_100g: 8, fat_serving: 8 } })
+  const fine = servingNotes({ serving_quantity: 30, nutriments: { 'energy-kcal_100g': 500, 'energy-kcal_serving': 150 } })
+  const about100 = servingNotes({ serving_quantity: 100, nutriments: { 'energy-kcal_100g': 150, 'energy-kcal_serving': 150 } })
+  checks.push(
+    ['per-serving: OFF derived per-100 from a per-serving label → note on kcal', perServ.notes.length === 1 && perServ.notes[0].field === 'k' && /per-serving label/.test(perServ.notes[0].msg)],
+    ['per-serving: per-100 lines equal the per-serving ones for a 30 g serving → note', sameLines.length === 1 && /30 g serving/.test(sameLines[0].msg)],
+    ['per-serving: different lines, or a ~100 g serving, → no note', fine.length === 0 && about100.length === 0],
+    ['OFF_FIELDS asks for nutriments, last_modified_t and the quantity unit', ['nutriments', 'last_modified_t', 'product_quantity_unit'].every((f) => OFF_FIELDS.split(',').includes(f))],
+    // naming a nutrient as a field empties nutriments in the live API (checked Sept 2026)
+    ['OFF_FIELDS names no nutrient (top-level fields only)', OFF_FIELDS.split(',').every((f) => !/_(100g|serving)$|^energy/.test(f))],
+    ['multipack: "4 x 250g" → one unit is 250 g; "250 g x 4" too; "6 x" without a weight → none', multipackUnit('4 x 250g').unit === 250 && multipackUnit('250 g x 4').unit === 250 && multipackUnit('6 x pots').multi && multipackUnit('6 x pots').unit === undefined && !multipackUnit('400 g').multi],
+    ['multipack ready meal: default serving is one unit, not the whole pack', draftFromOff('4006381333931', { product_name: 'Soup', quantity: '4 x 300 g', product_quantity: 1200, categories_tags: ['en:soups'], nutriments: {} }, []).serving.eat === 300 && draftFromOff('4006381333931', { quantity: '6 x pots', product_quantity: 750, categories_tags: ['en:meals'], nutriments: {} }, []).serving.eat === 100],
+    ['ml: product_quantity_unit wins over the quantity text', isPer100ml({ product_quantity_unit: 'g', quantity: '500 ml' }) === false && isPer100ml({ product_quantity_unit: 'ml', quantity: '500 g' }) === true],
+    ['ml: ice cream sold in ml stays per 100 g', isPer100ml({ quantity: '500 ml', product_quantity_unit: 'ml', categories_tags: ['en:frozen-desserts', 'en:ice-creams'] }) === false],
+    ['US-only label detected; a UK one or one sold in both is not', isUsLabel(['en:united-states']) && !isUsLabel(['en:united-kingdom', 'en:united-states']) && !isUsLabel(['en:united-kingdom']) && !isUsLabel(undefined)],
+    ['stale: last edit over 3 years ago gives the year; recent none', staleYear(Date.UTC(2021, 5, 1) / 1000, Date.UTC(2026, 8, 25)) === 2021 && staleYear(Date.UTC(2025, 0, 1) / 1000, Date.UTC(2026, 8, 25)) === undefined && staleYear('x') === undefined],
+    ['bad OFF data: wrong types dropped, no throw', (() => { const x = draftFromOff('4006381333931', { product_name: 42, brands: ['x'], categories_tags: 'en:meals', countries_tags: [1, 'en:united-states'], nutriments: { 'energy-kcal_100g': { a: 1 }, proteins_100g: '5' } }, []); return x.name === '' && x.kind === 'cook' && x.values.k === undefined && x.values.p === 5 && x.usLabel })()],
+    ['bad OFF data: not an object at all', draftFromOff('4006381333931', null, []).name === '' && draftFromOff('4006381333931', 'junk', []).notes.length === 0],
+    ['name capped at 120 characters', draftFromOff('4006381333931', { product_name: 'x'.repeat(500) }, []).name.length === MAX_NAME],
+    ['link: a saved food of the same name without a barcode is reused; one with a barcode or a built-in is not', linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], ' heinz baked beanz')?.id === 'a' && !linkableFood([{ id: 'a', n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100, barcode: '1' }], 'Heinz Baked Beanz') && !linkableFood([{ n: 'Heinz Baked Beanz', k: 1, p: 1, c: 1, f: 1, g: 100 }], 'Heinz Baked Beanz') && d.baseName === 'Heinz Baked Beanz'],
+  )
+
+  // Benn's case: Walkers Sensations, 5000328028873. OFF: whole 150 g bag as one serving, name "sensations"
+  const walkers = draftFromOff('5000328028873', {
+    product_name: 'sensations', brands: 'Walkers', serving_size: '1 pack (150 g)', serving_quantity: 150, quantity: '150',
+    categories_tags: ['en:snacks', 'en:salty-snacks', 'en:appetizers', 'en:crisps', 'en:potato-crisps'],
+    nutriments: { 'energy-kcal_100g': 490, proteins_100g: 6.6, carbohydrates_100g: 54, fat_100g: 26 },
+  }, [])
+  const crisps = foodFromConfirmed({ barcode: walkers.barcode, name: 'Walkers Sensations Thai Sweet Chilli', values: { k: 497, p: 6.3, c: 55, f: 27 }, ml: false, kind: walkers.kind, meal: walkers.meal, cat: walkers.cat, g: 30 })
+  const eatEntry = buildEntry({ ...crisps, id: uuid() }, { mode: 'serv', serv: 1 }, 'snack', DEFAULT_PROFILE, { custom: true, fat: null, askFat: false }).entry
+  checks.push(
+    ['crisps: eat as it is, cat snacks, not a meal, not a liquid', walkers.kind === 'eat' && walkers.cat === 'snacks' && !walkers.meal && !walkers.liquid && !walkers.ml],
+    ['crisps: whole pack as one serving is flagged and not used as the default', walkers.wholePack && walkers.pack === 150 && walkers.serving.eat === undefined && walkers.serving.cook === undefined && walkers.notes.some((n) => n.field === 'serving' && /whole pack as one serving/.test(n.msg))],
+    ['crisps: "sensations" is a vague name (ask for the flavour)', walkers.vague && walkers.name === 'Walkers sensations'],
+    ['crisps: saved with eat, cat snacks (not ready); one 30 g serving = 149 kcal', crisps.eat === true && crisps.cat === 'snacks' && crisps.g === 30 && eatEntry.k === 149.1],
+    ['serving is required: empty flagged, typed fine', checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 0 }).some((p) => p.field === 'serving' && p.kind === 'missing') && !checkLabel({ k: 1, p: 0, c: 0, f: 0 }, { serving: 30 }).some((p) => p.field === 'serving')],
+    ['whole pack: fine for single-serve sizes (400 g meal, 500 ml bottle, 25 g bag), or a real smaller serving', !servingIsWholePack(400, 400, 'meal') && !servingIsWholePack(500, 500, 'drink') && !servingIsWholePack(25, 25, 'other') && !servingIsWholePack(30, 150, 'other') && servingIsWholePack(148, 150, 'other')],
+    ['eat as is: crisps, chocolate, biscuits, bars, sodas, juice, desserts, ice cream', [['en:crisps'], ['en:chocolates'], ['en:biscuits'], ['en:cereal-bars'], ['en:sodas'], ['en:fruit-juices'], ['en:desserts'], ['en:ice-creams']].every((t) => classifyProduct(t) === 'eat' && !isMealProduct(t))],
+    ['for cooking wins: milk and plant milk filed as beverages, plain nuts filed as snacks', classifyProduct(['en:beverages', 'en:plant-based-milks']) === 'cook' && classifyProduct(['en:dairies', 'en:milks', 'en:beverages']) === 'cook' && classifyProduct(['en:snacks', 'en:nuts']) === 'cook'],
+    ['saved: a meal eaten as is → ready + eat; for cooking → no eat flag', asMeal.cat === 'ready' && asMeal.eat === true && asIngr.eat === undefined && foodFromConfirmed({ barcode: '1', name: 'X', values: lasagne.values, ml: false, kind: 'cook', meal: true, cat: 'grains', g: 100 }).cat === 'grains'],
+    ['vague names: one word or just the brand; a real name is not', isVagueName({ product_name: 'sensations', brands: 'Walkers' }) && isVagueName({ product_name: 'Walkers', brands: 'Walkers' }) && isVagueName({ product_name: 'Sensations 150g' }) && !isVagueName({ product_name: 'Baked Beanz', brands: 'Heinz' }) && !isVagueName({})],
+    ['2 L cola, no serving: no default serving (not 2000 ml), flagged', (() => { const x = draftFromOff('1', { product_name: 'Coca-Cola Original Taste', brands: 'Coca-Cola', quantity: '2 l', product_quantity: 2000, product_quantity_unit: 'ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: { 'energy-kcal_100g': 42 } }, []); return x.kind === 'eat' && x.ml && x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving') })()],
+    ['2 L cola, serving given as 2000: whole pack flagged, not used', (() => { const x = draftFromOff('1', { quantity: '2 l', product_quantity: 2000, serving_quantity: 2000, categories_tags: ['en:sodas'], nutriments: {} }, []); return x.wholePack && x.serving.eat === undefined && x.serving.cook === undefined })()],
+    ['1.2 kg family lasagne: no 1200 g default, flagged; a 400 g one still defaults to the pack', (() => { const x = draftFromOff('1', { product_quantity: 1200, categories_tags: ['en:meals', 'en:lasagnas'], nutriments: {} }, []); return x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving') && lasagne.serving.eat === 400 })()],
+    ['a 330 ml can defaults to the can', draftFromOff('1', { quantity: '330 ml', product_quantity: 330, categories_tags: ['en:sodas'], nutriments: {} }, []).serving.eat === 330],
+    ['pints are ml; milk counts as liquid', isPer100ml({ quantity: '4 pints' }) && packFromQuantity('2 pints') === 1136 && draftFromOff('1', { quantity: '1 kg', product_quantity_unit: 'g', categories_tags: ['en:dairies', 'en:milks'], nutriments: {} }, []).liquid],
+    ['brand not repeated when the name has it with other punctuation', productName({ product_name: 'Coca Cola Zero', brands: 'Coca-Cola' }) === 'Coca Cola Zero' && productName({ product_name: 'Original Taste', brands: 'Coca-Cola' }) === 'Coca-Cola Original Taste' && productName({ product_name: 'Diet coke', brands: 'Coca-Cola' }) === 'Coca-Cola Diet coke'],
+    ['pack size from a plain quantity; not from a multipack', packFromQuantity('150') === 150 && packFromQuantity('150 g') === 150 && packFromQuantity('1.5 kg') === 1500 && packFromQuantity('33cl') === 330 && packFromQuantity('4 x 250g') === undefined],
+    ['a drink counts as liquid (per 100 ml offered up front)', draftFromOff('1', { quantity: '500 ml', categories_tags: ['en:beverages', 'en:sodas'], nutriments: {} }, []).liquid],
+    ['made food keys off the saved eat flag, whatever the category', isMadeFood({ eat: true, cat: 'grains' }) && kitchenCandidates([], ['Granola bar'], [{ id: 'g', n: 'Granola bar', k: 1, p: 1, c: 1, f: 1, g: 40, cat: 'grains', eat: true }]).length === 0],
+    ['sync: a pulled alias of the wrong shape is cleaned, not trusted', (() => { const f = fromServerFood({ id: 'x', name: 'Oats', kcal: 1, protein: 1, carbs: 1, fat: 1, grams: 100, ml: false, updated_at: 'z', meta: { alias: [3, { a: 1 }, ' oats ', 'Oats'] } }); return JSON.stringify(f.alias) === '["oats"]' })()],
+    ['sync (flag on): meta carries eat', (toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true) as any).meta.eat === true && fromServerFood({ ...toServerFood({ ...crisps, id: uuid() }, LOCAL_USER, true), updated_at: 'z' }).eat === true],
+  )
+
+  // sync with the flag on: meta is always an object, so a cleared field clears on pull
+  const plain: Food = { id: uuid(), n: 'Plain', k: 1, p: 1, c: 1, f: 1, g: 100 }
+  checks.push(['sync (flag on): a food with no extra fields sends meta {}', JSON.stringify((toServerFood(plain, LOCAL_USER, true) as any).meta) === '{}'])
+  const s3 = stateFromBackup({ days: {} } as never)
+  s3.customFoods = [{ ...saved, _dirty: false }]
+  const m3 = ensureMeta(s3, false)
+  m3.settings.dirty = false
+  const cleared = { ...toServerFood({ ...saved, barcode: undefined, src: undefined, cat: undefined }, LOCAL_USER, true), updated_at: 'y' }
+  globalThis.fetch = fakeServer({ settings: [], day_logs: [], recipes: [], custom_foods: [cleared] }).fetchFn
+  try { await pullAll(s3, m3) } finally { globalThis.fetch = realFetch }
+  checks.push(['sync: a server meta of {} clears the device’s barcode, src and cat on pull', s3.customFoods.length === 1 && s3.customFoods[0].barcode === undefined && s3.customFoods[0].src === undefined && s3.customFoods[0].cat === undefined])
+
+  // lookup: offline vs a server error vs not found
+  const look = async (f: typeof fetch) => { globalThis.fetch = f; try { return (await lookupProduct({ code: '4006381333931' }, { timeoutMs: 200 })).status } finally { globalThis.fetch = realFetch } }
+  const st500 = await look((async () => new Response('oops', { status: 503 })) as typeof fetch)
+  const stNet = await look((async () => { throw new TypeError('Failed to fetch') }) as typeof fetch)
+  const st404 = await look((async () => new Response(JSON.stringify({ status: 0 }), { status: 404 })) as typeof fetch)
+  const stBad = await look((async () => new Response('<html>', { status: 200 })) as typeof fetch)
+  const stSlow = await look(((_u: string, o: RequestInit) => new Promise((_, no) => o.signal!.addEventListener('abort', () => no(new DOMException('aborted', 'AbortError'))))) as typeof fetch)
+  const stOk = await look((async () => new Response(JSON.stringify({ status: 1, product: { nutriments: { 'energy-kcal_100g': 1 } } }), { status: 200 })) as typeof fetch)
+  checks.push(['lookup: 5xx and unreadable replies are errors; no connection and timeouts are offline; 404 is not found', [st500, stBad, stNet, stSlow, st404, stOk].join() === 'error,error,offline,offline,not-found,found'])
+
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'barcode:', n) }
+}
+
+// Label photos: parsing the literal text, the misread checks, the one-fix search, and the draft.
+function labelScan(): void {
+  const checks: [string, boolean][] = []
+  type Rows = Partial<Record<(typeof LABEL_ROWS)[number], [string, string?, string?]>>
+  const read = (rows: Rows, o: Partial<LabelRead> = {}, conf: Record<string, 'low'> = {}): LabelRead => ({
+    readable: true, basis: '100g', serving_text: '30g', ri_basis: 'serving',
+    rows: Object.fromEntries(LABEL_ROWS.map((k) => {
+      const [a = '', b = '', c = ''] = rows[k] || []
+      return [k, { per100: { text: a, confidence: conf[k + ':per100'] || 'high' }, serving: { text: b, confidence: conf[k + ':serving'] || 'high' }, ri: { text: c, confidence: 'high' } }]
+    })) as LabelRead['rows'],
+    front: { brand: '', product: '', variety: '', pack_size: '' },
+    ...o,
+  })
+  const ids = (r: LabelRead) => labelIssues(textsFromRead(r, r.basis === '100ml')).issues.map((i) => i.id).sort().join(',')
+  // crisps, 30 g bag: every column agrees
+  const crisps: Rows = {
+    kj: ['2079kJ', '624kJ', '7%'], kcal: ['497kcal', '149kcal', '7%'], fat: ['27.3g', '8.2g', '12%'], saturates: ['2.3g', '0.7g', '4%'],
+    carbohydrate: ['57.0g', '17.1g'], sugars: ['3.9g', '1.2g', '1%'], fibre: ['4.3g', '1.3g'], protein: ['6.2g', '1.9g'], salt: ['1.30g', '0.39g', '7%'],
+  }
+  // granola, 30 g serving: fat 7.1 g per 100 g, 2.1 g per serving
+  const granola: Rows = {
+    kj: ['1640kJ', '492kJ'], kcal: ['390kcal', '117kcal'], fat: ['7.1g', '2.1g'], saturates: ['1.2g', '0.4g'], carbohydrate: ['66.0g', '19.8g'],
+    sugars: ['21.0g', '6.3g'], fibre: ['7.5g', '2.3g'], protein: ['9.0g', '2.7g'], salt: ['0.05g', '0.02g'],
+  }
+  const p = (t: string, f: any = 'f', col: any = 'per100') => JSON.stringify(parseCell(t, f, col))
+  checks.push(
+    ['parse: grams', p('0.64g') === JSON.stringify({ value: 0.64, dp: 2 })],
+    ['parse: decimal comma', parseCell('0,64 g', 'f', 'per100').value === 0.64],
+    ['parse: thousands comma in kJ', parseCell('2,079kJ', 'kj', 'per100').value === 2079],
+    ['parse: less than is stored at the midpoint, marked, bound kept', p('<0.5g') === JSON.stringify({ value: 0.25, dp: 2, mark: 'lt', raw: 0.5 })],
+    ['parse: <0.1 g → 0.05, salt <0.0125 g → 0.00625', parseCell('<0.1g', 'sugars', 'per100').value === 0.05 && parseCell('<0.0125g', 'salt', 'per100').value === 0.00625],
+    ['parse: trace is 0 and marked', parseCell('Trace', 'sugars', 'per100').mark === 'trace' && parseCell('trace', 'sugars', 'per100').value === 0],
+    ['parse: kJ/kcal in one cell, each row takes its own', parseCell('2079kJ/497kcal', 'kj', 'per100').value === 2079 && parseCell('2079kJ/497kcal', 'k', 'per100').value === 497],
+    ['parse: kJ in the kcal row is flagged', parseCell('2079kJ', 'k', 'per100').flag === 'unit'],
+    ['parse: kcal in a grams row is flagged', parseCell('12kcal', 'p', 'per100').flag === 'unit'],
+    ['parse: salt in mg becomes grams', parseCell('300mg', 'salt', 'per100').value === 0.3],
+    ['parse: missing decimal point (064) is flagged', parseCell('064g', 'salt', 'per100').flag === 'format'],
+    ['parse: doubled decimal point is flagged', parseCell('0.6.4g', 'salt', 'per100').flag === 'format'],
+    ['parse: letter O in a number is unreadable, never silently read', parseCell('O.5g', 'fibre', 'per100').flag === 'unreadable' && parseCell('O.5g', 'fibre', 'per100').value === undefined],
+    ['parse: empty and dash are not printed', parseCell('', 'f', 'per100').value === undefined && parseCell('-', 'f', 'per100').value === undefined && !parseCell('—', 'f', 'per100').flag],
+    ['parse: RI percent', parseCell('12%', 'f', 'ri').value === 12 && parseCell('<1%', 'sugars', 'ri').mark === 'lt'],
+    ['serving text: brackets win, else the first quantity', parseServing('Per ½ pack (200g)') === 200 && parseServing('30g') === 30 && parseServing('1 biscuit (12.5 g)') === 12.5 && parseServing('250ml glass') === 250 && parseServing('1 bar') === undefined],
+    ['serving text: ignores what comes after “with”', parseServing('30g with 125ml semi-skimmed milk') === 30],
+    ['serving text: ignores what comes after “serves”', parseServing('Per 250ml glass (serves 4 from 1L)') === 250 && parseServing('100g (makes 2 x 250g)') === 100],
+    ['checks: a consistent label has no issues', ids(read(crisps)) === ''],
+    ['checks: granola hangs together too', ids(read(granola)) === ''],
+    ['check kJ↔kcal: per 100 misread', ids(read({ ...crisps, kcal: ['457kcal', '149kcal', '7%'] })).includes('energy:per100')],
+    ['check kJ↔kcal: 2.5% tolerance (2079 kJ = 497 kcal; 486 passes, 484 doesn’t)', !ids(read({ kj: ['2079kJ'], kcal: ['486kcal'] }, { serving_text: '' })).includes('energy') && ids(read({ kj: ['2079kJ'], kcal: ['484kcal'] }, { serving_text: '' })).includes('energy:per100')],
+    ['check energy ↔ macros still runs with “<0.5g” (at its midpoint)', ids(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['<0.5g'], carbohydrate: ['66g'], protein: ['9.0g'] }, { serving_text: '' })).includes('macros')
+      && !ids(read({ kj: ['1580kJ'], kcal: ['378kcal'], fat: ['<0.5g'], carbohydrate: ['85g'], protein: ['8.5g'] }, { serving_text: '' })).includes('macros')],
+    ['check with no serving size: the energy ratio checks every row', ids(read({ ...granola, fat: ['7.1g', '2.7g'] }, { serving_text: '1 bowl' })) === 'serving:f' && ids(read(granola, { serving_text: '' })) === ''],
+    ['check kJ↔kcal: per serving misread', ids(read({ ...crisps, kj: ['2079kJ', '684kJ', '7%'] })).includes('energy:serving')],
+    ['check per 100 ↔ per serving', ids(read({ ...granola, fat: ['1.1g', '2.1g'] })).includes('serving:f')],
+    ['check per 100 ↔ per serving allows label rounding (salt 0.015 → 0.02)', !ids(read(granola)).includes('serving:salt')],
+    ['check energy ↔ macros', ids(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['1.1g'], carbohydrate: ['66.0g'], protein: ['9.0g'], fibre: ['7.5g'] }, { serving_text: '' })).includes('macros')],
+    ['check RI %', ids(read({ ...crisps, fat: ['27.3g', '8.2g', '42%'] })) === 'ri:f'],
+    ['check sugars ≤ carbs', ids(read({ ...crisps, sugars: ['59g', '1.2g', '1%'] })).includes('part:sugars:per100')],
+    ['check saturates ≤ fat', ids(read({ ...crisps, saturates: ['2.3g', '8.7g', '4%'] })).includes('part:sat:serving')],
+    ['check parts ≤ 100 g', ids(read({ protein: ['60g'], carbohydrate: ['50g'], fat: ['1g'] }, { serving_text: '' })).includes('sum')],
+    ['check salt over 10 g is soft (stock cubes)', labelIssues(textsFromRead(read({ salt: ['12.5g'] }, { serving_text: '' }), false)).issues.some((i) => i.id === 'salt' && i.soft)],
+    ['check decimal-point format', ids(read({ ...crisps, salt: ['130g', '0.39g', '7%'] })).includes('serving:salt')],
+    ['variants: 1↔7, decimal point added or removed', ['7.1g', '1.7g', '11g'].every((v) => variants('1.1g').includes(v)) && variants('64g').includes('6.4g') && variants('0.64').includes('064')],
+  )
+  // the one-fix search
+  const fix = (r: LabelRead) => suggestFix(textsFromRead(r, false))
+  const s17 = fix(read({ ...granola, fat: ['1.1g', '2.1g'] }))
+  checks.push(
+    ['suggest 1↔7: fat 1.1 → 7.1 from the per-serving column', s17?.cell === cellId('f', 'per100') && s17.value === 7.1 && s17.display === '7.1 g' && s17.because === 'The per-serving column says 2.1 g for 30 g, which is about 7 g per 100 g.'],
+    ['suggest with no serving size, from the energy ratio: 2.7 → 2.1', (() => { const s = fix(read({ ...granola, fat: ['7.1g', '2.7g'] }, { serving_text: '' })); return s?.cell === cellId('f', 'serving') && s.value === 2.1 })()],
+    ['suggest decimal: salt 064 → 0.64', (() => { const s = fix(read({ ...granola, salt: ['064g', '0.19g'] })); return s?.value === 0.64 && s.to === '0.64g' })()],
+    ['suggest decimal: fibre 75 → 7.5', fix(read({ ...granola, fibre: ['75g', '2.3g'] }))?.value === 7.5],
+    ['suggest in the per-serving column: 2.7 → 2.1', (() => { const s = fix(read({ ...granola, fat: ['7.1g', '2.7g'] })); return s?.cell === cellId('f', 'serving') && s.value === 2.1 })()],
+    ['suggest 3↔8 in kcal: 437 → 487', fix(read({ ...crisps, kj: ['2038kJ', '611kJ', '7%'], kcal: ['437kcal', '146kcal', '7%'] }))?.value === 487],
+    ['ambiguous (only the macros disagree, several fixes fit) → no suggestion', fix(read({ kj: ['1640kJ'], kcal: ['390kcal'], fat: ['1.1g'], carbohydrate: ['66g'], protein: ['9.0g'], fibre: ['7.5g'] }, { serving_text: '', ri_basis: 'none' })) === null],
+    ['two misreads → no suggestion', fix(read({ ...granola, fat: ['1.1g', '2.1g'], protein: ['3.0g', '2.7g'] })) === null],
+    ['nothing wrong → no suggestion', fix(read(crisps)) === null],
+    ['a unit in the wrong row can’t be fixed by a digit → no suggestion', fix(read({ ...crisps, kcal: ['2079kJ', '149kcal', '7%'] })) === null],
+  )
+  // mapping to the confirm view's draft
+  const d = draftFromLabel(read(granola, { front: { brand: 'Jordans', product: 'Jordans Country Crisp', variety: 'Strawberry', pack_size: '500g' } }), { taken: ['Jordans Country Crisp Strawberry'] })
+  const dLow = draftFromLabel(read(granola, {}, { 'fat:per100': 'low' }), { barcode: '5010477348678', taken: [] })
+  const dMark = draftFromLabel(read({ ...granola, salt: ['<0.01g', '<0.01g'] }), { taken: [] })
+  const base = draftFromOff('5000328657950', { product_name: 'Sensations Roasted Chicken & Thyme', brands: 'Walkers', nutriments: { 'energy-kcal_100g': 490 }, categories_tags: ['en:crisps'] }, [])
+  const dBase = draftFromLabel(read(crisps, { serving_text: '' }), { base, taken: [] })
+  checks.push(
+    ['draft: per-100 values parsed from the read', JSON.stringify(d.values) === JSON.stringify({ kj: 1640, k: 390, f: 7.1, sat: 1.2, c: 66, sugars: 21, fibre: 7.5, p: 9, salt: 0.05 })],
+    ['draft: name from the front photo, deduplicated, then made unique', d.name === 'Jordans Country Crisp Strawberry (2)' && d.label?.nameFromFront === true],
+    ['draft: serving and pack from the label and front', d.serving.cook === 30 && d.serving.eat === 30 && d.pack === 500],
+    ['draft: saved as a label (no barcode unless scanned)', d.source === 'label' && d.barcode === '' && dLow.barcode === '5010477348678'],
+    ['draft: low confidence highlights the cell', dLow.label?.lowConf.includes(cellId('f', 'per100')) === true],
+    ['draft: a “less than” value says how it’s saved', dMark.label?.marks.some((m) => m.includes('<0.01g')) === true],
+    ['draft: photo after a barcode keeps the barcode and OFF name, takes the label’s numbers', dBase.barcode === '5000328657950' && dBase.name === 'Walkers Sensations Roasted Chicken & Thyme' && dBase.values.k === 497 && dBase.kind === 'eat'],
+    ['draft: the 1↔7 suggestion travels with the draft', draftFromLabel(read({ ...granola, fat: ['1.1g', '2.1g'] }), { taken: [] }).label?.suggestion?.value === 7.1],
+    ['draft: per 100 ml labels', draftFromLabel(read({ kcal: ['42kcal'] }, { basis: '100ml' }), { taken: [] }).ml === true],
+    ['draft: per-serving column but no readable serving → serving required', (() => { const x = draftFromLabel(read(granola, { serving_text: '1 bowl' }), { taken: [] }); return x.serving.cook === undefined && x.serving.eat === undefined && x.notes.some((n) => n.field === 'serving' && n.msg === SERVING_NEEDED) })()],
+    ['draft: “<0.5g” note says it’s halfway', dMark.label?.marks.some((m) => m.includes('halfway')) === true],
+    ['draft: empty fallback keeps the barcode', emptyLabelDraft({ barcode: '5000328657950', taken: [] }).barcode === '5000328657950' && Object.keys(emptyLabelDraft({ taken: [] }).values).length === 0],
+    ['front name: brand already in the product', frontName({ brand: 'Walkers', product: 'Walkers Sensations', variety: 'Roasted Chicken & Thyme', pack_size: '' }) === 'Walkers Sensations Roasted Chicken & Thyme'],
+    ['saved food: src label, barcode only when scanned', (() => {
+      const a = foodFromConfirmed({ barcode: '', name: 'X', values: { k: 1, p: 1, c: 1, f: 1 }, ml: false, kind: 'cook', g: 30, source: 'label' })
+      const b = foodFromConfirmed({ barcode: '5000328657950', name: 'X', values: { k: 1, p: 1, c: 1, f: 1 }, ml: false, kind: 'cook', g: 30, source: 'label' })
+      return a.src === 'label' && a.barcode === undefined && b.src === 'label' && b.barcode === '5000328657950' && sourceErr({ ...b, id: 'x' }) === 0
+    })()],
+  )
+  // the pack's per-serving line is saved as ref, and one serving logs exactly it
+  const bar: Rows = { kcal: ['452kcal', '204kcal'], fat: ['21.0g', '9.5g'], carbohydrate: ['58.0g', '26.1g'], protein: ['6.0g', '2.7g'] }
+  const barCheck = labelIssues(textsFromRead(read(bar, { serving_text: '45g' }), false))
+  const ref = servingRef(barCheck, 45, 45)
+  const barFood = { id: 'b', ...foodFromConfirmed({ barcode: '', name: 'Bar', values: { k: 452, p: 6, c: 58, f: 21 }, ml: false, kind: 'eat', g: 45, source: 'label', ref }) } as Food
+  const logged = buildEntry(barFood, { mode: 'serv', serv: 1 } as any, 'snack', DEFAULT_PROFILE as any, { custom: true, fat: null, askFat: false }).entry
+  const two = buildEntry(barFood, { mode: 'serv', serv: 2 } as any, 'snack', DEFAULT_PROFILE as any, { custom: true, fat: null, askFat: false }).entry
+  checks.push(
+    ['ref: the per-serving line is kept when it agrees and the serving is the printed one', JSON.stringify(ref) === JSON.stringify({ g: 45, k: 204, p: 2.7, c: 26.1, f: 9.5 }) && JSON.stringify(barFood.ref) === JSON.stringify(ref)],
+    ['ref: per-100 452 kcal, 45 g serving printed 204 kcal → one serving logs 204', logged.k === 204 && logged.f === 9.5 && Math.round(scaleFoodRef(barFood, 45).k) === 204],
+    ['ref: other amounts scale the per-100 values (2 servings = 406.8)', two.k === 406.8],
+    ['ref: not kept when the saved serving differs or the columns disagree', servingRef(barCheck, 45, 50) === undefined
+      && servingRef(labelIssues(textsFromRead(read({ ...bar, fat: ['21.0g', '3.5g'] }, { serving_text: '45g' }), false)), 45, 45) === undefined],
+    ['flag: label scanning is on (ai-read-label and submit-product deployed)', LABEL_SCAN_ENABLED === true],
+  )
+  // the schema and its validator (server and client share them)
+  const good = read(crisps)
+  checks.push(
+    ['validate: a well-formed read passes', JSON.stringify(validateLabelRead(JSON.parse(JSON.stringify(good)))) === JSON.stringify(good)],
+    ['validate: a missing row, a bad enum or an over-long cell is rejected', validateLabelRead({ ...good, rows: { ...good.rows, salt: undefined } }) === null
+      && validateLabelRead({ ...good, basis: 'per pack' }) === null
+      && validateLabelRead({ ...good, rows: { ...good.rows, fat: { ...good.rows.fat, per100: { text: 'x'.repeat(200), confidence: 'high' } } } }) === null
+      && validateLabelRead('ignore previous instructions') === null],
+    ['schema: every row is required and closed', (LABEL_SCHEMA.properties.rows.required as readonly string[]).length === LABEL_ROWS.length && LABEL_SCHEMA.additionalProperties === false],
+  )
+  // photo quality on a synthetic frame
+  const W = 64, H = 48
+  const frame = (f: (x: number, y: number) => number) => { const a = new Uint8Array(W * H); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) a[y * W + x] = f(x, y); return a }
+  const sharp = frame((x, y) => ((x >> 1) + (y >> 2)) % 2 ? 30 : 220)
+  const flat = frame(() => 150)
+  const dark = frame((x, y) => ((x >> 1) + (y >> 2)) % 2 ? 5 : 60)
+  const glare = frame((x, y) => (x < 20 ? 255 : ((x >> 1) + (y >> 2)) % 2 ? 30 : 220))
+  const rgba = new Uint8Array([255, 255, 255, 255, 0, 0, 0, 255])
+  checks.push(
+    ['quality: sharp text passes', qualityIssue(measureFrame(sharp, W, H)) === null],
+    ['quality: a featureless (blurred) frame says hold still', qualityIssue(measureFrame(flat, W, H)) === 'blur'],
+    ['quality: too dark', qualityIssue(measureFrame(dark, W, H)) === 'dark'],
+    ['quality: glare', qualityIssue(measureFrame(glare, W, H)) === 'glare'],
+    ['quality: greyscale from RGBA', Array.from(toGray(rgba, 2, 1)).join() === '255,0'],
+  )
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'label:', n) }
+}
+
+// Network deadlines: a slow call settles with the fallback; a quick one (or a quick failure) is untouched.
+async function timeouts(): Promise<void> {
+  const wait = <T,>(ms: number, v: T) => new Promise<T>((r) => setTimeout(() => r(v), ms))
+  const quick = await withTimeout(wait(5, 'reply'), 200, 'fallback')
+  const slow = await withTimeout(wait(300, 'reply'), 20, 'fallback')
+  let failed = ''
+  try { await withTimeout(Promise.reject(new Error('down')), 200, 'fallback') } catch (e) { failed = (e as Error).message }
+  const checks: [string, boolean][] = [
+    ['a reply before the deadline wins', quick === 'reply'],
+    ['past the deadline, the fallback', slow === 'fallback'],
+    ['a failure before the deadline still fails', failed === 'down'],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'timeout:', n) }
+}
+
+// weekly plans (P5, Benn's model): phases of weeks, maintenance reuses the week lighter, the
+// calendar decides the week (never stored), a plan's week drives planned workouts and the mirror
+{
+  const W = '55555555-5555-4555-8555-555555555555'
+  const R = [{ id: W, name: 'Yoga reset', modality: 'yoga', effort: 'light', source: 'custom', blocks: [{ id: 'main', kind: 'sets', slots: [{ exId: 'downward-dog' }] }] }] as any
+  const week = { 0: [], 1: ['Legs'], 2: [W, 'Cardio'], 3: ['Push'], 4: [], 5: ['Pull', W], 6: [] }
+  const plan = { id: 'p', name: 'Mine', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'a', name: 'Build', weeks: 8, week }, { id: 'b', name: 'Maintain', weeks: 4, maintain: true }] } as any
+  const st = (extra = {}) => ({ trainingPlans: [plan], routines: R, schedule: { 0: 'Rest', 1: 'Push', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, ...extra }) as any
+  const pos = (d: string) => { const x = positionOn(plan, d); return x ? `${x.week}/${x.total}:${x.phase.name}:${x.weekInPhase}${x.ended ? ':end' : ''}` : 'none' }
+  const got = [
+    totalWeeks(plan), pos('2026-09-27'), pos('2026-09-28'), pos('2026-10-04'), pos('2026-10-05'), pos('2026-11-23'), pos('2026-12-20'), pos('2026-12-21'),
+    plannedKeys(st(), '2026-09-29').join('+'), plannedKeys(st(), '2026-12-01').join('+'), plannedKeys(st(), '2026-09-27').join('+'),  // Tue build, Tue maintain, before start (schedule)
+    [maintainOn(st(), '2026-11-02'), maintainOn(st(), '2026-11-23'), maintainOn(st(), '2026-12-22')].join(','),
+    JSON.stringify(scheduleMirror(week, R)),
+    plannedKeys(st({ routines: [{ ...R[0], archived: true }] }), '2026-09-29').join('+'),        // a removed own workout drops out
+  ].join(' ')
+  const want = '12 none 1/12:Build:1 1/12:Build:1 2/12:Build:2 9/12:Maintain:1 12/12:Maintain:4 13/12:Maintain:4:end ' +
+    W + '+Cardio ' + W + '+Cardio Rest'.replace('Rest', '') + ' false,true,true ' +
+    '{"0":"Rest","1":"Legs","2":"Cardio","3":"Push","4":"Rest","5":"Pull","6":"Rest"} Cardio'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: weeks, phases, planned workouts, maintenance, mirror', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const H = '66666666-6666-4666-8666-666666666666'
+  const R = [{ id: H, name: 'Hard one', modality: 'strength', effort: 'hard', source: 'custom', blocks: [] }] as any
+  const two = planWeekNotes({ 1: ['Legs', H], 2: [], 3: [] }, R).filter((n) => n.includes('harder workouts')).length
+  const none = planWeekNotes({ 0: ['Cardio'], 1: ['Legs'], 2: ['Cardio'], 3: ['Push'], 4: ['Cardio'], 5: ['Pull'], 6: ['Cardio'] }, R).some((n) => n.includes('no rest day'))
+  const fine = planWeekNotes(weekFromSchedule({ 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Cardio', 5: 'Pull', 6: 'Cardio' } as any), R).length
+  const two_active = activePlan({ trainingPlans: [
+    { id: 'a', state: 'active', startedAt: '2026-09-01', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'b', state: 'active', startedAt: '2026-09-20', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] },
+    { id: 'c', state: 'completed', startedAt: '2026-09-25', phases: [{ id: 'x', name: 'B', weeks: 1, week: {} }] }] } as any)?.id
+  const clean = cleanPhases([{ id: 'a', name: '', weeks: 40, week: { 1: ['Legs', 'Push', 'Pull', 'Cardio', 'Legs'] } }, { id: 'b', name: 'M', weeks: 30, maintain: true, week: { 1: ['x'] } }, { id: 'c', name: 'Z', weeks: 5 }] as any)
+  const cleanTxt = clean.map((p) => `${p.name}:${p.weeks}:${p.maintain ? 'm' : (p.week?.[1] || []).length}`).join(',')
+  const tpl = PLAN_TEMPLATES.every((t) => totalWeeks(t as any) > 0 && t.phases.some((x) => x.week && !x.maintain) && t.goals.includes(t.nutritionGoal) && t.phases.every((x) => !x.after)) && nextSuggestions({ baseTemplateId: 'tpl-ppl-12' } as any).every((t) => t.id !== 'tpl-ppl-12')
+  // back-to-back from every hard workout of each day: a day's second lift, and an own copy of Legs
+  const L = '77777777-7777-4777-8777-77777777aaaa'
+  const RL = [...R, { id: L, name: 'My legs', modality: 'strength', effort: 'hard', source: 'custom', blocks: [{ id: 'm', slots: [{ exId: 'back-squat' }, { exId: 'romanian-deadlift' }, { exId: 'leg-extension' }] }] }]
+  const b2b = (w: any) => planWeekNotes(w, RL).filter((n) => n.includes('back-to-back')).map((n) => n.split(' on ')[0]).join('|')
+  const got = [two, none, fine, two_active, cleanTxt, tpl, b2b({ 1: ['Push', 'Pull'], 2: ['Pull'] }), b2b({ 1: ['Legs'], 2: [L] }), b2b({ 1: ['Legs'], 2: ['Cardio'], 3: ['Push'] })].join(' ')
+  const want = '1 true 0 b Build:26:4,M:26:m true Pull is Two workouts for the same muscles are '
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: week notes, one active plan, limits, templates', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  const a = '77777777-7777-4777-8777-777777777777'
+  const P = (id: string, extra = {}) => ({ id, name: 'Plan ' + id, source: 'custom', state: 'active', startedAt: '2026-09-28', phases: [{ id: 'x', name: 'Build', weeks: 8, week: { 1: ['Legs'] } }], ...extra })
+  const loaded = stateFromBackup({ days: {}, trainingPlans: [P(a), null, { name: 'no phases' }, P('bad-id', { state: 'weird', startedAt: 'soon' })] } as never)
+  const got = [loaded.trainingPlans.length, loaded.trainingPlans[0].id, loaded.trainingPlans[1].state, String(loaded.trainingPlans[1].startedAt), loaded.trainingPlans.every((p: any) => p._dirty),
+    backupSummary({ days: {}, trainingPlans: [P(a), P('z', { state: 'archived' })] } as never).plans].join(' ')
+  const ok = got.startsWith(`2 ${a} archived undefined true 1`); if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: local data made valid, backup', JSON.stringify(got))
+}
+
+{
+  // a plan's day can hold several workouts and own ones: "pick it up" and the start date follow it
+  const r1 = { id: '88888888-8888-4888-8888-888888888888', name: 'Mine', blocks: [], modality: 'strength' }
+  const plan = { id: 'p', name: 'P', source: 'custom', state: 'active', startedAt: '2026-09-21', phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs', 'Cardio'], 3: ['Push'], 5: [r1.id] } }] }
+  const e = { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null }
+  const st = (days: any) => ({ target: { kcal: 2000 }, schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, profile: {}, days, customFoods: [], recipes: [], routines: [r1], trainingPlans: [plan] }) as any
+  const got = [
+    catchUp(st({ '2026-09-20': e }), '2026-09-23')?.type ?? '-',  // Wed (Push): Monday's Legs from the plan, not the empty schedule
+    catchUp(st({ '2026-09-20': e }), '2026-09-26')?.type ?? '-',  // Sat: Friday's own workout
+    planStart('2026-09-23', 'today'), planStart('2026-09-23', 'monday'), planStart('2026-09-27', 'monday'), planStart('2026-09-28', 'monday'),
+    weekSource({ phases: [{ maintain: false }, { maintain: true }, { maintain: false }, { maintain: true }] as any }, 3),
+    weekSource({ phases: [{ maintain: true }, { maintain: false }] as any }, 0),
+  ].join(' ')
+  const want = `Legs ${r1.id} 2026-09-23 2026-09-28 2026-09-28 2026-10-05 2 1`
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: pick up from the plan, start dates, which week a phase trains', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // junk from a newer or buggy client never breaks a launch, and nothing the server would refuse stays queued
+  let threw = ''
+  let phases: any[] = []
+  try { phases = cleanPhases([{ id: 7, name: 42, weeks: 'x', week: { 1: 'Legs', 2: ['Push', 9] } }, { name: 'M', weeks: 2, maintain: 'yes' }] as any) } catch (e) { threw = String(e) }
+  const P = { id: '77777777-7777-4777-8777-777777777777', name: 'x', source: 'custom', state: 'completed', startedAt: '2026-02-31', completedAt: 'soon', clonedFromId: 'nope',
+    reflection: { good: 5, change: '  Fewer days  ', at: 'x' }, phases: [{ id: 'a', name: 'Build', weeks: 4, week: { 1: ['Legs'] } }] }
+  const L = stateFromBackup({ days: {}, trainingPlans: [P] } as never).trainingPlans[0] as any
+  const got = [threw || 'ok', phases.map((ph) => `${ph.name}:${ph.weeks}:${ph.maintain ? 'm' : JSON.stringify(ph.week[1]) + JSON.stringify(ph.week[2])}`).join(','),
+    String(L.startedAt), String(L.completedAt), String(L.clonedFromId), L.reflection?.change, String(L.reflection?.good), typeof L.reflection?.at].join(' ')
+  const want = 'ok Build:1:[]["Push"],M:2:[][] undefined undefined undefined Fewer days undefined string'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: junk phases and fields made valid', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // a next plan chosen to start later leaves the current one in charge until then; a plan started today plans nothing before today
+  const ph = (w: any) => [{ id: 'a', name: 'Build', weeks: 4, week: w }]
+  const old = { id: 'o', name: 'Old', source: 'custom', state: 'active', startedAt: '2026-06-29', phases: [{ id: 'a', name: 'Build', weeks: 12, week: { 1: ['Legs', 'Pull'], 6: ['Push'] } }, { id: 'b', name: 'M', weeks: 1, maintain: true }] }
+  const nxt = { id: 'n', name: 'New', source: 'custom', state: 'active', startedAt: '2026-09-28', phases: ph({ 1: ['Push'] }) }
+  const s = { trainingPlans: [old, nxt], schedule: { 0: 'Rest', 1: 'Legs', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const fresh = { trainingPlans: [{ id: 'f', name: 'F', source: 'custom', state: 'active', startedAt: '2026-09-27', phases: ph({ 6: ['Push'] }) }], schedule: { 0: 'Rest', 1: 'Rest', 2: 'Rest', 3: 'Rest', 4: 'Rest', 5: 'Rest', 6: 'Rest' }, routines: [] } as any
+  const got = [
+    activePlan(s, '2026-09-27')?.id, upcomingPlan(s, '2026-09-27')?.id, String(maintainOn(s, '2026-09-27')), plannedKeys(s, '2026-09-26').join('+'),
+    activePlan(s, '2026-09-28')?.id, plannedKeys(s, '2026-09-28').join('+'), supersededPlans(s, '2026-09-28').map((p) => p.id).join(','), supersededPlans(s, '2026-09-27').length,
+    plannedKeys(fresh, '2026-09-26').join('+') || 'none', isBuiltinKey('constructor'), isBuiltinKey('Push'),
+    // started today with the schedule already mirrored to its week (Sat Push): Saturday was a rest day, nothing to pick up
+    catchUp({ ...fresh, schedule: { ...fresh.schedule, 6: 'Push' }, target: { kcal: 2000 }, profile: {}, customFoods: [], recipes: [],
+      days: { '2026-09-20': { foods: [{ n: 'x' }], supps: {}, weight: null, workout: null } } }, '2026-09-27')?.type ?? 'none',
+  ].join(' ')
+  const want = 'o n true Push n Push o 0 none false true none'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: next plan waits its turn, no plan before its start, own keys', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // the approved plan model (design canvas, Plans 1 to 4): maintenance after a plan, easier and lighter weeks
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', baseTemplateId: t.id, phases: phasesOf(t) }
+  const cellStr = (cs: any[]) => cs.map((c) => (c.kind === 'after' ? 'a' : c.kind === 'easier' ? 'e' : 'f') + (c.state === 'done' ? 'D' : c.state === 'now' ? 'N' : '')).join('')
+  const ended = positionOn(plan, '2027-01-04')!                     // week 15: past the 12 weeks, no maintenance chosen
+  const withM = { ...plan, phases: cleanPhases([...plan.phases, { id: 'x', name: 'Maintenance', weeks: 1, after: true, week: maintenanceWeekOf(plan) }]) }
+  const inM = positionOn(withM, '2027-01-04')!
+  const st = { trainingPlans: [withM], schedule: {}, routines: [] } as any
+  const lighter = withLighterWeek(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any), 5)
+  const easier = withEasierStart(phasesOf({ phases: [{ name: 'Build', weeks: 8, week: { 1: ['Legs'] } }] } as any))
+  const lib = catalogue({ trainingPlans: [{ id: 'o', name: 'My 8-week plan', source: 'custom', state: 'template', phases: [{ id: 'a', name: 'Build', weeks: 8, week: { 1: ['Legs'], 3: ['Push'], 5: ['Pull'] } }] }] } as any, 'build-muscle')
+  const days = { '2026-09-28': { foods: [], supps: {}, weight: null, workout: { type: 'Legs' } }, '2026-09-20': { foods: [], supps: {}, weight: null, workout: { type: 'Push' } } } as any
+  const got = [
+    totalWeeks(plan), cellStr(timeline(plan, '2026-10-05')),
+    [ended.ended, ended.maintain, ended.maintenanceWeek].join(','), [inM.ended, inM.maintain, inM.maintenanceWeek, inM.phase.name].join(','),
+    String(maintainOn(st, '2027-01-04')), plannedKeys(st, '2027-01-04').join('+'), String(totalWeeks(withM)), afterPhase(withM)?.name,
+    phaseRows(plan, '2026-10-12').map((r) => `${r.name}:${r.from}-${r.to}:${r.kind}:${r.state}`).join(','),
+    lighter.map((x) => x.name + x.weeks + (x.maintain ? 'M' : '')).join(','), easier.map((x) => x.name + (x.easier ? 'E' : '')).join(','),
+    lib.map((e) => e.name + ':' + e.madeBy + ':' + e.days).join(','),
+    filterCatalogue(lib, { madeBy: ['me'] }).length, filterCatalogue(lib, { goal: ['build-muscle'] }).length, filterCatalogue(lib, { q: 'muscle' }).length, filterCatalogue(lib, { length: ['8'] }).length,
+    workoutsDone({ days }, plan, '2026-10-05'),
+  ].join(' | ')
+  const want = ['12', 'eDeNffffefffffaaa', 'true,false,', 'false,true,3,Maintenance', 'true', 'Legs', '12', 'Maintenance',
+    'Foundation:1-2:easier:done,Build:3-6:full:now,Lighter week:7-7:lighter:,Build:8-12:full:',
+    'Build4,Lighter week1M,Build4', 'Easier first weekE,Build', 'Pure muscle growth:tali:6,Full body system:tali:5,Stronger with age:tali:5,My 8-week plan:me:3', '1', '3', '2', '2', '1'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance after, timeline, phase rows, added weeks, library filters', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // Tilo's three plans: every key resolves, the new workouts use library exercises, fit and eating lines follow the profile
+  const [pmg, swa, fbs] = PLAN_TEMPLATES
+  const keys = PLAN_TEMPLATES.flatMap((t) => [...t.phases.flatMap((ph) => Object.values(ph.week ?? {}).flat()), ...Object.values(t.maintenance).flat()])
+  const unresolved = keys.filter((k) => !isBuiltinKey(k) && !routineFor(k, []))
+  const badEx = taliWorkouts().flatMap((r) => r.blocks.flatMap((b) => b.slots)).filter((sl) => !EXERCISES.some((x) => x.id === sl.exId)).map((sl) => sl.exId)
+  const order = (f: any) => fitsFirst(PLAN_TEMPLATES, f).map((t) => t.id.split('-')[0]).join(',')
+  const got = [
+    unresolved.length, badEx.length, String(isTaliKey('tali-full-body-a')), String(isTaliKey('constructor')), routineFor('tali-full-body-a', [])?.effort, (routineFor('tali-full-body-a', [])?.estMins ?? 0) > 0,
+    String(fits(pmg, { goal: 'build-muscle', experience: 'intermediate' })), String(fits(pmg, { goal: 'build-muscle', experience: 'beginner' })), String(fits(fbs, { goal: 'lose-fat' })), String(fits(pmg, {})),
+    order({ goal: 'lose-fat' }), order({ goal: 'build-muscle', age: 60 }),
+    String(isEaseIn({ phases: phasesOf(swa) }, 0)), String(isEaseIn({ phases: phasesOf(pmg) }, 2)),
+    eatingLine(pmg, 'build-muscle'), eatingLine(pmg, 'lose-fat').startsWith('For building muscle, Food targets suggest protein about 1.8'), eatingLine(pmg, undefined), eatingLine(pmg, 'build-muscle', true).includes('g per kg'),
+  ].join(' | ')
+  const want = ['0', '0', 'true', 'false', 'hard', 'true', 'true', 'false', 'true', 'false', 'full,pure,stronger', 'stronger,pure,full', 'true', 'false',
+    'Protein about 1.8 g per kg a day and a small surplus. Your Food targets for building muscle cover this.', 'true', 'Set a goal in Profile and your Food targets will follow it.', 'false'].join(' | ')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: Tilo plans resolve, goal fit, ease in, eating lines', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  // the eating line matches "Fits your goal": a plan that fits the person's goal speaks for that goal
+  const swa = PLAN_TEMPLATES.find((t) => t.id === 'stronger-with-age')!
+  const got = [eatingLine(swa, 'build-muscle'), eatingLine(swa, 'feel-better').endsWith('for feeling better cover this.'), eatingLine(swa, 'lose-fat').startsWith('For feeling better, Food targets suggest')].join(' | ')
+  const want = 'Protein about 1.8 g per kg a day, at least 25–30 g at each main meal, and a small surplus. Your Food targets for building muscle cover this. | true | true'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: eating line follows a goal the plan fits', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+{
+  // maintenance counts from the day it's chosen; junk over the year's cap never drops it
+  const t = PLAN_TEMPLATES[0]
+  const plan: any = { id: 'm', name: 'x', source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: cleanPhases([...phasesOf(t), { id: 'a', name: 'M', weeks: 1, after: true, since: '2027-01-04', week: t.maintenance }]) }
+  const before = positionOn(plan, '2026-12-28')!, day1 = positionOn(plan, '2027-01-04')!, wk3 = positionOn(plan, '2027-01-18')!
+  const junk = cleanPhases([{ id: 'a', name: 'a', weeks: 26, week: {} }, { id: 'b', name: 'b', weeks: 26, week: {} }, { id: 'c', name: 'c', weeks: 3, week: {} }, { id: 'x', name: 'x', weeks: 1, after: true, maintain: true }, { id: 'z', name: 'z', weeks: 1, after: true, week: { 1: ['Legs', 'bad key!'] } }] as any)
+  const got = [before.ended, before.maintenanceWeek, day1.maintenanceWeek, wk3.maintenanceWeek, junk.map((x) => x.name + (x.after ? 'A' : '')).join(','), JSON.stringify(junk[junk.length - 1].week?.[1])].join(' | ')
+  const want = 'true |  | 1 | 3 | a,b,MaintenanceA | ["Legs"]'
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: maintenance counts from its start, never dropped by the cap', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+{
+  // Flow 3's note: lifting and cardio on one day, lift first (never blocks); two hard ones keep their own note
+  const one = planWeekNotes({ 1: ['Legs', 'Cardio'] } as any, [])
+  const two = planWeekNotes({ 1: ['Legs', 'Push', 'Cardio'] } as any, [])
+  const got = [one.some((n) => n === 'Monday has lifting and cardio. Doing both? Lift first, then cardio.'), two.some((n) => n.includes('Lift first')), two.some((n) => n.includes('two harder'))].join(' ')
+  const ok = got === 'true false true'; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: lift first when a day has lifting and cardio', JSON.stringify(got))
+}
+
+{
+  // stopping a plan never loses the week: it's kept when the first plan starts and comes back when none runs;
+  // carrying on repeats the last week at the full version, counted from the day it's chosen
+  const own = { 0: 'Rest', 1: 'Legs', 2: 'Cardio', 3: 'Push', 4: 'Rest', 5: 'Pull', 6: 'Cardio' } as any
+  const mirror = { 0: 'Rest', 1: 'Cardio', 2: 'Cardio', 3: 'Cardio', 4: 'Cardio', 5: 'Cardio', 6: 'Rest' } as any
+  const t = PLAN_TEMPLATES[2]
+  const running: any = { id: 'r', name: t.name, source: 'recommended', state: 'active', startedAt: '2026-09-28', phases: phasesOf(t) }
+  const keptOnStart = weekToKeep({ trainingPlans: [], schedule: own, profile: {} } as any)
+  const notTwice = weekToKeep({ trainingPlans: [running], schedule: mirror, profile: { weekBeforePlan: own } } as any)
+  const whileRunning = weekToPutBack({ trainingPlans: [running], profile: { weekBeforePlan: own } } as any)
+  const afterStop = weekToPutBack({ trainingPlans: [{ ...running, state: 'archived' }], profile: { weekBeforePlan: own } } as any)
+  const beforeStart = plannedKeys({ trainingPlans: [running], schedule: mirror, routines: [], profile: { weekBeforePlan: own } } as any, '2026-09-21')
+  const carry: any = { ...running, phases: cleanPhases([...phasesOf(t), { id: 'c', name: 'Carrying on', weeks: 1, after: true, full: true, since: '2026-12-07' }] as any) }
+  const c1 = positionOn(carry, '2026-12-14')!
+  const got = [JSON.stringify(keptOnStart) === JSON.stringify(own), notTwice, whileRunning, JSON.stringify(afterStop) === JSON.stringify(own), beforeStart.join('+'),
+    c1.maintain, c1.maintenanceWeek, c1.phase.name, String(maintainOn({ trainingPlans: [carry] } as any, '2026-12-14')), plannedKeys({ trainingPlans: [carry], schedule: mirror, routines: [] } as any, '2026-12-14').join('+')].join(' | ')
+  const want = 'true |  |  | true | Legs | false | 2 | Carrying on | false | tali-full-body-a'
+  // a plan picked for next Monday: an edit made while it waits is what Train, Summary and Stop see
+  const edited = { ...own, 4: 'Rest', 5: 'Rest' }
+  const waiting = { trainingPlans: [running], schedule: edited, routines: [], profile: { weekBeforePlan: own } } as any
+  waiting.profile.weekBeforePlan = keptAfterEdit(waiting, edited, '2026-09-24')
+  const waitGot = [plannedKeys(waiting, '2026-09-25').join('+') || 'rest', JSON.stringify(weekToPutBack({ ...waiting, trainingPlans: [] })) === JSON.stringify(edited),
+    String(keptAfterEdit({ trainingPlans: [running], routines: [], profile: { weekBeforePlan: own } } as any, edited, '2026-09-30'))].join(' | ')
+  if (waitGot !== 'rest | true | null') { bad++; console.log('FAIL', 'plans: edits while a plan waits', JSON.stringify(waitGot)) } else console.log('PASS', 'plans: edits while a plan waits are kept')
+  const ok = got === want; if (!ok) bad++
+  console.log(ok ? 'PASS' : 'FAIL', 'plans: stopping puts the week back, carrying on stays full', JSON.stringify(got), ok ? '' : 'want ' + JSON.stringify(want))
+}
+
+// Tester feedback email: only what was answered, open questions after the areas, app and device last.
+function feedbackForm(): void {
+  const empty = { areas: {}, wishes: '', other: '' }
+  const a = { areas: { food: { rating: 'Needs work' as const, note: '  Barcode missed my yoghurt ' }, plan: { rating: 'Works well' as const } }, wishes: 'Recipes from a photo', other: '' }
+  const e = feedbackEmail(a, { version: 'tali-v55', device: 'iPhone' })
+  const url = feedbackMailto(e)
+  const checks: [string, boolean][] = [
+    ['nothing answered: nothing to send', !hasFeedback(empty) && hasFeedback(a) && hasFeedback({ ...empty, other: 'hi' })],
+    ['a skipped area is left out, answered ones keep their order', e.body.indexOf('Logging food: Needs work') === 0 && e.body.includes('Planning your week: Works well') && !e.body.includes('Workouts')],
+    ['notes are trimmed and wishes follow the areas', e.body.includes('\nBarcode missed my yoghurt\n') && e.body.indexOf('What I’d like to see in Tilo:\nRecipes from a photo') > e.body.indexOf('Planning')],
+    ['app and device at the end', e.body.endsWith('---\nApp: tali-v55\nDevice: iPhone')],
+    ['mailto addressed to Benn, subject and body encoded', url.startsWith('mailto:benn@gravita.co?subject=Tilo%20tester%20feedback&body=') && decodeURIComponent(url.split('&body=')[1]) === e.body],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'feedback:', n) }
+}
+
+// Legal texts gated on first-run onboarding (ONBOARDING_ENABLED) and on Mind (WELLBEING_ENABLED),
+// each flag on its own passages. Onboarding on with Mind off: main's text as of 2026-10-09 (the
+// fixture). Onboarding off (what's published today), with Mind off or on: nothing that only
+// onboarding does. Changing the onboarding text on purpose means regenerating the fixture in the
+// same change. The Mind-off parity with main is in scripts/wellbeing/legal.ts.
+function legalOnboardingGate(): void {
+  const render = (onboarding: boolean, mind: boolean) => ({ privacy: privacyPolicy({ onboarding, mind }), terms: termsOfUse({ onboarding, mind }), cookies: cookiePolicy({ onboarding, mind }) })
+  const on = render(true, false)
+  const off = render(false, false)
+  const offMind = render(false, true)
+  const text = (d: object) => JSON.stringify(d)
+  const onlyOnboarding = ['setup', 'set Tilo up', 'Health check answers', 'Health data, then', 'tali.onboarding', 'tali.setupCardHidden', 'tali.pendingDelete', 'body fat', 'worth it', 'reasons Tilo gives', 'training preferences', 'pregnan']
+  // terms keep the general GP advice for pregnancy; only the setup paragraph goes
+  const leaksIn = (docs: typeof off) => (Object.keys(docs) as (keyof typeof docs)[]).flatMap((k) =>
+    onlyOnboarding.filter((w) => !(k === 'terms' && w === 'pregnan') && text(docs[k]).includes(w)).map((w) => `${k}: ${w}`))
+  const leaks = leaksIn(off), leaksMind = leaksIn(offMind)
+  const live = ['Weekly review: the day you picked', 'a weekly review reminder', 'Train offers lighter options', 'You can withdraw that consent', 'If Tilo learns that you\'re under']
+  const checks: [string, boolean][] = [
+    ['onboarding is off in this build', ONBOARDING_ENABLED === false],
+    ['on: privacy equals the fixture (main, 2026-10-09)', text(on.privacy) === text(LEGAL_ONBOARDING.privacy)],
+    ['on: terms equal the fixture', text(on.terms) === text(LEGAL_ONBOARDING.terms)],
+    ['on: cookie policy equals the fixture', text(on.cookies) === text(LEGAL_ONBOARDING.cookies)],
+    ['no option means off', text(privacyPolicy()) === text(off.privacy) && text(termsOfUse()) === text(off.terms) && text(cookiePolicy()) === text(off.cookies)],
+    ['off: no onboarding-only wording' + (leaks.length ? ` (${leaks.join(', ')})` : ''), !leaks.length],
+    ['off with Mind on: no onboarding-only wording' + (leaksMind.length ? ` (${leaksMind.join(', ')})` : ''), !leaksMind.length],
+    ['off: dates (all 2026-11-05, the Tilo rename)', off.privacy.updated === '2026-11-05' && off.terms.updated === '2026-11-05' && off.cookies.updated === '2026-11-05'],
+    ['off with Mind on: dates (all 2026-11-05, the Tilo rename)', offMind.privacy.updated === '2026-11-05' && offMind.terms.updated === '2026-11-05' && offMind.cookies.updated === '2026-11-05'],
+    ['off: the live passages stay (weekly review, reminders, lighter options, withdrawal, under-18 stop)', live.every((w) => text(off.privacy).includes(w))],
+    ['off with Mind on: the live passages stay', live.every((w) => text(offMind.privacy).includes(w))],
+    ['off with Mind on: the Mind passages are there (privacy, cookies, terms)',
+      ['a rough band for how long you slept', 'Mind settings: which parts of Tilo you use', 'your Unload notes (what', 'where to find support after a run of low moods', 'a check-in reminder (in the morning', 'at most once a month on each phone', 'the check-in, wind-down and plan check-in reminders', 'your usual wake and wind-down times and your wind-down routine; your Mind plans; and your Unload notes'].every((w) => text(offMind.privacy).includes(w)) &&
+        ['It also holds things that are never synced', 'tali-notify'].every((w) => text(offMind.cookies).includes(w)) &&
+        text(offMind.terms).includes("it isn't a crisis service")],
+    ['off with Mind on: the Health data list keeps injuries', text(offMind.privacy).includes('any injuries you mention')],
+  ]
+  for (const [n, ok] of checks) { if (!ok) bad++; console.log(ok ? 'PASS' : 'FAIL', 'legal onboarding gate:', n) }
+}
+
+backupRestore().then(importCarryOver).then(accountOwner).then(legacyAndGuest).then(syncResilience).then(barcodeScan).then(labelScan).then(timeouts).then(feedbackForm).then(legalOnboardingGate).then(routinesMissing).then(async () => { bad += await consentSuite(fakeServer) }).then(() => { bad += onboardingSuite() }).then(() => { bad += engineSuite() }).then(async () => { bad += await wizardSuite(fakeServer) }).then(() => { bad += wizardAnswersSuite() }).then(() => { bad += summaryModelSuite() }).then(async () => { bad += await wellbeingSuite(fakeServer) }).then(() => { bad += loopSuite() }).then(() => { bad += planSuite() }).then(async () => { bad += await sharedProductsSuite() }).then(async () => { bad += await duplicatesSuite(fakeServer) }).then(() => { bad += foodModelSuite() }).then(() => process.exit(bad ? 1 : 0), (e) => { console.error(e); process.exit(1) })

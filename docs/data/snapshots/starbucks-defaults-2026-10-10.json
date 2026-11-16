@@ -1,0 +1,547 @@
+{
+ "source": "Starbucks UK menu pages (each drink's default build, as shown on starbucks.co.uk/menu/product/<id>)",
+ "url": "https://www.starbucks.co.uk/menu",
+ "fetched": "2026-10-10",
+ "products": [
+  {
+   "id": "307",
+   "title": "Pumpkin Spice Latte",
+   "size": "Grande",
+   "k": 259.0,
+   "p": 9.1,
+   "c": 32.3,
+   "f": 9.4
+  },
+  {
+   "id": "371726",
+   "title": "Pumpkin Spice Caramel Macchiato",
+   "size": "Grande",
+   "k": 234.0,
+   "p": 10.8,
+   "c": 32.2,
+   "f": 6.1
+  },
+  {
+   "id": "416016",
+   "title": "Maple Pecan Macchiato",
+   "size": "Grande",
+   "k": 215.0,
+   "p": 9.9,
+   "c": 32.7,
+   "f": 4.8
+  },
+  {
+   "id": "396843",
+   "title": "Caramel Protein Latte",
+   "size": "Grande",
+   "k": 209.0,
+   "p": 24.4,
+   "c": 17.4,
+   "f": 4.7
+  },
+  {
+   "id": "396923",
+   "title": "Caramel Protein Americano",
+   "size": "Grande",
+   "k": 102.0,
+   "p": 16.5,
+   "c": 7.0,
+   "f": 0.8
+  },
+  {
+   "id": "2333",
+   "title": "Caffè Latte",
+   "size": "Grande",
+   "k": 151.0,
+   "p": 10.9,
+   "c": 15.0,
+   "f": 5.2
+  },
+  {
+   "id": "231",
+   "title": "Latte Macchiato",
+   "size": "Grande",
+   "k": 147.0,
+   "p": 10.6,
+   "c": 14.6,
+   "f": 5.1
+  },
+  {
+   "id": "405",
+   "title": "Cappuccino",
+   "size": "Grande",
+   "k": 130.0,
+   "p": 9.4,
+   "c": 12.9,
+   "f": 4.5
+  },
+  {
+   "id": "743",
+   "title": "Flat White",
+   "size": "Short",
+   "k": 76.0,
+   "p": 4.1,
+   "c": 5.8,
+   "f": 4.0
+  },
+  {
+   "id": "391869",
+   "title": "Ristretto Bianco",
+   "size": "Short",
+   "k": 106.0,
+   "p": 5.6,
+   "c": 8.5,
+   "f": 5.5
+  },
+  {
+   "id": "2789",
+   "title": "Cortado",
+   "size": "Short",
+   "k": 69.0,
+   "p": 3.8,
+   "c": 5.9,
+   "f": 3.5
+  },
+  {
+   "id": "2141",
+   "title": "Caffè Americano",
+   "size": "Grande",
+   "k": 11.0,
+   "p": 0.6,
+   "c": 1.4,
+   "f": 0.2
+  },
+  {
+   "id": "1023",
+   "title": "Filter Coffee",
+   "size": "Grande",
+   "k": 31.0,
+   "p": 1.3,
+   "c": 2.6,
+   "f": 1.3
+  },
+  {
+   "id": "2153",
+   "title": "Espresso",
+   "size": "Doppio",
+   "k": 7.0,
+   "p": 0.4,
+   "c": 0.9,
+   "f": 0.1
+  },
+  {
+   "id": "931",
+   "title": "Espresso Macchiato",
+   "size": "Double",
+   "k": 15.0,
+   "p": 1.0,
+   "c": 1.7,
+   "f": 0.4
+  },
+  {
+   "id": "2973",
+   "title": "Caramel Macchiato",
+   "size": "Grande",
+   "k": 214.0,
+   "p": 10.9,
+   "c": 28.9,
+   "f": 6.0
+  },
+  {
+   "id": "2545",
+   "title": "Caffè Mocha",
+   "size": "Grande",
+   "k": 283.0,
+   "p": 12.0,
+   "c": 32.2,
+   "f": 11.2
+  },
+  {
+   "id": "1611",
+   "title": "White Chocolate Mocha",
+   "size": "Grande",
+   "k": 345.0,
+   "p": 11.3,
+   "c": 46.2,
+   "f": 12.7
+  },
+  {
+   "id": "2039",
+   "title": "Classic Hot Chocolate",
+   "size": "Grande",
+   "k": 311.0,
+   "p": 13.9,
+   "c": 35.4,
+   "f": 12.1
+  },
+  {
+   "id": "1627",
+   "title": "Chai Latte",
+   "size": "Grande",
+   "k": 181.0,
+   "p": 7.4,
+   "c": 29.4,
+   "f": 3.7
+  },
+  {
+   "id": "396861",
+   "title": "Vanilla Protein Matcha Latte",
+   "size": "Grande",
+   "k": 215.0,
+   "p": 25.2,
+   "c": 17.2,
+   "f": 4.8
+  },
+  {
+   "id": "1595",
+   "title": "Matcha Latte",
+   "size": "Grande",
+   "k": 161.0,
+   "p": 12.0,
+   "c": 15.2,
+   "f": 5.6
+  },
+  {
+   "id": "543",
+   "title": "English Breakfast Tea",
+   "size": "Grande",
+   "k": 5.0,
+   "p": 0.8,
+   "c": 0.0,
+   "f": 0.1
+  },
+  {
+   "id": "1445",
+   "title": "Earl Grey Tea",
+   "size": "Grande",
+   "k": 4.0,
+   "p": 0.7,
+   "c": 0.0,
+   "f": 0.1
+  },
+  {
+   "id": "1675",
+   "title": "Mint Herbal Blend Tea",
+   "size": "Grande",
+   "k": 4.0,
+   "p": 0.2,
+   "c": 0.6,
+   "f": 0.1
+  },
+  {
+   "id": "2121",
+   "title": "Hibiscus Herbal Blend Tea",
+   "size": "Grande",
+   "k": 6.0,
+   "p": 0.2,
+   "c": 1.1,
+   "f": 0.0
+  },
+  {
+   "id": "2007",
+   "title": "Emperor's Clouds & Mist Tea",
+   "size": "Grande",
+   "k": 4.0,
+   "p": 0.6,
+   "c": 0.0,
+   "f": 0.1
+  },
+  {
+   "id": "416001",
+   "title": "Aerocano",
+   "size": "Grande",
+   "k": 9.0,
+   "p": 0.4,
+   "c": 1.1,
+   "f": 0.2
+  },
+  {
+   "id": "416099",
+   "title": "Caramel Aerocano",
+   "size": "Grande",
+   "k": 52.0,
+   "p": 0.5,
+   "c": 11.7,
+   "f": 0.2
+  },
+  {
+   "id": "781",
+   "title": "Iced Pumpkin Spice Latte",
+   "size": "Grande",
+   "k": 192.0,
+   "p": 7.7,
+   "c": 29.5,
+   "f": 3.8
+  },
+  {
+   "id": "371702",
+   "title": "Iced Pumpkin Spice Caramel Macchiato",
+   "size": "Grande",
+   "k": 209.0,
+   "p": 8.5,
+   "c": 30.2,
+   "f": 5.2
+  },
+  {
+   "id": "416049",
+   "title": "Iced Maple Pecan Macchiato",
+   "size": "Grande",
+   "k": 214.0,
+   "p": 9.8,
+   "c": 32.6,
+   "f": 4.8
+  },
+  {
+   "id": "396766",
+   "title": "Iced Caramel Protein Latte",
+   "size": "Grande",
+   "k": 206.0,
+   "p": 24.2,
+   "c": 17.1,
+   "f": 4.6
+  },
+  {
+   "id": "396731",
+   "title": "Iced Caramel Protein Americano",
+   "size": "Grande",
+   "k": 102.0,
+   "p": 16.5,
+   "c": 7.0,
+   "f": 0.8
+  },
+  {
+   "id": "9499",
+   "title": "Iced Brown Sugar Oat Shaken Espresso",
+   "size": "Grande",
+   "k": 131.0,
+   "p": 1.6,
+   "c": 20.2,
+   "f": 4.4
+  },
+  {
+   "id": "2421",
+   "title": "Iced Caffè Latte",
+   "size": "Grande",
+   "k": 128.0,
+   "p": 9.2,
+   "c": 12.7,
+   "f": 4.4
+  },
+  {
+   "id": "2213",
+   "title": "Cold Brew Coffee",
+   "size": "Grande",
+   "k": 22.0,
+   "p": 1.1,
+   "c": 2.2,
+   "f": 0.8
+  },
+  {
+   "id": "31",
+   "title": "Cold Brew Latte",
+   "size": "Grande",
+   "k": 123.0,
+   "p": 8.9,
+   "c": 12.0,
+   "f": 4.3
+  },
+  {
+   "id": "1789",
+   "title": "Iced Caffè Americano",
+   "size": "Grande",
+   "k": 11.0,
+   "p": 0.6,
+   "c": 1.4,
+   "f": 0.2
+  },
+  {
+   "id": "49",
+   "title": "Iced Caramel Macchiato",
+   "size": "Grande",
+   "k": 201.0,
+   "p": 9.6,
+   "c": 27.9,
+   "f": 5.6
+  },
+  {
+   "id": "1651",
+   "title": "Iced Caffè Mocha",
+   "size": "Grande",
+   "k": 342.0,
+   "p": 11.6,
+   "c": 32.9,
+   "f": 17.7
+  },
+  {
+   "id": "2841",
+   "title": "Iced White Chocolate Mocha",
+   "size": "Grande",
+   "k": 401.0,
+   "p": 10.6,
+   "c": 46.5,
+   "f": 19.1
+  },
+  {
+   "id": "416054",
+   "title": "Iced Apple Crumble Matcha Latte",
+   "size": "Grande",
+   "k": 328.0,
+   "p": 6.7,
+   "c": 38.5,
+   "f": 15.9
+  },
+  {
+   "id": "957",
+   "title": "Iced Chai Latte",
+   "size": "Grande",
+   "k": 180.0,
+   "p": 7.4,
+   "c": 29.3,
+   "f": 3.6
+  },
+  {
+   "id": "2275",
+   "title": "Iced Green Tea",
+   "size": "Grande",
+   "k": 0.0,
+   "p": 0.0,
+   "c": 0.0,
+   "f": 0.0
+  },
+  {
+   "id": "4229",
+   "title": "Peach Iced Tea",
+   "size": "Grande",
+   "k": 72.0,
+   "p": 0.1,
+   "c": 17.3,
+   "f": 0.1
+  },
+  {
+   "id": "3723",
+   "title": "Cool Lime Starbucks Refresha® Drink",
+   "size": "Grande",
+   "k": 69.0,
+   "p": 0.2,
+   "c": 16.1,
+   "f": 0.1
+  },
+  {
+   "id": "4269",
+   "title": "Strawberry Acai Starbucks Refresha® Drink",
+   "size": "Grande",
+   "k": 79.0,
+   "p": 0.4,
+   "c": 18.4,
+   "f": 0.1
+  },
+  {
+   "id": "147",
+   "title": "Pumpkin Spice Frappuccino",
+   "size": "Grande",
+   "k": 368.0,
+   "p": 5.1,
+   "c": 48.6,
+   "f": 16.3
+  },
+  {
+   "id": "1923",
+   "title": "Caramel Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 362.0,
+   "p": 4.9,
+   "c": 45.4,
+   "f": 17.7
+  },
+  {
+   "id": "2791",
+   "title": "Mocha Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 330.0,
+   "p": 5.8,
+   "c": 39.0,
+   "f": 16.5
+  },
+  {
+   "id": "2625",
+   "title": "Coffee Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 299.0,
+   "p": 4.8,
+   "c": 33.9,
+   "f": 15.9
+  },
+  {
+   "id": "1961",
+   "title": "Pumpkin Spice Cream Frappuccino®",
+   "size": "Grande",
+   "k": 359.0,
+   "p": 5.8,
+   "c": 43.5,
+   "f": 17.4
+  },
+  {
+   "id": "617",
+   "title": "Caramel Cream Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 358.0,
+   "p": 5.7,
+   "c": 41.4,
+   "f": 18.9
+  },
+  {
+   "id": "2751",
+   "title": "Matcha Green Tea Cream Frappuccino®  Blended Beverage",
+   "size": "Grande",
+   "k": 320.0,
+   "p": 6.3,
+   "c": 34.6,
+   "f": 17.2
+  },
+  {
+   "id": "1069",
+   "title": "Chocolate Cream Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 346.0,
+   "p": 7.1,
+   "c": 38.2,
+   "f": 18.1
+  },
+  {
+   "id": "2155",
+   "title": "Cookies & Cream Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 387.0,
+   "p": 7.1,
+   "c": 43.0,
+   "f": 20.7
+  },
+  {
+   "id": "1311",
+   "title": "Strawberries & Cream Frappuccino® Blended Beverage",
+   "size": "Grande",
+   "k": 331.0,
+   "p": 5.5,
+   "c": 39.0,
+   "f": 17.0
+  },
+  {
+   "id": "396926",
+   "title": "Iced Vanilla Protein Matcha Latte",
+   "size": "Grande",
+   "k": 160.0,
+   "p": 21.1,
+   "c": 11.9,
+   "f": 2.9
+  },
+  {
+   "id": "161",
+   "title": "Iced Matcha Latte",
+   "size": "Grande",
+   "k": 117.0,
+   "p": 8.8,
+   "c": 10.9,
+   "f": 4.0
+  }
+ ]
+}

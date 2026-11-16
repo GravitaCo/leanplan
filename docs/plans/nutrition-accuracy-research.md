@@ -1,6 +1,6 @@
 # Nutrition accuracy research — what the evidence says so far
 
-**Status:** Research only, round 1 (September 2026). No app changes made from it yet.
+**Status:** Research, round 1 (September 2026). Applied so far: the ±20% floor for chain menu sources (§3).
 **Owner:** `nutrition-accuracy` agent.
 **Method:** multi-source web research with 3-vote adversarial verification per claim
 (deep-research workflow, 73 agents, 24 sources fetched, 14 claims checked).
@@ -83,12 +83,15 @@ The three studies use different reference standards, so their numbers can't be c
 hand 20%, quick 25%, cooking fat 30%.
 
 - **Current values are consistent with the evidence** where it exists. No change is needed now.
-- **When restaurant or menu logging arrives**, give it its own capture method at **about 20%**, not the
-  serving value (12%). (1.1)
+- **Restaurant and menu entries** carry **about 20%**, not the serving value (12%). (1.1) Done: chain
+  sources set `err: MENU_ERR` (0.2) in `src/core/data/sources.ts`, a floor on the entry's margin rather
+  than a separate capture method.
 - **When AI photo logging arrives (plan phase 3)**, start at **about 35%**. Photo estimates also run low, so
   always ask about portion size, and add **no** hidden correction factor: ask, don't guess. (1.3)
 - **Packaged foods from labels** shouldn't be treated as tighter than about ±10–20%, even when weighed.
   Whether weighed-and-labelled should rise from 8% depends on the real-label-accuracy data we don't have yet. (1.4)
+  Benn's decision (26 Sept 2026) for now: the user's own pack is taken as the truth, with no tolerance added
+  (`label-scan-and-shared-products.md` §1.5; `sourceErr` in `sources.ts`).
 - **Fibre is where databases disagree most** (1.2). If we show fibre, show it as approximate.
 
 ## 4. Not covered yet (needs round 2)
