@@ -105,3 +105,7 @@ screen is rebuilt on N1, in the same commit, so both apps read one copy.
 - Builder steps 1 and 2: the title and everything below sit 4 pt low; an empty day's "+ Add" sits 3 pt below its day label.
 - Plan home tiles (Workouts, Exercise library): 2 pt short; number and label 2 to 3 pt high.
 - Week rows: the day label and a two-line title sit 2 pt high inside the row (single-line rows match).
+- Plan builder pages with a footer (`PlanBuilder.tsx`, three): the web pads `.pb` 150 under its fixed bar; native still ends 24 above its footer. Measure and set `end` like the preview and the end of a plan.
+- End of plan, step 1: the second look-back field sits near the bottom, so the iOS keyboard may cover it and the Continue bar (`PlanPage` has no keyboard inset). Device check, then `automaticallyAdjustKeyboardInsets` or N1's keyboard wrapper.
+- `PlanPage`'s footer has no bottom safe-area inset; fine while the tab bar shows, needed if a Plan view ever hides it.
+- Device: the preview's last footnote clears the Starts bar (124 pt) and the end of a plan's clears Skip (105 pt), light and dark.
