@@ -105,4 +105,3 @@ screen is rebuilt on N1, in the same commit, so both apps read one copy.
 - Builder steps 1 and 2: the title and everything below sit 4 pt low; an empty day's "+ Add" sits 3 pt below its day label.
 - Plan home tiles (Workouts, Exercise library): 2 pt short; number and label 2 to 3 pt high.
 - Week rows: the day label and a two-line title sit 2 pt high inside the row (single-line rows match).
-- The big plan tile's caption is bold on the web because `.ptile.big` also matches the global `.big` (theme.css:194). Native matches it; whether the web means it is Benn's or Sara's call.
