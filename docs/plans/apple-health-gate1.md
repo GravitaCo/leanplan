@@ -82,8 +82,10 @@ before the iOS sheet. HealthKit is read (not just shown) only when all of these 
 shared function `mayReadHealth(s, ctx)` in `src/data/` that the importer calls before every read:
 
 1. the connection record exists and its `owner` is the signed-in uid;
-2. the latest `health-import` record for the account is a yes;
-3. health consent is current (`health_consent_current` rules: a yes, not paused, not withdrawn);
+2. the account's latest `health-import` record is a yes and its id equals the connection record's
+   `consentId` (so a yes made later on another phone never restarts reads on a phone whose wipe was lost);
+3. health consent is current on the device (`hasCurrentConsent('health')`, `consentLetsSync`, and not
+   `healthSyncPaused`);
 4. signed in, and no owner question pending (`ownerCheck` neither 'ask' nor 'verify').
 
 A yes recorded on another device never starts reads here: this phone needs its own Connect. If (1)
@@ -91,40 +93,59 @@ fails for a different uid the store is wiped (H3).
 
 ### H2. Withdrawals from anywhere wipe this phone
 
-- **Health withdrawal pulled from another device:** `applyHealthWithdrawal` (consent.ts) gains a
-  platform hook; the native app registers `clearDeviceHealth`, which wipes the store and stops reads. The
-  hook runs once per record id, guarded like `healthCleared`.
+- **One hook in `clearHealthData`** (consent.ts): a registered platform hook `onHealthDataCleared` (its
+  own name; `clearDeviceHealth` in `deviceOnly.ts` already clears the Unload notes) wipes the store and
+  stops reads. `clearHealthData` has three callers (the local `withdraw`, the pulled
+  `applyHealthWithdrawal`, and the store's own call), so the one hook covers all three.
 - **health-import withdrawal pulled from another device** (a Disconnect on a second iPhone):
   `applyHealthImportWithdrawal(s, meta)`, applied once per record id (`importCleared`, stored next to
-  `healthCleared`), runs the same wipe.
+  `healthCleared`), runs the same wipe. It runs after every `pullConsents`, next to the two
+  `applyHealthWithdrawal` calls in `store.ts`.
 - **The shared `withdraw('health')`** also records a `health-import` withdrawal when the account's latest
   `health-import` is a yes, so the web records it too and a later health yes never resumes imports.
 - Disconnect on this phone: records the `health-import` withdrawal, then wipes, offline too; the record
   uploads on the next sync.
+- `healthCleared` and `importCleared` live in `leanplan.v1` and the store in `tali.health`, which are
+  written separately, so a guard can be saved while a wipe is lost. H3's read-time consent check makes
+  that safe: the hooks only tidy up.
 
 ### H3. An owner check on every read, failing closed
 
 The store's accessors copy the Unload gate (`unloadNotes` and `NotesContext` in `src/data/deviceOnly.ts`):
 every read returns empty, and clears the store, unless signed in, no owner question pending, and the
-store's stamp equals `_meta.owner`. No recorded owner means empty. The wipe hooks in §4 then only tidy
+store's stamp equals `_meta.owner`, health consent is current on the device, and the account's latest
+`health-import` record is a yes whose id equals the connection record's `consentId`. No recorded owner
+means empty. The wipe hooks in §4 then only tidy
 up; a crash between writing `tali.health` and `leanplan.v1`, or a pending owner question, can never show
 one account's watch data to another.
 
 ### M1. The sync race: compare-and-swap at push, saving offline as normal
 
-Saving never waits on the network. For a day changed by the importer (confirming or, if P2-4 says so,
-removing a walk), the day records `meta.days[d].base` (the server `updated_at` it was based on) and the
-session operations made (`{ add: [ids], remove: [ids] }`). At push, such a day skips the plain upsert
-(`upsertEach` in sync.ts) and goes:
+Saving never waits on the network. The compare-and-swap path is only for a day that was **synced and
+clean** when the importer changed it (confirming or, if P2-4 says so, removing a walk). The day then
+records `meta.days[d].base`, the server's `updated_at` string **exactly as received** (microseconds and
+offset; never re-formatted through `Date`, never taken from `u`, which local edits and `clearHealthData`
+set to `nowIso()`), and the session operations made (`{ add: [ids], remove: [ids] }`). **Any other edit
+to that day clears `base` and `ops`**, and the day goes back to today's plain upsert, so the rebase can
+never drop an unpushed manual edit.
 
-1. `PATCH day_logs?user_id=eq.<uid>&log_date=eq.<d>&updated_at=eq.<base>` with
+At push, the path runs inside `pushDirty`'s days step, after the consents step and the "health consent
+not uploaded yet" stop, and its bodies are built exactly as that step builds them:
+`withoutHealth(toServerDay(...))` when health is declined, the held-check-in form when paused, else
+`toServerDay`. For each such day:
+
+1. `PATCH day_logs?user_id=eq.<uid>&log_date=eq.<d>&updated_at=eq.<encodeURIComponent(base)>` with
    `Prefer: return=representation` (`updated_at` is set by the `set_updated_at` trigger, so this is a
-   true conditional write).
-2. No row back: fetch the server day (as `serverDays` does), take it onto the phone, reapply the session
-   operations by id (an add whose id is there already, or a remove whose id is gone, is a no-op), set the
-   new base and retry, at most 3 times; then leave the day dirty for the next sync.
-3. A day the server has never had: insert with `Prefer: resolution=ignore-duplicates`; on a conflict, the
-   same rebase.
+   true conditional write; the `+` in `+00:00` must be encoded or it decodes to a space).
+2. No row back: fetch the server day (as `serverDays` does). If it exists, take it onto the phone,
+   reapply the session operations by id (an add whose id is there already, or a remove whose id is gone,
+   is a no-op), set `base` to its `updated_at` and retry. If it doesn't exist, go to 3.
+3. **No `base` known** (the phone never had the row; it may still exist): `POST
+   day_logs?on_conflict=user_id,log_date` with `Prefer: resolution=ignore-duplicates,return=representation`.
+   An empty array back means the row already existed: fetch it and rebase as in 2.
+4. Success: `meta.days[d] = { u: <returned updated_at>, dirty: false }`, and `base` and `ops` cleared.
+5. At most 3 attempts per sync; after the third failure the day stays dirty and is reported in `failed`,
+   as other steps are.
 
 Other days keep today's path. This narrows, not removes, whole-day last-write-wins for manual edits,
 which is an existing risk and out of scope.
@@ -152,7 +173,7 @@ In `scripts/wellbeing/data-device.ts`, beside the Unload sentinel, with the same
   than `self`; no `asleepMin`, `bedAt`, `ext` or planted value appears anywhere.
 - An import boundary like `boundaryIssues`: only the health store and the importer may import
   `modules/tilo-health` or the store's accessors; `sync`, `backup`, `labelReader`, `push` and `consent`
-  must not.
+  must not. Calling the registered `onHealthDataCleared` hook (H2) is not an import and is allowed.
 
 ### M4. Swift returns as little as possible (`modules/tilo-health`)
 
@@ -179,12 +200,24 @@ Decision P2-13 must be made before W1 ships, not only before App Store submissio
 - L4: ledger entries older than 56 days are pruned.
 - L5: `tali.health` is left out of the backup export.
 
-Migration draft (not applied):
+Migration draft (not applied; for `docs/migrations/`, following `2026-10-10-shared-products.sql`):
 
 ```sql
+-- Tilo: consent type 'health-import' (Apple Health import W1, option (c), device only).
+-- NOT APPLIED: security-data review, then Benn applies it BEFORE any native build that records a
+-- 'health-import' consent ships (until then those rows are refused with 23514 and stay dirty).
+-- Widening only: every existing row passes. No server function reads this type (all filter
+-- type = 'health'); delete-account already removes every consents row. No table, grant or policy change.
+-- Rollback: consents is append-only history, so never delete 'health-import' rows to narrow the
+-- check. Only if no build ever recorded the type
+-- (select count(*) from public.consents where type = 'health-import') = 0, re-run the
+-- shared-products step with the four types. Safe to re-run.
 begin;
 alter table public.consents drop constraint if exists consents_type_check;
 alter table public.consents add constraint consents_type_check
   check (type in ('health', 'ai', 'label-photo', 'shared-products', 'health-import'));
 commit;
+-- Verify:
+-- select pg_get_constraintdef(oid) from pg_constraint
+--   where conrelid = 'public.consents'::regclass and conname = 'consents_type_check';
 ```
