@@ -28,10 +28,10 @@ neither is known yet. So the job before Plus is to measure both cheaply, not to 
 | Phase | Starts when | Cash burn a month (base, excluding founder time) | Revenue | Unlocks the next phase |
 |---|---|---|---|---|
 | 0. Alpha, now | Today | about £66 | £0 | Alpha gate clips, native parity, solicitor #6 and clinician #44 engaged, one-off costs funded |
-| 1. Store launch, free | Native plan phase 3, after the public-launch gates | about £300 to £525, plus about £10.3k one-off | £0 | AI Phase 1 passes its quality gate; about 1,000 MAU; D30 retention measured on three monthly cohorts |
-| 2. Plus | AI Phase 1 live, DMCC-compliant purchase flow, solicitor has reviewed the terms | falls as payers grow; covers running and launch costs at about 470 payers | payers × £2.82 | Three months of Plus data; about 470 payers |
-| 3. Coach | Plus measured; 5 to 10 PT interviews positive; consent-sharing design cleared | as Phase 2, plus support time | adds about £15 net a coach a month | About 2,550 payers (one salary) |
-| 4. Stable and profitable | One salary covered | | | About 3,640 payers for a 20% margin |
+| 1. Store launch, free | Native plan phase 3, after the public-launch gates | about £300 to £525, plus about £284 one-off and the solicitor and clinician once quoted | £0 | AI Phase 1 passes its quality gate; about 1,000 MAU; D30 retention measured on three monthly cohorts |
+| 2. Plus | AI Phase 1 live, DMCC-compliant purchase flow, solicitor has reviewed the terms | falls as payers grow; covers running and launch costs (solicitor and clinician excluded) at about 230 payers | payers × £2.82 | Three months of Plus data; about 230 payers |
+| 3. Coach | Plus measured; 5 to 10 PT interviews positive; consent-sharing design cleared | as Phase 2, plus support time | adds about £15 net a coach a month | About 2,340 payers (one salary) |
+| 4. Stable and profitable | One salary covered | | | About 3,330 payers for a 20% margin |
 
 **The numbers that matter** (base case):
 
@@ -39,10 +39,10 @@ neither is known yet. So the job before Plus is to measure both cheaply, not to 
 |---|---|---|
 | Net receipts per payer, store in-app purchase (15%), blended | £2.79 a month | §3.2 |
 | Payers / MAU to cover infrastructure | about 50 / 1,200 | §4.2 |
-| Payers / MAU to cover running, launch and compliance costs | about 470 / 11,700 | §4.2 |
-| Payers / MAU to pay one salary of £4,000 a month | about 2,550 / 64,000 | §4.2 |
-| Payers / MAU for a 20% margin after that salary | about 3,640 / 91,000 | §4.2 |
-| One-off launch and compliance costs (quotes needed) | about £10.3k (range £3.8k to £22.8k) | §2.3 |
+| Payers / MAU to cover running costs and the modelled one-offs (solicitor and clinician excluded) | about 230 / 5,700 | §4.2 |
+| Payers / MAU to pay one salary of £4,000 a month | about 2,340 / 58,500 | §4.2 |
+| Payers / MAU for a 20% margin after that salary | about 3,330 / 83,300 | §4.2 |
+| One-off launch costs in the model (solicitor and clinician excluded until quoted) | £284 | §2.3 |
 | Blended LTV per payer / CAC cap | about £26 / £9 | §4.4 |
 
 The low case never reaches a 20% margin and needs about 79,500 MAU just to cover infrastructure
@@ -51,11 +51,12 @@ growth. All three of those inputs are ours to control.
 
 **Decisions for Benn, first ones first** (full list in §12):
 
-1. **Get quotes** from a solicitor (#6) and a clinician (#44), plus an insurance quote. They are the
-   largest costs before any revenue, and every later figure in §4 moves with them.
-2. **Confirm Gravita's VAT status and whether Tilo stays inside Gravita.** VAT changes web net
-   receipts by about 21%; the entity decides SEIS eligibility (§6) and is hard to change once the
-   apps and subscriptions sit under Gravita's developer accounts.
+1. **Get quotes** from a solicitor (#6) and a clinician (#44), plus an insurance quote. Both are
+   still required before public launch and any paid feature, but their costs are left out of §4 until
+   quotes exist (§2.3), so every threshold above (b) rises once they are added back.
+2. **Confirm whether Tilo stays inside Gravita.** The entity decides SEIS eligibility (§6) and is
+   hard to change once the apps and subscriptions sit under Gravita's developer accounts. (Gravita's
+   VAT registration is settled, §12.)
 3. **Check the Supabase plan tier and the EAS plan**, and read last month's EAS and Seedance bills
    (§2.5). Move Supabase to Pro before store launch if it is on Free.
 4. **Ask the accountant about an R&D claim** for Gravita's current period before the claim
@@ -173,14 +174,21 @@ and need re-checking before pricing Plus.
 
 | Item | Gate | Low (worst) | Base | High (best) | Basis |
 |---|---|---|---|---|---|
-| Solicitor: privacy policy, terms, register, subscription terms, the 30-day hold question (#6) | Public launch and any paid feature | £14,500 | £6,000 | £2,000 | **ASSUMPTION** 7 to 25 hours. Anchor: the 2026 court guideline hourly rates for a solicitor of 8+ years are £288 (National 2) to £579 (London 1) [S24]; market and fixed-fee rates differ. Quote needed |
-| Clinician review: wellbeing question and routing, Mind skills, loop safety tiers, Cycle thresholds (#44, DPIA D1) | Onboarding beyond testers, public launch | £8,000 | £4,000 | £1,500 | **ASSUMPTION** 15 to 40 hours at £100 to £200 an hour; no source. Quote needed |
+| Solicitor: privacy policy, terms, register, subscription terms, the 30-day hold question (#6) | Public launch and any paid feature | excluded | excluded | excluded | Quote needed; see the note below. Anchor: the 2026 court guideline hourly rates for a solicitor of 8+ years are £288 (National 2) to £579 (London 1) [S24]; market and fixed-fee rates differ |
+| Clinician review: wellbeing question and routing, Mind skills, loop safety tiers, Cycle thresholds (#44, DPIA D1) | Onboarding beyond testers, public launch | excluded | excluded | excluded | Quote needed; see the note below |
 | UK trade mark "Tilo", two classes | Before store submission (`native-app-plan.md` §9.1) | £265 | £265 | £265 | £205 online plus £60 a class from 1 April 2026 [S25] |
 | Google Play registration | Android phase | £19 | £19 | £19 | $25 once [S20] |
-| **Total** | | **£22,784** | **£10,284** | **£3,784** | Amortised over 24 months in §4 (**ASSUMPTION**) |
+| **Total in the model** | | **£284** | **£284** | **£284** | Amortised over 24 months in §4 (**ASSUMPTION**): £11.82 a month |
 | DPIA | Onboarding flag, AI Phase 0 | £0 | £0 | £0 | Written in-house by `compliance`; signed by Benn |
 | Alpha-gate demo clips (83 or 289) | Alpha gate | unknown | unknown | unknown | **Measure:** cost per clip from Benn's Seedance bill for the 37 made, × clips to make |
 | Insurance | Public launch | in §2.1 | | | Annual, so in running costs |
+
+**Solicitor and clinician costs are excluded at Benn's request (17 November 2026) until quotes
+exist.** Both are still required before public launch and any paid feature (roadmap gates #6 and
+#44, §5). The earlier placeholders were **ASSUMPTIONS**: solicitor £2,000 to £14,500 (7 to 25 hours,
+base £6,000), clinician £1,500 to £8,000 (15 to 40 hours at £100 to £200 an hour, base £4,000),
+together £3,500 to £22,500. Thresholds (b) to (d) in §4.2, the §5 set-aside and the §6 funding
+need are therefore too low until the quotes are added back (in §4, spread over 24 months).
 
 ### 2.4 Founder and team time
 
@@ -202,7 +210,7 @@ True monthly burn = cash burn (§5) + F.
 Supabase plan tier and last month's usage (MAU, egress, disk); EAS plan and builds used; Seedance
 spend per clip; Anthropic spend on label reading and the monthly spend limit Benn decided to set on
 26 September (set or not); label reads per active user (from `ai_usage`, in aggregate); Webflow
-tier; domain renewal price; Gravita's VAT status, accounting period end and corporation tax rate.
+tier; domain renewal price; Gravita's accounting period end and corporation tax rate.
 Each replaces an ASSUMPTION above.
 
 ---
@@ -225,10 +233,11 @@ Each replaces an ASSUMPTION above.
 ### 3.2 Net receipts per subscriber per month
 
 Prices include 20% UK VAT. Apple and Google collect and remit VAT on store sales and pay proceeds on
-the price excluding VAT, so store receipts do not depend on Gravita's VAT status (third-party
-summaries; confirm in Apple's Paid Applications Agreement, Exhibit B) [S30]. On the web, VAT comes
-off only if Gravita is VAT-registered (registration is compulsory above £90,000 taxable turnover
-[S18]). Stripe UK: 1.5% + 20p on standard UK cards, plus 0.7% for Stripe Billing [S17]. RevenueCat
+the price excluding VAT (third-party summaries; confirm in Apple's Paid Applications Agreement,
+Exhibit B) [S30]. Gravita Creative Ltd is VAT-registered (Benn, 17 November 2026), so on the web
+Gravita accounts for the VAT and keeps the price excluding VAT. Registration may also let Gravita
+reclaim input VAT on UK-invoiced costs (for example the accountant or a UK solicitor); not modelled,
+as most vendors here bill in US dollars from abroad. Stripe UK: 1.5% + 20p on standard UK cards, plus 0.7% for Stripe Billing [S17]. RevenueCat
 1% applies to all tracked revenue once it passes $2,500 a month (about 470 payers), included below
 to be conservative.
 
@@ -236,7 +245,6 @@ to be conservative.
 |---|---|---|---|
 | Store in-app, 15%, with RevenueCat | £4.99 ÷ 1.2 × 0.85 − £0.05 = **£3.48** | £39.99 ÷ 1.2 × 0.85 ÷ 12 − £0.03 = **£2.33** | 0.6 × 2.33 + 0.4 × 3.48 = **£2.79** |
 | Web, Stripe, VAT-registered, with RevenueCat | £4.158 − £0.31 − £0.05 = **£3.80** | (£33.325 − £1.08) ÷ 12 − £0.03 = **£2.65** | **£3.11** |
-| Web, Stripe, not VAT-registered, with RevenueCat | £4.99 − £0.31 − £0.05 = **£4.63** | (£39.99 − £1.08) ÷ 12 − £0.03 = **£3.21** | **£3.78** |
 
 The 60% annual share is **ASSUMPTION** (range 50 to 70%), anchored on RevenueCat's finding that
 Health and Fitness apps take 59% of revenue from annual plans [S31].
@@ -247,16 +255,15 @@ Health and Fitness apps take 59% of revenue from annual plans [S31].
 
 ### 3.3 Recommendation: in-app purchase only at Plus launch
 
-**Web checkout moves break-even by under 3% in the base case** (475 payers with in-app only against
-452 with 30% on the web, §4.3). Once VAT comes off both, Stripe plus Billing take about half of
+**Web checkout moves break-even by about 16 payers in the base case** (233 payers with in-app only
+against 217 with 30% on the web, §4.3). With VAT off both, Stripe plus Billing take about half of
 what the stores do on the monthly plan (£0.31 against £0.62) and about a fifth on the annual
 (£1.08 against £5.00), but RevenueCat's 1% applies to both and the UK app cannot send anyone to the
 web, so few payers ever take the cheaper route. Building and
 running it means a second purchase flow, entitlements merged across channels (`security-data`), a
 new processor (`compliance`), our own VAT and DMCC duties, and a web surface after the PWA is
-retired. **The exceptions:** if Gravita is not VAT-registered, the web nets 35% more per web payer
-(break-even falls to about 411 payers at 30% web share), and if the CMA imposes a cheap steering
-requirement, UK web share could rise. Revisit at either event. Coach is different: it is sold to
+retired. **The exception:** if the CMA imposes a cheap steering requirement, UK web share could
+rise. Revisit then. Coach is different: it is sold to
 businesses on a web console, so it uses Stripe from the start (§7.3).
 
 **RevenueCat or direct StoreKit / Play Billing.** RevenueCat is free until about 470 payers, then
@@ -301,8 +308,8 @@ For M monthly active users and a paid share s, with P = s × M payers:
 | i, infrastructure per free MAU (§2.2) | £0.010 | £0.005 | £0.0025 |
 | L, label reading per MAU / C, cap (§2.2) | £0.09 / £228 | £0.0225 / £171 | £0 / £0 |
 | Fixed (a): infrastructure (§2.1) | £142 | £66 | £50 |
-| Fixed (b): (a) + admin + insurance + one-offs ÷ 24 | £1,600 | £728 | £349 |
-| Fixed (c): (b) + one salary £4,000 (§2.4) | £5,600 | £4,728 | £4,349 |
+| Fixed (b): (a) + admin + insurance + one-offs ÷ 24 (solicitor and clinician excluded, §2.3) | £662 | £311 | £203 |
+| Fixed (c): (b) + one salary £4,000 (§2.4) | £4,662 | £4,311 | £4,203 |
 | (d): (c) and a result of at least 20% of net revenue (**ASSUMPTION** target) | | | |
 
 **Contribution per payer** = N − A − 0.02 − L − (free users per payer) × (i + L) while label reads
@@ -326,26 +333,25 @@ Solved by stepping M until the result reaches the target.
 | Threshold | Low | Base | High |
 |---|---|---|---|
 | (a) Covers infrastructure | 1,590 payers, 79,520 MAU | **48 payers, 1,210 MAU** | 20 payers, 330 MAU |
-| (b) Also covers admin, insurance and launch and compliance one-offs | 6,796 payers, 339,810 MAU | **467 payers, 11,680 MAU** | 139 payers, 2,310 MAU |
-| (c) Also pays one salary (£4,000) | 21,082 payers, about 1.05M MAU | **2,555 payers, 63,880 MAU** | 1,723 payers, 28,720 MAU |
-| (d) (c) at a 20% margin | Never: the margin cannot pass 10% (0.28 ÷ 2.79) | **3,637 payers, 90,930 MAU** | 2,250 payers, 37,500 MAU |
+| (b) Also covers admin, insurance and the modelled one-offs | 3,448 payers, 172,400 MAU | **228 payers, 5,690 MAU** | 81 payers, 1,350 MAU |
+| (c) Also pays one salary (£4,000) | 17,734 payers, 886,690 MAU | **2,340 payers, 58,490 MAU** | 1,665 payers, 27,750 MAU |
+| (d) (c) at a 20% margin | Never: the margin cannot pass 10% (0.28 ÷ 2.79) | **3,332 payers, 83,310 MAU** | 2,176 payers, 36,260 MAU |
 
-Monthly result in the base case before any salary: −£673 at 1,000 MAU, −£454 at 5,000, −£126 at
-10,000, +£2,928 at 50,000 and +£6,754 at 100,000.
+Monthly result in the base case before any salary (fixed (b)): −£256 at 1,000 MAU, −£37 at 5,000,
++£291 at 10,000, +£1,446 at 25,000, +£3,344 at 50,000 and +£7,171 at 100,000.
 
 **What drives it, in order:** AI cost per payer and the paid share (together they separate the low
-case from the base case by a factor of about 29 in the MAU needed for threshold (b)), then the price, then free label
-reading, then the channel.
+case from the base case by a factor of about 30 in the MAU needed for threshold (b)), then the price
+and free label reading (label reading weighs more at (b), price from (c) on, §4.3), then the channel.
 
 ### 4.3 Sensitivity of threshold (b) in the base case
 
-| Change | Payers for (b) | Against 467 |
+| Change | Payers for (b) | Against 228 |
 |---|---|---|
-| In-app only (no web) | 475 | +2% |
-| 30% web, VAT-registered | 452 | −3% |
-| 30% web, not VAT-registered | 411 | −12% |
-| Label reading on-device (L = 0) | 377 | −19% |
-| Plus at £5.99 / £44.99, in-app only (net £3.24) | 382 | −18% |
+| In-app only (no web) | 233 | +2% |
+| 30% web | 217 | −5% |
+| Label reading on-device (L = 0) | 161 | −29% |
+| Plus at £5.99 / £44.99, in-app only (net £3.24) | 174 | −24% |
 
 ### 4.4 Lifetime value and the CAC cap (base, in-app)
 
@@ -380,14 +386,15 @@ notifications abolished for claims made from 1 April 2027 [S36].
   reads per active user, sync egress per MAU, all first-party and aggregated.
 - **Unlocks Phase 1:** the roadmap's public-launch gates (alpha-gate clips, solicitor #6,
   clinician #44, DPIA, processor agreements and the other register items), native parity and
-  store review, and the one-offs funded (§2.3: about £10.3k base).
-- **Decision for Benn:** commission the quotes, and confirm the entity and VAT status.
+  store review, and the one-offs funded (§2.3, plus the solicitor and clinician once quoted).
+- **Decision for Benn:** commission the quotes, and confirm whether Tilo stays inside Gravita.
 
 ### Phase 1: free in both stores
 
 - **Burn:** cash running costs about £327 a month at 1,000 MAU and £437 at 5,000 MAU (base;
   low £751 to £929, high £194 to £204), plus the one-offs. **Cash to set aside for 12 months of
-  Phase 1, one-offs included: about £15.5k base (£6.2k high, £33.9k low), excluding F.**
+  Phase 1, modelled one-offs included: about £5.5k base (£2.7k high, £11.4k low), excluding F and
+  the solicitor and clinician (§2.3).**
 - **Revenue:** none. Free launch is right: Plus has nothing to sell until AI Phase 1, and the store
   launch is where activation and retention get measured.
 - **Unlocks Phase 2:** AI Phase 1 passes its quality gate with a model chosen by evals (so A is
@@ -400,28 +407,27 @@ notifications abolished for claims made from 1 April 2027 [S36].
 
 ### Phase 2: Plus, with AI Phase 1
 
-- **Burn and revenue:** follow §4.2. Base: −£454 a month at 5,000 MAU, break-even including
-  amortised launch costs at about 467 payers (11,680 MAU).
+- **Burn and revenue:** follow §4.2. Base: break-even including the modelled one-offs at
+  threshold (b), solicitor and clinician excluded (§2.3).
 - **Offer:** §7: £4.99 / £39.99, founding-member price, a fair-use limit stated up front, pause
   where the store supports it, one-tap route to the store's cancel screen.
 - **Unlocks Phase 3:** three months of Plus data (paid share, plan mix, churn, AI cost per payer);
-  about 470 payers; 5 to 10 PT interviews run during Phase 2.
+  threshold (b) reached; 5 to 10 PT interviews run during Phase 2.
 - **Decision for Benn:** price points once A is measured (§7.2), and whether the measured paid
   share supports any paid acquisition (§10; at a £9 cap, almost certainly not).
 
 ### Phase 3: Coach
 
-- **Revenue:** £19 a month per coach, net £15.21 through Stripe if VAT-registered (§7.3); ten
+- **Revenue:** £19 a month per coach, net £15.21 through Stripe (§7.3); ten
   coaches add about £152 a month, the same as about 79 Plus payers at £1.93.
 - **Build:** coach web console, consent-based sharing with RLS changes (`security-data`), support.
-- **Unlocks Phase 4:** about 2,555 Plus payers or the coach-equivalent (one salary, §4.2 c).
+- **Unlocks Phase 4:** threshold (c) in Plus payers or the coach-equivalent (one salary, §4.2).
 - **Decision for Benn:** build Coach only if interviews show PTs will pay and Plus conversion is at
   or above base; otherwise put the time into retention.
 
 ### Phase 4: stable, then profitable
 
-One salary at about 2,555 payers (63,880 MAU); a 20% margin after it at about 3,637 payers (90,930
-MAU). Workplace wellness and curated programmes (§8) belong here, not earlier. Revenue-based
+One salary at threshold (c) and a 20% margin after it at threshold (d) (§4.2). Workplace wellness and curated programmes (§8) belong here, not earlier. Revenue-based
 financing becomes available once net revenue passes about £10,000 a month (§6), which in the base
 case is about 3,550 payers (£10,000 ÷ £2.82).
 
@@ -431,7 +437,7 @@ case is about 3,550 payers (£10,000 ÷ £2.82).
 
 | Option | Available now? (16 November 2026) | Fit for Tilo | Value |
 |---|---|---|---|
-| **Gravita's own cash** | Yes | The realistic bridge for Phases 0 and 1 | Needs about £15.5k for 12 months of Phase 1 (base, §5) |
+| **Gravita's own cash** | Yes | The realistic bridge for Phases 0 and 1 | Needs the Phase 1 set-aside (§5) plus the solicitor and clinician once quoted |
 | **R&D tax relief** | Yes. Merged scheme: 20% taxable expenditure credit; ERIS for loss-making SMEs whose R&D is at least 30% of total spend: 86% extra deduction and a payable credit of up to 14.5% of the surrenderable loss [S34]. Data and cloud computing costs have qualified since April 2023, apportioned to R&D use [S35]. A first claim (or the first in three years) needs a claim notification within 6 months of the period end [S36]; notifications are being abolished for claims from 1 April 2027 [S36] | Good if real qualifying costs exist: staff time on technical uncertainty (offline sync, the estimate model, AI evaluation), and an apportioned share of the Claude plan, Anthropic, Supabase and EAS. ERIS needs Gravita's whole spend to be 30% R&D, which a creative business may not meet | About 16p per £1 under the merged scheme at a 19% tax rate (20% × 0.81), about 27p per £1 under ERIS (186% × 14.5%). Status: **no claim found in the repo; unknown.** An adviser decides |
 | **SEIS / EIS** | Yes. SEIS: up to £250k, gross assets up to £350k, under 25 employees, trade under 3 years old, and the company must not have carried on another trade before [S37]. EIS: from April 2026, £10m a year and gross assets up to £30m before issue; the schemes run to 2035 [S38] | **Poor inside Gravita:** Gravita already trades, so it fails SEIS's "no other trade before" rule. A new Tilo company could qualify, but the apps, accounts and any subscribers would then need moving. Equity also only makes sense if Benn wants investors and a bigger outcome than §4.2 models | Tax relief for investors, not cash for Tilo |
 | **Innovate UK grants** | Smart grants paused; Growth Catalyst Early Stage last ran July to August 2025 [S39]. Of the open and upcoming competitions listed on 16 November 2026, none is open to any sector or covers health, wellbeing or consumer apps; BridgeAI Deployment Catalyst is for AI in operational systems [S40] | Weak. Check the Innovation Funding Service monthly | £0 expected |
@@ -486,7 +492,7 @@ published fair-use limit and a model chosen by evals. **If evals need Opus for m
 | Coach Plus | £39 a month | up to 40 | TrueCoach Standard $57.99 for 20, Pro $136.99 for 50 [S44] |
 
 Sold on a web console through Stripe: £19 ÷ 1.2 = £15.83, less 1.5% × £19 + 20p + 0.7% × £19 =
-£0.62, **net £15.21** (VAT-registered); through the stores it would be £13.46. Clients stay free,
+£0.62, **net £15.21**; through the stores it would be £13.46. Clients stay free,
 as on TrueCoach and Everfit. Whether a coach who paid on the web can use coach features in the
 iOS app without an in-app option is a store-rules question for `compliance`; a web-only console
 avoids it. Prices are **ASSUMPTIONS** to test in interviews (comparables checked 24 September).
@@ -616,8 +622,9 @@ supplies trials, conversion, churn and refunds; our own database supplies activa
 
 ### Open, in order
 
-1. **Quotes:** solicitor (#6), clinician (#44) and insurance (§2.3, §2.1).
-2. **Entity and VAT:** confirm Gravita's VAT status, and that Tilo stays inside Gravita (§6, §3.2).
+1. **Quotes:** solicitor (#6), clinician (#44) and insurance (§2.3, §2.1). Solicitor and clinician
+   stay gates; their costs re-enter §4 when quoted.
+2. **Entity:** confirm that Tilo stays inside Gravita (§6).
 3. **Supabase tier and EAS plan:** check both; Supabase Pro before store launch (§2.1).
 4. **Incremental-pull sync fix** (§1.3): still not done.
 5. **R&D claim:** ask the accountant before Gravita's claim notification deadline (§6).
@@ -635,6 +642,9 @@ supplies trials, conversion, churn and refunds; our own database supplies activa
   which settled the old "free AI taste" decision for label reading. A free taste of AI Phase 1 is
   still open within decision 9.
 - **Developer accounts under Gravita Creative Ltd** (Benn, 10 October; `native-app-plan.md` §9.2).
+- **Gravita Creative Ltd is VAT-registered** (Benn, 17 November); web figures in §3.2 are net of VAT.
+- **Solicitor and clinician costs left out of the model until quotes exist** (Benn, 17 November);
+  both remain gates for public launch and any paid feature (§2.3).
 - **Solicitor before any paid feature:** now a roadmap gate (#6, `roadmap-overview.md` §4).
 - **No paid tier before January 2027; monetisation after AI Phase 1** (Benn, 28 October).
 - **Web app retired once native is live on both stores** (Benn, 9 November), which settles "Stripe
@@ -730,3 +740,10 @@ Checked 16 November 2026 unless marked (24 September 2026) or (30 September 2026
   label reading and its cap as an explicit cost line. Removed the web-only Stripe material, the
   detailed September arithmetic for minor lines (to be re-costed on store nets at Phase 2) and the
   superseded "What runs today" snapshot. Renamed Tali to Tilo.
+- **2026-11-17:** Applied two decisions by Benn. Gravita Creative Ltd is VAT-registered: settled in
+  §12 and the Summary; removed the not-VAT-registered web row and the exceptions built on it (§3.2,
+  §3.3, §4.3); noted input VAT reclaim as possible but not modelled. Solicitor (#6) and clinician
+  (#44) costs removed from the model until quoted, kept as gates, with the earlier placeholder ranges
+  recorded in §2.3. Re-ran the §4.1 model: one-offs £284, fixed (b) £662 / £311 / £203, and
+  thresholds (b) to (d), the base monthly results, §4.3 sensitivity and the §5 set-aside
+  recomputed.
