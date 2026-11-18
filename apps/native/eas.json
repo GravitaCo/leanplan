@@ -24,9 +24,25 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "testflight": {
+      "distribution": "store",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_DIAG": "1"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "testflight": {
+      "ios": {
+        "ascAppId": "6836313860",
+        "appleTeamId": "M8R77TCYF8"
+      }
+    }
   }
 }
