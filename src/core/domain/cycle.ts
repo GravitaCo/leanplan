@@ -84,9 +84,9 @@ export const CYCLE_THRESHOLDS = {
   acrossPeriods: 2,
   /** at most one showing of each prompt per this many days (§5.1: once per 3 months) */
   promptGapDays: 91,
-  /** no logged period for this long fires 'no-period' (proposed 90; clinician to set) */
+  /** no logged period for this long fires 'no-period' (Sara, 20 Nov: fine for the alpha; clinician to confirm) */
   noPeriodDays: 90,
-  /** the same for 'irregular' (mental-performance, 16 Nov: gaps run longer; clinician to set) */
+  /** the same for 'irregular' (mental-performance, 16 Nov: gaps run longer; Sara, 20 Nov; clinician to confirm) */
   noPeriodDaysIrregular: 180,
   /** …and only if the person checked in at least this many times in every block of this many days */
   noPeriodCheckinBlockDays: 30,
@@ -96,8 +96,8 @@ export const CYCLE_THRESHOLDS = {
   /** 12 months after a "usual" tap, the mark lapses */
   usualLapseDays: 365,
   /** setups that get 'no-period'. Not 'stop-skip' or 'perimenopause' (no bleeding is often
-   *  expected; design, 29 Oct), not 'none'. 'irregular' is a clinician call (§5.1): included
-   *  provisionally, since low energy availability affects them as much. */
+   *  expected; design, 29 Oct), not 'none'. 'irregular' included (Sara, 20 Nov), since low energy
+   *  availability affects them as much; clinician to confirm. */
   noPeriodSetups: ['regular', 'irregular', 'unsaid'] as CycleSetup[],
 } as const
 
@@ -137,9 +137,20 @@ export interface GateFacts {
   age?: number | null
 }
 
-/** Whether the Cycle offer may show at all (and Cycle may run). Seeing it collects nothing. */
+/**
+ * Whether Cycle may be turned on and run, and the Profile "Your cycle" row shows: an adult with a
+ * current health yes, whatever the sex answer (Sara, 20 Nov 2026; Equality Act, cycle-checks.md
+ * item 2). Turning it on from settings goes through the same explanation, consent and setup as the
+ * offer, and the route isn't recorded. Never asks or checks the sex answer.
+ */
+export function cycleAvailable(f: GateFacts): boolean {
+  return f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
+}
+
+/** Whether the unprompted Cycle offer shows in Profile: cycleAvailable and the onboarding answer
+ *  is female. Seeing it collects nothing. */
 export function cycleOffered(f: GateFacts): boolean {
-  return f.sexAnswer === 'female' && f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
+  return f.sexAnswer === 'female' && cycleAvailable(f)
 }
 
 /** "I don't have periods" closes the offer (§3). */
@@ -153,8 +164,11 @@ export interface Period {
   start: string
   /** last day with flow (not Stopped) */
   last: string
-  /** days from start to last, inclusive */
+  /** days from start to last, inclusive (spotting at either end included: "Day N" counts from it) */
   length: number
+  /** days from the first to the last day with flow heavier than spotting, inclusive: what the
+   *  long-bleed prompt measures, so spotting at the end of an ordinary period doesn't fire it */
+  bleedLength: number
   heavyDays: number
   /** days with pain "A lot" (any day of the period, flow or not, up to its last flow day) */
   lotDays: number
@@ -170,8 +184,8 @@ function sortedDays(days: Record<string, CycleDay>): string[] {
  * next flow day carries on the same period when it comes within SILENT_END_DAYS of the last flow
  * day with nothing logged between, or within STOPPED_CARRY_DAYS of a Stopped (a dry day in the
  * middle). Spotting carries on a period but doesn't start one; spotting followed by flow within
- * STOPPED_CARRY_DAYS backdates the start to the first spotting day (mental-performance, 16 Nov).
- * PROVISIONAL, a product call for Benn or Sara.
+ * STOPPED_CARRY_DAYS backdates the start to the first spotting day (mental-performance, 16 Nov;
+ * confirmed by Sara, 20 Nov). Spotting counts towards "Day N" but not towards `bleedLength`.
  */
 export function periodsOf(days: Record<string, CycleDay>): Period[] {
   const out: Period[] = []
@@ -197,7 +211,7 @@ export function periodsOf(days: Record<string, CycleDay>): Period[] {
         continue
       }
       const start = spotFrom && daysFrom(spotFrom, d) <= STOPPED_CARRY_DAYS ? spotFrom : d
-      cur = { start, last: d, length: 1, heavyDays: 0, lotDays: 0 }
+      cur = { start, last: d, length: 1, bleedLength: 1, heavyDays: 0, lotDays: 0 }
       out.push(cur)
     }
     stoppedAt = null
@@ -206,11 +220,15 @@ export function periodsOf(days: Record<string, CycleDay>): Period[] {
   // counts over each period's span
   for (const p of out) {
     p.length = daysFrom(p.start, p.last) + 1
+    let first: string | null = null, end: string | null = null
     for (let i = 0; i < p.length; i++) {
-      const v = days[shiftDay(p.start, i)]
+      const d = shiftDay(p.start, i)
+      const v = days[d]
+      if (bleeds(v) && v?.flow !== 'spotting') { first ??= d; end = d }
       if (v?.flow === 'heavy') p.heavyDays++
       if (v?.pain === 3) p.lotDays++
     }
+    p.bleedLength = first && end ? daysFrom(first, end) + 1 : 0
   }
   return out
 }
@@ -254,7 +272,7 @@ export interface RowFacts {
  * Whether the check-in shows "Period today?" on `today` (Sara, 4 Nov): during a logged period and
  * CYCLE_ROW.afterDays after it; for 'regular' with enough logged starts, hidden between periods
  * and back CYCLE_ROW.earlyDays before the usual start until a period is logged; otherwise every
- * check-in. Paused (pregnancy) hides it: PROVISIONAL, a product call (§3 says prompts pause).
+ * check-in. A pregnancy or breastfeeding pause hides it (Sara, 20 Nov).
  */
 export function rowShows(store: CycleStore, today: string, f: RowFacts = {}): boolean {
   if (f.paused || store.setup === 'none') return false
@@ -306,11 +324,11 @@ function usualHolds(store: CycleStore, prompt: CyclePrompt, ps: Period[], today:
   if (store.rearmedAt && store.rearmedAt >= u.at) return false
   // only periods that start after the tap count against it; the one running at the tap (a tap
   // mid-period) lifts the baseline to its final count instead (mental-performance, 16 Nov)
-  const metric = (p: Period) => prompt === 'long-bleed' ? p.length : prompt === 'heavy' ? p.heavyDays : p.lotDays
+  const metric = (p: Period) => prompt === 'long-bleed' ? p.bleedLength : prompt === 'heavy' ? p.heavyDays : p.lotDays
   const running = ps.find((p) => p.start <= u.at && daysFrom(p.last, u.at) <= SILENT_END_DAYS)
   const base = Math.max(u.base, running ? metric(running) : 0)
   const since = ps.filter((p) => p.start > u.at)
-  if (prompt === 'long-bleed') return !since.some((p) => p.length >= base + T.longBleedRearmExtra || p.length >= T.longBleedRearmDays)
+  if (prompt === 'long-bleed') return !since.some((p) => p.bleedLength >= base + T.longBleedRearmExtra || p.bleedLength >= T.longBleedRearmDays)
   if (prompt === 'heavy' || prompt === 'pain') return !since.some((p) => metric(p) > base)
   return true
 }
@@ -318,7 +336,7 @@ function usualHolds(store: CycleStore, prompt: CyclePrompt, ps: Period[], today:
 /** The baseline a "This is usual for me" tap records for a prompt, from the log up to `today`. */
 export function usualBase(store: CycleStore, prompt: CyclePrompt, today: string): number {
   const ps = periodsOf(Object.fromEntries(Object.entries(store.days).filter(([k]) => k <= today)))
-  if (prompt === 'long-bleed') return ps.length ? ps[ps.length - 1].length : 0
+  if (prompt === 'long-bleed') return ps.length ? ps[ps.length - 1].bleedLength : 0
   if (prompt === 'heavy') return Math.max(0, ...ps.map((p) => p.heavyDays))
   if (prompt === 'pain') return Math.max(0, ...ps.map((p) => p.lotDays))
   return 0
@@ -344,14 +362,15 @@ function keptCheckingIn(checkins: string[], from: string, today: string): boolea
 
 /**
  * The long gap with no logged period, if it has run its length on `today` while they kept
- * checking in: the day it counts from, else null. Counts from the latest of the last logged flow
- * (spotting included: someone logging spotting isn't asked whether a period came), the end of a
- * pregnancy pause, and a setup change, so neither a pause nor a new answer fires it at once.
+ * checking in: the day it counts from, else null. Counts from the latest of the last logged
+ * period's end (spotting never starts a period, so spotting on its own doesn't reset it:
+ * mental-performance and Sara, 20 Nov), the end of a pregnancy pause, and a setup change, so
+ * neither a pause nor a new answer fires it at once.
  */
 function longGapFrom(store: CycleStore, today: string, f: PromptFacts): string | null {
   if (!store.setup || !(T.noPeriodSetups as readonly CycleSetup[]).includes(store.setup)) return null
-  const flows = sortedDays(store.days).filter((d) => d <= today && bleeds(store.days[d]))
-  const lastFlow = flows[flows.length - 1]
+  const ps = periodsOf(Object.fromEntries(Object.entries(store.days).filter(([k]) => k <= today)))
+  const lastFlow = ps[ps.length - 1]?.last
   if (!lastFlow) return null
   const from = [lastFlow, store.resumedAt, store.rearmedAt].filter((x): x is string => !!x && x <= today).sort().pop()!
   const need = store.setup === 'irregular' ? T.noPeriodDaysIrregular : T.noPeriodDays
@@ -371,7 +390,7 @@ export function promptsDue(store: CycleStore, today: string, f: PromptFacts = {}
   const ok = (p: CyclePrompt) => !recentlyShown(store, p, today) && !usualHolds(store, p, ps, today)
   // long bleeding: the current (or just ended) period has run more than T.longBleedDays
   const last = ps[ps.length - 1]
-  if (last && last.length > T.longBleedDays && daysFrom(last.last, today) <= SILENT_END_DAYS && ok('long-bleed')) out.push('long-bleed')
+  if (last && last.bleedLength > T.longBleedDays && daysFrom(last.last, today) <= SILENT_END_DAYS && ok('long-bleed')) out.push('long-bleed')
   // heavy, pain: in at least T.acrossPeriods of the recent periods (a single heavy cycle doesn't
   // fire it), shown only during the period or just after it, never weeks later out of context
   const recent = ps.slice(-T.recentPeriods)

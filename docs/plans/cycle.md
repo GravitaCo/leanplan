@@ -14,7 +14,7 @@ a regulatory adviser and a clinician.
 | Date | Decision | By |
 |---|---|---|
 | 26 Sept | Not called "Flow". Working name **"Cycle"** (in copy, "Your cycle"). "Rhythm" was rejected because of "the rhythm method" (contraception). | Benn |
-| 29 Oct | **Only women see it.** The offer appears only when the onboarding answer is female. | Benn |
+| 29 Oct | **Only women see it.** The offer appears only when the onboarding answer is female. **Changed 20 Nov** (below): the offer stays female-only, but anyone 18+ can turn Cycle on from settings. | Benn |
 | 29 Oct | **UK first, US later.** v1 meets UK law; nothing in the design may rule out a US launch (§7). | Benn |
 | 29 Oct | Demonstrator videos split out of this plan. | Benn |
 | 29 Oct | **Prerequisite: switch onboarding on** so people record the sex answer (not a one-off Profile question). | Benn |
@@ -23,15 +23,16 @@ a regulatory adviser and a clinician.
 | 29 Oct | **Tali will never claim to be a medical device or give medical advice.** | Benn |
 | 29 Oct | Existing users reach the offer through Profile › "Set up my plan" only; Cycle's launch doesn't point them there. | Benn |
 | 4 Nov | **Design change approved: the check-in row (C1)** shows "Period today?" only during a logged period and a few days either side, not every day. Boards and §4 updated 4 Nov. | Sara |
-| 4 Nov | **Design change approved: the setup question (B2)** asks about bleeding, not contraception: Periods, usually regular / Irregular or unpredictable periods / Periods changing with age (perimenopause) / My periods often stop or skip, for example with some contraception / I don't have periods / Prefer not to say. B3b lines change to match; the "often stop or skip" answer takes over the contraception answer's job in §5.1. Still needs `compliance` and a clinician on the wording. | Sara |
+| 4 Nov | **Design change approved: the setup question (B2)** asks about bleeding, not contraception: Periods, usually regular / Irregular or unpredictable periods / Periods changing with age (perimenopause) / My periods often stop or skip ("for example with some contraception" dropped 20 Nov) / I don't have periods / Prefer not to say. B3b lines change to match; the "often stop or skip" answer takes over the contraception answer's job in §5.1. Still needs `compliance` and a clinician on the wording. | Sara |
 | 4 Nov | **Design change approved: the safety prompts (G1/G2)** start from what's usual for the person ("You know what's usual for your periods. If this is different from usual, or getting in the way of things…") and offer "This is usual for me", which stops that prompt unless the pattern changes. "This is usual for me" works on the bleeding-over-a-week, heavy and pain prompts alike (§5.1); "When to get help" and urgent advice are never switched off. Still needs `mental-performance`, and a clinician to define "changes". | Sara |
 | 4 Nov | **Check-in options (C2) stay as drafted:** no extra symptom chips and the same five options. The field label changes from "Bleeding" to "Menstrual flow" (C2, D3, G1). | Sara |
 | 16 Nov | **Cycle is for the native app** ("Note cycle is for native app", relayed by the lead): the UI is built in `apps/native` only, no web screens. The logic stays UI-free in `src/core` (shared and tested); nothing web-facing changes. | Benn |
+| 20 Nov | **Answers to "Cycle: questions for Sara"**, after `compliance` and `mental-performance` reviews: (1) the offer stays female-only, but anyone 18+ with a current health yes can turn Cycle on from settings, unadvertised, whatever their sex answer or none (`cycleAvailable`); same A2, B1, B2 path; the route isn't recorded; the Profile row and turning it off show whenever Cycle is on. (2) B2 answer 4 is "My periods often stop or skip" (contraception example dropped). (3) Spotting carries on a period but never starts one; flow within 2 days backdates the start to the first spotting day. Only flow heavier than spotting counts towards the long-bleed prompt, and spotting alone doesn't reset the long gap. (4) A pregnancy or breastfeeding pause also hides the "Period today?" row. (5) Long gap: 90 days for regular and prefer not to say, 180 for irregular, never for often stop or skip or perimenopause (alpha defaults). (6) The "This is usual for me" confirmation is the app's toast with Undo: "Got it. Tilo won't show this again unless things change. 'When to get help' is in Cycle settings." (7) G1 and G2 keep the X, a neutral close that records nothing, so "This is usual for me" is never the only way to clear a card. (8) G1 keeps "If this is new for you…". Also approved: the B3b lines (§3) and the B1 consent text (§6), with "show" in place of "reveal". | Sara |
 | 4 Nov | **Alpha runs without a clinician** (Benn's call, relayed by Sara): `compliance` and `mental-performance` check instead, and every "clinician to set" value below is a provisional alpha default until a clinician signs it off before beta. Their fixes (B1, B3b, A2, C1, D4, G1, G2) approved and applied the same day. | Sara |
 
-The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
-non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
-§3 limits the second effect; the first is the accepted cost of the decision. In-app copy never says
+Since 20 Nov (Sara), only women see the offer, but anyone 18+ with a health yes can turn Cycle on
+from settings, unadvertised, so trans men and non-binary people who menstruate aren't shut out.
+Some women who don't menstruate will see the offer; §3 limits that. In-app copy never says
 "for women".
 
 ## 1. Summary
@@ -111,11 +112,15 @@ the app or on the website.
     to `'M'` and stores "prefer not to say" as `'F'`).
 - **Seeing it collects nothing.** Women see one quiet offer in Profile (not a modal, not repeated).
   It is off until they turn it on.
+- **Anyone 18+ can turn it on from settings** (Sara, 20 Nov; Equality Act, `cycle-checks.md` item
+  2). It needs only a current health yes and age ≥ `MIN_AGE` (`cycleAvailable`), never the sex
+  answer, and isn't advertised. The switch opens the same A2, B1 and B2 path as the offer; the
+  route isn't recorded anywhere.
 - **Setup, after the cycle consent, asks one question** (answer changeable any time; never asks why):
   - Periods, usually regular
   - Irregular or unpredictable periods
   - Periods changing with age (perimenopause)
-  - My periods often stop or skip, for example with some contraception
+  - My periods often stop or skip
   - I don't have periods
   - Prefer not to say
 - **No contraception question** (Sara, 4 Nov). The only feature it changed was the long-gap prompt
@@ -125,11 +130,27 @@ the app or on the website.
   data. "I don't have periods" closes the offer; the most a synced field may hold is a plain
   "offer hidden" flag with no reason.
 - **Every answer gets the same features, except the no-period prompt (§5.1)** (logging, the lighter offer, safety prompts and "Day N of
-  your period"), since none of them forecasts. Each answer says plainly what Tali will and won't do.
-- **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts;
-  data is kept.
-- **If `sexAnswer` changes away from female,** the entry disappears but the data stays until
-  deleted. "Delete all cycle data" lives under Privacy for everyone.
+  your period"), since none of them forecasts. Each answer says plainly what Tilo will and won't do,
+  including whether it asks about gaps (B3b, approved by Sara 20 Nov):
+  - Regular: "Tilo counts the days of a period from what you log, never from a calendar. If you
+    keep checking in and no period is logged for about 3 months, Tilo will ask if one came."
+  - Irregular: "Nothing here depends on a regular cycle. Log days as they come. If you keep
+    checking in and no period is logged for about 6 months, Tilo will ask if one came."
+  - Perimenopause: "Periods can change a lot at this stage. Log what happens, when it happens.
+    Tilo won't guess what comes next, and won't ask about gaps between periods."
+  - Often stop or skip: "Bleeding can be lighter, come at odd times or stop for a while. Log what
+    happens, if anything. Tilo won't ask about gaps, so if your periods stop and that's new for
+    you, it's worth mentioning to a GP."
+  - Prefer not to say: "That's fine. Log what happens. If you keep checking in and no period is
+    logged for about 3 months, Tilo will ask if one came."
+  - I don't have periods: closes the offer (A3).
+  If a clinician changes the 90 or 180 days, these lines change with them.
+- **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts
+  and hide the "Period today?" row (Sara, 20 Nov); data is kept. "When to get help", turning Cycle
+  off and delete stay reachable during the pause.
+- **If `sexAnswer` changes away from female,** the offer disappears; while Cycle is on or a cycle
+  consent exists, the Profile row, turning it off and delete stay, whatever the answer (Art. 7(3)).
+  "Delete all cycle data" lives under Privacy for everyone.
 - **Under-18s: no** (Benn, 29 Oct). Tali already requires 18+ (`MIN_AGE`, `src/core/legal`), so the
   gate needs no extra age check; a test confirms Cycle is never offered below `MIN_AGE`.
 
@@ -154,6 +175,10 @@ For people who turned Cycle on, `CheckinSheet` gets a "Cycle" group, **collapsed
   window or stop hiding the row.
 
 - **Menstrual flow** (label renamed from "Bleeding", Sara, 4 Nov): stopped / spotting / light / medium / heavy. "Stopped" (was "None") marks the end of a period or a dry day within one.
+- **Spotting** carries on a period but never starts one; flow within 2 days of spotting starts the
+  period from the first spotting day, so "Day N" is right (Sara, 20 Nov). Spotting counts towards
+  "Day N" but not towards the long-bleed prompt, and spotting alone doesn't reset the long gap
+  (§5.1).
 - **Pain:** No pain / A bit / A lot (same wording as the soreness scale).
 - **Optional chips:** cramps, bloating, headache, breast tenderness, upset stomach. No "PMS" or
   "moody" chip; mood is already asked.
@@ -184,8 +209,11 @@ thresholds need clinician sign-off.
 - **People know what's usual for their own periods** (Sara, 4 Nov). The bleeding, heavy and pain
   prompts start "You know what's usual for your periods" and are framed around change or impact.
   Each has a "This is usual for me" button that stops that prompt until the pattern changes.
-  "When to get help" and urgent advice are never switched off. After the tap: "Got it. Tali won't
-  show this again unless things change. 'When to get help' is always in Cycle settings." When
+  "When to get help" and urgent advice are never switched off. After the tap, the app's toast with
+  Undo (Sara, 20 Nov): "Got it. Tilo won't show this again unless things change. 'When to get
+  help' is in Cycle settings." Undo removes the mark. The cards keep the X (Sara, 20 Nov): a
+  neutral close that records nothing, so "This is usual for me" is never the only way to clear a
+  card (`compliance`: Art. 5(1)(d); `mental-performance`: autonomy). When
   shown together, only the first card opens with "You know what's usual…". A returning prompt uses
   the same copy, never "your periods have changed".
 - **"The pattern changes" (alpha defaults, clinician to confirm before beta)**, from the person's
@@ -197,7 +225,8 @@ thresholds need clinician sign-off.
   - any change of setup answer, a pregnancy pause, or 12 months after the tap re-arms all three;
   - the once-in-3-months limit still applies. Alpha measure: share of prompts marked usual (over
     about 70% means the thresholds fire on ordinary periods).
-- **Bleeding for more than 7 days** → "If this is new for you, bleeding that lasts more than a week
+- **Bleeding for more than 7 days** (flow heavier than spotting; spotting at either end doesn't
+  count, Sara 20 Nov) → G1 keeps "If this is new for you" (Sara, 20 Nov): "If this is new for you, bleeding that lasts more than a week
   is worth mentioning to a GP." NHS heavy periods page.
 - **Heavy days across 2 or more cycles** → "If they've got heavier, or they're getting in the way
   of things, they're worth raising with a GP." At most once per 3 months. A single heavy cycle
@@ -205,8 +234,10 @@ thresholds need clinician sign-off.
 - **Pain "A lot" across 2 or more cycles** → (opener only if shown alone) "If the pain is worse than usual, or stops you doing
   things, it's worth raising with a GP. You don't have to put up with it." At most once per 3
   months. No condition names.
-- **No logged period for a long stretch** (proposed 90 days; NHS says see a GP after missing three
-  in a row, which is longer for long cycles: clinician to set it):
+- **No logged period for a long stretch** (alpha defaults, Sara 20 Nov: 90 days for regular and
+  prefer not to say, 180 for irregular; never for often stop or skip, perimenopause or no periods;
+  clinician to confirm before beta). Counted from the end of the last logged period; spotting on
+  its own doesn't reset it:
   - fires only if the person kept checking in through that time, and first asks "Has a period come
     that isn't logged?";
   - blame-free copy that allows for pregnancy: "Periods can stop for lots of reasons, including
@@ -221,8 +252,6 @@ thresholds need clinician sign-off.
     review;
   - not for the "often stop or skip" or perimenopause answers, where no bleeding is often
     expected and the prompt would fire falsely (`design` review, 29 Oct; clinician to confirm);
-  - whether "irregular" users get this prompt (they're equally at risk of low energy availability)
-    is a clinician call.
 - **A static "When to get help" page** in Cycle settings for what Tali must not detect itself:
   bleeding between periods or after sex (GP); periods that stop, if that's new (GP); feeling faint
   or breathless with heavy bleeding (NHS 111); sudden severe pain (111 or 999).
@@ -282,6 +311,12 @@ needs a pregnancy caveat (vitamin A). Needs `nutrition-accuracy` sign-off.
   `consents_type_check`** (`docs/migrations/2026-10-10-shared-products.sql` allows only `health`,
   `ai`, `label-photo`, `shared-products`). Written in the same file style as the other migrations.
 - The cycle consent requires a current health yes.
+- **The B1 consent text** (`compliance`, 20 Nov; approved by Sara with "show" in place of
+  "reveal"): "I agree to Tilo storing and using my period and symptom log, and my answer about my
+  periods, on this phone to run Your cycle for me, as the privacy policy explains. This can show
+  things about my sexual and reproductive health. I can turn it off any time in Profile, then Your
+  cycle, and the log is deleted." Unticked; Continue disabled until ticked. The same for the
+  offer and the settings route; no `CONSENT_VERSIONS.cycle` bump (nothing has been agreed to yet).
 - **A health withdrawal deletes the device cycle data** (add `device.cycle` to `HEALTH_FIELDS` and to
   `clearHealthData` / `applyHealthWithdrawal`) and writes a cycle withdrawal record.
 - **Turning Cycle off records a withdrawal** (Art. 7(3)) and deletes the cycle data, offering the
@@ -317,7 +352,7 @@ especially the one that changes nutrition, stay outside UK MDR 2002 and MHRA sof
 
 ### Advertising (ASA/CAP)
 
-Any Cycle marketing on www.tali.fit needs documentary evidence for objective claims (CAP 12.1). No
+Any Cycle marketing on www.tilo.fit needs documentary evidence for objective claims (CAP 12.1). No
 claim that Tali eases period pain or symptoms; no "train with your cycle" performance claims; iron
 copy only in authorised GB health-claim wording, if at all. Verify every † citation before it is
 used in copy.
@@ -415,8 +450,10 @@ in `USER_TABLES`; a purge marker so deletes reach every device; the opaque `data
    "abnormal"); the deficit hold reads as Tilo pausing its own suggestion, with no promise that
    eating more brings periods back; the internal usual-start estimate is never surfaced. Draft
    intended-purpose statement recorded there. Equality Act: low risk; suggested settings route for
-   anyone (a Benn or Sara decision, open).
+   anyone. **Decided (Sara, 20 Nov 2026):** anyone 18+ with a health yes can turn Cycle on from
+   settings (§3).
 4. **Lawyer:** Equality Act 2010 s.29 and a women-only offer gated on a self-declared answer
    (unknown whether the Sch. 3 single-sex exceptions fit); the GB iron claim thresholds. Not now
-   (Benn, 16 Nov 2026: "We do not need lawyer at this time").
+   (Benn, 16 Nov 2026: "We do not need lawyer at this time"). The settings route (§3, 20 Nov)
+   lowers the Equality Act risk; a lawyer is still not needed now.
 5. **Unknown:** the Supabase backup retention window (matters only once sync exists).

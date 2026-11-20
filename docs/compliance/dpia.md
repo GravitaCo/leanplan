@@ -1042,10 +1042,13 @@ section before Cycle reaches anyone beyond the two of them. Not legal or medical
 
 ### 10.1 Processing
 
-- **Who:** offered in Profile only to an adult (`MIN_AGE`) whose onboarding sex answer is female
-  (`profile.sexAnswer`, never the legacy `sex` field) and who has a current health yes
-  (`cycleOffered`, `src/core/domain/cycle.ts`). Seeing the offer collects nothing; Cycle stays off
-  until the person turns it on.
+- **Who:** the offer shows in Profile only to an adult (`MIN_AGE`) whose onboarding sex answer is
+  female (`profile.sexAnswer`, never the legacy `sex` field) and who has a current health yes
+  (`cycleOffered`, `src/core/domain/cycle.ts`). Since 20 Nov 2026 (Sara), anyone aged `MIN_AGE` or
+  over with a current health yes can turn Cycle on from settings, unadvertised, whatever their sex
+  answer (`cycleAvailable`). The same explanation, consent and setup apply, and the route taken is
+  not recorded. Seeing the offer or the setting collects nothing; Cycle stays off until the person
+  turns it on.
 - **Device only** (`deviceOnly.cycle` in `leanplan.v1`, stamped with the owner account): one setup
   answer from six (regular, irregular, perimenopause, often stop or skip, no periods, prefer not to
   say) with its dated history; per day, flow (stopped to heavy), pain (no pain, a bit, a lot) and
@@ -1078,9 +1081,8 @@ sexual and reproductive health". The consent record's basis follows D10.
 
 - Device only in v1; nothing about the log reaches the server (`scripts/test-cycle.ts` sentinel).
 - Fixed lists only; no free text, now or later.
-- No contraception question (Sara, 4 Nov). The setup option "My periods often stop or skip, for
-  example with some contraception" still names contraception: dropping "for example with some
-  contraception" loses nothing (register item 49(d)).
+- No contraception question (Sara, 4 Nov). The setup option reads "My periods often stop or skip"
+  (contraception example dropped, Sara, 20 Nov).
 - No forecast is ever stored for display; the usual-start estimate is computed, used for row timing
   and discarded.
 - No synced "offer hidden" flag exists yet; if one is added it carries no reason.
@@ -1093,7 +1095,7 @@ Scores on the section 5 scale, proposed, not confirmed.
 |---|---|---|---|---|
 | R23 | **Exposure on a shared phone, or to a coercive partner or family member**, who opens the app on an unlocked phone and reads the log (periods, a gap, a setup answer). There is no app lock; only the phone's lock protects it. | Possible | Severe | High |
 | R24 | **The unencrypted export** (whole device state as JSON, including the Cycle log) is kept in Downloads, synced to a cloud drive or shared by mistake. | Possible | Significant | Medium |
-| R25 | **The setup answer or the log reveals reproductive or sex-life facts** (perimenopause, periods stopping, a long gap that may suggest pregnancy or contraception). Stored on the device; inferred by anyone who sees it. | Possible | Significant | Medium |
+| R25 | **The setup answer or the log reveals reproductive or sex-life facts** (perimenopause, periods stopping, a long gap that may suggest pregnancy or contraception). Stored on the device; inferred by anyone who sees it. Since the settings route, the synced `cycle` consent yes, combined with a synced sex answer of male or prefer not to say, may suggest gender identity or intersex status to anyone with access to the account database. | Possible | Significant | Medium |
 | R26 | **Safety harm from the prompts and holds**: PMDD or severe pain not signposted, or signposted badly; prompts that read as judging; disordered eating worsened, for example a gap from under-eating met with diet suggestions. | Possible | Severe | High |
 | R27 | **Provisional thresholds with no clinician review** (`CYCLE_THRESHOLDS`, marked provisional) under- or over-prompt. | Probable (as built) | Significant | Medium |
 | R28 | **Withdrawal not fully honoured across phones**: another phone keeps its log until it next connects; until the migration is applied, a cycle "no" doesn't sync at all; an export keeps a copy. | Possible | Significant | Medium |
@@ -1116,12 +1118,19 @@ Scores on the section 5 scale, proposed, not confirmed.
   the export screen says the file includes the Cycle log and isn't encrypted (cycle.md §6
   must-have 5). Residual: **medium**.
 - **R25 Setup answer.** In place: device only; six fixed options, including prefer not to say;
-  never asks why; changeable at any time; the history is kept for the alpha review only.
-  Recommended: drop the contraception example (item 49(d)); delete `setupLog` before beta, or
-  justify keeping it. Residual: **low** with both done, **medium** until then.
+  never asks why; changeable at any time; the history is kept for the alpha review only;
+  contraception example dropped (20 Nov); the consent record treated as special category;
+  owner-only RLS; no analytics. Recommended: delete `setupLog` before beta, or justify keeping it.
+  Residual: **low** once `setupLog` is deleted before beta or justified; **medium** until then.
+- **Equality Act.** The offer is female-only; anyone 18+ with a health yes can turn Cycle on from
+  settings (Sara, 20 Nov 2026; cycle-checks.md item 2). Residual: **low**. The Profile row and
+  withdrawal show whenever Cycle is on or a cycle consent exists, whatever the sex answer
+  (Art. 7(3)).
 - **R26 Safety (PMDD, disordered eating).** In place: prompts only signpost (GP, NHS 111), never
   name a condition, grade severity or say "abnormal"; once per episode and at most every 91 days;
-  "usual for me" marks; paused during pregnancy or breastfeeding; the no-period hold stops deficit
+  "usual for me" marks; the G1/G2 cards keep a neutral close (the X, which records nothing), so
+  "This is usual for me" is never the only way to clear one (Sara, 20 Nov); paused during
+  pregnancy or breastfeeding, which also hides the check-in row; the no-period hold stops deficit
   suggestions rather than adding food targets; cycle data never feeds the hard-day or week
   picture logic. Gaps: no PMDD-specific or mood-linked prompt (mood is in the check-in, cycle data
   is kept apart from it by design), and the interaction with Gentle mode and the wellbeing flag

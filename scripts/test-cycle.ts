@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import type { CheckIn } from '@/core/types'
 import { MIN_AGE } from '@/core/legal'
 import {
-  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleOffered, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
+  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleAvailable, cycleOffered, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
   periodStarted, periodsOf, promptsDue, rowShows, setSetup, bledBetween, type CycleDay, type CycleStore,
 } from '@/core/domain/cycle'
 import { shiftDay } from '@/core/domain/date'
@@ -40,6 +40,10 @@ function coreChecks() {
   /* gate (§3) */
   report('gate', [
     ['female + health yes + adult', cycleOffered({ sexAnswer: 'female', healthYes: true, age: 30 })],
+    // Sara, 20 Nov: anyone 18+ with a health yes can turn it on from settings, whatever the sex answer
+    ['settings route: any sex answer, or none, with a health yes and adult', ['male', 'unspecified', 'female', undefined].every((sexAnswer) => cycleAvailable({ sexAnswer, healthYes: true, age: 30 }))],
+    ['settings route: never without a health yes, or below MIN_AGE', !cycleAvailable({ sexAnswer: 'male', healthYes: false, age: 30 }) && !cycleAvailable({ healthYes: true, age: MIN_AGE - 1 }) && !cycleAvailable({ healthYes: true, age: null }) && cycleAvailable({ healthYes: true, age: MIN_AGE })],
+    ['the offer stays female-only', !cycleOffered({ sexAnswer: 'male', healthYes: true, age: 30 })],
     ['never on prefer-not-to-say (stored as legacy F)', !cycleOffered({ sexAnswer: 'unspecified', healthYes: true, age: 30 })],
     ['never without an onboarding answer', !cycleOffered({ healthYes: true, age: 30 })],
     ['never without a current health yes (a withdrawal clears sexAnswer too)', !cycleOffered({ sexAnswer: 'female', healthYes: false, age: 30 }) && !cycleOffered({ sexAnswer: undefined, healthYes: false, age: 30 })],
@@ -167,8 +171,20 @@ function coreChecks() {
       ['a mid-period "usual" tap is not undone by the same period', !promptsDue(midTap, TODAY).includes('heavy')],
       ['heavy and pain never show weeks after the period', !promptsDue(stale, TODAY).includes('heavy')],
       ['no-period never fires the day a pause ends or a setup changes', !promptsDue(paused, TODAY, { checkinDays: checkins }).includes('no-period') && !promptsDue(switched, TODAY, { checkinDays: checkins }).includes('no-period')],
-      ['"irregular" waits longer (provisional)', !promptsDue(irr, TODAY, { checkinDays: checkins }).includes('no-period') && T.noPeriodDaysIrregular > T.noPeriodDays],
-      ['spotting then flow backdates the start; spotting counts as not a gap', periodsOf(spotStart)[0]?.start === ago(3) && !promptsDue(spotOnly, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['"irregular" waits longer (Sara, 20 Nov; clinician to confirm)', !promptsDue(irr, TODAY, { checkinDays: checkins }).includes('no-period') && T.noPeriodDaysIrregular > T.noPeriodDays],
+      // Sara, 20 Nov: spotting never starts a period, so spotting alone doesn't reset the long gap
+      ['spotting then flow backdates the start; spotting alone does not reset the gap', periodsOf(spotStart)[0]?.start === ago(3) && promptsDue(spotOnly, TODAY, { checkinDays: checkins }).includes('no-period')],
+      // Sara, 20 Nov: only flow heavier than spotting counts towards "more than a week"
+      ['spotting at the end of a week-long period does not fire long-bleed; "Day N" still counts it', (() => {
+        const x = store('regular'); bleed(x.days, ago(T.longBleedDays + 1), T.longBleedDays); x.days[ago(1)] = { flow: 'spotting' }; x.days[TODAY] = { flow: 'spotting' }
+        const p = periodsOf(x.days)[0]
+        return p.length === T.longBleedDays + 2 && p.bleedLength === T.longBleedDays && !promptsDue(x, TODAY).includes('long-bleed') && periodDay(x.days, TODAY) === T.longBleedDays + 2
+      })()],
+      ['spotting before flow does not count towards long-bleed either', (() => {
+        const x = store('regular'); x.days[ago(T.longBleedDays + 1)] = { flow: 'spotting' }; bleed(x.days, ago(T.longBleedDays), T.longBleedDays)
+        const p = periodsOf(x.days)[0]
+        return p.start === ago(T.longBleedDays + 1) && p.bleedLength === T.longBleedDays && !promptsDue(x, TODAY).includes('long-bleed')
+      })()],
       ['no-period shows once per gap, not every 3 months', !promptsDue(onceGap, TODAY, { checkinDays: checkins }).includes('no-period')],
       ['one check-in per block is not enough', !promptsDue(gap('regular'), TODAY, { checkinDays: Array.from({ length: 4 }, (_, i) => ago(i * 30)) }).includes('no-period')],
     ])
