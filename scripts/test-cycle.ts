@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import type { CheckIn } from '@/core/types'
 import { MIN_AGE } from '@/core/legal'
 import {
-  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleAvailable, cycleOffered, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
+  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleAvailable, cycleOffered, cycleRowShows, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
   periodStarted, periodsOf, promptsDue, rowShows, setSetup, bledBetween, type CycleDay, type CycleStore,
 } from '@/core/domain/cycle'
 import { shiftDay } from '@/core/domain/date'
@@ -44,6 +44,7 @@ function coreChecks() {
     ['settings route: any sex answer, or none, with a health yes and adult', ['male', 'unspecified', 'female', undefined].every((sexAnswer) => cycleAvailable({ sexAnswer, healthYes: true, age: 30 }))],
     ['settings route: never without a health yes, or below MIN_AGE', !cycleAvailable({ sexAnswer: 'male', healthYes: false, age: 30 }) && !cycleAvailable({ healthYes: true, age: MIN_AGE - 1 }) && !cycleAvailable({ healthYes: true, age: null }) && cycleAvailable({ healthYes: true, age: MIN_AGE })],
     ['the offer stays female-only', !cycleOffered({ sexAnswer: 'male', healthYes: true, age: 30 })],
+    ['the Profile row stays while Cycle is on or a consent exists, even with no current health yes (Art. 7(3))', cycleRowShows({ sexAnswer: 'male', healthYes: false, age: 30 }, true, false) && cycleRowShows({ healthYes: false, age: 30 }, false, true) && !cycleRowShows({ healthYes: false, age: 30 }, false, false)],
     ['never on prefer-not-to-say (stored as legacy F)', !cycleOffered({ sexAnswer: 'unspecified', healthYes: true, age: 30 })],
     ['never without an onboarding answer', !cycleOffered({ healthYes: true, age: 30 })],
     ['never without a current health yes (a withdrawal clears sexAnswer too)', !cycleOffered({ sexAnswer: 'female', healthYes: false, age: 30 }) && !cycleOffered({ sexAnswer: undefined, healthYes: false, age: 30 })],

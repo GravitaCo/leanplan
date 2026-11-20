@@ -47,9 +47,9 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
     // safeguard named on 11 Oct 2026
     // with onboarding on: the conditions and medicines question asked for every goal, and its two
     // settings (protein at the everyday amount, or a capped range), 24 Oct 2026
-    // Cycle (`cycle`), 16 Nov 2026: only the Cycle version carries the new date, so the published
+    // Cycle (`cycle`), 16 Nov 2026 (settings route 20 Nov): only the Cycle version carries the new date, so the published
     // text with Cycle off is unchanged. Set it to the publish date when CYCLE_ENABLED goes on.
-    updated: cycle ? '2026-11-16' : '2026-11-05',
+    updated: cycle ? '2026-11-20' : '2026-11-05',
     intro:
       `This explains what Tilo collects, why, who else handles it and the rights you have. It covers the Tilo app ` +
       `(app.tilo.fit) and the Tilo website (www.tilo.fit). Tilo is run by ${who()} ("we", "us"). We are the controller ` +
@@ -179,12 +179,12 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             {
               h: 'Cycle',
               p: [
-                `Cycle is an optional period and symptom log. Tilo offers it in Profile to people aged ${MIN_AGE} and over who chose female as their sex in Tilo and have agreed to Tilo keeping their health data. Anyone aged ${MIN_AGE} and over who has agreed to Tilo keeping their health data can also turn it on in settings, whatever their answer. Seeing the offer or the setting collects nothing, and Cycle stays off unless you turn it on. ` +
+                `Cycle is an optional period and symptom log. Tilo offers it in Profile to people aged ${MIN_AGE} and over who chose female as their sex in Tilo and have agreed to Tilo keeping their health data. Anyone aged ${MIN_AGE} and over who has agreed to Tilo keeping their health data can also turn it on in settings, whatever sex they chose in Tilo, or none. Seeing the offer or the setting collects nothing, and Cycle stays off unless you turn it on. ` +
                   `It lets you record your periods and how you feel, as a personal diary. Tilo uses what you record to offer general wellness choices, such as a lighter session, and general information on when to speak to a GP. ` +
                   `It isn't intended to diagnose, prevent, monitor or treat any disease or condition, to predict periods, ovulation or fertile days, or to help you get pregnant or avoid pregnancy. It isn't a medical device.`,
                 `What it keeps: your answer to its one setup question (such as regular periods, irregular periods or periods changing with age), and for each day you log, your flow, your pain and any symptoms you pick from a fixed list (such as cramps or a headache), never your own words. ` +
                   `It also keeps which of its notes on when to get help it has shown you and when, any you marked as usual for you, and your earlier setup answers with their dates. ` +
-                  `This can reveal things about your sexual and reproductive health, so Cycle asks for its own explicit consent when you turn it on, separate from the one for health data.`,
+                  `This can show things about your sexual and reproductive health, so Cycle asks for its own explicit consent when you turn it on, separate from the one for health data.`,
                 `Where it's kept: on your phone only. Your Cycle log is never synced to your account, never sent to an AI service or anyone else, and never mentioned in a notification. ` +
                   `Your account holds only the record of your Cycle consent choices (which one, the version of the wording and when), as for your other consents. Because it shows you chose to use a period log, we protect it like your health data. ` +
                   `Like the rest of your log on this phone, your Cycle log is protected by your phone's lock, not by a separate password. If someone else signs in to Tilo on this phone, the app doesn't show them your Cycle log, and it's never moved into another account. ` +

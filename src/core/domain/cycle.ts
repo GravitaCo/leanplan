@@ -138,13 +138,22 @@ export interface GateFacts {
 }
 
 /**
- * Whether Cycle may be turned on and run, and the Profile "Your cycle" row shows: an adult with a
+ * Whether Cycle may be turned on and run: an adult with a
  * current health yes, whatever the sex answer (Sara, 20 Nov 2026; Equality Act, cycle-checks.md
  * item 2). Turning it on from settings goes through the same explanation, consent and setup as the
  * offer, and the route isn't recorded. Never asks or checks the sex answer.
  */
 export function cycleAvailable(f: GateFacts): boolean {
   return f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
+}
+
+/**
+ * Whether the Profile "Your cycle" row (and turning Cycle off) shows: wherever Cycle may be turned
+ * on, and always while it is on or a cycle consent exists, so withdrawal stays as easy as giving
+ * it even if a health version bump leaves no current health yes (Art. 7(3); compliance, 20 Nov).
+ */
+export function cycleRowShows(f: GateFacts, cycleOn: boolean, cycleConsentExists: boolean): boolean {
+  return cycleOn || cycleConsentExists || cycleAvailable(f)
 }
 
 /** Whether the unprompted Cycle offer shows in Profile: cycleAvailable and the onboarding answer
