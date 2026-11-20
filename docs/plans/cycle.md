@@ -150,7 +150,8 @@ the app or on the website.
   off and delete stay reachable during the pause.
 - **If `sexAnswer` changes away from female,** the offer disappears; while Cycle is on or a cycle
   consent exists, the Profile row, turning it off and delete stay, whatever the answer (Art. 7(3)).
-  "Delete all cycle data" lives under Privacy for everyone.
+  "Delete all cycle data" lives under Privacy for everyone. After "I don't have periods" the row
+  leaves Profile for that person, whatever the route (A3, Sara 20 Nov); it stays under Privacy.
 - **Under-18s: no** (Benn, 29 Oct). Tali already requires 18+ (`MIN_AGE`, `src/core/legal`), so the
   gate needs no extra age check; a test confirms Cycle is never offered below `MIN_AGE`.
 

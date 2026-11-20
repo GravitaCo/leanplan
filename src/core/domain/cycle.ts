@@ -151,8 +151,11 @@ export function cycleAvailable(f: GateFacts): boolean {
  * Whether the Profile "Your cycle" row (and turning Cycle off) shows: wherever Cycle may be turned
  * on, and always while it is on or a cycle consent exists, so withdrawal stays as easy as giving
  * it even if a health version bump leaves no current health yes (Art. 7(3); compliance, 20 Nov).
+ * After "I don't have periods" it leaves Profile (A3, Sara 20 Nov); Cycle settings, turning it off
+ * and delete stay under Profile › Privacy.
  */
-export function cycleRowShows(f: GateFacts, cycleOn: boolean, cycleConsentExists: boolean): boolean {
+export function cycleRowShows(f: GateFacts, cycleOn: boolean, cycleConsentExists: boolean, setup?: CycleSetup): boolean {
+  if (closesOffer(setup)) return false
   return cycleOn || cycleConsentExists || cycleAvailable(f)
 }
 
