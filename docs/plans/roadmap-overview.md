@@ -17,6 +17,15 @@ so the **Target** columns stay blank until Benn sets dates.
 3. **Solicitor and clinician:** the connections have to be made first. No budget or date yet.
 4. **Next build stream: food data clean-up and making it more robust.**
 
+## Order set by Benn (22 Nov 2026)
+
+1. **Cycle (N14)**: finish and approve (ship-critic, Benn or Sara).
+2. **Switch onboarding on**, web and native, as its own change: DPIA §§1 to 7 signed by Benn,
+   register #34, onboarding legal texts published, DPIA D1 clinician question settled.
+3. **Apple Watch phase 2: sleep and walking**, to the settled rules in `native-app-plan.md` §3.5.
+
+Then, not yet ordered: Summary callouts, recipe sharing (N13), men's demo clips, store launch.
+
 ## Proposed order (Now, Next, Later)
 
 | When | Stream | Why now | Target |
