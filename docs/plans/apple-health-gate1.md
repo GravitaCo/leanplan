@@ -5,7 +5,8 @@ decisions in `native-app-plan.md` §3.5**, which replace the 16 Nov device-only 
 nothing built, applied or published.** Order (Benn, 22 Nov): Cycle, then onboarding on, then this.
 
 Verdicts on this revision: first pass 22 Nov, `compliance` and `security-data` both CHANGES NEEDED; their
-fixes are written in below; recheck pending. (The 16 Nov device-only draft, approved by both as a draft,
+fixes are written in below. Recheck: `compliance` APPROVE AS DRAFT (its three follow-ups written in);
+`security-data` CHANGES NEEDED on the SQL, fixes written in, second recheck pending. (The 16 Nov device-only draft, approved by both as a draft,
 is in git history at 747c7aa.)
 
 ## 0. What changed from the 16 Nov draft (from §3.5)
@@ -88,8 +89,13 @@ wearable: {
   never send `wearable`, so a stale whole-day push from any phone, the web or an old build never
   overwrites or resurrects watch data.
 - **Import vs import** (a second iPhone, a partial read while iCloud Health syncs): `merge_wearable`
-  merges under the per-user lock: `night` set only when present, the larger step count kept, walks
-  merged by `key`.
+  merges under its own lock: `night` set only when present, the larger step count kept, a number always
+  beating "not worn", walks merged by `key` (each walk's key must be 16 hex characters, or the call is
+  refused). The server keeps only the §2 fields, so the minimisation holds even against an old or
+  modified build. A merge that changes nothing writes nothing. The app stores what `merge_wearable`
+  returns (through `mayShowWearable`), so the phone holds the merged day. A deadlock (40P01) is retried
+  once; a size refusal (23514, over 4 KB) is permanent: that day's flag is dropped and logged.
+- **Walks deleted in Health** stay on the account until Disconnect; removing them is a W2 question.
 - **Pull:** `fromServerDay` drops `wearable` from `leanplan.v1`; the pull writes it into the health
   store through `mayShowWearable` (§6): a day with a pending `meta.wear[d]` keeps the local copy;
   otherwise the server wins, null included (a withdrawal elsewhere clears it here). Rows with no content
@@ -97,8 +103,9 @@ wearable: {
   `accountRows` or `sameAccount`.
 - **Confirmed walks** change `sessions`, so they go through M1's compare-and-swap (§6).
 - **TL002** (the server refusing watch data without a current `wearables` yes) maps to its own consent
-  error, counted as a whole-request refusal; the app then runs `pullConsents` and
-  `applyWearablesWithdrawal`, which drops the pending flags. No retry loop.
+  error, counted as a whole-request refusal. The app runs `pullConsents`; only if the latest `wearables`
+  answer is then a no does `applyWearablesWithdrawal` drop the pending flags, otherwise they wait for the
+  next run. The wearable step is skipped in any run whose consents step didn't finish. No retry loop.
 
 ## 3. On the phone: kept out of iPhone backups
 
@@ -141,15 +148,20 @@ Written after `2026-11-16-cycle-consent.sql`; the consent type list keeps `cycle
    non-null `wearable` is refused (`TL002`) unless `wearables_consent_current`. It runs after
    `require_health_consent` (alphabetical), takes the same shared lock, passes the service role, and
    passes old builds whose upserts don't send the column.
-5. `merge_wearable(d date, patch jsonb)`: security invoker, under the per-user lock; inserts or merges
-   the day's `wearable` (rules in §2), so the triggers still fire.
+5. `merge_wearable(d date, patch jsonb)`: security invoker; a merge-only lock first, then the
+   `tali-log` lock shared (so it never deadlocks against the consent triggers of M1's PATCH, and still
+   waits for the clear functions); validates, allow-lists and merges the day's `wearable` (rules in §2);
+   the triggers still fire.
 6. `clear_wearables_after_withdrawal()`: security invoker, exclusive lock; returns `cleared:false` while
-   `wearables` is current or while health isn't (then `clear_log_after_withdrawal` removes the rows, and
-   the UPDATE would be refused by `require_health_consent` anyway). The app marks `wearablesCleared`
-   only on `cleared:true`, so a call made before the withdrawal reached the server retries.
-7. **Backstop:** a daily service-role step next to `purge_unconsented_logs` nulls `wearable` for accounts
-   whose latest `wearables` answer is a no older than a day (re-checked under the lock), so watch data
-   never outlives a withdrawal from a phone that is never opened again.
+   `wearables` is current, and `cleared:false, reason:'health'` while health isn't (then
+   `clear_log_after_withdrawal` owns the deletion, and the UPDATE would be refused by
+   `require_health_consent` anyway). The app marks `wearablesCleared` on `cleared:true` or reason
+   `health`, so a call made before the withdrawal reached the server retries, and nothing retries forever.
+7. **Backstop:** `purge_withdrawn_wearables()`, scheduled daily with `cron.schedule` (as
+   `purge_unconsented_logs` is; cron runs it as postgres, no API role may call it), nulls `wearable` for
+   up to 200 accounts a run whose latest `wearables` answer is a no older than a day (the due test in the
+   query, so only due accounts are locked; re-checked under the lock), so watch data never outlives a
+   withdrawal from a phone that is never opened again.
 8. Unchanged and already covering the column: `clear_log_after_withdrawal()`,
    `purge_unconsented_logs()` and delete-account (`USER_TABLES`) delete whole rows; export reads rows.
 9. The client never sends `wearable` while `wearables` isn't current.
@@ -168,8 +180,8 @@ Written after `2026-11-16-cycle-consent.sql`; the consent type list keeps `cycle
 - **H2 Withdrawals from anywhere.** A platform hook `onHealthDataCleared` inside `clearHealthData`
   (consent.ts; its three callers covered) wipes the health store and stops reads.
   `applyWearablesWithdrawal(s, meta)` runs after every `pullConsents` (next to the two
-  `applyHealthWithdrawal` calls in `store.ts`), once per record id (`wearablesCleared`, set only on
-  `cleared:true`): it wipes the store, drops `meta.wear`, and calls `clear_wearables_after_withdrawal()`.
+  `applyHealthWithdrawal` calls in `store.ts`), once per record id (`wearablesCleared`, set on
+  `cleared:true` or reason `health`): it wipes the store, drops `meta.wear`, and calls `clear_wearables_after_withdrawal()`.
   The shared `withdraw('health')` records the `wearables` withdrawal.
 - **H3 Every read fails closed.** The health store returns empty, and clears, unless `mayShowWearable`
   holds; the hooks only tidy up.
@@ -196,8 +208,8 @@ Written after `2026-11-16-cycle-consent.sql`; the consent type list keeps `cycle
   Import boundary: only the health store and the importer import `modules/tilo-health`.
 - **M4 Swift** returns only §1's fields; `value` is removed from `SleepSample`.
 - **L** The migration before any build records `wearables` (a test that the newest
-  `consents_type_check` equals `CONSENT_TYPES`); `cleanGuided` keeps `src` and `srcKey` only if
-  key-shaped; validation keeps `wearable` by shape.
+  `consents_type_check` equals `CONSENT_TYPES`); `cleanGuided` keeps `src` only if
+  `^[a-z][a-z0-9-]{0,31}$` and `srcKey` only if exactly 16 hex characters; validation keeps `wearable` by shape.
 - **Backup file.** `exportBackup` merges `wearable` in from the health store on purpose (access right);
   the web's export has none, so the account-level export reads the server copy. A restore **always**
   drops `wearable` and never sets `meta.wear` (the file can be hand-edited; HealthKit and the server
@@ -234,10 +246,15 @@ Written after `2026-11-16-cycle-consent.sql`; the consent type list keeps `cycle
   the account; confirmed walks stay as Train entries); the Health app switch stops reads but deletes
   nothing; Apple Health is not a processor. If the whole store leaves backups (§3), edits not yet synced
   are lost on a restore.
+- **Privacy policy, "How long we keep it"** (`privacy.ts`): a wearables line: "If you disconnect Apple
+  Health, we delete imported watch data from your account straight away (or as soon as your phone next
+  connects)", and that reason added to the backup-expiry sentence (today only the health and unconsented
+  cases). Art. 13(2)(a).
 - **Cookie and storage policy:** the `tali.health` entry (the phone's copy, excluded from backup, the
   last 14 nights and 56 days).
 - **Register:** a processing row (day logs gain `wearable`; Art. 6(1)(b) and 9(2)(a) with the
-  `wearables` consent; bed and wake times deliberately not kept; phone retention); consent types; the
+  `wearables` consent; bed and wake times deliberately not kept; phone retention; confirmed walks keep `src` and `srcKey`,
+  which sit in `leanplan.v1` and so fall under §3's backup decision); consent types; the
   Wellbeing row's sentence that `checkin.night` device fields are "reserved for a later wearable build"
   rewritten (never written there; the sentinel asserts it); open items (Apple's HealthKit licence terms,
   §3's backup decision, the Health app path on iOS 27, pilot measures by asking, not telemetry; the
@@ -268,9 +285,10 @@ in both places); label, manifest, App Store description; `ship-critic`. OPEN for
 -- Widening: every existing row passes the new checks; the column is nullable. Existing table grants
 -- cover the column; RLS is per row and unchanged. clear_log_after_withdrawal, purge_unconsented_logs
 -- and delete-account delete whole day_logs rows, so they already cover it.
--- Rollback: never delete consent history; to narrow the type check, re-run the cycle migration's step
--- only if (select count(*) from public.consents where type = 'wearables') = 0. Drop the trigger and
--- functions; the column can be dropped once no client reads it (or left, unused).
+-- Rollback: select cron.unschedule('tali-purge-wearables'); drop the trigger and functions. Never delete
+-- consent history; to narrow the type check, re-run the cycle migration's step only if
+-- (select count(*) from public.consents where type = 'wearables') = 0. The column can be dropped once
+-- no client reads it (or left, unused).
 begin;
 
 alter table public.consents drop constraint if exists consents_type_check;
@@ -314,43 +332,56 @@ drop trigger if exists require_wearables_consent on public.day_logs;
 create trigger require_wearables_consent before insert or update on public.day_logs
   for each row execute function public.require_wearables_consent();
 
--- the importer's only write: merges one day's watch summary under the per-user lock
+-- the importer's only write: merges one day's watch summary. Lock order: a merge-only key first (merges
+-- queue behind each other), then 'tali-log' SHARED, so a merge never deadlocks against the consent
+-- triggers of a plain UPDATE (M1's PATCH) and still waits for the clear functions' exclusive lock.
+-- Server-side allow-list: night keeps only asleepMin; each walk keeps only key, type, start, mins, brisk.
 create or replace function public.merge_wearable(d date, patch jsonb)
 returns jsonb language plpgsql security invoker set search_path = '' as $$
-declare uid uuid := auth.uid(); cur jsonb; merged jsonb; walks jsonb;
+declare uid uuid := auth.uid(); found_row boolean; cur jsonb; merged jsonb; walks jsonb; k text;
 begin
   if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
   if patch is null or jsonb_typeof(patch) <> 'object' then
     raise exception 'tali: bad wearable' using errcode = '22023';
   end if;
-  perform pg_advisory_xact_lock(hashtextextended('tali-log:' || uid::text, 0));
-  select wearable into cur from public.day_logs where user_id = uid and log_date = d;
+  if patch ? 'walks' and (jsonb_typeof(patch->'walks') <> 'array' or exists (
+       select 1 from jsonb_array_elements(patch->'walks') w
+       where jsonb_typeof(w) <> 'object' or coalesce(w->>'key', '') !~ '^[0-9a-f]{16}$')) then
+    raise exception 'tali: bad wearable walk' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended('tali-wear:' || uid::text, 0));
+  perform pg_advisory_xact_lock_shared(hashtextextended('tali-log:' || uid::text, 0));
+  select true, wearable into found_row, cur from public.day_logs where user_id = uid and log_date = d;
   cur := coalesce(cur, '{}'::jsonb);
   merged := cur || jsonb_build_object('src', 'healthkit');
-  if patch ? 'night' then merged := merged || jsonb_build_object('night', patch->'night'); end if;
-  if patch ? 'steps' then
-    merged := merged || jsonb_build_object('steps',
-      case when jsonb_typeof(cur->'steps') = 'number' and jsonb_typeof(patch->'steps') = 'number'
-           then to_jsonb(greatest((cur->>'steps')::numeric, (patch->>'steps')::numeric))
-           else patch->'steps' end);
+  if jsonb_typeof(patch->'night') = 'object' and jsonb_typeof(patch->'night'->'asleepMin') = 'number' then
+    merged := merged || jsonb_build_object('night', jsonb_build_object('asleepMin', patch->'night'->'asleepMin'));
   end if;
-  if patch ? 'stepsInWalks' then
-    merged := merged || jsonb_build_object('stepsInWalks',
-      case when jsonb_typeof(cur->'stepsInWalks') = 'number' and jsonb_typeof(patch->'stepsInWalks') = 'number'
-           then to_jsonb(greatest((cur->>'stepsInWalks')::numeric, (patch->>'stepsInWalks')::numeric))
-           else patch->'stepsInWalks' end);
-  end if;
-  if jsonb_typeof(patch->'walks') = 'array' then
-    -- walks merged by key: the patch's version of a walk replaces the stored one
-    select coalesce(jsonb_agg(w), '[]'::jsonb) into walks from (
+  -- steps and stepsInWalks: a number always beats { notWorn: true }; the larger number wins;
+  -- notWorn only fills a day that has no number (a partial or locked read never wipes a count)
+  foreach k in array array['steps', 'stepsInWalks'] loop
+    if jsonb_typeof(patch->k) = 'number' then
+      merged := merged || jsonb_build_object(k, case when jsonb_typeof(cur->k) = 'number'
+        then to_jsonb(greatest((cur->>k)::numeric, (patch->>k)::numeric)) else patch->k end);
+    elsif patch->k = '{"notWorn": true}'::jsonb and jsonb_typeof(cur->k) is distinct from 'number' then
+      merged := merged || jsonb_build_object(k, '{"notWorn": true}'::jsonb);
+    end if;
+  end loop;
+  if patch ? 'walks' then
+    -- walks merged by key (the patch's version wins); a walk deleted in Health stays until Disconnect (W2)
+    select coalesce(jsonb_agg(w order by w->>'start'), '[]'::jsonb) into walks from (
       select distinct on (w->>'key') w from (
-        select w, 1 as pri from jsonb_array_elements(patch->'walks') w
+        select jsonb_strip_nulls(jsonb_build_object('key', w->'key', 'type', w->'type', 'start', w->'start',
+                 'mins', w->'mins', 'brisk', w->'brisk')) as w, 1 as pri
+          from jsonb_array_elements(patch->'walks') w
         union all
         select w, 2 from jsonb_array_elements(coalesce(cur->'walks', '[]'::jsonb)) w
       ) x order by w->>'key', pri
     ) y;
     merged := merged || jsonb_build_object('walks', walks);
   end if;
+  -- nothing changed: no write, so updated_at doesn't move and M1 needn't rebase
+  if found_row and merged = cur then return merged; end if;
   insert into public.day_logs (user_id, log_date, wearable) values (uid, d, merged)
     on conflict (user_id, log_date) do update set wearable = excluded.wearable;
   return merged;
@@ -366,7 +397,10 @@ begin
   perform pg_advisory_xact_lock(hashtextextended('tali-log:' || uid::text, 0));
   -- nothing to do while wearables is current; and with health withdrawn, clear_log_after_withdrawal
   -- removes the rows (this UPDATE would be refused by require_health_consent)
-  if public.wearables_consent_current(uid) or not public.health_consent_current(uid) then
+  if not public.health_consent_current(uid) then
+    return jsonb_build_object('cleared', false, 'reason', 'health', 'at', now());
+  end if;
+  if public.wearables_consent_current(uid) then
     return jsonb_build_object('cleared', false, 'at', now());
   end if;
   update public.day_logs set wearable = null where user_id = uid and wearable is not null;
@@ -376,31 +410,35 @@ end $$;
 revoke all on function public.clear_wearables_after_withdrawal() from public, anon;
 grant execute on function public.clear_wearables_after_withdrawal() to authenticated;
 
--- backstop: a daily service-role run (next to purge_unconsented_logs) nulls watch data for accounts
--- whose latest wearables answer is a no older than a day
+-- backstop: daily (cron, as postgres) nulls watch data for accounts whose latest wearables answer is
+-- a no older than a day. The due test is in the query, so only due accounts are locked; 200 a run.
+-- The re-check also clears when health isn't current (the safe direction: no yes, no watch data).
 create or replace function public.purge_withdrawn_wearables()
-returns integer language plpgsql security invoker set search_path = '' as $$
-declare r record; total integer := 0; n integer;
+returns jsonb language plpgsql security invoker set search_path = '' as $$
+declare r record; people integer := 0; total integer := 0; n integer;
 begin
   for r in
     select distinct d.user_id from public.day_logs d
-    where d.wearable is not null and exists (
-      select 1 from public.consents c where c.user_id = d.user_id and c.type = 'wearables')
+    where d.wearable is not null
+      and not public.wearables_consent_current(d.user_id)
+      and (select least(c.recorded_at, c.created_at) from public.consents c
+           where c.user_id = d.user_id and c.type = 'wearables' and not c.granted
+           order by least(c.recorded_at, c.created_at) desc, c.created_at desc limit 1)
+          < now() - interval '1 day'
+    limit 200
   loop
     perform pg_advisory_xact_lock(hashtextextended('tali-log:' || r.user_id::text, 0));
-    if not public.wearables_consent_current(r.user_id) and (
-      select least(c.recorded_at, c.created_at) from public.consents c
-      where c.user_id = r.user_id and c.type = 'wearables'
-      order by least(c.recorded_at, c.created_at) desc, c.created_at desc limit 1
-    ) < now() - interval '1 day' then
+    -- again under the lock: a yes may have arrived since
+    if not public.wearables_consent_current(r.user_id) then
       update public.day_logs set wearable = null where user_id = r.user_id and wearable is not null;
-      get diagnostics n = row_count; total := total + n;
+      get diagnostics n = row_count; total := total + n; people := people + 1;
     end if;
   end loop;
-  return total;
+  return jsonb_build_object('people', people, 'rows', total, 'at', now());
 end $$;
-revoke all on function public.purge_withdrawn_wearables() from public, anon, authenticated;
-grant execute on function public.purge_withdrawn_wearables() to service_role;
+-- cron runs it as postgres; no API role may call it
+revoke all on function public.purge_withdrawn_wearables() from public, anon, authenticated, service_role;
+select cron.schedule('tali-purge-wearables', '23 3 * * *', 'select public.purge_withdrawn_wearables()');
 
 notify pgrst, 'reload schema';
 commit;
@@ -408,4 +446,5 @@ commit;
 -- select pg_get_constraintdef(oid) from pg_constraint
 --   where conrelid = 'public.consents'::regclass and conname = 'consents_type_check';
 -- select column_name from information_schema.columns where table_name = 'day_logs' and column_name = 'wearable';
+-- select jobname, schedule, command from cron.job where jobname = 'tali-purge-wearables';
 ```
