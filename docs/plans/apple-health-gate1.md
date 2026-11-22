@@ -1,223 +1,277 @@
-# Apple Health import (phase 2, W1): gate 1 draft
+# Apple Health import (phase 2, W1): gate 1 design
 
-Drafted 16 Nov 2026 by N9 with `compliance` and `security-data`. **Draft only: nothing edited, applied
-or published.** Decisions are in `native-build-plan.md` §11.1.
+Drafted 16 Nov 2026 by N9 with `compliance` and `security-data`; **revised 22 Nov to Benn's settled
+decisions in `native-app-plan.md` §3.5**, which replace the 16 Nov device-only option (c). **Docs only:
+nothing built, applied or published.** Order (Benn, 22 Nov): Cycle, then onboarding on, then this.
 
-Verdicts: `compliance` APPROVE AS DRAFT for option (c), device only, with a separate `health-import`
-consent (CHANGES NEEDED for (a) or (b)). `security-data` CHANGES NEEDED: agrees with (c), wanted H1 to H3
-and M1 to M5 written into the design: they are in §7, and the recheck APPROVED AS DRAFT (16 Nov).
+Verdicts on this revision: `compliance` pending; `security-data` pending. (On the 16 Nov device-only
+draft: both APPROVED AS DRAFT; that draft is in git history at 747c7aa.)
+
+## 0. What changed from the 16 Nov draft (from §3.5)
+
+- Imported summaries **sync** on `day_logs` (§3.5 item 9), so they inherit consent, withdrawal, purge,
+  export and deletion. They live in a **new `wearable` column**, never in `checkin.night`, so the
+  person's own answer and the watch night sit side by side and gate 2 (an imported night is never a
+  check-in and never replaces the person's own) holds by construction.
+- A separate **`wearables` consent** (§3.5 item 8; replaces `health-import`), with a server check.
+- HealthKit-derived data is **kept out of iPhone backups** (§3.5 item 9).
+- The watch supplies the night's hours; the person enters hours only with no watch night; "How did
+  you sleep?" stays the person's own answer, never prefilled, and alone drives hard day, low signals
+  and the hard week. A watch-only short night never makes a hard day.
+- Disagreement: the watch band shows with **"Not right?"**; changing it asks one confirmation and the
+  person's choice wins for that night. Until they answer, a manual entry counts. Never added together.
+- Sleep **shows in gentle mode** (hours band, own rating, weekly line). Hidden in gentle mode: stages,
+  the 7 to 9 reference line, sleep-hunger lines, any food or weight link.
+- **Background delivery on.**
+- Weekly sleep line: the most common band from all nights (watch or own), from 3 nights.
 
 ## 1. Reads (read only; never writes to HealthKit)
 
-- Sleep (sleepAnalysis): asleep and in-bed samples, reduced in Swift to one result per night; stage
-  values never reach JS.
-- Steps (stepCount): a daily sum per local day, plus the sum inside each counted walk. No samples, no sources.
-- Walks (workouts filtered to walking in Swift): start, duration, pace. The iOS permission covers all
-  workout types; the filter is in the query. `totalDistance` is deprecated from iOS 18; the alternative
-  adds a fourth read type (distanceWalkingRunning).
-- Never read: energy, routes, heart rate, metadata, source or device. Bed time is read only to frame the night.
+- Sleep (`sleepAnalysis`): reduced in Swift to **one result per night**: asleep minutes, bed time (the
+  in-bed start) and wake time (the end of the last asleep stretch). No spans (their gaps show each
+  waking), no stage values. **Stages are not in W1**: the opt-in weekly rough split (§3.5 item 2) is a
+  later board with its own review, and only then does Swift return per-night stage totals.
+- Steps (`stepCount`): a daily sum per local day, plus the sum inside each counted walk. No samples, no sources.
+- Walks (workouts, filtered to walking in Swift): Apple's workout id (for de-duplication, §2), start,
+  duration, and pace computed in Swift for the brisk test (5.6 km/h, Compendium 17200). Distance
+  itself never leaves Swift. `.strictStartDate` so a walk crossing a window is never counted twice.
+- Never read: energy (§3.5: Apple's active energy never feeds any number), routes, heart rate,
+  metadata, source or device.
+- Background delivery: `HKObserverQuery` for the three types, with the background-delivery
+  entitlement. A background read runs only when H1's conditions hold.
 
-## 2. Stores (on the iPhone only)
+## 2. What syncs: `day_logs.wearable`
 
-- Night, keyed to the wake-up day: the five self-report bands and wake time "HH:MM". Not stored:
-  minutes, stages, score, bed time, sample ids. Kept 14 nights.
-- Day steps: steps and steps inside walks, rounded to 100; a day under 1,000 is kept as "not worn" with
-  no number. Kept 56 days.
-- Walk: start, minutes, brisk (pace at 4.8 MET or more), confirmed. Kept 56 days.
-- Ledger: Apple workout id to session id, confirmed walks only, so a re-import changes nothing. Pruned at 56 days.
-- A confirmed walk becomes the person's own synced session (`modality 'cardio'`, title Walk or Brisk walk,
-  minutes, time, `src 'healthkit'`), with no distance and no energy.
+One nullable jsonb column per day, written only by the importer:
 
-## 3. Where it lives
+```
+wearable: {
+  src: 'healthkit',
+  night?: { asleepMin, bedAt: 'HH:MM', wakeAt: 'HH:MM' },   // keyed to the wake-up day
+  steps?: number,          // rounded to 100; a day under 1,000 is { notWorn: true } with no number
+  stepsInWalks?: number,
+  walks?: [{ key, type: 'walking', start: 'HH:MM', mins, brisk, session? }]
+}
+```
 
-- (a) A device field in the synced day log: needs a new consent anyway, no server path on disconnect,
-  last-write-wins can bring data back, and it sits in `leanplan.v1`, which is in iCloud backups.
-- (b) A new table: the full migration, RLS and grants, consent trigger, purge, `USER_TABLES`, a sync
-  path, while no feature needs a server copy.
-- **(c) Recommended:** its own `tilo-store` namespace `health` (key `tali.health`), excluded from backup
-  and owner-stamped. Only confirmed walks sync.
-- Consent: a new type `health-import` (version `2026-11-v1`), recorded on Connect before the iOS sheet,
-  offered only with a current health yes; a health withdrawal also records a health-import withdrawal.
-- Background delivery isn't needed under (c).
+- `key`: a SHA-256 of Apple's workout id, truncated to 16 hex characters, so a walk is de-duplicated
+  across phones without Apple's id leaving the phone. `session` is the Tilo session id once confirmed.
+- No raw samples, route, heart rate, energy, distance or stages.
+- A confirmed walk also becomes the person's own session (`modality 'cardio'`, title Walk or Brisk
+  walk, `cardio.key`, `mins`, `at`, `src 'healthkit'`), which stays if wearables is withdrawn: it is
+  their own entry (§3.5 item 8).
+- Kept on the server like the rest of the day log; on the phone, the import window is 14 nights and
+  56 days (reads older than that are not repeated).
 
-## 4. Text changes (gated on a new `watch` flag with `native`)
+### Why a column, and how it syncs without the race
 
-- Privacy policy: what is read and kept, that it stays on the iPhone and out of iCloud backup, that
-  connecting is a separate choice, that the person's own check-in always counts, the steps suggestion's
-  rules, retention (2 weeks sleep, 8 weeks steps and walks), how to stop, Apple Health not a processor.
-- Cookie and storage policy: a `tali.health` entry.
-- Register: a new processing row; confirmed walks in the day logs row; the wearable line replaced; the
-  consent types; open items (Apple's HealthKit licence terms unread, the 5.1.3(ii) iCloud question, the
-  pilot measures, the Health app path on iOS 27).
-- DPIA §10: both consents (Art. 9(2)(a)); minimisation, no reads in gentle mode, while wellbeing is
-  flagged, in care versions or safety weeks; risks (worry from watch sleep, compulsive stepping, a lost
-  phone, imports outliving a disconnect); the steps-up-mood-down concern signal is not approved.
-- App Store label: Health unchanged; Fitness gains confirmed walks; never tracking, ads or analytics.
-- Permission wording: the spike's "Nothing is shared unless you choose to" must not ship with W1.
-- Disconnect: wipes the store (offline too), stops reads, records a withdrawal, removes the watch lines
-  and any open suggestion, tells the person the Health app path. The same wipe runs on health
-  withdrawal, account deletion, sign-out, start fresh or keep, and an owner change.
+- **A column-only write.** The importer never dirties the whole day. It sets its own flag
+  (`meta.days[d].wear`) and pushes `upsert day_logs (user_id, log_date, wearable)` with only those
+  columns: PostgREST's upsert sets only the columns it sends (sync.ts notes this), so it can never
+  overwrite food, a check-in or sessions written on another phone. A new row gets the table's
+  defaults for every other column.
+- **The day push never sends `wearable`.** `toServerDay` leaves it out, so a stale whole-day push from
+  any phone (or the web) never overwrites or resurrects watch data.
+- **Pull** reads `wearable` into the phone's health store (§3), not into `leanplan.v1`.
+- A **confirmed walk** changes `sessions` too, so it goes through M1's compare-and-swap (§6).
 
-## 5. From gate 2
+## 3. On the phone: kept out of iPhone backups
 
-Cross-device race on whole-day last-write-wins (M1); `healthDataSummary` is correct under (c) because no
-imported night reaches the check-in, pinned by the sentinel test; the legacy Mind row and MindCard
-disagree (older than gate 2, to align when the import UI lands); an end-to-end test once the importer exists.
+- `leanplan.v1` is included in iPhone backups (`apps/native/lib/platform/storage.ts`), so the phone's
+  copy of `wearable` lives in its own `tilo-store` namespace `health` (key `tali.health`), excluded from
+  backup (M2), owner-stamped and read through the H3 gate. Screens merge it with the day in memory.
+- **OPEN (Benn, §3.5 item 9):** a confirmed walk is a session in `leanplan.v1`, which is in backups.
+  Excluding the whole store from backups settles it; otherwise confirmed walks need their `src`
+  stripped from the backed-up copy or the judgement recorded.
 
-## 6. Before anything ships (compliance)
+## 4. Consent: `wearables`
 
-The migration (Benn applies it first), consent types and versions, the gated texts with `check:legal`
-passing and Webflow drafts only, the register and DPIA §10 signed, the permission wording chosen, the
-Swift minimisation and backup exclusion, the sentinel test, the W4 board approved, label, manifest and
-App Store description, `ship-critic`.
+- New type `wearables` (version `2026-11-v1`), off by default, asked on the Connect screen before the
+  iOS sheet, offered only with a current health yes.
+- Withdrawing it: stops reading, deletes imported records on the phone and on the server
+  (`clear_wearables_after_withdrawal()`), keeps the person's own entries (confirmed walks included).
+- A health withdrawal also records a `wearables` withdrawal (only when the latest is a yes), so a
+  later health yes never resumes imports. Health withdrawal already deletes the whole log on the server.
+- Records only on a change (the 500-row consent cap is shared).
 
-## 7. Design amendments from security-data (written in 16 Nov)
+## 5. Server (one migration, `security-data`, Benn applies before any build records `wearables`)
 
-### H1. Reading needs this phone's own connection (shared phones)
+1. `consents_type_check` gains `'wearables'`.
+2. `alter table public.day_logs add column if not exists wearable jsonb`, with a check that it is null
+   or an object. Existing grants cover the new column; RLS is per row, unchanged.
+3. `wearables_consent_current(uid)`: the latest `wearables` record is a yes and health consent is current.
+4. A `BEFORE INSERT OR UPDATE` trigger on `day_logs`: when `new.wearable` is not null and differs from
+   the old value, refuse (`TL002`) unless `wearables_consent_current`. Shares the per-user advisory
+   lock with the clear functions, as `require_health_consent` does. So a stale phone can never upload
+   watch data after a withdrawal.
+5. `clear_wearables_after_withdrawal()`: security invoker, takes the per-user lock, and only while the
+   latest `wearables` record is a no: `update day_logs set wearable = null where user_id = auth.uid()`.
+6. Unchanged and already covering the column: `clear_log_after_withdrawal()` and
+   `purge_unconsented_logs()` delete whole rows; delete-account removes `day_logs` (`USER_TABLES`); the
+   export reads whole rows.
+7. The client strips `wearable` from every upload while `wearables` isn't current (as `withoutHealth`),
+   so a row is never refused for it.
 
-The `health-import` consent belongs to the account and syncs (`pullConsents`); the iOS HealthKit
-permission belongs to the app on this phone. So the store keeps a **device connection record**
-`{ owner: uid, at, consentId }`, written only by this phone's own Connect, after the consent record and
-before the iOS sheet. HealthKit is read (not just shown) only when all of these hold, checked in one
-shared function `mayReadHealth(s, ctx)` in `src/data/` that the importer calls before every read:
+## 6. Security design (from `security-data`, carried over and updated)
 
-1. the connection record exists and its `owner` is the signed-in uid;
-2. the account's latest `health-import` record is a yes and its id equals the connection record's
-   `consentId` (so a yes made later on another phone never restarts reads on a phone whose wipe was lost);
-3. health consent is current on the device (`hasCurrentConsent('health')`, `consentLetsSync`, and not
-   `healthSyncPaused`);
-4. signed in, and no owner question pending (`ownerCheck` neither 'ask' nor 'verify').
+- **H1 Shared phone.** The consent belongs to the account; the iOS permission to the phone. A device
+  connection record `{ owner: uid, at, consentId }` in the health store, written only by this phone's
+  Connect. `mayReadHealth(s, ctx)` (in `src/data/`) gates every read, foreground and background:
+  the record's owner is the signed-in uid; the latest `wearables` record is a yes with id
+  `consentId`; health consent is current on the device (`hasCurrentConsent('health')`,
+  `consentLetsSync`, not `healthSyncPaused`); signed in, no owner question pending.
+- **H2 Withdrawals from anywhere.** A platform hook `onHealthDataCleared` inside `clearHealthData`
+  (consent.ts; its three callers covered) wipes the health store and stops reads.
+  `applyWearablesWithdrawal(s, meta)` runs after every `pullConsents` (next to the two
+  `applyHealthWithdrawal` calls in `store.ts`), once per record id (`wearablesCleared`), and wipes the
+  store and calls `clear_wearables_after_withdrawal()`. The shared `withdraw('health')` records the
+  `wearables` withdrawal.
+- **H3 Every read fails closed.** The health store returns empty, and clears, unless signed in, no
+  owner question pending, the stamp equals `_meta.owner`, health consent is current, and the latest
+  `wearables` record is a yes with id `consentId`. The hooks only tidy up.
+- **M1 Confirmed walks** (they change `sessions`): compare-and-swap at push, only for a day that was
+  synced and clean when the walk was confirmed; any other edit clears `base` and `ops` and the day goes
+  back to the plain upsert. `PATCH day_logs?user_id=eq.<uid>&log_date=eq.<d>&updated_at=eq.<base>`
+  (`base` is the server's `updated_at` exactly as received, URL-encoded), `Prefer:
+  return=representation`; no row: fetch, rebase the session operations by id, retry; no `base`: insert
+  with `resolution=ignore-duplicates`, empty reply means rebase; at most 3 attempts, then `failed`.
+  Bodies are shaped as `pushDirty`'s days step shapes them, after the consents step.
+- **M2 The store.** Namespace `health`; `isExcludedFromBackup` on the namespace folder at every open,
+  read back in a native test; exclusion and protection from a Swift allow-list. Background delivery
+  reads while the phone may be locked, so the class is `completeUntilFirstUserAuthentication`, and
+  `loaded()` must throw (not cache an empty store) if read before first unlock.
+- **M3 Sentinel test** (`scripts/wellbeing/data-device.ts`): plant distinctive values; run `pushDirty`
+  and the wearable push over all tables and serialisers; assert `healthkit` appears only at
+  `day_logs[*].wearable.src` and `day_logs[*].sessions[*].src`; `wearable` keys are exactly those in §2;
+  no Apple workout id, distance, energy, stage or span anywhere; no `checkin.night` with a source other
+  than `self`; no `wearable` in any upload while `wearables` isn't current; the day push never carries
+  `wearable`. Import boundary: only the health store and the importer import `modules/tilo-health`.
+- **M4 Swift** returns only §1's fields; `value` is removed from `SleepSample`.
+- **L** The migration before any build records `wearables` (a test that the newest
+  `consents_type_check` equals `CONSENT_TYPES`); `cleanGuided` keeps `src` only if
+  `^[a-z][a-z0-9-]{0,31}$`; validation keeps `wearable` by shape; the JSON backup export includes
+  `wearable` (access right) and a restore drops it unless `wearables` is current (HealthKit re-reads it).
 
-A yes recorded on another device never starts reads here: this phone needs its own Connect. If (1)
-fails for a different uid the store is wiped (H3).
+## 7. App logic changes W1 needs (shared core)
 
-### H2. Withdrawals from anywhere wipe this phone
+- `nightFor` takes the person's own night and the wearable night: the watch supplies hours; the
+  person's own band (from "Not right?" or hand entry) wins for that night. Rating is always the
+  person's own.
+- Gate 2 stays: an imported night is never a check-in (`hasCheckinContent`, `mindOf`, `checkinOn`,
+  `summary.ts` `checkedIn`, `maintenanceLoop` active days) and never replaces the person's own night.
+  It now also never reaches `checkin` at all.
+- The weekly sleep line counts all nights (watch or own) from 3; pattern lines and the observation read
+  the person's own answers only (today's `ownNightView` in `mind.ts` splits accordingly).
+- Hard day, low signals and the hard week read the rating only.
+- `healthDataSummary` (consent.ts) counts check-ins from `checkin` only, so imported days don't
+  inflate it; it gains a separate "watch days" count for the withdrawal and export summaries.
+- Steps: the daily-movement band suggestion waits for the `STEPS_MULT` review (§3.5 item 7, OPEN).
 
-- **One hook in `clearHealthData`** (consent.ts): a registered platform hook `onHealthDataCleared` (its
-  own name; `clearDeviceHealth` in `deviceOnly.ts` already clears the Unload notes) wipes the store and
-  stops reads. `clearHealthData` has three callers (the local `withdraw`, the pulled
-  `applyHealthWithdrawal`, and the store's own call), so the one hook covers all three.
-- **health-import withdrawal pulled from another device** (a Disconnect on a second iPhone):
-  `applyHealthImportWithdrawal(s, meta)`, applied once per record id (`importCleared`, stored next to
-  `healthCleared`), runs the same wipe. It runs after every `pullConsents`, next to the two
-  `applyHealthWithdrawal` calls in `store.ts`.
-- **The shared `withdraw('health')`** also records a `health-import` withdrawal when the account's latest
-  `health-import` is a yes, so the web records it too and a later health yes never resumes imports.
-- Disconnect on this phone: records the `health-import` withdrawal, then wipes, offline too; the record
-  uploads on the next sync.
-- `healthCleared` and `importCleared` live in `leanplan.v1` and the store in `tali.health`, which are
-  written separately, so a guard can be saved while a wipe is lost. H3's read-time consent check makes
-  that safe: the hooks only tidy up.
+## 8. Text changes (gated on a new `watch` flag with `native`)
 
-### H3. An owner check on every read, failing closed
+- Privacy policy: what is read (sleep: hours asleep, bed and wake time; daily steps; walks: type,
+  start, length, brisk or not), what syncs (those summaries, on the account, like the rest of the log),
+  what never is read (stages in W1, heart rate, energy, routes), kept out of iPhone backups, a separate
+  consent, the person's own answer always counts, how to stop (Disconnect, which deletes imported
+  records on the phone and the account and keeps the person's own entries; and the Health app path),
+  Apple Health not a processor, background reading while the app is closed.
+- Cookie and storage policy: the `tali.health` entry (the phone's copy, excluded from backup).
+- Register: a processing row (day logs gain `wearable`; lawful basis Art. 6(1)(b) and 9(2)(a) with
+  the `wearables` consent); consent types; open items (Apple's HealthKit licence terms, the 5.1.3(ii)
+  question for the rest of the store, the Health app path on iOS 27, pilot measures by asking, not
+  telemetry).
+- DPIA §10 addendum, signed before any imported data is stored, TestFlight included: synced summaries,
+  background reads, gentle-mode display, risks (worry from watch sleep, orthosomnia, compulsive
+  stepping, a shared phone, imports outliving a withdrawal), the intended-purpose statement (general
+  wellness, not diagnosing or monitoring sleep disorders), no new processor.
+- App Store: privacy label Health & Fitness, linked, app functionality; never tracking, ads or
+  analytics; the description names Apple Health (2.5.1); method wording ("Your watch estimated...")
+  for 1.4.1.
+- Purpose string: rewritten (the spike's "next to your check-in" and "Nothing is shared unless you
+  choose to" become untrue); wording past `compliance` and Benn or Sara.
 
-The store's accessors copy the Unload gate (`unloadNotes` and `NotesContext` in `src/data/deviceOnly.ts`):
-every read returns empty, and clears the store, unless signed in, no owner question pending, and the
-store's stamp equals `_meta.owner`, health consent is current on the device, and the account's latest
-`health-import` record is a yes whose id equals the connection record's `consentId`. No recorded owner
-means empty. The wipe hooks in §4 then only tidy
-up; a crash between writing `tali.health` and `leanplan.v1`, or a pending owner question, can never show
-one account's watch data to another.
+## 9. Before anything ships
 
-### M1. The sync race: compare-and-swap at push, saving offline as normal
+The migration (Benn applies first); consent types and versions; the gated texts with `check:legal`
+passing and Webflow drafts only; register and DPIA §10 signed; purpose string chosen; Swift
+minimisation, backup exclusion and its native test; the sentinel test; boards approved (Connect,
+sleep views, walk confirmation, "Not right?", Disconnect); label, manifest, App Store description;
+`ship-critic`. OPEN for Benn: §3.5 item 9 (exclude the whole store from backups) and item 7
+(`STEPS_MULT`).
 
-Saving never waits on the network. The compare-and-swap path is only for a day that was **synced and
-clean** when the importer changed it (confirming or, if P2-4 says so, removing a walk). The day then
-records `meta.days[d].base`, the server's `updated_at` string **exactly as received** (microseconds and
-offset; never re-formatted through `Date`, never taken from `u`, which local edits and `clearHealthData`
-set to `nowIso()`), and the session operations made (`{ add: [ids], remove: [ids] }`). **Any other edit
-to that day clears `base` and `ops`**, and the day goes back to today's plain upsert, so the rebase can
-never drop an unpushed manual edit.
-
-At push, the path runs inside `pushDirty`'s days step, after the consents step and the "health consent
-not uploaded yet" stop, and its bodies are built exactly as that step builds them:
-`withoutHealth(toServerDay(...))` when health is declined, the held-check-in form when paused, else
-`toServerDay`. For each such day:
-
-1. `PATCH day_logs?user_id=eq.<uid>&log_date=eq.<d>&updated_at=eq.<encodeURIComponent(base)>` with
-   `Prefer: return=representation` (`updated_at` is set by the `set_updated_at` trigger, so this is a
-   true conditional write; the `+` in `+00:00` must be encoded or it decodes to a space).
-2. No row back: fetch the server day (as `serverDays` does). If it exists, take it onto the phone,
-   reapply the session operations by id (an add whose id is there already, or a remove whose id is gone,
-   is a no-op), set `base` to its `updated_at` and retry. If it doesn't exist, go to 3.
-3. **No `base` known** (the phone never had the row; it may still exist): `POST
-   day_logs?on_conflict=user_id,log_date` with `Prefer: resolution=ignore-duplicates,return=representation`.
-   An empty array back means the row already existed: fetch it and rebase as in 2.
-4. Success: `meta.days[d] = { u: <returned updated_at>, dirty: false }`, and `base` and `ops` cleared.
-5. At most 3 attempts per sync; after the third failure the day stays dirty and is reported in `failed`,
-   as other steps are.
-
-Other days keep today's path. This narrows, not removes, whole-day last-write-wins for manual edits,
-which is an existing risk and out of scope.
-
-### M2. The store (`modules/tilo-store`)
-
-- Namespace `health` (the `^[a-z0-9-]+$` rule), key `tali.health`.
-- Backup exclusion: `isExcludedFromBackup` set through `URLResourceValues` on the namespace folder at
-  every open (per file would be lost, since each atomic write replaces the file).
-- Exclusion and the protection class come from a Swift allow-list per namespace, never a flag from JS.
-- Protection class: `.complete` only once `loaded()` stops caching an empty store when read while the
-  phone is locked (it must throw, not cache); until then `completeUntilFirstUserAuthentication`, as
-  `leanplan.v1`.
-- A native test reads the backup flag back.
-
-### M3. The sentinel test
-
-In `scripts/wellbeing/data-device.ts`, beside the Unload sentinel, with the same fake server and spy:
-
-- Plant distinctive values in the store: 98700 steps, wake 04:17, a ledger workout id, `notWorn`,
-  `stepsInWalks`, an unconfirmed brisk walk; and one confirmed walk.
-- Run `pushDirty` over all 7 tables, plus `toServerDay`, `toServerFood`, `toServerPlan` and the settings row.
-- Walk the parsed JSON: `healthkit` appears only at `day_logs[*].sessions[*].src`; such a session's keys
-  are within {id, modality, title, cardio.key, mins, at, src}; no `checkin.night` has a source other
-  than `self`; no `asleepMin`, `bedAt`, `ext` or planted value appears anywhere.
-- An import boundary like `boundaryIssues`: only the health store and the importer may import
-  `modules/tilo-health` or the store's accessors; `sync`, `backup`, `labelReader`, `push` and `consent`
-  must not. Calling the registered `onHealthDataCleared` hook (H2) is not an import and is allowed.
-
-### M4. Swift returns as little as possible (`modules/tilo-health`)
-
-- Sleep: one result per night from Swift: asleep minutes, the end of the last asleep stretch, and the
-  in-bed start only if P2-2 keeps bed time. No spans (their gaps show each waking), no `value`.
-- `value` is removed from `SleepSample` in `src/TiloHealthModule.ts`, and the "Raw samples go to JS"
-  header is rewritten.
-- Walks: workout id (for the ledger), start, duration and pace; never distance itself.
-- Queries use `.strictStartDate`, so a walk crossing a window boundary is never counted twice.
-
-### M5. iCloud backups
-
-A confirmed walk lives in `leanplan.v1`, which is in iPhone iCloud backups (`TiloStoreModule.swift`).
-Decision P2-13 must be made before W1 ships, not only before App Store submission.
-
-### L1 to L5
-
-- L1: the migration goes in before any build records `health-import` (otherwise refused with 23514 and
-  retried every sync); a test that the newest `consents_type_check` in `docs/migrations/` equals
-  `CONSENT_TYPES`.
-- L2: the 500-row consent cap is shared: record `health-import` only when its state changes; consider
-  exempting `type = 'health'` from the cap.
-- L3: `cleanGuided` (persistence.ts) keeps `src` only if it matches `^[a-z][a-z0-9-]{0,31}$`.
-- L4: ledger entries older than 56 days are pruned.
-- L5: `tali.health` is left out of the backup export.
-
-Migration draft (not applied; for `docs/migrations/`, following `2026-10-10-shared-products.sql`):
+## Migration draft (not applied; for `docs/migrations/`, following `2026-09-28-health-consent-server.sql`)
 
 ```sql
--- Tilo: consent type 'health-import' (Apple Health import W1, option (c), device only).
+-- Tilo: wearables consent and day_logs.wearable (Apple Health import W1, synced summaries).
 -- NOT APPLIED: security-data review, then Benn applies it BEFORE any native build that records a
--- 'health-import' consent ships (until then those rows are refused with 23514 and stay dirty).
--- Widening only: every existing row passes. No server function reads this type (all filter
--- type = 'health'); delete-account already removes every consents row. No table, grant or policy change.
--- Rollback: consents is append-only history, so never delete 'health-import' rows to narrow the
--- check. Only if no build ever recorded the type
--- (select count(*) from public.consents where type = 'health-import') = 0, re-run the
--- shared-products step with the four types. Safe to re-run.
+-- 'wearables' consent or uploads 'wearable' ships.
+-- Widening: every existing row passes the new check; the column is nullable. Existing table grants
+-- cover the column; RLS is per row and unchanged. clear_log_after_withdrawal, purge_unconsented_logs
+-- and delete-account delete whole day_logs rows, so they already cover it.
+-- Rollback: never delete consent history. Drop the trigger and functions; the column can be dropped
+-- only after confirming no client reads it (or left, unused).
 begin;
+
 alter table public.consents drop constraint if exists consents_type_check;
 alter table public.consents add constraint consents_type_check
-  check (type in ('health', 'ai', 'label-photo', 'shared-products', 'health-import'));
+  check (type in ('health', 'ai', 'label-photo', 'shared-products', 'wearables'));
+
+alter table public.day_logs add column if not exists wearable jsonb;
+alter table public.day_logs drop constraint if exists day_logs_wearable_is_object;
+alter table public.day_logs add constraint day_logs_wearable_is_object
+  check (wearable is null or jsonb_typeof(wearable) = 'object');
+
+create or replace function public.wearables_consent_current(uid uuid)
+returns boolean language sql stable security invoker set search_path = '' as $$
+  select public.health_consent_current(uid) and coalesce((
+    select c.granted from public.consents c
+    where c.user_id = uid and c.type = 'wearables'
+    order by least(c.recorded_at, c.created_at) desc, c.created_at desc limit 1), false)
+$$;
+revoke all on function public.wearables_consent_current(uuid) from public, anon;
+grant execute on function public.wearables_consent_current(uuid) to authenticated, service_role;
+
+create or replace function public.require_wearables_consent()
+returns trigger language plpgsql security invoker set search_path = '' as $$
+declare uid uuid := auth.uid();
+begin
+  if new.wearable is null then return new; end if;
+  if tg_op = 'UPDATE' and new.wearable is not distinct from old.wearable then return new; end if;
+  if uid is null then
+    if current_user in ('anon', 'authenticated') then
+      raise exception 'tali: wearables consent required' using errcode = 'TL002';
+    end if;
+    return new;
+  end if;
+  perform pg_advisory_xact_lock_shared(hashtextextended('tali-log:' || uid::text, 0));
+  if not public.wearables_consent_current(uid) then
+    raise exception 'tali: wearables consent required' using errcode = 'TL002';
+  end if;
+  return new;
+end $$;
+drop trigger if exists require_wearables_consent on public.day_logs;
+create trigger require_wearables_consent before insert or update on public.day_logs
+  for each row execute function public.require_wearables_consent();
+
+create or replace function public.clear_wearables_after_withdrawal()
+returns jsonb language plpgsql security invoker set search_path = '' as $$
+declare uid uuid := auth.uid(); n integer;
+begin
+  if uid is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('tali-log:' || uid::text, 0));
+  if public.wearables_consent_current(uid) then
+    return jsonb_build_object('cleared', false, 'at', now());
+  end if;
+  update public.day_logs set wearable = null where user_id = uid and wearable is not null;
+  get diagnostics n = row_count;
+  return jsonb_build_object('cleared', true, 'rows', n, 'at', now());
+end $$;
+revoke all on function public.clear_wearables_after_withdrawal() from public, anon;
+grant execute on function public.clear_wearables_after_withdrawal() to authenticated;
+
 commit;
 -- Verify:
 -- select pg_get_constraintdef(oid) from pg_constraint
 --   where conrelid = 'public.consents'::regclass and conname = 'consents_type_check';
+-- select column_name from information_schema.columns where table_name = 'day_logs' and column_name = 'wearable';
 ```
