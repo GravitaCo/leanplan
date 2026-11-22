@@ -1,7 +1,7 @@
 // `import.meta.env.VITE_*` in shared code (Vite's flags) becomes this build's values, so a feature
 // is on or off in both apps from the same names (native-build-plan finding 6). Values come from
 // EXPO_PUBLIC_* at build time (eas.json), with the web's defaults when unset.
-const ENV_KEYS = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'VITE_ONBOARDING', 'VITE_WELLBEING', 'VITE_MIND_REVIEWED', 'VITE_SUPP_NAMES']
+const ENV_KEYS = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'VITE_ONBOARDING', 'VITE_WELLBEING', 'VITE_MIND_REVIEWED', 'VITE_SUPP_NAMES', 'VITE_CYCLE']
 
 function importMetaEnv({ types: t }) {
   const envObject = () =>

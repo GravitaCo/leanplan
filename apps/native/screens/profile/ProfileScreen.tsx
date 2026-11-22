@@ -56,6 +56,14 @@ import { DeleteAccountView } from '../../lib/account/Delete'
 import { pickBackup } from '../../lib/account/backupFile'
 import { openLegal } from '../../lib/account/legal'
 import { pushReady } from './n12'
+import { CYCLE_ENABLED } from '@/data/cycleFlag'
+import { cycleDayCount, cycleHidden } from '@/data/deviceOnly'
+import { hasCurrentConsent } from '@/data/consent'
+import { cycleOffered, cycleOn, cycleSwitchable } from '@/core/domain/cycle'
+import { selectCycle } from '@/store/store'
+import { CycleSetupFlow } from '../cycle/CycleSetup'
+import { CyclePage, DeleteCycleSheet } from '../cycle/CyclePage'
+import { CY } from '../cycle/text'
 
 /** `.list`'s 8 pt below, which N1's List leaves to the screen */
 const LIST = { marginBottom: 8 }
@@ -111,7 +119,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const arrival = profileOpen
   const [open, setOpen] = useState<Section | null>(() => (arrival && arrival !== 'health' && arrival !== 'delete-confirm' && arrival !== 'health-answers' ? arrival as Section : null))
   // 'delete-confirm' (back from a Google re-sign-in) opens the delete view at its confirm step
-  const [view, setView] = useState<'main' | 'delete' | 'answers'>(() => (arrival === 'delete-confirm' ? 'delete' : arrival === 'health-answers' ? 'answers' : 'main'))
+  const [view, setView] = useState<'main' | 'delete' | 'answers' | 'cycle-setup' | 'cycle'>(() => (arrival === 'delete-confirm' ? 'delete' : arrival === 'health-answers' ? 'answers' : 'main'))
   const [confirmOpen, setConfirmOpen] = useState(arrival === 'delete-confirm')
   // the health data sheet (N2's), opened at its start or straight at the withdraw step (Privacy's button)
   const [healthOpen, setHealthOpen] = useState<false | 'main' | 'withdraw'>(arrival === 'health' ? 'main' : false)
@@ -139,6 +147,20 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const [pendingBackup, setPendingBackup] = useState<PersistedState | null>(null)
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  // Cycle: the women-only offer in Tracking (A1), the open-to-anyone row in Privacy (Sara, 22 Nov),
+  // and "Delete all cycle data" whenever there's cycle data or a cycle yes on this phone (D6),
+  // whatever the flag, so anything left behind can always be deleted
+  const cycleLogNow = useStore(selectCycle)
+  const cycleIsOn = cycleOn(cycleLogNow)
+  const cycleHealthYes = useStore((s) => hasCurrentConsent(s.data, 'health'))
+  const cycleGate = { healthYes: cycleHealthYes, age: pr.age }
+  const cycleHide = useStore((s) => cycleHidden(s.data))
+  const cycleData = useStore((s) => cycleDayCount(s.data) > 0 || !!s.data.deviceOnly?.cycle || hasConsent(s.data, 'cycle'))
+  const hideCycleOffer = useStore((s) => s.hideCycleOffer)
+  const [cycleDelete, setCycleDelete] = useState(false)
+  const showCycleOffer = CYCLE_ENABLED && (cycleIsOn || (!cycleHide && cycleOffered({ ...cycleGate, sexAnswer: pr.sexAnswer })))
+  const showCyclePrivacy = CYCLE_ENABLED && (cycleIsOn || cycleSwitchable(cycleGate))
+  const openCycle = () => setView(cycleIsOn ? 'cycle' : 'cycle-setup')
   // agreeing from Profile: the full consent screen for someone who never agreed; after a withdrawal, the one-box sheet (N2)
   // agreeing from Profile: someone who never agreed gets the full consent screen (its three boxes, so
   // the record covers the terms and age too); after a withdrawal, the one-box regrant sheet (N2's)
@@ -190,6 +212,9 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
   const muted = { color: t.label2 }
 
   // ob7-1: back goes to the Health data sheet it came from
+  // Cycle (native only; boards A1 to D6, approved by Benn 22 Nov 2026): the setup flow and the page
+  if (view === 'cycle-setup') return <CycleSetupFlow onClose={() => setView('main')} onOn={() => { hideCycleOffer(false); setView('cycle') }} />
+  if (view === 'cycle') return <CyclePage onBack={() => setView('main')} />
   if (view === 'answers') return <HealthAnswersScreen onBack={() => { setView('main'); setHealthOpen('main') }} />
   if (view === 'delete') return <DeleteAccountView onBack={() => { setView('main'); setConfirmOpen(false) }} confirmOpen={confirmOpen} setConfirmOpen={setConfirmOpen} />
 
@@ -365,6 +390,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               <Sub style={NOTE}>{pr.gentle ? P.display.gentleNote : P.display.standardNote}</Sub>
             </Disclosure>
           </View>
+          {/* A1: the quiet row, last in Tracking; never a banner or a modal */}
+          {showCycleOffer && <SettingRow soft icon="heart" color={MINDF} label={CY.row} value={cycleIsOn ? CY.on : CY.off} onPress={openCycle} />}
         </List>
 
         {/* ml-e4: the weekly review (boards ml-c4, ml-d1) */}
@@ -433,6 +460,15 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : ''}
               {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
             </Sub>
+            {(showCyclePrivacy || cycleData) && (
+              // D6 and Sara's 22 Nov answer: anyone 18+ with a health yes can turn Cycle on here
+              // (unadvertised); "Delete all cycle data" for everyone with cycle data on this phone
+              <View style={{ marginBottom: 16 }}>
+                {showCyclePrivacy && <List><Row title={CY.row} value={cycleIsOn ? CY.on : CY.off} onPress={openCycle} /></List>}
+                {cycleIsOn && <Foot style={{ marginBottom: 6 }}>{CY.privacy.line}</Foot>}
+                {cycleData && <Btn kind="gray" title={CY.privacy.delete} style={{ marginTop: 8 }} onPress={() => setCycleDelete(true)} />}
+              </View>
+            )}
             {SHARED_PRODUCTS_ENABLED && (
               // sp-5: on after a yes at the first shared product (sp-1), off after Not now
               <>
@@ -458,6 +494,7 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
 
       {reviewDayOpen && <ReviewDaySheet onClose={() => setReviewDayOpen(false)} />}
       {handsOpen && <HandsSheet onClose={() => setHandsOpen(false)} />}
+      {cycleDelete && <DeleteCycleSheet onClose={() => setCycleDelete(false)} onDeleted={() => setCycleDelete(false)} />}
       {signOutOpen && <SignOutSheet onClose={() => setSignOutOpen(false)} />}
       {feedbackOpen && <FeedbackSheet onClose={() => setFeedbackOpen(false)} />}
       {healthOpen && <HealthDataSheet start={healthOpen} onClose={() => setHealthOpen(false)} onAgree={() => { setHealthOpen(false); agree() }}

@@ -70,7 +70,7 @@ import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
-import { cycleLog, deleteCycle, saveCycle, type CycleContext } from '@/data/deviceOnly'
+import { cycleLog, deleteCycle, saveCycle, setCycleHidden, type CycleContext } from '@/data/deviceOnly'
 import { cleanCycle, emptyCycle, notePause, type CycleStore } from '@/core/domain/cycle'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
@@ -337,6 +337,9 @@ export interface StoreState {
   editCycle: (edit: (log: CycleStore) => void) => boolean
   /** "Delete all cycle data": works offline and with no consent; records nothing */
   deleteCycleData: () => boolean
+  /** "I don't have periods" (A3, B2): hides the offer on this phone, keeps no reason. After a
+   *  cycle yes it also turns Cycle off (a withdrawal record, the log deleted). `false` shows it again. */
+  hideCycleOffer: (hidden: boolean) => void
   /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
    *  the reads waiting to be sent */
   setShareProducts: (on: boolean) => void
@@ -2028,6 +2031,11 @@ export const useStore = create<StoreState>()(
       },
 
       deleteCycleData: () => deviceWrite((d) => { deleteCycle(d) }),
+
+      hideCycleOffer: (hidden) => {
+        if (hidden && consented(get().data, 'cycle')) get().withdrawConsent('cycle')
+        deviceWrite((d) => { setCycleHidden(d, hidden) })
+      },
 
       setShareProducts: (on) => {
         if (on) get().grantConsent('shared-products')
