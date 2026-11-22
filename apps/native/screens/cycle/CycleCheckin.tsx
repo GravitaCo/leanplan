@@ -48,7 +48,9 @@ function GapSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-export function CycleCheckinGroup({ log, day, value, onChange }: { log: CycleStore; day: string; value: CycleDay; onChange: (v: CycleDay) => void }) {
+/** `onSaved`: a day was saved from here (G4's "Yes, add it"): the sheet takes it as its copy, so Done
+ *  can't write an older copy over it (ship-critic, 22 Nov). */
+export function CycleCheckinGroup({ log, day, value, onChange, onSaved }: { log: CycleStore; day: string; value: CycleDay; onChange: (v: CycleDay) => void; onSaved: (v: CycleDay) => void }) {
   const t = useTokens()
   const facts = usePromptFacts()
   const surface = useSurface(t)
@@ -64,7 +66,10 @@ export function CycleCheckinGroup({ log, day, value, onChange }: { log: CycleSto
     editCycle((l) => { markShown(l, ['no-period'], today); if (!yes) l.gapAnswered = today })
     if (yes) setAddDay(today); else setGapNo(true)
   }
-  const added = (_d: string, v: CycleDay) => { if (v.flow && v.flow !== 'stopped') editCycle((l) => { l.gapAnswered = today }) }
+  const added = (d: string, v: CycleDay) => {
+    if (v.flow && v.flow !== 'stopped') editCycle((l) => { l.gapAnswered = today })
+    if (d === day) { onSaved(v); setOpen(true) }
+  }
   return (
     <View>
       <Lbl>{CY.checkin.group}</Lbl>
@@ -95,7 +100,7 @@ export function CycleCheckinGroup({ log, day, value, onChange }: { log: CycleSto
           <Foot>{CY.checkin.foot}</Foot>
         </View>
       )}
-      {addDay && <LogDaySheet day={addDay} onClose={() => setAddDay(null)} onSaved={added} />}
+      {addDay && <LogDaySheet day={addDay} initial={addDay === day ? value : undefined} onClose={() => setAddDay(null)} onSaved={added} />}
       {gapNo && <GapSheet onClose={() => setGapNo(false)} />}
     </View>
   )

@@ -28,13 +28,14 @@ import { CY, NHS, dayLine, setupLabel } from './text'
 const dayName = (d: string, today: string) => (d === today ? CY.page.today : d === shiftDay(today, -1) ? CY.page.yesterday : shortDateOf(d))
 
 /** D3: log or fix one day. "Done" saves; "Clear this day" removes it. */
-export function LogDaySheet({ day: start, onClose, onSaved }: { day: string; onClose: () => void; onSaved?: (day: string, v: CycleDay) => void }) {
+export function LogDaySheet({ day: start, onClose, onSaved, initial }: { day: string; onClose: () => void; onSaved?: (day: string, v: CycleDay) => void; initial?: CycleDay }) {
   const t = useTokens()
   const today = todayStr()
   const log = useStore(selectCycle)
   const editCycle = useStore((s) => s.editCycle)
   const [day, setDay] = useState(start)
-  const [v, setV] = useState<CycleDay>(() => log?.days[start] ?? {})
+  // `initial`: the check-in's answers for this day so far, so logging from G4 starts from them
+  const [v, setV] = useState<CycleDay>(() => initial ?? log?.days[start] ?? {})
   const pickDay = (d: string) => { setDay(d); setV(log?.days[d] ?? {}) }
   const save = () => { if (editCycle((l) => { logDay(l, day, v, today) })) onSaved?.(day, v); onClose() }
   return (
@@ -129,7 +130,8 @@ export function CyclePage({ onBack }: { onBack: () => void }) {
 
   if (view === 'help') return <HelpPage onBack={() => setView('page')} />
   if (view === 'fits') return <CycleSetupFlow change onClose={() => setView('page')} onOn={() => setView('page')} onNone={() => { setView('page'); setDelOpen('none') }} />
-  if (!log) return null
+  // the log stopped being readable while open (an owner question, a withdrawal elsewhere): a way back
+  if (!log) return <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: insets.top + 18, paddingHorizontal: 10 }}><BackButton label={CY.page.back} onPress={onBack} /></View>
 
   const period = currentPeriod(log.days, today)
   const n = periodDay(log.days, today)

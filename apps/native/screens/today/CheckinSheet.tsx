@@ -160,7 +160,8 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
       <Lbl>Hunger right now</Lbl>
       <Scale labels={HUNGER} value={hunger} onChange={setHunger} />
       {cycleShown && cycleLog && (
-        <CycleCheckinGroup log={cycleLog} day={cur} value={cycleDay} onChange={(v) => { setCycleDay(v); setCycleTouched(true) }} />
+        <CycleCheckinGroup log={cycleLog} day={cur} value={cycleDay} onChange={(v) => { setCycleDay(v); setCycleTouched(true) }}
+          onSaved={(v) => { setCycleDay(v); setCycleTouched(false) }} />
       )}
       <Lbl>Note</Lbl>
       <TextInput multiline numberOfLines={3} value={note} placeholder="Anything worth remembering? Optional." placeholderTextColor={t.label3} onChangeText={setNote}

@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectCycle, useStore } from '@/store/store'
-import { cycleAllowed } from '@/data/consent'
+import { cycleAllowed, hasCurrentConsent } from '@/data/consent'
 import { setSetup, type CycleSetup } from '@/core/domain/cycle'
 import { todayStr } from '@/core/domain/date'
 import { GLYPH_ROOM, tx, useTokens } from '../../lib/theme'
@@ -64,6 +64,9 @@ export function CycleSetupFlow({ onClose, onOn, change, onNone }: { onClose: () 
   const t = useTokens()
   const log = useStore(selectCycle)
   const allowed = useStore((s) => cycleAllowed(s.data))
+  // turning on needs a signed-in owner and a current health yes (else the yes would be recorded with
+  // nothing turned on; ship-critic, 22 Nov)
+  const canTurnOn = useStore((s) => s.signedIn && !s.ownerAsk && hasCurrentConsent(s.data, 'health'))
   const grantConsent = useStore((s) => s.grantConsent)
   const editCycle = useStore((s) => s.editCycle)
   const hide = useStore((s) => s.hideCycleOffer)
@@ -157,7 +160,7 @@ export function CycleSetupFlow({ onClose, onOn, change, onNone }: { onClose: () 
         <Text style={[tx(17, 600), { color: t.label, marginBottom: 6 }]}>{CY.works.phoneH}</Text>
         {CY.works.phone.map((p) => <Text key={p} style={[tx(15, 400, 1.45), { color: t.label2, marginTop: 6 }]}>{p}</Text>)}
       </Card>
-      <Btn title={CY.works.turnOn} onPress={() => {
+      <Btn title={CY.works.turnOn} disabled={!canTurnOn} onPress={() => {
         // the yes ticked at B1 is recorded now, then the answer saved: Cycle is on (grantCycle and
         // editCycle refuse without a current health yes)
         if (!allowed && agreed) grantConsent('cycle')
