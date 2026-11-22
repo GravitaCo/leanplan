@@ -46,7 +46,7 @@ export function LogDaySheet({ day: start, onClose, onSaved, initial }: { day: st
         </DateInput>
       </List>
       <CycleFields value={v} onChange={setV} />
-      <Btn kind="danger" title={CY.log.clear} style={{ marginTop: 20 }} onPress={() => { editCycle((l) => { logDay(l, day, {}, today) }); onClose() }} />
+      <Btn kind="danger" title={CY.log.clear} style={{ marginTop: 20 }} onPress={() => { if (editCycle((l) => { logDay(l, day, {}, today) })) onSaved?.(day, {}); onClose() }} />
       <Foot>{CY.log.foot}</Foot>
     </Sheet>
   )
