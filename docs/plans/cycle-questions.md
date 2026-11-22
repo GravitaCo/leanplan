@@ -37,4 +37,7 @@ clinician signs it off.
 
 ## Answers
 
-(Sara or Benn: write here, with your name and the date.)
+Sara, in the doc above, 22 Nov 2026 (relayed as hers by Benn): (1) keep the offer women-only, but
+let anyone switch it on from settings, unadvertised; (2) yes, drop it; (3) yes, as described;
+(4) hide the row too; (5) yes, fine for the alpha; (6) toast; (7) drop the X; (8) keep "If this is
+new for you…". Recorded in cycle.md §0; (1) is built (cycle.ts `cycleSwitchable`).

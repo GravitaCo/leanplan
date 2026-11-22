@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import type { CheckIn } from '@/core/types'
 import { MIN_AGE } from '@/core/legal'
 import {
-  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleOffered, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
+  CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleOffered, cycleSwitchable, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
   periodStarted, periodsOf, promptsDue, rowShows, setSetup, bledBetween, type CycleDay, type CycleStore,
 } from '@/core/domain/cycle'
 import { shiftDay } from '@/core/domain/date'
@@ -45,6 +45,7 @@ function coreChecks() {
     ['never without a current health yes (a withdrawal clears sexAnswer too)', !cycleOffered({ sexAnswer: 'female', healthYes: false, age: 30 }) && !cycleOffered({ sexAnswer: undefined, healthYes: false, age: 30 })],
     ['never below MIN_AGE, or with no age', !cycleOffered({ sexAnswer: 'female', healthYes: true, age: MIN_AGE - 1 }) && !cycleOffered({ sexAnswer: 'female', healthYes: true, age: null }) && cycleOffered({ sexAnswer: 'female', healthYes: true, age: MIN_AGE })],
     ['the flag is off in a production build', CYCLE_ENABLED === false],
+    ['anyone 18+ with a health yes may switch it on from settings, whatever their sex answer (Sara, 22 Nov)', cycleSwitchable({ healthYes: true, age: 30 }) && !cycleSwitchable({ healthYes: false, age: 30 }) && !cycleSwitchable({ healthYes: true, age: MIN_AGE - 1 })],
   ])
 
   /* periods (§4) */

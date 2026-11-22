@@ -725,6 +725,9 @@ Added 2026-09-28 (onboarding wizard review, before `ONBOARDING_ENABLED` goes on)
         sign-off of `CYCLE_THRESHOLDS` (testers told they are provisional until then); the
         Equality Act settings route (cycle-checks.md item 2) decided by Benn or Sara; the ICO fee
         (item 1); processor DPAs (D4).
+    22 Nov: Sara decided (c)'s settings route (anyone 18+ with a health yes may switch Cycle on
+        from its settings, unadvertised; the offer stays women-only; policy text updated) and (d)
+        (the example is dropped: the option is "My periods often stop or skip").
     (d) Should fix: the setup option "My periods often stop or skip, for example with some
         contraception" hints at contraception (possible sex-life data, Art. 9(1)); drop "for
         example with some contraception". Never add free text to the Cycle log.

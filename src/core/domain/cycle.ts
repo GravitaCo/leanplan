@@ -137,9 +137,18 @@ export interface GateFacts {
   age?: number | null
 }
 
-/** Whether the Cycle offer may show at all (and Cycle may run). Seeing it collects nothing. */
+/** Whether the proactive Cycle offer shows (Profile, women-only: Benn 29 Oct). Seeing it collects nothing. */
 export function cycleOffered(f: GateFacts): boolean {
-  return f.sexAnswer === 'female' && f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
+  return f.sexAnswer === 'female' && cycleSwitchable(f)
+}
+
+/**
+ * Whether Cycle may be turned on, and run, at all: anyone 18+ with a current health yes, through
+ * Cycle's own settings route, unadvertised (Sara, 22 Nov 2026, on compliance's Equality Act point:
+ * the offer stays women-only, the feature isn't). Never inferred from the sex answer.
+ */
+export function cycleSwitchable(f: Omit<GateFacts, 'sexAnswer'>): boolean {
+  return f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
 }
 
 /** "I don't have periods" closes the offer (§3). */

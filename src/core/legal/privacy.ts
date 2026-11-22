@@ -179,7 +179,7 @@ export function privacyPolicy({ onboarding = false, mind = false, suppNames = fa
             {
               h: 'Cycle',
               p: [
-                `Cycle is an optional period and symptom log. Tilo offers it in Profile to people aged ${MIN_AGE} and over who chose female as their sex in Tilo and have agreed to Tilo keeping their health data. Seeing the offer collects nothing, and Cycle stays off unless you turn it on. ` +
+                `Cycle is an optional period and symptom log. Tilo offers it in Profile to people aged ${MIN_AGE} and over who chose female as their sex in Tilo and have agreed to Tilo keeping their health data. Anyone aged ${MIN_AGE} and over who has agreed to that can also turn it on in Cycle's own settings, whatever sex they chose. Seeing the offer collects nothing, and Cycle stays off unless you turn it on. ` +
                   `It lets you record your periods and how you feel, as a personal diary. Tilo uses what you record to offer general wellness choices, such as a lighter session, and general information on when to speak to a GP. ` +
                   `It isn't intended to diagnose, prevent, monitor or treat any disease or condition, to predict periods, ovulation or fertile days, or to help you get pregnant or avoid pregnancy. It isn't a medical device.`,
                 `What it keeps: your answer to its one setup question (such as regular periods, irregular periods or periods changing with age), and for each day you log, your flow, your pain and any symptoms you pick from a fixed list (such as cramps or a headache), never your own words. ` +
