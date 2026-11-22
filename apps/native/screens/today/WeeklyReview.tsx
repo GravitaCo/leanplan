@@ -10,7 +10,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Text, View, useColorScheme } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useStore } from '@/store/store'
+import { selectCycle, useStore } from '@/store/store'
+import { CYCLE_ENABLED } from '@/data/cycleFlag'
+import { bledBetween, holdsDeficit, CYCLE_WEIGHT_NOTE } from '@/core/domain/cycle'
 import { healthLoggingAllowed } from '@/data/consent'
 import { fmt, shiftDay, todayStr } from '@/core/domain/date'
 import {
@@ -61,7 +63,15 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
   const consent = healthLoggingAllowed(data)
   const p = data.profile
   const [lastAt] = useState(p.lastReviewAt)
-  const rv = useMemo(() => weeklyReview(data, today, { healthConsent: consent, lastReviewAt: lastAt, reviewDay: p.reviewDay ?? 0, patternShown: p.patternShown }), [data, today, consent, lastAt, p.reviewDay, p.patternShown])
+  // Cycle (F1; native only, behind CYCLE_ENABLED): no "eat less" option in this check or the next
+  // after a logged bleed (14 days covers both), or while a long gap with no period holds it
+  // (cycle.md §5 Body, §5.1); the weigh-in note when there was flow this week and weight went up
+  const cycleLog = useStore(selectCycle)
+  const checkinDays = Object.keys(data.days).filter((d) => !!data.days[d]?.checkin)
+  const cyclePaused = !!p.pregnancy?.flagged
+  const noLess = CYCLE_ENABLED && !!cycleLog && (bledBetween(cycleLog, shiftDay(today, -14), shiftDay(today, -1)) || holdsDeficit(cycleLog, today, { paused: cyclePaused, checkinDays }))
+  const bledThisWeek = CYCLE_ENABLED && bledBetween(cycleLog, shiftDay(today, -7), shiftDay(today, -1))
+  const rv = useMemo(() => weeklyReview(data, today, { healthConsent: consent, lastReviewAt: lastAt, reviewDay: p.reviewDay ?? 0, patternShown: p.patternShown, noLess }), [data, today, consent, lastAt, p.reviewDay, p.patternShown, noLess])
   const safety = loopSafety(data, latestWeight(data, today), consent)
   const [askWeight, setAskWeight] = useState(() => p.reviewWeight === undefined && !safety.quiet && !rv.welcomeBack)
   const [pick, setPick] = useState<ReviewChoice>(rv.welcomeBack ? 'pick-up' : 'keep')
@@ -83,14 +93,14 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
     if (chosen) showToast(REVIEW.noted)
     const held = (m: MindContext) => careWeek(m) || m.wellbeing === 'flagged' || m.wellbeing === 'sometimes'
     if (!rv.welcomeBack && !held(rv.mind) && lastAt !== today) {
-      const o = { healthConsent: consent }
+      const o = { healthConsent: consent, noLess }
       const weekAgo = shiftDay(today, -7)
       const lastHeld = held(weeklyReview(data, weekAgo, { healthConsent: consent }).mind)
       const rate = suggestRateAdjustment(data, today, o), rate0 = suggestRateAdjustment(data, weekAgo, o)
       if (rate.kind === 'options' && (lastHeld || !(rate0.kind === 'options' && rate0.pace === rate.pace))) return setAfter({ k: 'rate', r: rate })
       if (rate.kind === 'on-pace' && (lastHeld || rate0.kind === 'none')) return setAfter({ k: 'rate', r: rate })
       const drift = maintenanceDrift(data, today, o)
-      if (drift.kind === 'drift' && (lastHeld || maintenanceDrift(data, weekAgo, o).kind !== 'drift')) return setAfter({ k: 'drift', r: drift })
+      if (drift.kind === 'drift' && !(noLess && !!drift.range && drift.range.suggested < drift.range.kcal) && (lastHeld || maintenanceDrift(data, weekAgo, o).kind !== 'drift')) return setAfter({ k: 'drift', r: drift })
       const learned = adaptiveMaintenance(data, today, o)
       if (learned.kind === 'estimate' && (lastHeld || adaptiveMaintenance(data, weekAgo, o).kind !== 'estimate') && Math.abs(learned.maint - data.target.kcal) >= 100) return setAfter({ k: 'learned', r: learned })
     }
@@ -205,7 +215,7 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
         <ChangeOneSheet mind={rv.mind} ctx={rv.changeOne.ctx} options={rv.changeOne.options} range={rv.changeOne.range} value={option}
           onClose={() => setChangeOpen(false)} onPick={(o) => { setOption(o); setChangeOpen(false) }} />
       )}
-      {after?.k === 'rate' && <CheckSheet r={after.r} onClose={onBack} />}
+      {after?.k === 'rate' && <CheckSheet r={after.r} onClose={onBack} cycleNote={bledThisWeek} />}
       {after?.k === 'drift' && <DriftSheet r={after.r} onClose={onBack} />}
       {after?.k === 'learned' && <LearnedSheet r={after.r} onClose={onBack} />}
       {offer && <ReviewDaySheet onClose={() => { if (useStore.getState().data.profile.reviewPush === undefined) setPrefs({ reviewPush: false }); onBack() }} />}
@@ -378,14 +388,17 @@ function SideBySide({ week, span, cap, weight, food, sleepHunger }: { week: Week
 }
 
 /** ml-b1 to ml-b3 */
-function CheckSheet({ r, onClose }: { r: Extract<RateSuggestion, { kind: 'options' | 'on-pace' }>; onClose: () => void }) {
+function CheckSheet({ r, onClose, cycleNote }: { r: Extract<RateSuggestion, { kind: 'options' | 'on-pace' }>; onClose: () => void; cycleNote?: boolean }) {
   const { t, sheetCard } = useLoop()
   const [o, setO] = useState<LoopOption | null>(null)
   const applyRange = useStore((s) => s.applyRangeChange)
   const choose = useStore((s) => s.chooseNextWeek)
   const n = r.trend.n
   const pace = r.kind === 'on-pace' ? 'in-line' : r.pace
-  const weight = <>{LOOP.weighedIn(n)} {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}</>
+  // F1: only where weight already shows (this sheet never opens in gentle or quiet modes), when
+  // there was flow this week and the change is upwards
+  const note = cycleNote && r.trend.weeklyPct > 0 ? ' ' + CYCLE_WEIGHT_NOTE : ''
+  const weight = <>{LOOP.weighedIn(n)} {weightSub({ weighIns: n, words: { kind: 'pace', pace }, weeks: Math.round(r.trend.windowDays / 7) }, false)}{note}</>
   const pickIt = (x: LoopOption) => {
     setO(x)
     if (r.kind === 'options' && (x === 'range-less' || x === 'range-more') && r.range) applyRange(r.range)

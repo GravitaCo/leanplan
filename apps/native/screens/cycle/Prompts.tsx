@@ -12,7 +12,7 @@ import { useStore } from '@/store/store'
 import { markShown, markUsual, promptsDue, promptsToShow, type CyclePrompt, type CycleStore, type PromptFacts } from '@/core/domain/cycle'
 import { todayStr } from '@/core/domain/date'
 import { tx, useTokens } from '../../lib/theme'
-import { LinkBtn } from '../../lib/ui/kit'
+import { LinkBtn, useSurface } from '../../lib/ui/kit'
 import { Icon } from '../../lib/ui/icons'
 import { CY, NHS } from './text'
 
@@ -31,13 +31,20 @@ export function usePromptFacts(): PromptFacts {
 }
 
 /** G1/G2 for `log` on today. Records a first showing once (markShown), as core's once-per-episode rule needs. */
-export function SafetyCards({ log, facts }: { log: CycleStore; facts: PromptFacts }) {
+export function SafetyCards({ log, facts, dueOnly }: { log: CycleStore; facts: PromptFacts; dueOnly?: boolean }) {
   const t = useTokens()
+  // --card on a page, --elev inside a sheet (the check-in), as Card does
+  const surface = useSurface(t)
   const editCycle = useStore((s) => s.editCycle)
   const showToast = useStore((s) => s.showToast)
   const today = todayStr()
-  const cards = promptsToShow(log, today, facts).filter((p): p is Card => p !== 'no-period')
-  const due = promptsDue(log, today, facts).filter((p) => p !== 'no-period').join(',')
+  const dueList = promptsDue(log, today, facts).filter((p): p is Card => p !== 'no-period')
+  // the check-in shows a card only on the day it first applies (`dueOnly`); the Cycle page keeps it
+  // for the episode until "This is usual for me"
+  // (due, or first shown today: marking it shown makes it no longer "due" a moment later)
+  const all = promptsToShow(log, today, facts).filter((p): p is Card => p !== 'no-period')
+  const cards = dueOnly ? all.filter((p) => dueList.includes(p) || log.shown?.[p] === today) : all
+  const due = dueList.join(',')
   useEffect(() => {
     if (due) editCycle((l) => markShown(l, due.split(',') as CyclePrompt[], today))
   }, [due])
@@ -52,7 +59,7 @@ export function SafetyCards({ log, facts }: { log: CycleStore; facts: PromptFact
       {cards.map((p, i) => {
         const w = WORDS[p]
         return (
-          <View key={p} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: t.card, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }}>
+          <View key={p} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: surface, borderRadius: t.radius, paddingVertical: 12, paddingHorizontal: 14 }}>
             <Icon name="info" color={t.mindInk} />
             <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
               <Text style={[tx(15, 400, 1.4), { color: t.label }]}>{(i === 0 && w.opener ? CY.prompt.usualOpener : '') + w.body}</Text>

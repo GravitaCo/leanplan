@@ -24,6 +24,11 @@ import { List } from '../../lib/ui/kit'
 import { NavBtn, Sheet } from '../../lib/ui/primitives'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { Chevron } from '../../lib/ui/icons'
+import { selectCycle } from '@/store/store'
+import { CYCLE_ENABLED } from '@/data/cycleFlag'
+import { logDay, type CycleDay } from '@/core/domain/cycle'
+import { todayStr } from '@/core/domain/date'
+import { CycleCheckinGroup, cycleRowShows } from '../cycle/CycleCheckin'
 
 /* TODO(N1-followup): `.scale` is a shared class N1's kit doesn't have yet (P4); until it lands it is
    drawn here from the web markup (theme.css) and swapped when it does. */
@@ -78,6 +83,15 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
   const [filled, setFilled] = useState(more)
   const [touched, setTouched] = useState(false)
   const [support, setSupport] = useState(false)
+  // Cycle (C1, C2; native only, behind CYCLE_ENABLED): the "Period today?" row when core says it
+  // shows; its answers go to the device-only Cycle log on Done, never to the day's check-in
+  const cur = useStore((s) => s.cur)
+  const cycleLog = useStore(selectCycle)
+  const paused = useStore((s) => !!s.data.profile?.pregnancy?.flagged)
+  const editCycle = useStore((s) => s.editCycle)
+  const cycleShown = CYCLE_ENABLED && cycleRowShows(cycleLog, cur, paused)
+  const [cycleDay, setCycleDay] = useState<CycleDay>(() => cycleLog?.days[cur] ?? {})
+  const [cycleTouched, setCycleTouched] = useState(false)
   const toggleMore = () => {
     const open = !more
     setMore(open)
@@ -91,6 +105,7 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
     const wake = isHHMM(wakeAt) ? wakeAt : normTime(wakeAt)
     const night = WELLBEING_ENABLED ? nightPatch(existing, { band, wakeAt: wake, touched }, at) : {}
     setCheckin({ mood, hunger, sleep, stress, energy, sore: liftDay ? sore : existing?.sore ?? 0, note: note.trim(), t: at, ...night })
+    if (cycleShown && cycleTouched) editCycle((l) => { logDay(l, cur, cycleDay, todayStr()) })
     onClose()
   }
   const f = CHECKIN_SLEEP.noteFoot
@@ -144,6 +159,9 @@ export function CheckinSheet({ onClose }: { onClose: () => void }) {
       {liftDay && <><Lbl>Soreness</Lbl><Scale labels={SORE} value={sore} onChange={setSore} /></>}
       <Lbl>Hunger right now</Lbl>
       <Scale labels={HUNGER} value={hunger} onChange={setHunger} />
+      {cycleShown && cycleLog && (
+        <CycleCheckinGroup log={cycleLog} day={cur} value={cycleDay} onChange={(v) => { setCycleDay(v); setCycleTouched(true) }} />
+      )}
       <Lbl>Note</Lbl>
       <TextInput multiline numberOfLines={3} value={note} placeholder="Anything worth remembering? Optional." placeholderTextColor={t.label3} onChangeText={setNote}
         style={[tx(17, 400), { color: t.label, backgroundColor: t.elev, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 12, minHeight: 84, textAlignVertical: 'top' }]} />

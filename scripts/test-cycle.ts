@@ -8,7 +8,7 @@ import type { CheckIn } from '@/core/types'
 import { MIN_AGE } from '@/core/legal'
 import {
   CYCLE_THRESHOLDS, cleanCycle, currentPeriod, cycleOffered, cycleSwitchable, cycleSignal, emptyCycle, holdsDeficit, logDay, markShown, markUsual, periodDay,
-  periodStarted, periodsOf, promptsDue, rowShows, setSetup, bledBetween, type CycleDay, type CycleStore,
+  periodStarted, periodsOf, promptsDue, promptsToShow, rowShows, setSetup, bledBetween, notePause, cycleOn, type CycleDay, type CycleStore,
 } from '@/core/domain/cycle'
 import { shiftDay } from '@/core/domain/date'
 import { offerLighter } from '@/core/domain/dayOptions'
@@ -179,6 +179,30 @@ function coreChecks() {
       ['more Heavy days than their most re-arms it', promptsDue(more, later).includes('heavy')],
       ['a setup change re-arms it', promptsDue(rearmed, later).includes('heavy')],
       ['12 months after the tap re-arms it', promptsDue(lapsed, shiftDay(TODAY, T.usualLapseDays + 3)).includes('heavy')],
+    ])
+  }
+
+  /* native stage 1 and 2 helpers */
+  {
+    const T = CYCLE_THRESHOLDS
+    const checkins = Array.from({ length: 200 }, (_, i) => ago(i))
+    const heavy = store('regular'); bleed(heavy.days, ago(31), 4, {}, 'heavy'); bleed(heavy.days, ago(1), 2, {}, 'heavy')
+    const shown = JSON.parse(JSON.stringify(heavy)) as CycleStore; markShown(shown, ['heavy'], ago(1))
+    const usualed = JSON.parse(JSON.stringify(shown)) as CycleStore; markUsual(usualed, 'heavy', TODAY)
+    const ended = JSON.parse(JSON.stringify(shown)) as CycleStore
+    const gap = store('regular'); bleed(gap.days, ago(T.noPeriodDays + 5), 4)
+    const asked = JSON.parse(JSON.stringify(gap)) as CycleStore; markShown(asked, ['no-period'], ago(2))
+    const answered = JSON.parse(JSON.stringify(asked)) as CycleStore; answered.gapAnswered = ago(1)
+    const p = store('regular'); bleed(p.days, ago(T.noPeriodDays + 5), 4)
+    const startPause = notePause(p, true, ago(30)), again = notePause(p, true, ago(29)), endPause = notePause(p, false, ago(10))
+    report('native helpers', [
+      ['a card shown earlier this episode stays on the page (not only on its first day)', !promptsDue(shown, TODAY).includes('heavy') && promptsToShow(shown, TODAY).includes('heavy')],
+      ['...until "This is usual for me"', !promptsToShow(usualed, TODAY).includes('heavy')],
+      ['...or the episode ends', !promptsToShow(ended, shiftDay(TODAY, 5)).includes('heavy')],
+      ['G4 stays until answered, then not again this gap', promptsToShow(asked, TODAY, { checkinDays: checkins }).includes('no-period') && !promptsToShow(answered, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['notePause: a pause re-arms once, its end restarts the gap count', startPause && !again && endPause && p.rearmedAt === ago(30) && p.resumedAt === ago(10) && !p.paused && !promptsDue(p, TODAY, { checkinDays: checkins }).includes('no-period')],
+      ['cycleOn: a setup answer other than none', cycleOn(store('irregular')) && !cycleOn(store('none')) && !cycleOn({ days: {} }) && !cycleOn(undefined)],
+      ['the stored flags survive validation', cleanCycle({ ...answered, paused: true })?.gapAnswered === ago(1) && cleanCycle({ ...answered, paused: true })?.paused === true],
     ])
   }
 

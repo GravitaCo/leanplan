@@ -14,6 +14,8 @@ export const HARD_DAY_COPY = {
   roughNight: 'Rough night? Here are a few options for today. All of them count.',
   /** B3.1b */
   toughDay: 'Tough day? Here are a few options for today. All of them count.',
+  /** Cycle (board E1, native only): the lead when pain "A lot" is what tipped the offer; never names the period */
+  cycleLighter: 'A lighter session is here if you want it.',
   planned: 'As planned',
   shorter: 'Shorter',
   swapKicker: 'Swap',

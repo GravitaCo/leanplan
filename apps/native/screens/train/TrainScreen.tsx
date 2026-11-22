@@ -4,10 +4,12 @@
  * the wellbeing flag) and what's done. The day model is the web's own (src/screens/train/
  * trainModel.ts), so every row, version, swap and note is computed by the same code.
  */
+import { CYCLE_ENABLED } from '@/data/cycleFlag'
+import { cycleSignal } from '@/core/domain/cycle'
 import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Text, View, type ScrollViewInstance, type StyleProp, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useStore, TRAIN_LOG_WALK } from '@/store/store'
+import { selectCycle, useStore, TRAIN_LOG_WALK } from '@/store/store'
 import { quietNumbers } from '@/data/consent'
 import { fmtDate, shiftDay } from '@/core/domain/date'
 import { easyUntil } from '@/core/domain/training'
@@ -69,7 +71,9 @@ function Train() {
   const [lighterOpen, setLighterOpen] = useState(false)
   const phBg = usePhBg()
 
-  const m = useMemo(() => trainDay(data, cur, ui), [data, cur, ui])
+  // Cycle (E1, native only, behind CYCLE_ENABLED): pain "A lot" today adds one signal to the lighter offer
+  const cyclePain = useStore((s) => CYCLE_ENABLED && cycleSignal(selectCycle(s), s.cur))
+  const m = useMemo(() => trainDay(data, cur, ui, cyclePain), [data, cur, ui, cyclePain])
   const { sessions, routines, planned, restDay, planNow, planPos, isToday, dayName, offer, choiceFor, planShortKind } = m
 
   useEffect(() => { setOpen(null); setUi(NO_TRAIN_UI); setConfirmId(null); setLighterOpen(false); setPlaying(false) }, [cur])
