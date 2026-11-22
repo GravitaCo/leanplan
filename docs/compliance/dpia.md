@@ -1080,12 +1080,18 @@ sexual and reproductive health". The consent record's basis follows D10.
 
 - Device only in v1; nothing about the log reaches the server (`scripts/test-cycle.ts` sentinel).
 - Fixed lists only; no free text, now or later.
-- No contraception question (Sara, 4 Nov). The setup option "My periods often stop or skip, for
-  example with some contraception" still names contraception: dropping "for example with some
-  contraception" loses nothing (register item 49(d)).
+- No contraception question (Sara, 4 Nov). The contraception example is dropped: the option is
+  "My periods often stop or skip" (Sara, 22 Nov; register item 49(d), done).
 - No forecast is ever stored for display; the usual-start estimate is computed, used for row timing
   and discarded.
-- No synced "offer hidden" flag exists yet; if one is added it carries no reason.
+- No synced "offer hidden" flag exists yet; if one is added it carries no reason. The device-only
+  flag (`deviceOnly.ui.cycleHidden`, 22 Nov build) carries no reason, but only "I don't have
+  periods" sets it, so it is treated as possibly special category and is named in the gated policy.
+- The log also keeps the day the G4 gap question was answered (`gapAnswered`) and a `paused` flag
+  while a pregnancy or breastfeeding pause is in force (not which); both are in the Cycle export
+  and named in the gated policy.
+- The cycle yes is recorded at B3's "Turn on Your cycle", not at B1's Continue, so leaving setup
+  part way leaves no yes on record (22 Nov change).
 
 ### 10.4 New risks
 
@@ -1114,9 +1120,11 @@ Scores on the section 5 scale, proposed, not confirmed.
   without a measure that protects data on an unlocked phone. Benn and Sara should decide whether
   the warning is enough for wider testers.
 - **R24 Export.** In place: the privacy policy says the export isn't encrypted (gated text); the
-  backup import needs a current cycle yes and never overwrites this device's log. Recommended:
-  the export screen says the file includes the Cycle log and isn't encrypted (cycle.md §6
-  must-have 5). Residual: **medium**.
+  backup import needs a current cycle yes and never overwrites this device's log. The 22 Nov
+  build adds "Export my cycle log" (the Cycle log alone, a JSON file through the share sheet; the
+  iOS cache copy is deleted when the sheet closes); the Cycle page says the file isn't encrypted,
+  and the gated policy names it. Recommended: the whole-state export screen says the file includes
+  the Cycle log and isn't encrypted (cycle.md §6 must-have 5). Residual: **medium**.
 - **R25 Setup answer.** In place: device only; six fixed options, including prefer not to say;
   never asks why; changeable at any time; the history is kept for the alpha review only.
   Recommended: drop the contraception example (item 49(d)); delete `setupLog` before beta, or

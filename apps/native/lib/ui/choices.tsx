@@ -55,14 +55,14 @@ export function Opts<T extends string>({ opts, value, onPick, label, multi }: {
 }
 
 /** `.ticks`: a card (padding 16, `tight` 14 16) of sentences, each after a 16 pt tinted tick, 10 apart. */
-export function Ticks({ items, tight }: { items: string[]; tight?: boolean }) {
+export function Ticks({ items, tight, color }: { items: string[]; tight?: boolean; color?: string }) {
   const t = useTokens()
   const bg = useSurface(t)
   return (
     <View role="list" style={{ backgroundColor: bg, borderRadius: t.radius, paddingVertical: tight ? 14 : 16, paddingHorizontal: 16, gap: 10 }}>
       {items.map((s) => (
         <View key={s} role="listitem" style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ marginTop: 2 }}><Icon name="check" size={16} stroke={2.6} color={t.tint} /></View>
+          <View style={{ marginTop: 2 }}><Icon name="check" size={16} stroke={2.6} color={color ?? t.tint} /></View>
           <Text style={[tx(15, 400, 1.45), { color: t.label, flex: 1 }]}>{s}</Text>
         </View>
       ))}

@@ -42,7 +42,11 @@ export interface DeviceOnly {
   notify?: NotifyEvent[]
   /** `backoffSeen`: per reminder type, the back-off (profile.mind.halved) whose notice was closed */
   /** `medicalReasked`: the one-time re-ask of a 'flagged' answer from before the split was shown here */
-  ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string>; medicalReasked?: boolean }
+  /** `cycleHidden`: "I don't have periods" hid the Your cycle offer in Profile (board A3). No
+   *  reason is kept; device only for now (a synced reason-free flag needs a policy change first,
+   *  register item 49(f)). Only that answer sets it, so treat it as possibly special category
+   *  (DPIA §10.2) and protect it like health data. */
+  ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string>; medicalReasked?: boolean; cycleHidden?: boolean }
   /** `owner`: the `_meta.owner` the log was written under; any other owner's log is dropped */
   cycle?: { owner: string; log: CycleStore }
 }
@@ -163,6 +167,7 @@ export function cleanDeviceOnly(x: unknown, owner: string | undefined): DeviceOn
     const o: NonNullable<DeviceOnly['ui']> = {}
     if (ui.sleepMore === true) o.sleepMore = true
     if (ui.medicalReasked === true) o.medicalReasked = true
+    if (ui.cycleHidden === true) o.cycleHidden = true
     const seen: Record<string, string> = {}
     const bs = ui.backoffSeen
     if (bs && typeof bs === 'object') for (const [k, v] of Object.entries(bs)) if (/^[a-z-]{1,32}$/.test(k) && isIso(v)) seen[k] = v
@@ -299,6 +304,21 @@ export function deleteCycle(s: PersistedState): boolean {
   delete d.cycle
   if (!Object.keys(d).length) delete s.deviceOnly
   return true
+}
+
+/** Whether "I don't have periods" hid the Your cycle offer on this phone (A3). */
+export function cycleHidden(s: Pick<PersistedState, 'deviceOnly'>): boolean {
+  return s.deviceOnly?.ui?.cycleHidden === true
+}
+
+/** Hide or show the Your cycle offer (A3; Privacy's Cycle row shows it again). */
+export function setCycleHidden(s: PersistedState, hidden: boolean): void {
+  if (hidden) { const d = (s.deviceOnly ??= {}); d.ui = { ...d.ui, cycleHidden: true }; return }
+  const d = s.deviceOnly
+  if (!d?.ui?.cycleHidden) return
+  delete d.ui.cycleHidden
+  if (!Object.keys(d.ui).length) delete d.ui
+  if (!Object.keys(d).length) delete s.deviceOnly
 }
 
 /** How many days the Cycle log holds (confirm steps). No contents. */

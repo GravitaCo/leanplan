@@ -10,7 +10,9 @@
  */
 import { useEffect, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
-import { selectAskCtx, useStore } from '@/store/store'
+import { selectAskCtx, selectCycle, useStore } from '@/store/store'
+import { CYCLE_ENABLED } from '@/data/cycleFlag'
+import { cycleSignal } from '@/core/domain/cycle'
 import { canSaveHealthAnswers, healthDeclined, healthLoggingAllowed, quietNumbers } from '@/data/consent'
 import { hasCheckinContent } from '@/core/domain/checkin'
 import { plannedKeys } from '@/core/domain/plans'
@@ -92,6 +94,9 @@ export function Summary() {
 function SummaryPage() {
   const t = useTokens()
   const data = useStore((s) => s.data)
+  // Cycle (E2, native only): pain "A lot" today counts towards the lighter choices, as on Train;
+  // nothing on Summary names the period
+  const cyclePain = useStore((s) => CYCLE_ENABLED && cycleSignal(selectCycle(s), s.cur))
   const cur = useStore((s) => s.cur)
   const toggleSupp = useStore((s) => s.toggleSupp)
   const logEntries = useStore((s) => s.logEntries)
@@ -234,7 +239,7 @@ function SummaryPage() {
   }, [suggestVisible?.level, cur]) // eslint-disable-line react-hooks/exhaustive-deps
   const same = wb && hard && on.food ? sameAsYesterdayRow(data, cur, meal, { gentle }) : null
   const lighterMove = wb && !logged && !isRest &&
-    offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin))
+    offerLighter(day.checkin, Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin), cyclePain)
 
   const openCheckin = () => (healthDeclined(data) ? openProfile('health') : setSheet({ k: 'checkin' }))
   const pk = (color: string, label: string) => <Text style={[tx(13, 600), GLYPH_ROOM, { color: color }]}>{label}</Text>

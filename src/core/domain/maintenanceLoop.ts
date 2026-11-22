@@ -277,6 +277,9 @@ export type RateSuggestion =
 
 export interface RateOptions {
   healthConsent: boolean
+  /** Cycle (cycle.md §5 Body, §5.1; native only): no "eat less" range after a logged bleed or
+   *  during a long gap with no period. The web never sets it. */
+  noLess?: boolean
   /** when a check last showed (YYYY-MM-DD); a new one waits a week. Not stored yet. */
   lastAt?: string
   t?: LoopThresholds
@@ -313,7 +316,7 @@ export function suggestRateAdjustment(s: AppState, today: string, o: RateOptions
   if (!pace || pace === 'in-line') return { kind: 'on-pace', trend: tr, week, span }
   const ctx = week.mind.hard ? 'hard' : 'calm'
   const dir = pace === 'slower' ? (goal === 'lose-fat' ? 'less' : 'more') : (goal === 'lose-fat' ? 'more' : 'less')
-  const range = dir === 'less' && !allowLess(safety, week.mind) ? null : rangeStep(s, dir, tr.level, safety, today, t)
+  const range = dir === 'less' && (o.noLess || !allowLess(safety, week.mind)) ? null : rangeStep(s, dir, tr.level, safety, today, t)
   return { kind: 'options', pace, ctx, options: optionsFor(ctx, range ? dir : null, week.mind), range, trend: tr, week, span }
 }
 
@@ -452,6 +455,8 @@ export interface WeeklyReview {
 
 export interface ReviewOptions {
   healthConsent: boolean
+  /** as RateOptions.noLess: no "eat less" range change in "Change one thing" */
+  noLess?: boolean
   /** the last review the person opened (YYYY-MM-DD), and the weekday they picked (0 = Sunday); not stored yet */
   lastReviewAt?: string
   reviewDay?: number
@@ -531,9 +536,10 @@ export function weeklyReview(s: AppState, today: string, o: ReviewOptions): Week
   // points one way (eat-less only after a drift or a slower pace, never after a hard week)
   let range: RangeChange | null = null, dir: 'less' | 'more' | null = null
   if (ctx !== 'gentle' && !welcomeBack && !care && !lighter) {
-    const rate = suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, t })
+    const rate = suggestRateAdjustment(s, today, { healthConsent: o.healthConsent, noLess: o.noLess, t })
     const drift = rate.kind === 'none' ? maintenanceDrift(s, today, { healthConsent: o.healthConsent, t }) : null
-    const r = rate.kind === 'options' ? rate.range : drift?.kind === 'drift' ? drift.range : null
+    let r = rate.kind === 'options' ? rate.range : drift?.kind === 'drift' ? drift.range : null
+    if (r && o.noLess && r.suggested < r.kcal) r = null
     if (r) { range = r; dir = r.suggested < r.kcal ? 'less' : 'more' }
   }
   return {

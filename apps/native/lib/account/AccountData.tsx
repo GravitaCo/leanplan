@@ -33,6 +33,7 @@ import { DeleteAccountView } from './Delete'
 import { Opts, Signposts, Ticks } from '../ui/choices'
 import { LEGAL_LABEL, openLegal } from './legal'
 import { pickBackup } from './backupFile'
+import { clearCycleCopies } from '../../screens/cycle/exportFile'
 
 export type HealthStatus = 'on' | 'paused' | 'off' | 'unasked'
 export function useHealthStatus(): HealthStatus {
@@ -172,6 +173,8 @@ export function SignOutSheet({ onClose }: { onClose: () => void }) {
     if (busy) return
     if (remove && (unsynced > 0 || phoneOnly) && !sure) { setSure(true); return } // losing data takes a second tap
     setBusy(remove ? 'remove' : 'keep')
+    // no Cycle export copy outlives the sign-out (security-data, 22 Nov)
+    clearCycleCopies()
     try { await signOut({ remove }) } finally { setBusy(null) }
   }
   return (

@@ -48,7 +48,9 @@ export const sessSub = (x: Session) => {
 
 export type TrainDay = ReturnType<typeof trainDay>
 
-export function trainDay(data: PersistedState, cur: string, ui: TrainUi) {
+/** `cycle` (native only, Cycle on): pain "A lot" logged today, one more signal for the lighter offer
+ *  (cycle.md §5; core's cycleSignal). The web never passes it. */
+export function trainDay(data: PersistedState, cur: string, ui: TrainUi, cycle?: boolean) {
   const { pick0, swapsBy, keepBy } = ui
   const day = data.days[cur]
   // the workouts done: a warm-up on its own is movement, not a workout done (workoutsOf)
@@ -74,7 +76,10 @@ export function trainDay(data: PersistedState, cur: string, ui: TrainUi) {
   const recent = Object.keys(data.days).filter((d) => d < cur).sort().reverse().map((d) => data.days[d]?.checkin)
   const low = lowSignals(day?.checkin, recent)
   // not on rest days: rest is the plan, and a lighter option than rest would nudge movement
-  const offer = !logged && !restDay && offerLighter(day?.checkin, recent)
+  const offer = !logged && !restDay && offerLighter(day?.checkin, recent, cycle)
+  // the offer came from the Cycle signal (the check-in alone wouldn't have made it): board E1's
+  // lead, which never names the period, instead of "Tough day?"
+  const cycleLead = offer && !offerLighter(day?.checkin, recent)
   // an accepted "easier first week" pre-selects the shorter version (still just a choice), and so
   // does a maintenance week
   const easyWeek = !logged && !restDay && !!data.profile.easyUntil && cur >= (data.profile.easyFrom || data.profile.welcomeAsked || '') && cur <= data.profile.easyUntil
@@ -215,13 +220,13 @@ export function trainDay(data: PersistedState, cur: string, ui: TrainUi) {
     })
     return {
       k, tiles,
-      heading: offer ? (roughNight(low) ? HARD_DAY_COPY.roughNight : HARD_DAY_COPY.toughDay) : easyNote,
+      heading: offer ? (cycleLead ? HARD_DAY_COPY.cycleLighter : roughNight(low) ? HARD_DAY_COPY.roughNight : HARD_DAY_COPY.toughDay) : easyNote,
       effort: swapDay?.day === 'cardio' ? HARD_DAY_COPY.effortCardio : HARD_DAY_COPY.effort,
       roughNote: k ? roughNoteFor(k) : false,
     }
   }
   /** the plain lighter card's heading (flag off) */
-  const lighterHeading = offer ? (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.' : easyNote
+  const lighterHeading = offer ? (cycleLead ? HARD_DAY_COPY.cycleLighter : (low.includes('sleep') ? 'Short night? ' : 'Tough day? ') + 'Here are a few options for today. All of them count.') : easyNote
 
   const routineOf = (x: Session): WorkoutKey | null => keyOfSession(x, routines)
 

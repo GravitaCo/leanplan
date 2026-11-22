@@ -9,6 +9,7 @@ import { useStore } from '@/store/store'
 import { useGate } from '../lib/gate'
 import '../lib/e2eHook'
 import { clearBackupCopies } from '../lib/account/backupFile'
+import { clearCycleCopies } from '../screens/cycle/exportFile'
 import { useNotifications } from '../lib/platform/notifications'
 import { ToastHost } from '../lib/ui/kit'
 import { sweepPhotoCache } from '../screens/scan/labelPhoto'
@@ -21,6 +22,8 @@ export default function Root() {
   useEffect(() => { sweepPhotoCache() }, [])
   // a backup copy the share sheet left in the cache (N2: lib/account/backupFile.ts)
   useEffect(() => { clearBackupCopies() }, [])
+  // a Cycle log export the share sheet left in the cache (security-data, 22 Nov)
+  useEffect(() => { clearCycleCopies() }, [])
   // reminders: taps, the delivery log and the push token (N12)
   useNotifications()
   // the navigator stays mounted (Expo Router needs it); its screens render nothing while gated

@@ -60,6 +60,10 @@ export interface CycleStore {
   rearmedAt?: string
   /** the day a pregnancy pause ended: the long-gap count starts again from it */
   resumedAt?: string
+  /** the day G4 ("Has a period come that isn't logged?") was answered: not asked again this gap */
+  gapAnswered?: string
+  /** a pregnancy or breastfeeding pause was in force when Cycle last looked (notePause) */
+  paused?: boolean
   /** alpha review only (§5.1, "log answer changes on the device"): setup answers with the day */
   setupLog?: { at: string; setup: CycleSetup }[]
 }
@@ -150,6 +154,9 @@ export function cycleOffered(f: GateFacts): boolean {
 export function cycleSwitchable(f: Omit<GateFacts, 'sexAnswer'>): boolean {
   return f.healthYes && typeof f.age === 'number' && f.age >= MIN_AGE
 }
+
+/** Cycle is on: a log with a setup answer other than "I don't have periods" (read with a cycle yes). */
+export const cycleOn = (log: CycleStore | undefined): boolean => !!log?.setup && log.setup !== 'none'
 
 /** "I don't have periods" closes the offer (§3). */
 export const closesOffer = (setup: CycleSetup | undefined): boolean => setup === 'none'
@@ -396,6 +403,34 @@ export function promptsDue(store: CycleStore, today: string, f: PromptFacts = {}
 }
 
 /**
+ * The safety cards to show on `today` (G1, G2, G4): those due now, plus any already shown in this
+ * same episode that still apply and weren't marked usual, so a card stays put (at the top of the
+ * Cycle page, in the check-in's Cycle group) until "This is usual for me" or the episode ends,
+ * instead of vanishing after its first showing. Mark only `promptsDue`'s with markShown.
+ */
+export function promptsToShow(store: CycleStore, today: string, f: PromptFacts = {}): CyclePrompt[] {
+  if (f.paused || !store.setup || store.setup === 'none') return []
+  const due = promptsDue(store, today, f)
+  const ps = periodsOf(Object.fromEntries(Object.entries(store.days).filter(([k]) => k <= today)))
+  const last = ps[ps.length - 1]
+  const out = new Set(due)
+  const inEpisode = !!last && daysFrom(last.last, today) <= SILENT_END_DAYS
+  for (const p of ['long-bleed', 'heavy', 'pain'] as const) {
+    const at = store.shown?.[p]
+    if (!at || !inEpisode || at < last!.start || usualHolds(store, p, ps, today)) continue
+    if (p === 'long-bleed' && last!.length <= T.longBleedDays) continue
+    if (p === 'heavy' && !last!.heavyDays) continue
+    if (p === 'pain' && !last!.lotDays) continue
+    out.add(p)
+  }
+  const gap = longGapFrom(store, today, f)
+  const nAt = store.shown?.['no-period']
+  if (gap && nAt && nAt > gap) out.add('no-period')
+  if (gap && store.gapAnswered && store.gapAnswered > gap) out.delete('no-period')
+  return CYCLE_PROMPTS.filter((p) => out.has(p))
+}
+
+/**
  * Whether the maintenance loop holds off suggesting a deficit (§5.1 no-period, for people in a
  * deficit): true while 'no-period' would be due, whether or not the prompt was dismissed, until a
  * period is logged. PROVISIONAL and pending a regulatory view (§6, §10.3): wired only behind
@@ -440,6 +475,17 @@ export function pregnancyRearm(store: CycleStore, today: string): void { store.r
 
 /** A pregnancy pause ended: the long-gap count starts again from today. */
 export function pregnancyEnded(store: CycleStore, today: string): void { store.resumedAt = today }
+
+/**
+ * Bring the log up to date with the pregnancy flag (profile.pregnancy.flagged), wherever it was
+ * changed: a pause starting re-arms every "usual" mark, one ending restarts the long-gap count.
+ * Call before reading prompts. Returns whether the log changed (so the caller saves it).
+ */
+export function notePause(store: CycleStore, paused: boolean, today: string): boolean {
+  if (paused === !!store.paused) return false
+  if (paused) { pregnancyRearm(store, today); store.paused = true } else { pregnancyEnded(store, today); delete store.paused }
+  return true
+}
 
 /** "This is usual for me" on a prompt (never on "When to get help"). */
 export function markUsual(store: CycleStore, prompt: Exclude<CyclePrompt, 'no-period'>, today: string): void {
@@ -494,6 +540,8 @@ export function cleanCycle(x: unknown): CycleStore | undefined {
   if (shown) out.shown = shown as CycleStore['shown']
   if (isDay(c.rearmedAt)) out.rearmedAt = c.rearmedAt
   if (isDay(c.resumedAt)) out.resumedAt = c.resumedAt
+  if (c.paused === true) out.paused = true
+  if (isDay(c.gapAnswered)) out.gapAnswered = c.gapAnswered
   if (Array.isArray(c.setupLog)) {
     const log = c.setupLog.filter((e): e is { at: string; setup: CycleSetup } => !!e && typeof e === 'object' && isDay((e as { at: unknown }).at) && CYCLE_SETUPS.includes((e as { setup: CycleSetup }).setup)).map((e) => ({ at: e.at, setup: e.setup })).slice(-50)
     if (log.length) out.setupLog = log
