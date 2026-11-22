@@ -218,8 +218,8 @@ export function dayLine(d: { flow?: CycleFlow; pain?: 1 | 2 | 3; chips?: CycleCh
   return parts.join(' · ')
 }
 
-/** NHS pages (not given on the board; both checked live on 22 Nov 2026; re-check before beta with the rest). */
+/** NHS pages (not given on the board; checked live on 22 Nov 2026, period pain at its new address; re-check before beta). */
 export const NHS = {
   heavy: 'https://www.nhs.uk/conditions/heavy-periods/',
-  pain: 'https://www.nhs.uk/conditions/period-pain/',
+  pain: 'https://www.nhs.uk/symptoms/period-pain/',
 }

@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { Linking, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { selectCycle, useStore } from '@/store/store'
-import { hasConsent } from '@/data/consent'
+import { hasConsent, kcalHidden } from '@/data/consent'
 import { currentPeriod, daysFrom, logDay, periodDay, type CycleDay } from '@/core/domain/cycle'
 import { shortDateOf, shiftDay, todayStr } from '@/core/domain/date'
 import { GLYPH_ROOM, num, tx, useTokens } from '../../lib/theme'
@@ -22,13 +22,13 @@ import { SupportSheet } from '../mind/SupportSheet'
 import { CycleSetupFlow } from './CycleSetup'
 import { CycleFields } from './Fields'
 import { SafetyCards, usePromptFacts } from './Prompts'
-import { exportCycleFile } from './exportFile'
+import { clearCycleCopies, exportCycleFile } from './exportFile'
 import { CY, NHS, dayLine, setupLabel } from './text'
 
 const dayName = (d: string, today: string) => (d === today ? CY.page.today : d === shiftDay(today, -1) ? CY.page.yesterday : shortDateOf(d))
 
 /** D3: log or fix one day. "Done" saves; "Clear this day" removes it. */
-export function LogDaySheet({ day: start, onClose }: { day: string; onClose: () => void }) {
+export function LogDaySheet({ day: start, onClose, onSaved }: { day: string; onClose: () => void; onSaved?: (day: string, v: CycleDay) => void }) {
   const t = useTokens()
   const today = todayStr()
   const log = useStore(selectCycle)
@@ -36,7 +36,7 @@ export function LogDaySheet({ day: start, onClose }: { day: string; onClose: () 
   const [day, setDay] = useState(start)
   const [v, setV] = useState<CycleDay>(() => log?.days[start] ?? {})
   const pickDay = (d: string) => { setDay(d); setV(log?.days[d] ?? {}) }
-  const save = () => { editCycle((l) => { logDay(l, day, v, today) }); onClose() }
+  const save = () => { if (editCycle((l) => { logDay(l, day, v, today) })) onSaved?.(day, v); onClose() }
   return (
     <Sheet title={CY.log.title} onClose={onClose} right={<NavBtn title="Done" bold onPress={save} />}>
       <List>
@@ -59,9 +59,12 @@ export function DeleteCycleSheet({ onClose, onDeleted, alsoHide }: { onClose: ()
   const wipe = useStore((s) => s.deleteCycleData)
   const hide = useStore((s) => s.hideCycleOffer)
   const consented = useStore((s) => hasConsent(s.data, 'cycle'))
+  const mayAct = useStore((s) => s.signedIn && !s.ownerAsk)
   const del = () => {
+    clearCycleCopies()
     // a withdrawal deletes the log too (consent.ts withdraw); with no yes on record, just delete
-    if (consented) withdraw('cycle'); else wipe()
+    // a withdrawal only on this owner's record (never while "whose data is this?" is open)
+    if (consented && mayAct) withdraw('cycle'); else wipe()
     if (alsoHide) hide(true)
     onDeleted()
   }
@@ -116,7 +119,8 @@ export function CyclePage({ onBack }: { onBack: () => void }) {
   const t = useTokens()
   const insets = useSafeAreaInsets()
   const log = useStore(selectCycle)
-  const gentle = useStore((s) => !!s.data.profile?.gentle)
+  // no numbers from Cycle in gentle mode, wellbeing Yes or quiet numbers (cycle.md §5.3; mental-performance)
+  const gentle = useStore((s) => !!s.data.profile?.gentle || kcalHidden(s.data))
   const facts = usePromptFacts()
   const [view, setView] = useState<'page' | 'help' | 'fits'>('page')
   const [logDayOpen, setLogDayOpen] = useState<string | null>(null)

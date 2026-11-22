@@ -14,6 +14,7 @@ import { UNCONSENTED_DELETION } from '@/core/legal'
 import { MERGED_FIELDS } from '@/core/domain/profileMerge'
 import { isKindPlan, MIND_HEALTH_KEYS, MIND_TIME_KEYS } from '@/core/domain/checkin'
 import { foodModeOf } from '@/core/domain/foodMode'
+import { isUnderAge } from '@/core/domain/age'
 import { sbFetch, sbGet, getUid, nowIso, uuid, HttpError, UUID_RE } from './supabase'
 import type { PersistedState, SyncMeta } from './persistence'
 import { clearDraft } from './onboardingDraft'
@@ -684,7 +685,8 @@ export function applyCycleWithdrawal(s: PersistedState): boolean {
 
 /** Agree to Cycle. Refused (null) without a current health yes. */
 export function grantCycle(s: PersistedState): ConsentRecord | null {
-  if (!hasCurrentConsent(s, 'health')) return null
+  // and never under 18, whatever the screens do (security-data, 22 Nov)
+  if (!hasCurrentConsent(s, 'health') || isUnderAge(s.profile?.age) || s.profile?.age == null) return null
   return recordConsent(s, 'cycle', true)
 }
 

@@ -44,7 +44,8 @@ export interface DeviceOnly {
   /** `medicalReasked`: the one-time re-ask of a 'flagged' answer from before the split was shown here */
   /** `cycleHidden`: "I don't have periods" hid the Your cycle offer in Profile (board A3). No
    *  reason is kept; device only for now (a synced reason-free flag needs a policy change first,
-   *  register item 49(f)). Not health data. */
+   *  register item 49(f)). Only that answer sets it, so treat it as possibly special category
+   *  (DPIA §10.2) and protect it like health data. */
   ui?: { sleepMore?: boolean; backoffSeen?: Record<string, string>; medicalReasked?: boolean; cycleHidden?: boolean }
   /** `owner`: the `_meta.owner` the log was written under; any other owner's log is dropped */
   cycle?: { owner: string; log: CycleStore }

@@ -224,6 +224,7 @@ const ON: CycleContext = { signedIn: true, ownerAsk: false, cycleYes: true }
 function owned(owner = LOCAL_USER): PersistedState {
   const s = loadStateFrom(null)
   ensureMeta(s, false).owner = owner
+  s.profile.age = 30
   return s
 }
 function withCycle(): PersistedState {

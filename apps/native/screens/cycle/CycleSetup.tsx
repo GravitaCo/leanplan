@@ -17,7 +17,6 @@ import { GLYPH_ROOM, tx, useTokens } from '../../lib/theme'
 import { Btn, Card, LinkBtn } from '../../lib/ui/kit'
 import { BackButton, BareSheet } from '../../lib/ui/primitives'
 import { ConsentRow, Opts, Ticks } from '../../lib/ui/choices'
-import { Icon } from '../../lib/ui/icons'
 import { Foot, Lbl } from '../../lib/ui/text'
 import { openLegal } from '../../lib/account/legal'
 import { CY, SETUP_LINE, SETUP_OPTS, setupLabel } from './text'
@@ -96,7 +95,7 @@ export function CycleSetupFlow({ onClose, onOn, change, onNone }: { onClose: () 
           <Lbl>{CY.offer.wontH}</Lbl>
           <Card><Dashes items={CY.offer.wont} /></Card>
         </View>
-        <Foot style={{ paddingHorizontal: 0, paddingTop: 0 }}>{CY.offer.foot}</Foot>
+        <Foot style={{ paddingTop: 0 }}>{CY.offer.foot}</Foot>
         <Btn title={CY.offer.setUp} onPress={() => setStep(allowed ? 'question' : 'consent')} />
         <View style={{ alignItems: 'center', gap: 4 }}>
           <LinkBtn title={CY.offer.notNow} onPress={onClose} />
@@ -116,8 +115,9 @@ export function CycleSetupFlow({ onClose, onOn, change, onNone }: { onClose: () 
           {CY.consent.box.after}
         </ConsentRow>
       </Card>
-      {/* never pre-ticked; the yes is recorded here (consent.ts grantCycle needs a current health yes) */}
-      <Btn title={CY.consent.cont} disabled={!agreed} onPress={() => { grantConsent('cycle'); setStep('question') }} />
+      {/* never pre-ticked; the yes is recorded at "Turn on Your cycle", so leaving setup before then
+          leaves no yes on record (compliance, 22 Nov) */}
+      <Btn title={CY.consent.cont} disabled={!agreed} onPress={() => setStep('question')} />
       <Btn kind="gray" title={CY.consent.notNow} onPress={onClose} />
       <Foot style={{ textAlign: 'center' }}>{CY.consent.foot}</Foot>
     </Page>
@@ -154,14 +154,13 @@ export function CycleSetupFlow({ onClose, onOn, change, onNone }: { onClose: () 
         <Text style={[tx(15, 400, 1.45), { color: t.label, marginTop: 10 }]}>{SETUP_LINE[chosen]}</Text>
       </Card>
       <Card>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <Icon name="key" size={18} color={t.mindInk} />
-          <Text style={[tx(17, 600), { color: t.label }]}>{CY.works.phoneH}</Text>
-        </View>
+        <Text style={[tx(17, 600), { color: t.label, marginBottom: 6 }]}>{CY.works.phoneH}</Text>
         {CY.works.phone.map((p) => <Text key={p} style={[tx(15, 400, 1.45), { color: t.label2, marginTop: 6 }]}>{p}</Text>)}
       </Card>
       <Btn title={CY.works.turnOn} onPress={() => {
-        // the answer is the switch: Cycle is on once it's saved (refused without a cycle yes)
+        // the yes ticked at B1 is recorded now, then the answer saved: Cycle is on (grantCycle and
+        // editCycle refuse without a current health yes)
+        if (!allowed && agreed) grantConsent('cycle')
         if (editCycle((l) => setSetup(l, chosen, todayStr()))) onOn()
       }} />
     </Page>

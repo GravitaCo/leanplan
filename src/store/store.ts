@@ -2033,7 +2033,9 @@ export const useStore = create<StoreState>()(
       deleteCycleData: () => deviceWrite((d) => { deleteCycle(d) }),
 
       hideCycleOffer: (hidden) => {
-        if (hidden && consented(get().data, 'cycle')) get().withdrawConsent('cycle')
+        const st = get()
+        // a withdrawal only on this owner's record: never signed out or while the owner question is open
+        if (hidden && consented(st.data, 'cycle') && st.signedIn && !st.ownerAsk) get().withdrawConsent('cycle')
         deviceWrite((d) => { setCycleHidden(d, hidden) })
       },
 

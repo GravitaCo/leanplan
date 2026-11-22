@@ -460,13 +460,11 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
               {health.granted && healthAt ? PRIVACY_ROW.agreedOn(healthAt) : healthStatus === 'off' ? PRIVACY_ROW.withdrawn : ''}
               {consentLetsSync(data) ? PRIVACY_ROW.stored : PRIVACY_ROW.phoneOnly}{PRIVACY_ROW.neverSold}
             </Sub>
-            {(showCyclePrivacy || cycleData) && (
-              // D6 and Sara's 22 Nov answer: anyone 18+ with a health yes can turn Cycle on here
-              // (unadvertised); "Delete all cycle data" for everyone with cycle data on this phone
+            {showCyclePrivacy && (
+              // Sara's 22 Nov answer: anyone 18+ with a health yes can turn Cycle on here (unadvertised)
               <View style={{ marginBottom: 16 }}>
-                {showCyclePrivacy && <List><Row title={CY.row} value={cycleIsOn ? CY.on : CY.off} onPress={openCycle} /></List>}
-                {cycleIsOn && <Foot style={{ marginBottom: 6 }}>{CY.privacy.line}</Foot>}
-                {cycleData && <Btn kind="gray" title={CY.privacy.delete} style={{ marginTop: 8 }} onPress={() => setCycleDelete(true)} />}
+                <List><Row title={CY.row} value={cycleIsOn ? CY.on : CY.off} onPress={openCycle} /></List>
+                {cycleIsOn && <Foot>{CY.privacy.line}</Foot>}
               </View>
             )}
             {SHARED_PRODUCTS_ENABLED && (
@@ -484,6 +482,8 @@ export function ProfileScreen({ onOpenTab }: { onOpenTab?: (tab: 'plan') => void
             {health.granted
               ? <Btn kind="gray" title={PRIVACY_ROW.withdraw} onPress={() => setHealthOpen('withdraw')} />
               : <Btn kind="gray" title={PRIVACY_ROW.turnBackOn} onPress={agree} />}
+            {/* D6: "Delete all cycle data" for everyone with cycle data or a cycle yes on this phone */}
+            {cycleData && <Btn kind="gray" title={CY.privacy.delete} style={{ marginTop: 6 }} onPress={() => setCycleDelete(true)} />}
             <Btn kind="danger" title={ACCOUNT_ROW.deleteRow} style={{ marginTop: 6 }} onPress={() => setView('delete')} />
           </Disclosure>
         </List>

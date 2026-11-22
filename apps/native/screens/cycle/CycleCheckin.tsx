@@ -58,10 +58,13 @@ export function CycleCheckinGroup({ log, day, value, onChange }: { log: CycleSto
   const [gapNo, setGapNo] = useState(false)
   const today = todayStr()
   const ask = day === today && promptsToShow(log, today, facts).includes('no-period')
+  // "No" answers it; "Yes, add it" only once a day with flow is saved (a cancelled sheet leaves the
+  // question for next time, so G5's signposting isn't lost; mental-performance, 22 Nov)
   const answerGap = (yes: boolean) => {
-    editCycle((l) => { markShown(l, ['no-period'], today); l.gapAnswered = today })
+    editCycle((l) => { markShown(l, ['no-period'], today); if (!yes) l.gapAnswered = today })
     if (yes) setAddDay(today); else setGapNo(true)
   }
+  const added = (_d: string, v: CycleDay) => { if (v.flow && v.flow !== 'stopped') editCycle((l) => { l.gapAnswered = today }) }
   return (
     <View>
       <Lbl>{CY.checkin.group}</Lbl>
@@ -92,7 +95,7 @@ export function CycleCheckinGroup({ log, day, value, onChange }: { log: CycleSto
           <Foot>{CY.checkin.foot}</Foot>
         </View>
       )}
-      {addDay && <LogDaySheet day={addDay} onClose={() => setAddDay(null)} />}
+      {addDay && <LogDaySheet day={addDay} onClose={() => setAddDay(null)} onSaved={added} />}
       {gapNo && <GapSheet onClose={() => setGapNo(false)} />}
     </View>
   )

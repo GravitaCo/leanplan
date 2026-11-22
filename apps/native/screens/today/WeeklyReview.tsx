@@ -69,8 +69,8 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
   const cycleLog = useStore(selectCycle)
   const checkinDays = Object.keys(data.days).filter((d) => !!data.days[d]?.checkin)
   const cyclePaused = !!p.pregnancy?.flagged
-  const noLess = CYCLE_ENABLED && !!cycleLog && (bledBetween(cycleLog, shiftDay(today, -14), shiftDay(today, -1)) || holdsDeficit(cycleLog, today, { paused: cyclePaused, checkinDays }))
-  const bledThisWeek = CYCLE_ENABLED && bledBetween(cycleLog, shiftDay(today, -7), shiftDay(today, -1))
+  const noLess = CYCLE_ENABLED && !!cycleLog && (bledBetween(cycleLog, shiftDay(today, -14), today) || holdsDeficit(cycleLog, today, { paused: cyclePaused, checkinDays }))
+  const bledThisWeek = CYCLE_ENABLED && bledBetween(cycleLog, shiftDay(today, -7), today)
   const rv = useMemo(() => weeklyReview(data, today, { healthConsent: consent, lastReviewAt: lastAt, reviewDay: p.reviewDay ?? 0, patternShown: p.patternShown, noLess }), [data, today, consent, lastAt, p.reviewDay, p.patternShown, noLess])
   const safety = loopSafety(data, latestWeight(data, today), consent)
   const [askWeight, setAskWeight] = useState(() => p.reviewWeight === undefined && !safety.quiet && !rv.welcomeBack)
@@ -102,7 +102,9 @@ export function WeeklyReviewScreen({ onBack, onPlanSheet }: {
       const drift = maintenanceDrift(data, today, o)
       if (drift.kind === 'drift' && !(noLess && !!drift.range && drift.range.suggested < drift.range.kcal) && (lastHeld || maintenanceDrift(data, weekAgo, o).kind !== 'drift')) return setAfter({ k: 'drift', r: drift })
       const learned = adaptiveMaintenance(data, today, o)
-      if (learned.kind === 'estimate' && (lastHeld || adaptiveMaintenance(data, weekAgo, o).kind !== 'estimate') && Math.abs(learned.maint - data.target.kcal) >= 100) return setAfter({ k: 'learned', r: learned })
+      // no lower learned target either while Cycle holds eat-less suggestions (mental-performance, 22 Nov)
+      const lower = learned.kind === 'estimate' && (learned.maint < data.target.kcal || (learnedTarget(data, learned, latestWeight(data, today) ?? 0)?.target.kcal ?? data.target.kcal) < data.target.kcal)
+      if (learned.kind === 'estimate' && !(noLess && lower) && (lastHeld || adaptiveMaintenance(data, weekAgo, o).kind !== 'estimate') && Math.abs(learned.maint - data.target.kcal) >= 100) return setAfter({ k: 'learned', r: learned })
     }
     // the reminder offer needs push (N12): until a phone has it, the review neither offers it nor
     // records a "no" the person was never asked (ship-critic)
