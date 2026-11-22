@@ -6,7 +6,7 @@ nothing built, applied or published.** Order (Benn, 22 Nov): Cycle, then onboard
 
 Verdicts on this revision: first pass 22 Nov, `compliance` and `security-data` both CHANGES NEEDED; their
 fixes are written in below. Recheck: `compliance` APPROVE AS DRAFT (its three follow-ups written in);
-`security-data` CHANGES NEEDED on the SQL, fixes written in, second recheck pending. (The 16 Nov device-only draft, approved by both as a draft,
+`security-data` APPROVED AS DRAFT on its second recheck (aa65118), with the low build notes in §9. (The 16 Nov device-only draft, approved by both as a draft,
 is in git history at 747c7aa.)
 
 ## 0. What changed from the 16 Nov draft (from §3.5)
@@ -275,6 +275,14 @@ purpose string and gated texts with `check:legal` passing and Webflow drafts onl
 the sentinel test; boards approved (Connect, sleep views, walk confirmation, "Not right?", Disconnect
 in both places); label, manifest, App Store description; `ship-critic`. OPEN for Benn: §3.5 item 9
 (exclude the whole store from backups) and item 7 (`STEPS_MULT`); bed and wake times deferred (§1).
+
+**Build notes from `security-data` (fold in before the build, no re-review):** an empty merge
+(`merged - 'src' = '{}'`) returns without writing; `merge_wearable` checks values, not just names
+(`type = 'walking'`, `start` HH:MM, `mins` and `asleepMin` 0 to 1440, steps 0 to 200,000, `brisk`
+boolean, else 22023); the purge wraps each person in an `exception when deadlock_detected` block and
+finds distinct users before calling the consent functions; the retry-once on 40P01 also covers
+`clear_wearables_after_withdrawal` and M1's PATCH; a night's `asleepMin` keeps the larger value (as
+steps), so a partial read while iCloud Health syncs never shrinks it.
 
 ## Migration draft (not applied; for `docs/migrations/`, after `2026-11-16-cycle-consent.sql`)
 
