@@ -60,6 +60,8 @@ export interface CycleStore {
   rearmedAt?: string
   /** the day a pregnancy pause ended: the long-gap count starts again from it */
   resumedAt?: string
+  /** a pregnancy or breastfeeding pause was in force when Cycle last looked (notePause) */
+  paused?: boolean
   /** alpha review only (§5.1, "log answer changes on the device"): setup answers with the day */
   setupLog?: { at: string; setup: CycleSetup }[]
 }
@@ -441,6 +443,17 @@ export function pregnancyRearm(store: CycleStore, today: string): void { store.r
 /** A pregnancy pause ended: the long-gap count starts again from today. */
 export function pregnancyEnded(store: CycleStore, today: string): void { store.resumedAt = today }
 
+/**
+ * Bring the log up to date with the pregnancy flag (profile.pregnancy.flagged), wherever it was
+ * changed: a pause starting re-arms every "usual" mark, one ending restarts the long-gap count.
+ * Call before reading prompts. Returns whether the log changed (so the caller saves it).
+ */
+export function notePause(store: CycleStore, paused: boolean, today: string): boolean {
+  if (paused === !!store.paused) return false
+  if (paused) { pregnancyRearm(store, today); store.paused = true } else { pregnancyEnded(store, today); delete store.paused }
+  return true
+}
+
 /** "This is usual for me" on a prompt (never on "When to get help"). */
 export function markUsual(store: CycleStore, prompt: Exclude<CyclePrompt, 'no-period'>, today: string): void {
   store.usual = { ...store.usual, [prompt]: { at: today, base: usualBase(store, prompt, today) } }
@@ -494,6 +507,7 @@ export function cleanCycle(x: unknown): CycleStore | undefined {
   if (shown) out.shown = shown as CycleStore['shown']
   if (isDay(c.rearmedAt)) out.rearmedAt = c.rearmedAt
   if (isDay(c.resumedAt)) out.resumedAt = c.resumedAt
+  if (c.paused === true) out.paused = true
   if (Array.isArray(c.setupLog)) {
     const log = c.setupLog.filter((e): e is { at: string; setup: CycleSetup } => !!e && typeof e === 'object' && isDay((e as { at: unknown }).at) && CYCLE_SETUPS.includes((e as { setup: CycleSetup }).setup)).map((e) => ({ at: e.at, setup: e.setup })).slice(-50)
     if (log.length) out.setupLog = log

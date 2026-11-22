@@ -57,7 +57,7 @@ import { KEEP_REMINDERS_WITHOUT_PUSH, onForeground } from '@/data/platform'
 import { supabase, setSession, uuid, nowIso, getUid, getToken, ConsentRequiredError } from '@/data/supabase'
 import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { askPushPermission, pushPermission, pushSupported, subscribePush, resubscribePush, unsubscribePush } from '@/data/push'
-import { withoutHealth, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, applyCycleWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
+import { withoutHealth, cycleAllowed, grantCycle, withoutMissingWeight, canSaveHealthAnswers, healthWithdrawalBackup, HEALTH_WITHDRAW_PROMPT, type HealthDataSummary, hasConsent as consented, healthLoggingAllowed, healthConsentAnswered, migrateLabelConsent, removeLegacyLabelFlag, recordConsent, withdraw, applyHealthWithdrawal, applyCycleWithdrawal, consentLetsSync, pullConsents, pushConsents, consentLog, resumeAfterYes, pendingCloudClear, needsReupload, markReupload, clearHealthData, grantHealth, pauseHealthSync, settleHealthPause, type ConsentType } from '@/data/consent'
 import { deleteAccount as deleteAccountData, defaultDeleteDeps, refreshForRetry, savedSessionUid, wipeDevice, reauthWithGoogle, reauthWithPassword, sessionSignedInRecently, tokenMatchesOwner, type DeleteResult, type ReauthResult } from '@/data/account'
 import { exportBackup } from '@/data/backup'
 import { connectionState, type ConnectionState } from '@/core/domain/connection'
@@ -70,6 +70,8 @@ import type { rerunForAnswers as RerunFn } from '@/core/domain/wizard'
 import { answerTargets, planFromAnswers } from '@/core/domain/answerTargets'
 import { isUnderAge, reminderAction, restoreTurnsOff } from '@/core/domain/age'
 import { stampFields, type MergedField } from '@/core/domain/profileMerge'
+import { cycleLog, deleteCycle, saveCycle, type CycleContext } from '@/data/deviceOnly'
+import { cleanCycle, emptyCycle, notePause, type CycleStore } from '@/core/domain/cycle'
 import { clearNotifyStore, dismissBackoff as dismissBackoffIn, lowMoodShownOn, markLowMoodShown as markLowMoodShownIn, markMedicalReasked as markMedicalReaskedIn, notifyLog, recordNotifyEvents, setSleepMoreOpen, UNLOAD_MAX_NOTES, type NotesContext, type NotifyEvent } from '@/data/deviceOnly'
 import { MIND_REVIEWED } from '@/data/wellbeingFlag'
 import { canSendOutbox, dropOutbox, queueShare, readOutbox, reconcileOutbox, scheduleSend, sendOutbox, SHARED_PRODUCTS_ENABLED } from '@/data/sharedProducts'
@@ -326,6 +328,15 @@ export interface StoreState {
    *  and, through sync, on the server */
   withdrawConsent: (type: ConsentType) => void
   hasConsent: (type: ConsentType) => boolean
+  /**
+   * Cycle (docs/plans/cycle.md; native UI only, behind CYCLE_ENABLED). Edit the device-only Cycle
+   * log: `edit` gets a copy (an empty log on the first edit) and the result is saved through
+   * deviceOnly.saveCycle, which refuses without a current cycle yes (selectCycleContext). The
+   * pregnancy flag is noted first (notePause). Returns whether it was saved.
+   */
+  editCycle: (edit: (log: CycleStore) => void) => boolean
+  /** "Delete all cycle data": works offline and with no consent; records nothing */
+  deleteCycleData: () => boolean
   /** a yes or "Not now" to sharing new products (sp-1, Profile › Privacy sp-5). A no also drops
    *  the reads waiting to be sent */
   setShareProducts: (on: boolean) => void
@@ -1961,8 +1972,9 @@ export const useStore = create<StoreState>()(
       },
 
       grantConsent: (type) => {
-        // a yes to health also uploads what a "Not now" held back on this device
-        set((st) => { if (type === 'health') grantHealth(st.data, meta(st.data)); else recordConsent(st.data, type, true) })
+        // a yes to health also uploads what a "Not now" held back on this device; a cycle yes
+        // needs a current health yes (grantCycle refuses without one)
+        set((st) => { if (type === 'health') grantHealth(st.data, meta(st.data)); else if (type === 'cycle') grantCycle(st.data); else recordConsent(st.data, type, true) })
         saved()
       },
 
@@ -2002,6 +2014,20 @@ export const useStore = create<StoreState>()(
       },
 
       hasConsent: (type) => consented(get().data, type),
+
+      editCycle: (edit) => {
+        const st = get()
+        const ctx = selectCycleContext(st)
+        if (!ctx.cycleYes || !ctx.signedIn || ctx.ownerAsk) return false
+        const log = cleanCycle(structuredClone(cycleLog(st.data, ctx) ?? emptyCycle())) ?? emptyCycle()
+        notePause(log, !!st.data.profile?.pregnancy?.flagged, todayStr())
+        edit(log)
+        let ok = false
+        const stored = deviceWrite((d) => { ok = saveCycle(d, log, ctx) })
+        return ok && stored
+      },
+
+      deleteCycleData: () => deviceWrite((d) => { deleteCycle(d) }),
 
       setShareProducts: (on) => {
         if (on) get().grantConsent('shared-products')
@@ -2398,6 +2424,19 @@ export const useStore = create<StoreState>()(
     }
   }),
 )
+
+/**
+ * Who may read and write the Cycle log (deviceOnly.ts CycleContext): as for the notes, plus a
+ * current cycle yes with a current health yes (consent.ts cycleAllowed).
+ */
+export function selectCycleContext(st: Pick<StoreState, 'signedIn' | 'ownerAsk' | 'data'>): CycleContext {
+  return { signedIn: st.signedIn, ownerAsk: !!st.ownerAsk, cycleYes: cycleAllowed(st.data) }
+}
+
+/** The Cycle log for screens (undefined when Cycle is off or may not be read here). Read-only: edit with editCycle. */
+export function selectCycle(st: Pick<StoreState, 'signedIn' | 'ownerAsk' | 'data'>): CycleStore | undefined {
+  return cycleLog(st.data, selectCycleContext(st))
+}
 
 /**
  * Who may read and write Unload notes (deviceOnly.ts NotesContext; security-data): a signed-in
