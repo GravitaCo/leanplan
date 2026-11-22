@@ -30,8 +30,10 @@ a regulatory adviser and a clinician.
 | 22 Nov | **Answers to N14's eight questions** (in the doc "Cycle: questions for Sara", relayed as hers by Benn): (1) the offer stays women-only, but **anyone 18+ with a health yes can switch Cycle on from its settings, unadvertised** (compliance's Equality Act point; changes the 29 Oct rule for the feature, not the offer); (2) **drop "for example with some contraception"**: the B2 option is "My periods often stop or skip"; (3) spotting carries on a period, never starts one, and backdates the start when flow follows within 2 days; (4) a pregnancy or breastfeeding pause hides the check-in row too; (5) the long-gap prompt for Regular, Irregular (after 180 days) and Prefer not to say is fine for the alpha; (6) "Got it…" after "This is usual for me" is the existing toast; (7) **no X** on the G1/G2 cards; (8) G1 keeps "If this is new for you…". | Sara |
 | 4 Nov | **Alpha runs without a clinician** (Benn's call, relayed by Sara): `compliance` and `mental-performance` check instead, and every "clinician to set" value below is a provisional alpha default until a clinician signs it off before beta. Their fixes (B1, B3b, A2, C1, D4, G1, G2) approved and applied the same day. | Sara |
 
-The Sept plan recommended offering Cycle to anyone. The women-only rule means trans men and
+The Sept plan recommended offering Cycle to anyone. The women-only offer means trans men and
 non-binary people who menstruate won't be offered it, and some women who don't menstruate will.
+Since 22 Nov (Sara) anyone 18+ with a health yes can still turn Cycle on from its settings row
+under Privacy, unadvertised, so the offer is women-only but the feature isn't (§3).
 §3 limits the second effect; the first is the accepted cost of the decision. In-app copy never says
 "for women".
 
@@ -91,7 +93,12 @@ the app or on the website.
 
 ## 3. Who sees it
 
-- **The gate is `profile.sexAnswer === 'female'` and a current health consent yes.** Not `sexOf`,
+- **Two gates (Sara, 22 Nov).** The proactive Profile offer (`cycleOffered`) needs
+  `profile.sexAnswer === 'female'`, a current health yes and age 18+. Turning Cycle on, and running
+  it (`cycleSwitchable`), needs only a current health yes and age 18+, through a "Cycle" row under
+  Profile › Privacy, beside "Delete all cycle data", shown to everyone and never advertised (the
+  board to confirm its place). The rest of this bullet is about the offer.
+- **The offer's gate is `profile.sexAnswer === 'female'` and a current health consent yes.** Not `sexOf`,
   and never the legacy `sex` field. "Prefer not to say" is stored in legacy `sex` as `'F'`
   (`legacySex`, `src/core/domain/onboarding.ts`), and a health withdrawal clears `sexAnswer`
   (it is in `HEALTH_FIELDS`, `src/data/consent.ts`) while legacy `sex` stays, so `sexOf` would then
@@ -129,8 +136,9 @@ the app or on the website.
   your period"), since none of them forecasts. Each answer says plainly what Tali will and won't do.
 - **Pregnancy and breastfeeding** (the existing `profile.pregnancy` flag) pause Cycle's prompts;
   data is kept.
-- **If `sexAnswer` changes away from female,** the entry disappears but the data stays until
-  deleted. "Delete all cycle data" lives under Privacy for everyone.
+- **If `sexAnswer` changes away from female,** the Profile offer disappears; Cycle itself stays
+  as the person set it (on or off, with its data), reachable from the Privacy row, since the
+  feature isn't gated on the answer (22 Nov). "Delete all cycle data" lives under Privacy for everyone.
 - **Under-18s: no** (Benn, 29 Oct). Tali already requires 18+ (`MIN_AGE`, `src/core/legal`), so the
   gate needs no extra age check; a test confirms Cycle is never offered below `MIN_AGE`.
 

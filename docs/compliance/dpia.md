@@ -1044,8 +1044,10 @@ section before Cycle reaches anyone beyond the two of them. Not legal or medical
 
 - **Who:** offered in Profile only to an adult (`MIN_AGE`) whose onboarding sex answer is female
   (`profile.sexAnswer`, never the legacy `sex` field) and who has a current health yes
-  (`cycleOffered`, `src/core/domain/cycle.ts`). Seeing the offer collects nothing; Cycle stays off
-  until the person turns it on.
+  (`cycleOffered`, `src/core/domain/cycle.ts`). Any adult with a current health yes can also turn
+  it on from an unadvertised row under Profile › Privacy, whatever their sex answer
+  (`cycleSwitchable`; Sara, 22 Nov 2026). Seeing the offer collects nothing; Cycle stays off until
+  the person turns it on.
 - **Device only** (`deviceOnly.cycle` in `leanplan.v1`, stamped with the owner account): one setup
   answer from six (regular, irregular, perimenopause, often stop or skip, no periods, prefer not to
   say) with its dated history; per day, flow (stopped to heavy), pain (no pain, a bit, a lot) and
