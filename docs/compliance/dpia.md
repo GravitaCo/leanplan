@@ -1419,8 +1419,8 @@ Scores on the section 5 scale, proposed 16 Nov, not confirmed.
   name a condition, grade severity or say "abnormal"; once per episode and at most every 91 days;
   "usual for me" marks; paused during pregnancy or breastfeeding (the check-in row too); the
   no-period hold stops deficit suggestions rather than adding food targets; cycle data never feeds
-  the hard-day or week-picture logic; `mental-performance` reviewed the built screens (register item
-  49, 22 Nov). Gaps: no PMDD-specific or mood-linked prompt (by design); the 111 signpost is wrong in
+  the hard-day or week-picture logic; `mental-performance` reviewed the native build with `security-data`,
+  `design` and `compliance` (commit `ca09417` on `claude/native-build`). Gaps: no PMDD-specific or mood-linked prompt (by design); the 111 signpost is wrong in
   Northern Ireland (register item 44); `NHS.pain` should move to the current NHS period pain page
   (item 49). Required: a clinician signs off before beta (`cycle.md` §10 item 2). Residual:
   **high** until the clinician review, which is why Cycle stays with Benn and Sara.
