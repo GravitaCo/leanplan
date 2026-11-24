@@ -1024,7 +1024,7 @@ D1), as in section 4.8.
 |---|---|---|
 | Section 8 approved by | Benn, 10 October 2026 | Scores in 8.4 confirmed as proposed. The flag still waits on the rows below. |
 | Clinician advice (Mind) | | Before `MIND_REVIEWED` goes on. |
-| Register item 42 deployed | | Before or with the flag. `notify_sent` migration applied in full 10 October 2026; the reminder function is still to deploy. |
+| Register item 42 deployed | | Before or with the flag. `notify_sent` migration applied in full 10 October 2026; the reminder function is still to deploy. *(Status, 24 Nov: deployed 10 Oct as v8 per register item 42; v13 live since 5 Nov, run every minute by pg_cron.)* |
 | Register item 44 decided | | Benn with mental-performance. |
 
 ### 8.8 Note for Benn: B12 and B11b (proposed 10 October 2026, not signed)
@@ -1064,7 +1064,7 @@ end to end, so the push service can't read it" holds for the web only. Proposed 
 
 | # | Risk to individuals | Likelihood | Severity | Overall |
 |---|---|---|---|---|
-| R19 | **Through Apple's push service the reminder text** (and supplement names, if they were sent) **and its timing are readable by Apple**, which can link them to the person's Apple ID. The wind-down reminder's timing says something about the person's sleep routine. | Remote | Significant | Low to medium |
+| R30 | **Through Apple's push service the reminder text** (and supplement names, if they were sent) **and its timing are readable by Apple**, which can link them to the person's Apple ID. The wind-down reminder's timing says something about the person's sleep routine. | Remote | Significant | Low to medium |
 
   Proposed measures, all built on `native/n12-notifications`: fixed copy only, the same as the web
   (`_shared/apns.ts` `shownCopy`, checked against `public/sw.js` in `npm test`); supplement names are
@@ -1074,8 +1074,17 @@ end to end, so the push service can't read it" holds for the web only. Proposed 
   `apns-expiration` one hour, so Apple stops trying to deliver an undelivered reminder after an hour (what Apple logs is governed by its own terms: open item); the function
   logs status codes only; the privacy policy says Apple can read iPhone reminders (gated on
   `native`). Open: Apple's role and data terms for APNs under the Apple Developer Program License
-  Agreement, and the transfer mechanism (Apple Inc., US). An alternative that removes R19 is a
+  Agreement, and the transfer mechanism (Apple Inc., US). An alternative that removes R30 is a
   Notification Service Extension that decrypts an encrypted payload on the phone (noted only).
+
+  *Status note, 24 Nov 2026 (compliance; not part of any signature):* this risk was numbered R19
+  when drafted, which section 9.5 already used for label photos; it is R30 from 24 Nov, and the
+  register's APNs row should follow. Still not live: the native-push migration is not applied and
+  the APNs key steps are not recorded as done (section 2.5). The iPhone app's Notification Service
+  Extension, now built, hands the alert back unchanged and only records `{id, kind, at}` in the
+  App Group, so it doesn't change R30. Supplement names in reminders (8.8, B11b) are still off:
+  `SUPP_NAMES_ENABLED` is off by default on `main`, and nothing in the repo records
+  `APNS_SUPP_NAMES` as set.
 
 | Item | Name and date | Notes |
 |---|---|---|
@@ -1120,6 +1129,11 @@ with the clinician review moved to a gate before public launch. Four things to r
 | Item | Name and date | Notes |
 |---|---|---|
 | 8.9 noted by | Benn, 10 October 2026 (in the build conversation) | Benn's words: "switch on once live then update the DPIA and when we have the money a clinician will review. again no public access yet". Benn rates R15 medium while access stays non-public. Recorded fact: sign-up at app.tilo.fit is technically open to anyone with the link (`src/screens/AuthScreen.tsx`, plain sign-up); the app isn't publicised. Recommended, not done: turn off "Allow new users to sign up" in Supabase Auth and add testers by invite, so "non-public" is enforced rather than relied on. If the app is publicised or sign-ups from unknown people appear before the clinician review, R15 is high and 7.3 applies. |
+
+*Status note, 24 Nov 2026 (compliance; not part of any signature):* the 8.9 recommendation is
+still open: whether "Allow new users to sign up" is off in Supabase Auth is not verified (D13), and
+one account was created on 16 Nov 2026. The Mind clinician review is not done. R15 stays medium only
+while access is non-public in practice.
 
 ## 9. Addendum: label photos (Anthropic) and the shared product list
 
@@ -1272,6 +1286,12 @@ privacy policy say so. A version can still be taken down after a report.
 | Section 9 approved by | Benn, Gravita Creative Ltd, 11 Oct 2026 | Approves label photo scanning and the shared product list. Before `LABEL_SCAN_ENABLED` reaches `main`. |
 | Anthropic DPA and transfer mechanism recorded | Compliance, 11 Oct 2026 (API organisation confirmed by Benn the same day) | EU SCCs Module Two/Three with the UK Addendum (DPA s. I, Sch. 3); see 9.4. Register item 24. |
 | `security-data` fix for day-level ordering | | Register item 46; should fix, not a gate. |
+
+*Status note, 24 Nov 2026 (compliance; not part of the signature):* label reading and the shared
+list run unchanged (`ai-read-label` and the three product functions live, last deployed 5 Nov; 3
+`ai_usage` rows and 0 shared products on 24 Nov). The iPhone app uses the same path; its temporary
+photo files are described in section 2.5 and add no new risk. Whether the item 46 ordering fix and
+the Console billing-country check (9.4) are done was not checked.
 
 ---
 
