@@ -41,7 +41,8 @@ explicit consent (Art. 9(2)(a)) given on the consent screen. Data lives on the p
 first and syncs to Supabase in Ireland only after a yes; the server refuses log uploads without
 one. Label photos go to Anthropic to be read, with no identifiers (signed off in section 9). The
 web app at app.tilo.fit is used by a small closed group (11 accounts on 24 November 2026). An
-iPhone app is in TestFlight internal testing with Benn and Sara (section 2.5). Nothing is sold,
+iPhone app is in TestFlight internal testing with Benn and Sara (reported by the lead engineer;
+section 2.5). Nothing is sold,
 advertised or used for analytics.
 
 **Residual risks after the measures in section 6** (section 5 has the scale):
@@ -53,7 +54,12 @@ advertised or used for analytics.
   beyond closed testers without a clinician's review (D1); R15 (section 8) if the app becomes
   public before the Mind clinician review; R23 and R26 (Cycle, section 10) for anyone beyond Benn
   and Sara.
-- **Low:** everything else, including the 28 October purge (done) and withdrawal.
+- **Also medium today:** R10 until the ICO fee (D3) is paid; R17 (section 8) until the
+  nation-neutral signposting is settled everywhere.
+- **Low:** everything else in sections 5 and 8 and 9, including the 28 October purge (done) and
+  withdrawal.
+- **Not approved here:** features that are off in every build (Cycle, section 10; Apple Health,
+  section 11; APNs reminders, R30) are scored in their own sections and need their own sign-off.
 - **No legal advice behind any of this.** Benn decided on 16 November 2026 not to instruct a
   lawyer for now (section 3, D15). Every legal judgement here is the `compliance` agent's,
   unreviewed.
@@ -111,7 +117,7 @@ has the sign-off table.
 | D12 | EU users (Art. 27 representative) and a DPO (Art. 37). | Open (register item 8). | **No DPO for now**; decide whether EU users are targeted before public launch or an App Store listing in EU storefronts. |
 | D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth (the setting can't be read with the checks used here); 1 account was created after 30 Sept, on 16 Nov 2026. | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
 | D14 | iPhone backups: the iPhone app keeps its data (the whole log, the Unload notes and, once used, the Cycle log) in the app's container, included in the phone's backups (`apps/native/lib/platform/storage.ts`), so a copy goes wherever the person's backups go (iCloud or a computer). | **New, open** (also open as item 9 of `native-app-plan.md` §3.5 and `apple-health-gate1.md` §3). | **Exclude the whole store from iPhone backups** before the iPhone app reaches anyone beyond the core team, or record why not and say so in the policy. Apple guideline 5.1.3(ii) bars HealthKit data in iCloud, which settles it for section 11 in any case. |
-| D15 | Legal advice. Several calls here are legal judgements made by an AI agent (D7, D10, 4.7, 7.3, the Cycle basis in section 10, the Equality Act point in `cycle.md` §10 item 4). | **Decided by Benn, 16 Nov 2026: no lawyer at this time.** His words: "We do not need lawyer at this time" (recorded in `docs/plans/cycle.md` §10 item 4, where it was given about Cycle; this DPIA applies it to all legal review, as Benn asked for this refresh). Every "solicitor" row here reads "not sought yet". | Accept for the closed test, knowingly: the risk is that a judgement here is wrong and nobody qualified catches it before a regulator or a user does (most exposed: D7 conditional consent, R12; the Art. 22 reasoning, 4.7; the prior-consultation view, 7.3; Cycle's women-only offer under the Equality Act). **Reconsider before public launch, an App Store listing, the new company or any paid tier**, and before Cycle goes beyond Benn and Sara if the Cycle residuals in 10.6 stay high. |
+| D15 | Legal advice. Several calls here are legal judgements made by an AI agent (D7, D10, 4.7, 7.3, the Cycle basis in section 10, the Equality Act point in `cycle.md` §10 item 4). | **Decided by Benn, 16 Nov 2026: no lawyer at this time.** His words: "We do not need lawyer at this time" (recorded in `docs/plans/cycle.md` §10 item 4, where it was given about Cycle; this DPIA applies it to all legal review, which Benn confirms or narrows by signing summary item 5). No solicitor's advice is recorded anywhere here. | Accept for the closed test, knowingly: the risk is that a judgement here is wrong and nobody qualified catches it before a regulator or a user does (most exposed: D7 conditional consent, R12; the Art. 22 reasoning, 4.7; the prior-consultation view, 7.3; Cycle's women-only offer under the Equality Act). **Reconsider before public launch, an App Store listing, the new company or any paid tier**, and before Cycle goes beyond Benn and Sara if the Cycle residuals in 10.6 stay high. |
 
 ---
 
@@ -263,7 +269,7 @@ and checked where noted):
 | Anthropic (Anthropic Ireland, Limited under the Commercial Terms) | Processor: reads label photos (section 9) | US processing likely | The photos only, no identifiers |
 | Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts`) |
 | Google (sign-in) | Independent controller | Global | Only for people who choose Google |
-| Apple (Sign in with Apple, iPhone app) | Independent controller for the sign-in (register) | Apple Inc., US | Only for people who choose it; 2 Apple identities existed on 24 Nov 2026 (who they belong to was not checked; Benn reported a Hide My Email account of his own, `native-build-plan.md` §10) |
+| Apple (Sign in with Apple, iPhone app) | Independent controller for the sign-in (register) | Apple Inc., US | Only for people who choose it; 2 Apple identities existed on 24 Nov 2026 (who they belong to was not checked; a Hide My Email sign-in made a separate account, `native-build-plan.md` §10) |
 | Apple, Google, Mozilla push services (web) | Deliver reminders | Global | An encrypted payload with fixed text |
 | Apple Push Notification service (iPhone app) | Delivers iPhone reminders: **not live** | Apple Inc., US | Would see the device token, timing and the fixed text (section 8.8, R30) |
 | Apple (TestFlight, App Store Connect, the phone's own backups) | Platform; role and terms not recorded | Apple Inc., US | Section 2.5 |
@@ -423,16 +429,17 @@ The benefit to the person is a private, offline-capable log with suggestions tha
 health situation. The benefit to Gravita is a product it can launch. No purpose involves selling,
 advertising, research or profiling for anyone else.
 
-
 ### 2.5 The iPhone app (TestFlight, core team only)
 
 **Status.** A native iPhone app (`apps/native`, React Native with Expo; bundle `fit.tilo.app`) is
 built on `claude/native-build` (not on `main`) and reuses the web app's shared code (`src/core`,
 `src/data`, `src/store`) unchanged, so it talks to the same Supabase project with the same consent
 gate, sync, server enforcement, withdrawal and deletion as the web. Benn reported on 16 Nov that
-build 16 ran on his iPhone (`native-build-plan.md` §10). **Since 18 November 2026 it is in TestFlight
-internal testing with Benn and Sara** (as reported to compliance for this refresh; the date is not
-recorded in the repo). An App Store Connect app record exists (`ascAppId` in `apps/native/eas.json`).
+build 16 ran on his iPhone (`native-build-plan.md` §10). **It is in TestFlight internal testing
+with Benn and Sara.** Not verified in the repo: this is reported by the lead engineer, who set it up
+(App Store Connect accepted the build and both installed it through TestFlight by 24 November 2026;
+the start date is not recorded). `native-build-plan.md` §10 on `claude/native-build` is out of date
+here: it still lists TestFlight as open. An App Store Connect app record exists (`ascAppId` in `apps/native/eas.json`).
 Benn and Sara are Gravita's core team, informed about how the app works, so the policy text for the
 iPhone app (`privacyPolicy({ native })`, written on `main`, off) may wait until anyone else gets a
 build. The phase 1 exit is not reached: push, the privacy manifest's collected-data types, the App
@@ -470,6 +477,7 @@ privacy label; the 8.8 APNs addendum signed before APNs reminders go live; the A
 recorded (D4); the `/lab` screen and diagnostics kept out of that build; the store age rating 18+
 (D8); and the provisioning profile's unused HealthKit `health-records` access dropped
 (`native-build-plan.md` §10).
+
 ---
 
 ## 3. Consultation
@@ -676,7 +684,7 @@ and R31 and R32 are new on 24 November (the iPhone app).
 | R12 | **Consent not freely given**: new users can only use Tilo if they agree (D7), which a regulator could see as conditional consent. | Possible | Significant | Medium |
 | R13 | **Controller change**: when the new company takes over, consents given to Gravita Creative Ltd do not carry over automatically and data could be moved without a basis. | Probable (planned) | Significant | Medium |
 | R31 | **iPhone backups carry the whole log**: the iPhone app's store (log, Unload notes, and the Cycle log once used) is copied into the phone's iCloud or computer backups, where it outlives withdrawal, account deletion and deleting the app until the backup is replaced, and is exposed if the backup account or computer is. Apple guideline 5.1.3(ii) bars HealthKit-derived data in iCloud. | Possible | Significant | Medium |
-| R32 | **Sign in with Apple not revoked on deletion**: until the revocation step is deployed, a deleted account leaves Tilo listed in the person's Apple Account and Tilo listed under the person's Apple Account sign-in settings until they remove it there (no Tilo data stays). | Probable (as deployed) | Minimal | Low |
+| R32 | **Sign in with Apple not revoked on deletion**: until the revocation step is deployed, a deleted account leaves Tilo listed under the person's Apple Account sign-in settings until they remove it there (no Tilo data stays). | Probable (as deployed) | Minimal | Low |
 
 ---
 
@@ -862,6 +870,7 @@ done unless a status note says so.
 - **Recommended:** set the four `APPLE_*` secrets and deploy `delete-account` from `main` before
   anyone beyond the core team (App Store guideline 5.1.1(v)).
 - **Residual:** **low**.
+
 ---
 
 ## 7. Sign-off and outcomes
@@ -876,7 +885,7 @@ done unless a status note says so.
 | Onboarding wizard on for closed testers | | Confirms the DPIA part of the onboarding launch gate for closed testers only (summary item 4); D1 stays a condition for anyone beyond them. |
 | D14 iPhone backups | | Exclude the whole store, or keep it in backups and say so in the policy. |
 | DPO advice | Not applicable: no DPO appointed (D12) | |
-| Solicitor advice | Not sought yet (D15) | Benn, 16 Nov 2026: "We do not need lawyer at this time". Risk accepted: the legal judgements here (D7, D10, 4.7, 7.3, section 10) are unreviewed. Reconsider before public launch, an App Store listing, the new company or paid tiers. |
+| Solicitor advice | | Benn, 16 Nov 2026: "We do not need lawyer at this time". Risk to accept by signing (summary item 5): the legal judgements here (D7, D10, 4.7, 7.3, section 10) are unreviewed. Reconsider before public launch, an App Store listing, the new company or paid tiers. |
 | Clinician advice | | Summary of the clinical review (D1). Not done on 24 Nov. |
 | ICO prior consultation needed? | | See 7.3 for the reasoned view. |
 | Consultation responses (users) | | Whether users were consulted, and if not, why (section 3). |
@@ -1081,7 +1090,7 @@ end to end, so the push service can't read it" holds for the web only. Proposed 
 
   *Status note, 24 Nov 2026 (compliance; not part of any signature):* this risk was numbered R19
   when drafted, which section 9.5 already used for label photos; it is R30 from 24 Nov, and the
-  register's APNs row should follow. Still not live: the native-push migration is not applied and
+  register's APNs row has been updated to match. Still not live: the native-push migration is not applied and
   the APNs key steps are not recorded as done (section 2.5). The iPhone app's Notification Service
   Extension, now built, hands the alert back unchanged and only records `{id, kind, at}` in the
   App Group, so it doesn't change R30. Supplement names in reminders (8.8, B11b) are still off:
