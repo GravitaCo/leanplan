@@ -1295,6 +1295,174 @@ the Console billing-country check (9.4) are done was not checked.
 
 ---
 
+## 10. Addendum: Cycle (iPhone app only; built, off)
+
+**DRAFT, not signed.** First drafted by `compliance` on 16 November 2026 on `native/n14-cycle`
+(the copy in `docs/compliance/dpia.md` on `claude/native-build`), updated with the 22 November
+review of the built native screens (register item 49 on `claude/native-build`) and folded in here
+on 24 November 2026 against `claude/native-build` at `d179ad0`. When `claude/native-build` merges,
+this version replaces that branch's section 10. Plan: `docs/plans/cycle.md` §0, §3, §5.1, §6;
+questions and Sara's answers: `docs/plans/cycle-questions.md`; regulatory check:
+`docs/plans/cycle-checks.md`; register: the two Cycle rows and item 49 (on `claude/native-build`).
+Benn or Sara signs this section before Cycle reaches anyone beyond the two of them. Not legal or
+medical advice.
+
+**Where it stands on 24 Nov 2026.**
+- **iPhone app only** (Benn, 16 Nov: "Note cycle is for native app"; `cycle.md` §0). The screens are
+  in `apps/native/screens/cycle/` and behind `CYCLE_ENABLED` in Profile, the check-in, Train and the
+  weekly review; the logic is UI-free in `src/core/domain/cycle.ts`. The web app has no Cycle
+  screens.
+- **Off:** `CYCLE_ENABLED` (`src/data/cycleFlag.ts`) is false unless a build sets `VITE_CYCLE=1`,
+  meant for Benn's and Sara's builds only. Not verified whether the TestFlight build sets it: the
+  `testflight` profile in `apps/native/eas.json` doesn't, but EAS environment settings could.
+- **The cycle consent can't reach the server yet:** the `consents` type check accepts only `health`,
+  `ai`, `label-photo` and `shared-products` (checked live 24 Nov), so
+  `docs/migrations/2026-11-16-cycle-consent.sql` is **not applied**. Until it is, a cycle yes or no
+  stays on the phone, and a cycle withdrawal doesn't reach the person's other phones, which the
+  gated policy text says it does. The flag's own comment and `native-build-plan.md` §10 say Benn
+  applies it before any build sets `VITE_CYCLE=1`.
+- **Order** (Benn, 22 Nov, `apple-health-gate1.md`): Cycle, then onboarding on, then Apple Health.
+  Cycle's offer reads the onboarding sex answer, so onboarding has to be on for the offer to reach
+  anyone through the normal path.
+
+### 10.1 Processing
+
+- **Who:** offered in Profile only to an adult (`MIN_AGE`) whose onboarding sex answer is female
+  (`profile.sexAnswer`, never the legacy `sex` field) and who has a current health yes
+  (`cycleOffered`). Since 22 Nov (Sara) anyone 18 or over with a current health yes can also turn it
+  on from an unadvertised row under Profile › Privacy, whatever their sex answer
+  (`cycleSwitchable`; the Equality Act point in `cycle-checks.md` item 2). Seeing the offer collects
+  nothing; Cycle stays off until the person turns it on.
+- **Device only** (`deviceOnly.cycle` in `leanplan.v1`, stamped with the owner account): one setup
+  answer from six (regular, irregular, perimenopause, "My periods often stop or skip", no periods,
+  prefer not to say) with its dated history (`setupLog`, up to 50 entries, kept for the alpha
+  review); per day, flow (stopped to heavy), pain (no pain, a bit, a lot) and symptom chips from a
+  fixed list; which safety prompts showed and when; "usual for me" marks; the day the gap question
+  was answered (`gapAnswered`) and a `paused` flag during a pregnancy or breastfeeding pause (not
+  which). No free text. A device-only "offer hidden" flag (`ui.cycleHidden`) carries no reason.
+- **Server:** only the `cycle` consent record (type, version `2026-11-v1`, yes or no, time) in
+  `consents`, once the migration is applied. No new table. The cycle yes is recorded at B3's "Turn on
+  Your cycle", so leaving setup part way leaves no yes.
+- **Processing on the phone** (still Tilo's processing, register item 27): Day N of a period; when
+  the "Period today?" row shows in the check-in (an internal usual-start estimate that is never
+  shown, exported or sent anywhere); "a lot" of pain as one signal to the lighter-session offer
+  (Train and Today only); a weigh-in note in a week with logged flow; four signpost prompts (long
+  bleed, heavy, pain, no period); no "eat less" option in the weekly review for two weeks after a
+  logged bleed; and, while the no-period prompt would be due, a hold on deficit suggestions
+  (`holdsDeficit`). Cycle data never feeds `lowSignals`, `hardDay` or `weekPicture`.
+- **Export:** the whole-state JSON export includes the Cycle log; "Export my cycle log" shares the
+  Cycle log alone through the share sheet (the iOS cache copy is deleted when the sheet closes).
+  Both unencrypted.
+- **Sex answer, new purpose:** collected for the energy estimate; it now also decides whether Cycle
+  is offered (Art. 5(1)(b), 6(4)). Compatible in my view: same relationship, same person, no new
+  recipient, and the only effect is an offer the person can ignore. Disclosed in the gated policy
+  text.
+
+### 10.2 Lawful basis
+
+Art. 6(1)(b) with Art. 9(2)(a) explicit consent, through a separate `cycle` consent that requires a
+current health yes (`grantCycle`). Separate, not a rewording of the health consent, so it stays
+specific (Art. 4(11), 9(2)(a); EDPB Guidelines 05/2020 on consent) and the health consent isn't
+re-asked of everyone. The ICO names signing up to a period tracker as an example of sex-life data,
+so the log, the consent record and the hidden-offer flag are treated as possibly sex-life as well as
+health data (Art. 9(1)). The B1 consent wording as built (reviewed 22 Nov) is explicit, specific and
+unticked, names "sexual and reproductive health", the withdrawal path and the policy. The consent
+record's basis follows D10. No lawyer has reviewed this (D15).
+
+### 10.3 Minimisation
+
+- Device only in v1; nothing about the log reaches the server (`scripts/test-cycle.ts` sentinel).
+- Fixed lists only; no free text, now or later.
+- No contraception question, and the contraception example is gone: the option is "My periods often
+  stop or skip" (Sara, 22 Nov; register item 49(d), done).
+- No forecast is ever stored for display; the usual-start estimate is computed, used for row timing
+  and discarded.
+- No synced "offer hidden" flag exists; the device-only one carries no reason, but only "I don't have
+  periods" sets it, so it is treated as possibly special category and named in the gated policy.
+- Open: `setupLog` keeps up to 50 dated setup answers for the alpha review; delete it before beta or
+  justify keeping it (R25).
+
+### 10.4 New risks
+
+Scores on the section 5 scale, proposed 16 Nov, not confirmed.
+
+| # | Risk to individuals | Likelihood | Severity | Overall |
+|---|---|---|---|---|
+| R23 | **Exposure on a shared phone, or to a coercive partner or family member**, who opens the app on an unlocked phone and reads the log (periods, a gap, a setup answer). There is no app lock; only the phone's lock protects it. The phone's backups also hold the log (R31). | Possible | Severe | High |
+| R24 | **The unencrypted exports** (the whole device state, or the Cycle log alone) are kept in Files, synced to a cloud drive or shared by mistake. | Possible | Significant | Medium |
+| R25 | **The setup answer or the log reveals reproductive or sex-life facts** (perimenopause, periods stopping, a long gap that may suggest pregnancy or contraception). Stored on the device; inferred by anyone who sees it. | Possible | Significant | Medium |
+| R26 | **Safety harm from the prompts and holds**: PMDD or severe pain not signposted, or signposted badly; prompts that read as judging; disordered eating worsened, for example a gap from under-eating met with diet suggestions. | Possible | Severe | High |
+| R27 | **Provisional thresholds with no clinician review** (`CYCLE_THRESHOLDS`, marked provisional) under- or over-prompt. | Probable (as built) | Significant | Medium |
+| R28 | **Withdrawal not fully honoured across phones**: another phone keeps its log until it next connects; until the migration is applied, a cycle "no" doesn't sync at all; an export or a phone backup keeps a copy. | Possible | Significant | Medium |
+| R29 | **Treated as a medical device or a contraception aid**, or a person relies on Tilo instead of seeing a GP. | Remote | Severe | Medium |
+
+### 10.5 Measures
+
+- **R23 Shared phone, coercive partner.** In place: off by default (the offer is one quiet line in
+  Profile, never a modal); the owner stamp and the owner check (another account signing in never
+  sees it or carries it); notifications never mention periods; "Delete all cycle data" works offline
+  and at once; "remove from this device" wipes it. Recommended: Cycle settings and setup say plainly
+  that only the phone's lock protects the log; consider a discreet name for the entry (a design
+  question for Benn and Sara); D14 (keep the store out of backups). An app lock is not planned.
+  Residual: **high** until Benn and Sara decide whether an on-screen warning is enough for wider
+  testers; I can't honestly score it lower without a measure that protects data on an unlocked
+  phone.
+- **R24 Exports.** In place: the gated policy says both exports are unencrypted; the Cycle page says
+  so for "Export my cycle log"; the backup import needs a current cycle yes and never overwrites
+  this device's log (`mergeCycleForImport`). Recommended: the whole-state export screen says the
+  file includes the Cycle log and isn't encrypted (`cycle.md` §6 must-have 5). Residual: **medium**.
+- **R25 Setup answer.** In place: device only; six fixed options, including prefer not to say;
+  never asks why; changeable at any time; the contraception example dropped. Recommended: delete
+  `setupLog` before beta, or justify keeping it. Residual: **low** with that done, **medium** until
+  then.
+- **R26 Safety (PMDD, disordered eating).** In place: prompts only signpost (GP, NHS 111), never
+  name a condition, grade severity or say "abnormal"; once per episode and at most every 91 days;
+  "usual for me" marks; paused during pregnancy or breastfeeding (the check-in row too); the
+  no-period hold stops deficit suggestions rather than adding food targets; cycle data never feeds
+  the hard-day or week-picture logic; `mental-performance` reviewed the built screens (register item
+  49, 22 Nov). Gaps: no PMDD-specific or mood-linked prompt (by design); the 111 signpost is wrong in
+  Northern Ireland (register item 44); `NHS.pain` should move to the current NHS period pain page
+  (item 49). Required: a clinician signs off before beta (`cycle.md` §10 item 2). Residual:
+  **high** until the clinician review, which is why Cycle stays with Benn and Sara.
+- **R27 Thresholds.** In place: `CYCLE_THRESHOLDS.provisional`; the flag limited to Benn and Sara.
+  Required before beta: clinician sign-off; testers told the thresholds are provisional. Residual:
+  **medium** for the alpha, **low** after sign-off.
+- **R28 Withdrawal.** In place: turning Cycle off deletes the log on that phone and records a cycle
+  "no"; a health withdrawal deletes it and records a cycle "no"; a pulled cycle "no" deletes the log
+  on other phones (`applyCycleWithdrawal`, built); the policy says the export keeps a copy.
+  Required: the migration applied before any `VITE_CYCLE=1` build is used. Residual: **low** once
+  applied; **medium** until then.
+- **R29 Medical device.** In place: the intended-purpose statement (register Cycle row); no
+  forecast, phase, fertility or "abnormal" language; the internal estimate never shown; the deficit
+  hold worded as Tilo pausing its own suggestion. Recommended: the statement in the terms and in the
+  Cycle screens (still open on 22 Nov); ASA/CAP rules for any marketing (`cycle-checks.md` item 4);
+  an optional MHRA borderline enquiry before public launch. Residual: **low**; unknown whether
+  MHRA would agree.
+
+### 10.6 ICO prior consultation (section 7.3 re-checked)
+
+Cycle adds two risks I can't score below high today: R23 and R26. Art. 36(1) asks whether a high
+risk remains after the controller's measures. My view, not checked by a lawyer (D15):
+
+- **Alpha (Benn and Sara only):** no consultation needed. They are the controller's own people,
+  fully informed, and can stop at any time.
+- **Wider testers or the public:** **unknown**. If R26 falls to medium after the clinician review
+  and Benn and Sara accept a clear on-screen warning as the R23 measure with a residual of medium,
+  the 7.3 conclusion stands. If either stays high, consult the ICO first, or don't release Cycle.
+
+### 10.7 Sign-off
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 10 approved by | | Benn or Sara. Before Cycle reaches anyone beyond the two of them. Confirm or change the scores in 10.4. |
+| Residual risk for R23 and R26 | | Accepted at medium, or prior consultation (10.6). |
+| Clinician sign-off of `CYCLE_THRESHOLDS` and the prompts | | Before beta (`cycle.md` §10 item 2). |
+| Migration `2026-11-16-cycle-consent.sql` applied | | Benn, after `security-data`. Before any `VITE_CYCLE=1` build is used. Not applied on 24 Nov. |
+| Cycle policy text published | | With the flag beyond Benn and Sara, after `ship-critic` and Benn's go-ahead (register item 49(c)); the cookie policy's Cycle clause (49(e)) with it. |
+| Solicitor advice (Equality Act offer, sex-life data) | Not sought yet (D15) | `cycle.md` §10 item 4. |
+
+---
+
 ## Sources checked
 
 - Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.
