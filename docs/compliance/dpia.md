@@ -1,15 +1,16 @@
 # Tilo: Data Protection Impact Assessment (UK GDPR Art. 35)
 
-**Status: for Benn's signature (sections 1 to 7). Refreshed 22 November 2026. Not yet signed.**
+**Status: for Benn's signature (sections 1 to 7). Refreshed 24 November 2026. Not yet signed.**
 First drafted on 30 September 2026 by the `compliance` agent (an AI assistant) for Benn, director
 of Gravita Creative Ltd; updated 1 October 2026 (Onboarding 9) and 24 October 2026 (the medical
-outcome split). Refreshed on 22 November 2026 from `main` at `fc3f7c5`, the native iPhone app on
-`origin/claude/native-build` at `518063e`, the Apple Health plan on
-`origin/claude/hopeful-thompson-5fqm2l` at `510db4f`, the compliance register
-(`docs/compliance/README.md`), read-only checks on the live Supabase project and the live
-website, all on 22 November 2026. Sections 8 (Mind) and 9 (label photos and the shared list) were
-signed by Benn on 10 and 11 October 2026 and are not changed, except for dated status notes
-marked as such.
+outcome split). Refreshed between 22 and 24 November 2026 from `main` at `fc3f7c5`, the native
+iPhone app and the Cycle and Apple Health plans on `origin/claude/native-build` at `d179ad0`, and the
+compliance register (`docs/compliance/README.md`, with its Cycle rows on `claude/native-build`).
+Read-only checks on the live Supabase project were made on 22 November and repeated on 24 November
+2026 (counts and settings only, no row content); the live website was checked on 22 November.
+Sections 8 (Mind) and 9 (label photos and the shared list) were signed by Benn on 10 and 11 October
+2026 and are not changed, except for dated status notes marked as such and one renumbering (the
+APNs risk in 8.8 was numbered R19, which section 9 already used; it is R30 from 24 November).
 
 **This is not legal advice.** It was drafted with AI help and has not been reviewed by a lawyer:
 Benn decided on 16 November 2026 not to seek one for now (section 3). It records how Tilo works and
@@ -38,71 +39,77 @@ Tilo works out ranges, plans and gentle suggestions from them. Almost all of it 
 (special category, UK GDPR Art. 9), processed on the basis of the contract (Art. 6(1)(b)) and
 explicit consent (Art. 9(2)(a)) given on the consent screen. Data lives on the person's phone
 first and syncs to Supabase in Ireland only after a yes; the server refuses log uploads without
-one. Label photos go to Anthropic to be read (signed off in section 9). The web app at
-app.tilo.fit is used by a small closed group (11 accounts on 22 November 2026). An iPhone app is in
-TestFlight internal testing with Benn and Sara (section 2.5). Nothing is sold, advertised or
-used for analytics.
+one. Label photos go to Anthropic to be read, with no identifiers (signed off in section 9). The
+web app at app.tilo.fit is used by a small closed group (11 accounts on 24 November 2026). An
+iPhone app is in TestFlight internal testing with Benn and Sara (section 2.5). Nothing is sold,
+advertised or used for analytics.
 
 **Residual risks after the measures in section 6** (section 5 has the scale):
 - **Medium:** R1 a breach of cloud health data (severity can't fall below severe; likelihood
-  remote); R3 wrong safety routing, but only once D1 is done (high without it); R4 under-18 use;
-  R7 transfers until the processor contracts (D4) are recorded; R12 conditional consent (no
-  solicitor view); R31 the iPhone app's data in phone backups, until Benn decides D14.
+  remote); R3 wrong safety routing, but only once D1 is done; R4 under-18 use; R7 transfers until
+  the processor contracts (D4) are recorded; R12 conditional consent, with no legal view sought;
+  R31 the iPhone app's data in phone backups, until Benn decides D14.
 - **High, and the reason for the conditions below:** R3 if the onboarding wizard reaches people
   beyond closed testers without a clinician's review (D1); R15 (section 8) if the app becomes
   public before the Mind clinician review; R23 and R26 (Cycle, section 10) for anyone beyond Benn
   and Sara.
 - **Low:** everything else, including the 28 October purge (done) and withdrawal.
+- **No legal advice behind any of this.** Benn decided on 16 November 2026 not to instruct a
+  lawyer for now (section 3, D15). Every legal judgement here is the `compliance` agent's,
+  unreviewed.
 
 **What your signature on sections 1 to 7 approves.**
-1. The processing described in sections 2 to 4 as it runs on 22 November 2026: the web app for
+1. The processing described in sections 2 to 4 as it runs on 24 November 2026: the web app for
    the closed test group, and the iPhone app in TestFlight for Gravita's core team (Benn and
    Sara), with the measures "in place" in section 6 and the residual risks above.
 2. The recommended measures in section 6 that you tick in 7.1, with owners and dates.
 3. The view in 7.3 that ICO prior consultation is not needed on the stated conditions.
-4. That the DPIA launch gate for the onboarding wizard (`first-run-onboarding.md` §9 and phase 1
-   of §10; register items 7 and 34) is met **for closed testers only**: the wizard
-   (`ONBOARDING_ENABLED`) may be switched on, through its own `ship-critic` pass, for people who
+4. That the DPIA part of the onboarding launch gate (`first-run-onboarding.md` §9 "Launch gate"
+   and phase 1 of §10; register items 7 and 34) is met **for closed testers only**: the wizard
+   (`ONBOARDING_ENABLED`) may then be switched on, through its own `ship-critic` pass, for people who
    are actually closed testers.
+5. Accepting, for now, the risk of having no legal advice (D15).
 
 **What stays conditional (not approved by this signature).**
 - **D1, a clinician's review** of the wellbeing question, the readiness and medical questions and
   the routing, before the wizard reaches anyone beyond closed testers. "Closed" has to be real:
   sign-up at app.tilo.fit is open to anyone with the link today (D13).
-- Before the wizard goes on at all: the open build fixes in register item 34 (the weight copy that
-  says weight is hidden), and publishing the onboarding version of the texts with that release.
+- Before the wizard goes on at all: the open build fix in register item 34 (copy that says weight
+  is hidden, when the weight sheet and Profile still show it), and publishing the onboarding
+  version of the texts with that release.
 - Section 8.8 (supplement names) and its APNs addendum (R30): unsigned; names stay off.
 - Section 10 (Cycle): a separate sign-off, before Cycle reaches anyone beyond Benn and Sara.
-- Section 11 (Apple Health, phase 2): planned; nothing is collected, and it needs its own
+- Section 11 (Apple Health, phase 2): planned; nothing is imported or stored, and it needs its own
   addendum signed before any imported data is stored, TestFlight included.
 - The iPhone app beyond the core team (an external TestFlight group or the App Store): the items in
-  section 2.5 (APNs terms, the `native` policy text, Sign in with Apple revocation deployed, D14).
+  section 2.5 (Apple's terms, the `native` policy text, Sign in with Apple revocation deployed, D14).
 - Public launch: D3, D4, D6, D8, D11, D12, the security test, the Mind clinician review, and
-  reconsidering legal advice (section 3).
+  reconsidering legal advice (D15).
 
 ---
 
 ## Decisions for Benn
 
-Open judgement calls, each with a recommendation and its status on 22 November 2026. Section 7
+Open judgement calls, each with a recommendation and its status on 24 November 2026. Section 7
 has the sign-off table.
 
-| # | Decision | Status on 22 Nov 2026 | Recommendation |
+| # | Decision | Status on 24 Nov 2026 | Recommendation |
 |---|---|---|---|
 | D1 | Clinical review of the onboarding wellbeing question and the safety routing (`routeSafety`) before `ONBOARDING_ENABLED` goes on beyond closed testers (`docs/plans/first-run-onboarding.md` §9: the wellbeing question "gets clinical review before wider launch"). | Not done. The wizard is still off on `main`. Benn's order (22 Nov, `apple-health-gate1.md`): Cycle, then onboarding on, then Apple Health. | **Before the wizard reaches anyone beyond closed testers.** A qualified clinician (for example a registered dietitian with eating-disorder experience) reviews the wording, the routing and the signposting. Without it, R3 stays high and 7.3 applies. |
-| D2 | Notice emails before the 28 October purge. | **Closed.** Benn decided not to send them (28 Sept, revisited 1 Oct; register item 30(a)); the register records no emails sent. The purge job ran on 28 and 29 October with status "succeeded" and runs daily since (last run 22 Nov). On 22 Nov no account had a cloud log without a current health yes. | None. Which of the two accounts were purged and which agreed first was not checked (no row content read). |
+| D2 | Notice emails before the 28 October purge. | **Closed.** Benn decided not to send them (28 Sept, revisited 1 Oct; register item 30(a)); the register records no emails sent. The purge job ran on 28 and 29 October with status "succeeded" and runs daily since (last run checked: 24 Nov, succeeded). On 24 Nov no account had a cloud log without a current health yes. | None. Which of the two accounts were purged and which agreed first was not checked (no row content read). |
 | D3 | Pay the ICO data protection fee for Gravita Creative Ltd. | **Still owed, as far as the repo shows:** `LEGAL.icoNumber` is null and `check:legal` warns. Unknown whether it has been paid without the number being recorded. | **Pay it now** and add the number. Register Tilo as a trading name (register item 48(f)). |
 | D4 | Processor contracts (Art. 28) and transfer terms: Supabase, Webflow, Bunny.net, Google Workspace, GitHub, Cloudflare Turnstile (register item 4). Anthropic is done (section 9.4). Apple's terms for APNs and Sign in with Apple are open (section 2.5). | **Open.** The register still lists item 4 as to do. | **Accept or confirm each DPA now and record the mechanism for each US provider.** Real health data is stored with Supabase. |
 | D5 | `ai-read-label` deployed while label reading was off. | **Superseded** by section 9 (signed 11 Oct 2026): label reading is on (`LABEL_SCAN_ENABLED` true) and disclosed. | None. |
-| D6 | Dormant accounts: accounts kept with no end date. | **Decided by Benn (1 Oct 2026, register item 30(c)): 12 months of inactivity, then deletion with notice. Not built.** On 22 Nov, 2 accounts had not signed in for 60 days and 4 accounts had never answered the consent screen. | Build it before public launch: it needs a way to send notices (an email service is a new processor), a scheduled job, privacy text and a register row. |
-| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx`), so health consent is a condition of using Tilo (Art. 7(4)). | Design kept. No solicitor view (Benn, 16 Nov). | **Keep the design** (the log is the service and no other Art. 9(2) condition fits), and accept the residual medium risk knowingly. Consider letting a new user who says no keep a phone-only log, as a withdrawn user can. |
+| D6 | Dormant accounts: accounts kept with no end date. | **Decided by Benn (1 Oct 2026, register item 30(c)): 12 months of inactivity, then deletion with notice. Not built.** On 24 Nov, 4 accounts had not signed in for 60 days and 4 accounts had never answered the consent screen (not checked whether these are the same accounts). | Build it before public launch: it needs a way to send notices (an email service is a new processor), a scheduled job, privacy text and a register row. |
+| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx`), so health consent is a condition of using Tilo (Art. 7(4)). | Design kept. No legal view sought (D15). | **Keep the design** (the log is the service and no other Art. 9(2) condition fits), and accept the residual medium risk knowingly. Consider letting a new user who says no keep a phone-only log, as a withdrawn user can. |
 | D8 | Age assurance: self-declared "I'm 18 or over" on the consent screen; the wizard's age question and stop are behind its flag. | Open. The "likely to be accessed by children" assessment is still not written (register item 21). | **Accept self-declaration for now**, and write the short assessment before public launch or an App Store listing (the store age rating must be 18+). |
 | D9 | ICO prior consultation (Art. 36). | Reasoned view in 7.3, updated for sections 8, 10 and 11. | **Not needed, on the conditions in 7.3.** |
-| D10 | Legal basis for consent records: 6(1)(c), and 9(2)(f) if special category. | Kept. No solicitor view (Benn, 16 Nov). | Keep. Art. 7(1) requires the controller to show consent; a record of a yes to health or Cycle processing may itself reveal health information, so treat it as special category. |
+| D10 | Legal basis for consent records: 6(1)(c), and 9(2)(f) if special category. | Kept. No legal view sought (D15). | Keep. Art. 7(1) requires the controller to show consent; a record of a yes to health or Cycle processing may itself reveal health information, so treat it as special category. |
 | D11 | Breach response (Art. 33, 34): no named person or written process. | Open (register item 11). | **Name Benn as responsible and write a one-page procedure before public launch.** It should cover the Apple Developer account and the APNs and Sign in with Apple keys too. |
 | D12 | EU users (Art. 27 representative) and a DPO (Art. 37). | Open (register item 8). | **No DPO for now**; decide whether EU users are targeted before public launch or an App Store listing in EU storefronts. |
-| D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth; 1 account was created after 30 Sept (16 Nov 2026). | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
+| D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth (the setting can't be read with the checks used here); 1 account was created after 30 Sept, on 16 Nov 2026 (2 Apple sign-in identities exist, the core team's, per the register). | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
 | D14 | iPhone backups: the iPhone app keeps its data (the whole log, the Unload notes and, once used, the Cycle log) in the app's container, included in the phone's backups (`apps/native/lib/platform/storage.ts`), so a copy goes wherever the person's backups go (iCloud or a computer). | **New, open** (also open as item 9 of `native-app-plan.md` §3.5 and `apple-health-gate1.md` §3). | **Exclude the whole store from iPhone backups** before the iPhone app reaches anyone beyond the core team, or record why not and say so in the policy. Apple guideline 5.1.3(ii) bars HealthKit data in iCloud, which settles it for section 11 in any case. |
+| D15 | Legal advice. Several calls here are legal judgements made by an AI agent (D7, D10, 4.7, 7.3, the Cycle basis in section 10, the Equality Act point in `cycle.md` §10 item 4). | **Decided by Benn, 16 Nov 2026: no lawyer at this time.** His words: "We do not need lawyer at this time" (recorded in `docs/plans/cycle.md` §10 item 4, and confirmed for this DPIA in his brief of 24 Nov). Every "solicitor" row here reads "not sought yet". | Accept for the closed test, knowingly: the risk is that a judgement here is wrong and nobody qualified catches it before a regulator or a user does (most exposed: D7 conditional consent, R12; the Art. 22 reasoning, 4.7; the prior-consultation view, 7.3; Cycle's women-only offer under the Equality Act). **Reconsider before public launch, an App Store listing, the new company or any paid tier**, and before Cycle goes beyond Benn and Sara if the Cycle residuals in 10.6 stay high. |
 
 ---
 
