@@ -674,25 +674,26 @@ and R31 and R32 are new on 24 November (the iPhone app).
 | R12 | **Consent not freely given**: new users can only use Tilo if they agree (D7), which a regulator could see as conditional consent. | Possible | Significant | Medium |
 | R13 | **Controller change**: when the new company takes over, consents given to Gravita Creative Ltd do not carry over automatically and data could be moved without a basis. | Probable (planned) | Significant | Medium |
 | R31 | **iPhone backups carry the whole log**: the iPhone app's store (log, Unload notes, and the Cycle log once used) is copied into the phone's iCloud or computer backups, where it outlives withdrawal, account deletion and deleting the app until the backup is replaced, and is exposed if the backup account or computer is. Apple guideline 5.1.3(ii) bars HealthKit-derived data in iCloud. | Possible | Significant | Medium |
-| R32 | **Sign in with Apple not revoked on deletion**: until the revocation step is deployed, a deleted account leaves Tilo listed in the person's Apple Account and the Apple relay address active (no Tilo data stays). | Probable (as deployed) | Minimal | Low |
+| R32 | **Sign in with Apple not revoked on deletion**: until the revocation step is deployed, a deleted account leaves Tilo listed in the person's Apple Account and Tilo listed under the person's Apple Account sign-in settings until they remove it there (no Tilo data stays). | Probable (as deployed) | Minimal | Low |
 
 ---
 
 ## 6. Measures to reduce the risks
 
-"In place" items were checked in the code on 30 Sept 2026 (and live where noted). "Recommended"
-items are not done.
+"In place" items were checked in the code on 30 Sept 2026 and re-checked against `main` and
+`claude/native-build` on 22 to 24 Nov 2026 (and live where noted). "Recommended" items are not
+done unless a status note says so.
 
 ### R1 Breach or unauthorised access
-- **In place:** owner-only RLS on every table (`docs/security-rls.sql`; live check: RLS
-  on for all 9 tables); `consents` insert and select only, `ai_usage` select only; the anon key
+- **In place:** owner-only RLS on every table (`docs/security-rls.sql`; live check 24 Nov: RLS
+  on for all 13 public tables; the three shared-list tables have no policies on purpose); `consents` insert and select only, `ai_usage` select only; the anon key
   reaches no rows without a session (`src/data/supabase.ts`); the service role key only in
   Edge Function environments and the pg_cron job (`delete-account/index.ts`); `delete-account`
   verifies the token with Auth, requires a recent sign-in, and revokes all sessions first
   (`delete-account/index.ts`); the reminder function checks a secret in constant time;
   functions log counts only, no ids or content; outcomes-only storage limits what a breach could
   reveal; leaked password protection on (register item 39); HTTPS throughout. Supabase security
-  advisor on 30 Sept: two warnings, `pg_net` in the public schema (register item 39, low) and
+  advisor on 30 Sept and again on 24 Nov: two warnings, `pg_net` in the public schema (register item 39, low) and
   `ai_usage_take` being a security definer callable by signed-in users (intended: it is how the
   allowance is taken, `docs/security-rls.sql`).
 - **Recommended:** a written breach procedure and named owner (D11); MFA on every Supabase, GitHub,
@@ -707,18 +708,20 @@ items are not done.
   device's log"; the owner check stops a different account on the same phone seeing the data
   (`ownerCheck`, `src/data/persistence.ts`).
 - **Recommended:** a line on the Export screen that the file contains health data and should be
-  kept private (a copy change, so it needs Benn's approval).
+  kept private (a copy change, so it needs Benn's approval). The iPhone app's backups are R31.
 - **Residual:** possible, minimal to significant: **low**.
 
 ### R2 Cloud without consent
 - **In place:** unticked boxes on the consent screen; the phone syncs nothing but consent records
   without a current yes (`consentLetsSync`, `consent.ts`; `store.ts`); the server refuses
-  log writes without a current yes (trigger on 7 tables, live check 30 Sept); reminders skip anyone
+  log writes without a current yes (trigger on 8 tables, live check 24 Nov); reminders skip anyone
   without a yes; health questions only shown and saved after a local yes (`canSaveHealthAnswers`,
   `consent.ts`; `HEALTH_STEPS`, `wizard.ts`); the pre-consent cloud copy is purged
   automatically (`purge_unconsented_logs`, live job checked).
-- **Recommended:** solicitor's view on the 30-day hold (register item 26); keep the purge job
-  monitored after 28 October (check that the two accounts' rows are gone).
+- **Status 24 Nov:** the purge ran on 28 and 29 Oct and daily since; no account has a cloud log
+  without a current yes. The 30-day hold is over; no legal view was sought (D15).
+- **Recommended:** keep the job in place for new accounts that never answer; glance at its run
+  status when this DPIA is reviewed.
 - **Residual:** remote, significant: **low**.
 
 ### R3 Wrong routing or advice
@@ -731,16 +734,20 @@ items are not done.
   on Food only if the person asks for one at week 4) and a sometimes gives a maintenance range
   only (never a deficit, Today in words until the person opts in at day 14); both take the weight
   number off Today, stop automatic training increases and signpost Beat, NHS 111, Samaritans and
-  emergency help (gaps as built, register item 34: a pregnant yes who opts into the range sees
-  calorie numbers on Food, and the weight sheet and Profile still show weight); BMI under 18.5 blocks a deficit; targets are ranges with
+  emergency help (gap as built, register item 34: the weight sheet and Profile still show weight
+  while the copy says it is hidden; the pregnant-range gap is fixed on `main`, `foodView` in
+  `src/core/domain/foodMode.ts`); BMI under 18.5 blocks a deficit; targets are ranges with
   neutral copy (CLAUDE.md design system); `mental-performance` and `nutrition-accuracy` reviews
   (section 3); the pregnancy flag is re-asked every 12 weeks.
-- **Recommended:** clinical review before the wizard goes on (D1); confirm the Beat number (0808 801
-  0677) against beateatingdisorders.org.uk (register item 9); decide what the live app, which has
+- **Recommended:** clinical review before the wizard goes beyond closed testers (D1); fix the
+  weight copy (item 34) before it goes on at all; the Beat number and hours matched Beat's site on
+  22 Nov (register item 49 on `claude/native-build`; item 9 can close); decide what the live app, which has
   no screener while the wizard is off, shows new users about these groups (today only the terms);
   a short MHRA qualification note (4.8); keep marketing free of health claims (ASA/CAP 12 and 15).
 - **Residual:** with D1 done, possible and significant: **medium**. Without D1, **high**: the
-  routing's thresholds and wording would rest on AI reviews alone.
+  routing's thresholds and wording would rest on AI reviews alone. For closed testers only (people
+  known to Gravita and told it's a test), Benn may accept the wizard on before D1, which is what
+  item 4 of the summary approves; that reasoning fails if sign-up is open in practice (D13).
 
 ### R4 Under-18s
 - **In place:** 18+ in the terms and policy (`MIN_AGE`); a required "I'm 18 or over" box on the
@@ -759,9 +766,11 @@ items are not done.
   screens say where the data is and offer a backup first (`HEALTH_WITHDRAW_PROMPT`); the purge keeps
   the phone's copy and a later yes re-uploads it (`needsReupload`); "Start fresh" needs a second
   tap with "Export a copy" beside it (register item 31).
-- **Recommended:** send the two notice emails before 28 October (D2); record the backup window.
-- **Residual:** with D2 done, remote, significant: **low**. Without it, possible, significant:
-  **medium**, for the two accounts affected (an accepted risk, register item 30(a)).
+- **Status 24 Nov:** no notice emails were sent (D2, Benn's decision); the purge has run. Whether
+  anyone lost data they wanted is unknown (nobody has complained, as far as the repo shows).
+- **Recommended:** record the backup window.
+- **Residual:** remote, significant: **low** from here on. The accepted risk for the purged
+  accounts is spent.
 
 ### R6 Withdrawal not fully honoured
 - **In place:** the phone clears all `HEALTH_FIELDS` and health-derived plan reasons at once
@@ -777,23 +786,22 @@ items are not done.
   Gentle mode on the phone; consent records in the account) is disclosed.
 
 ### R7 Transfers to US processors
-- **In place:** the database is in eu-west-1, Ireland (checked 30 Sept); push payloads are
-  encrypted end to end; the policy names each provider and the safeguards relied on.
-- **Recommended:** D4 (accept the DPAs and record the mechanism per provider); proxy Open Food
+- **In place:** the database is in eu-west-1, Ireland (checked 22 Nov); web push payloads are
+  encrypted end to end (APNs would not be: R30); the policy names each provider and the safeguards relied on.
+- **Recommended:** D4 (accept the DPAs and record the mechanism per provider, Apple included); proxy Open Food
   Facts lookups through an Edge Function so the IP address no longer reaches it (register item 23,
   optional).
 - **Residual:** once D4 is done, remote, significant: **low**. Until then **medium**, and the
   missing Art. 28 contracts are a compliance gap in their own right.
 
 ### R8 Function creep and AI
-- **In place:** label reading is off in the app (`LABEL_SCAN_ENABLED`) and the AI features row is
-  hidden (`AI_FEATURES_LIVE`, `src/screens/ProfileScreen.tsx`); the policy comment forbids
-  switching label reading on before it is described (`privacy.ts`); `ai-read-label` checks
-  a separate label-photo consent on the server and logs no content; purposes are listed and no
+- **In place:** label reading is on since October and assessed in section 9 (photos only, no
+  identifiers); the AI features row is still hidden (`AI_FEATURES_LIVE`); `ai-read-label` checks
+  the label-photo record on the server and logs no content; the iPhone lab's on-device model keeps
+  everything on the phone; purposes are listed and no
   secondary use exists; the register lists AI, analytics, error tracking, email marketing and paid
   tiers as changes that need the compliance agent first.
-- **Recommended:** D5 (disable the deployed function until item 24 is done); update this DPIA before
-  any AI feature goes on, covering the provider's DPA, zero retention, the transfer and TIA, an AI
+- **Recommended:** update this DPIA before any further AI feature goes on (D5 is superseded), covering the provider's DPA, zero retention, the transfer and TIA, an AI
   disclosure to users (EU AI Act Art. 50) and no solely automated decisions (register item 24;
   `docs/plans/ai-platform-plan.md` §4 and §5).
 - **Residual:** remote, significant: **low**.
@@ -821,9 +829,10 @@ items are not done.
 - **In place:** separate unticked boxes; no marketing bundled; withdrawal is easy and keeps the
   app usable on the phone for food and workouts (`healthDeclined`, `consent.ts`); existing users
   can say "Not now" without losing anything.
-- **Recommended:** solicitor's view (D7); consider whether a new user who says no could also keep
-  a phone-only log, as a withdrawn user can (a product and design decision for Benn).
-- **Residual:** possible, significant: **medium** until the solicitor confirms.
+- **Recommended:** a legal view on D7 when legal advice is reconsidered (D15); consider whether a
+  new user who says no could also keep a phone-only log, as a withdrawn user can (a product and
+  design decision for Benn).
+- **Residual:** possible, significant: **medium**, accepted without a legal view (D15).
 
 ### R13 Controller change
 - **In place:** the register plans it (item 15): update `LEGAL`, the texts, bump
@@ -832,6 +841,25 @@ items are not done.
   new ICO registration; new processor contracts in the new company's name.
 - **Residual:** **low** if the plan is followed.
 
+
+### R31 iPhone backups
+- **In place:** the store is protected until the first unlock after a restart; the Supabase
+  session is in the Keychain, this device only, so a restored backup doesn't sign anyone in;
+  label photos live in caches, not the store (section 2.5).
+- **Recommended:** D14: exclude the whole store from iPhone backups (everything is on the account,
+  since there is no guest mode, so a restore re-syncs; the policy says edits not yet synced are lost
+  on a restore). If Benn keeps backups, say in the `native` policy text that the log is in the
+  phone's backups. Either way, before anyone beyond the core team; Apple Health data is kept out
+  in any case (section 11).
+- **Residual:** with the store excluded, **low**. Until then **medium**, limited today to Benn's
+  and Sara's own phones.
+
+### R32 Sign in with Apple revocation
+- **In place:** the revocation step is written and reviewed (`_shared/apple.ts`, `delete-account`
+  on `main`); deletion of Tilo's data never depends on Apple's answer.
+- **Recommended:** set the four `APPLE_*` secrets and deploy `delete-account` from `main` before
+  anyone beyond the core team (App Store guideline 5.1.1(v)).
+- **Residual:** **low**.
 ---
 
 ## 7. Sign-off and outcomes
