@@ -421,6 +421,53 @@ The benefit to the person is a private, offline-capable log with suggestions tha
 health situation. The benefit to Gravita is a product it can launch. No purpose involves selling,
 advertising, research or profiling for anyone else.
 
+
+### 2.5 The iPhone app (TestFlight, core team only)
+
+**Status.** A native iPhone app (`apps/native`, React Native with Expo; bundle `fit.tilo.app`) is
+built on `claude/native-build` (not on `main`) and reuses the web app's shared code (`src/core`,
+`src/data`, `src/store`) unchanged, so it talks to the same Supabase project with the same consent
+gate, sync, server enforcement, withdrawal and deletion as the web. Benn reported on 16 Nov that
+build 16 ran on his iPhone (`native-build-plan.md` §10). **Since 18 November 2026 it is in TestFlight
+internal testing with Benn and Sara** (as reported to compliance for this refresh; the date is not
+recorded in the repo). An App Store Connect app record exists (`ascAppId` in `apps/native/eas.json`).
+Benn and Sara are Gravita's core team, informed about how the app works, so the policy text for the
+iPhone app (`privacyPolicy({ native })`, written on `main`, off) may wait until anyone else gets a
+build. The phase 1 exit is not reached: push, the privacy manifest's collected-data types, the App
+Store label and the `native` text are open (`native-build-plan.md` §10).
+
+**What is different from the web app.**
+
+| Area | As built on `claude/native-build` at `d179ad0` | Status |
+|---|---|---|
+| Storage | The same keys as the web (`leanplan.v1` and the rest) in the app's own store (`modules/tilo-store`, namespace `tali-local`): files in the app container, protected until the first unlock after a restart (`completeUntilFirstUserAuthentication`), and **included in the phone's backups** so a restored phone keeps unsynced days (`apps/native/lib/platform/storage.ts`). The Supabase session is in the Keychain, this device only. | Live in TestFlight. Backups: D14, R31. |
+| Sign in with Apple | Email scope only, no name (`modules/tilo-auth`; register Processors). Apple is an independent controller for the sign-in. A Hide My Email address makes a separate account. Revoking Apple's token when an account is deleted (App Store guideline 5.1.1(v)) is written in `delete-account` with `_shared/apple.ts` on `main` (15 Nov) but **not deployed**: the live function dates from 5 Nov (checked 24 Nov), and whether the four `APPLE_*` secrets are set is unknown. Until it is, deleting an account doesn't revoke Tilo's Apple link; the person can remove it in their Apple Account settings. | Live in TestFlight (2 Apple identities on 24 Nov). Revocation owed before anyone beyond the core team. |
+| Reminders through APNs | The push function's APNs path (`_shared/apns.ts`) and the migration `2026-11-13-native-push.sql` (the device token in `push_subscriptions.endpoint`, a `platform` column) are written. **Not deployed:** the migration is not applied (no `platform` column, checked 24 Nov) and the APNs key steps (`native-build-plan.md` §9.1) are not recorded as done. APNs is TLS only, so Apple could read the alert text and sees the device token and timing (8.8 APNs addendum, R30). The phone keeps the token and pending row deletions in `tali-push` (device only). | Not processing. Needs the 8.8 APNs addendum signed. |
+| Notification Service Extension and App Group | An extension (`plugins/withNotifyExtension.js`, `targets/notify-extension/NotificationService.swift`) runs as each Mind reminder arrives and records `{id, kind, at}` (no text, at most 60) in the App Group `group.fit.tilo.app`, shared only by the app and its extension; the app reads and empties it into the device-only delivery log (`lib/platform/notifyStore.ts`, `tali-notify`), as the web's service worker does. Never synced. It hands the alert back unchanged, so it does not decrypt anything (an encrypted payload decrypted here is the noted alternative that would remove R30). | Built; inert until APNs reminders are live. |
+| Label photos | The same `ai-read-label` path as the web (section 9). The photos live only in the app's `Caches/TiloCamera` folder with complete file protection, are re-encoded without metadata before sending, and are deleted once the read answers, when the screen closes or at the next launch (`modules/tilo-camera/ios/TemporaryPhotos.swift`; register, label photo row on `claude/native-build`). Whether the caches folder is excluded from backups was not checked in code; caches are not normally backed up by iOS. | Live in TestFlight. No new risk beyond section 9. |
+| Export | The same JSON file as the web, written to the app's cache and handed to the share sheet (`lib/account/backupFile.ts`). Unencrypted (R1b). | Live in TestFlight. |
+| Internal lab screen | `/lab` (`apps/native/lib/Lab.tsx`), for Benn, Sara and the lead engineer: reads last night's sleep and today's walking from Apple Health on request and shows it, keeping nothing (`lib/health.ts`); runs Apple's on-device model on a typed meal (nothing leaves the phone); shows sync and label-read error lines from memory in builds with `EXPO_PUBLIC_DIAG=1`, which the `testflight` profile sets (`lib/platform/diag.ts`). The app carries the HealthKit entitlement and a read purpose string for this. How a tester reaches `/lab` in the TestFlight build was not checked. | Processing on the phone only (register item 27); nothing stored or sent. Must not reach anyone beyond the core team. |
+| Cycle | Built behind `CYCLE_ENABLED` (native screens only, section 10). | Off unless a build sets `VITE_CYCLE=1`; not verified which builds do. |
+
+**Apple as a party.** Apple appears in four roles, none of them recorded in a contract review:
+(1) independent controller for Sign in with Apple; (2) the APNs service, which would process the
+device token, timing and alert text (role and data terms under the Apple Developer Program
+License Agreement not recorded; Apple Inc. is in the US, so a transfer mechanism is needed: D4);
+(3) the distribution platform (TestFlight, App Store Connect), which can send the developer crash
+reports and tester feedback (not checked what this build sends, or whether anything has been
+received); (4) the phone's own backups, where iCloud Backup is Apple's service under the person's
+own contract with Apple, not Tilo's processor, but which Tilo's storage choice puts health data
+into (D14). Apple's App Store Review Guidelines 5.1.1 and 5.1.3 apply to the app (5.1.3(ii): no
+personal health information in iCloud from HealthKit, which section 11 must meet).
+
+**Owed before the iPhone app reaches anyone beyond Benn and Sara** (an external TestFlight group
+or the App Store): the `native` policy text switched on and republished (`npm run legal:html`,
+Webflow drafts, `ship-critic`, Benn's go-ahead); Sign in with Apple revocation deployed with its
+secrets; D14 decided and built; the privacy manifest's collected-data types and the App Store
+privacy label; the 8.8 APNs addendum signed before APNs reminders go live; the Apple terms
+recorded (D4); the `/lab` screen and diagnostics kept out of that build; the store age rating 18+
+(D8); and the provisioning profile's unused HealthKit `health-records` access dropped
+(`native-build-plan.md` §10).
 ---
 
 ## 3. Consultation
