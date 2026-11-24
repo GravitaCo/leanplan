@@ -1,16 +1,28 @@
 # Tilo: Data Protection Impact Assessment (UK GDPR Art. 35)
 
-**Status: DRAFT for review. Not signed.** Prepared on 30 September 2026 by the `compliance` agent
-(an AI assistant) for Benn, director of Gravita Creative Ltd, from the code on branch
-`claude/pensive-ramanujan-j4k1ie` at commit `86eddbc` (current `main` plus the unmerged onboarding
-legal texts) and the compliance register (`docs/compliance/README.md`).
-Updated 1 October 2026 for Onboarding 9 (section 4.2, the wellbeing answer, and R3) from the
-code at `6430472` (`claude/onboarding-release`).
+**Status: for Benn's signature (sections 1 to 7). Refreshed 22 November 2026. Not yet signed.**
+First drafted on 30 September 2026 by the `compliance` agent (an AI assistant) for Benn, director
+of Gravita Creative Ltd; updated 1 October 2026 (Onboarding 9) and 24 October 2026 (the medical
+outcome split). Refreshed on 22 November 2026 from `main` at `fc3f7c5`, the native iPhone app on
+`origin/claude/native-build` at `518063e`, the Apple Health plan on
+`origin/claude/hopeful-thompson-5fqm2l` at `510db4f`, the compliance register
+(`docs/compliance/README.md`), read-only checks on the live Supabase project and the live
+website, all on 22 November 2026. Sections 8 (Mind) and 9 (label photos and the shared list) were
+signed by Benn on 10 and 11 October 2026 and are not changed, except for dated status notes
+marked as such.
 
-**This is not legal advice.** It was drafted with AI help and has not been reviewed by a lawyer.
-It records how Tilo works and the judgement calls still open, so that Benn, and his solicitor if
-he wants one, can check it, change it and sign it. Where a fact could not be checked it says
-"Unknown:" and what would settle it.
+**This is not legal advice.** It was drafted with AI help and has not been reviewed by a lawyer:
+Benn decided on 16 November 2026 not to seek one for now (section 3). It records how Tilo works and
+the judgement calls still open, so that Benn can check it, change it and sign it. Where a fact
+could not be checked it says "Unknown:" or "Not verified:" and what would settle it.
+
+The product was called Tali (app.tali.fit, www.tali.fit) until the rename to Tilo on 5 November
+2026 (register item 48). The rename changed no controller, purpose, data, processor or transfer.
+Anything this document records as checked before 5 November at a tilo.fit address was checked at
+the tali.fit address under the name Tali.
+
+Citations name files and functions. The line numbers in the September draft were removed on 22
+November because they had drifted from the code.
 
 It follows the structure of the ICO's DPIA template. The register stays the day-to-day record;
 this document is the assessment. Keep them in step: a change to one that affects the other
@@ -18,24 +30,79 @@ updates both.
 
 ---
 
+## Summary for Benn (one page)
+
+**What the processing is.** Tilo is a free health and fitness app run by Gravita Creative Ltd as
+controller. People log food, weight, workouts, supplements, sleep, mood and other check-ins, and
+Tilo works out ranges, plans and gentle suggestions from them. Almost all of it is health data
+(special category, UK GDPR Art. 9), processed on the basis of the contract (Art. 6(1)(b)) and
+explicit consent (Art. 9(2)(a)) given on the consent screen. Data lives on the person's phone
+first and syncs to Supabase in Ireland only after a yes; the server refuses log uploads without
+one. Label photos go to Anthropic to be read (signed off in section 9). The web app at
+app.tilo.fit is used by a small closed group (11 accounts on 22 November 2026). An iPhone app is in
+TestFlight internal testing with Benn and Sara (section 2.5). Nothing is sold, advertised or
+used for analytics.
+
+**Residual risks after the measures in section 6** (section 5 has the scale):
+- **Medium:** R1 a breach of cloud health data (severity can't fall below severe; likelihood
+  remote); R3 wrong safety routing, but only once D1 is done (high without it); R4 under-18 use;
+  R7 transfers until the processor contracts (D4) are recorded; R12 conditional consent (no
+  solicitor view); R31 the iPhone app's data in phone backups, until Benn decides D14.
+- **High, and the reason for the conditions below:** R3 if the onboarding wizard reaches people
+  beyond closed testers without a clinician's review (D1); R15 (section 8) if the app becomes
+  public before the Mind clinician review; R23 and R26 (Cycle, section 10) for anyone beyond Benn
+  and Sara.
+- **Low:** everything else, including the 28 October purge (done) and withdrawal.
+
+**What your signature on sections 1 to 7 approves.**
+1. The processing described in sections 2 to 4 as it runs on 22 November 2026: the web app for
+   the closed test group, and the iPhone app in TestFlight for Gravita's core team (Benn and
+   Sara), with the measures "in place" in section 6 and the residual risks above.
+2. The recommended measures in section 6 that you tick in 7.1, with owners and dates.
+3. The view in 7.3 that ICO prior consultation is not needed on the stated conditions.
+4. That the DPIA launch gate for the onboarding wizard (`first-run-onboarding.md` §9 and phase 1
+   of §10; register items 7 and 34) is met **for closed testers only**: the wizard
+   (`ONBOARDING_ENABLED`) may be switched on, through its own `ship-critic` pass, for people who
+   are actually closed testers.
+
+**What stays conditional (not approved by this signature).**
+- **D1, a clinician's review** of the wellbeing question, the readiness and medical questions and
+  the routing, before the wizard reaches anyone beyond closed testers. "Closed" has to be real:
+  sign-up at app.tilo.fit is open to anyone with the link today (D13).
+- Before the wizard goes on at all: the open build fixes in register item 34 (the weight copy that
+  says weight is hidden), and publishing the onboarding version of the texts with that release.
+- Section 8.8 (supplement names) and its APNs addendum (R30): unsigned; names stay off.
+- Section 10 (Cycle): a separate sign-off, before Cycle reaches anyone beyond Benn and Sara.
+- Section 11 (Apple Health, phase 2): planned; nothing is collected, and it needs its own
+  addendum signed before any imported data is stored, TestFlight included.
+- The iPhone app beyond the core team (an external TestFlight group or the App Store): the items in
+  section 2.5 (APNs terms, the `native` policy text, Sign in with Apple revocation deployed, D14).
+- Public launch: D3, D4, D6, D8, D11, D12, the security test, the Mind clinician review, and
+  reconsidering legal advice (section 3).
+
+---
+
 ## Decisions for Benn
 
-Open judgement calls, each with a recommendation. Section 7 has the sign-off table.
+Open judgement calls, each with a recommendation and its status on 22 November 2026. Section 7
+has the sign-off table.
 
-| # | Decision | Recommendation |
-|---|---|---|
-| D1 | Clinical review of the onboarding wellbeing question and the safety routing (`routeSafety`) before `ONBOARDING_ENABLED` goes on. The onboarding plan already says the wellbeing question "gets clinical review before wider launch" (`docs/plans/first-run-onboarding.md` §9). | **Do it before the wizard is switched on for anyone but closed testers.** A qualified clinician (for example a registered dietitian with eating-disorder experience) reviews the wording, the routing and the signposting. Without it, risk R3 stays high and prior consultation (D9) would need to be considered. |
-| D2 | Notice emails before the 28 October purge. Benn decided on 28 Sept not to send them (register item 30(a)). On 30 Sept only **2** accounts had a cloud log and no current yes (checked, section 2.2). | **Send the two emails** (register item 30(a) has the wording). It costs little and removes most of R5 for those two people. If they go out after 28 Sept, move PURGE_FROM and `UNCONSENTED_DELETION` as the register says. |
-| D3 | Pay the ICO data protection fee for Gravita Creative Ltd. | **Pay it now.** Processing of real people's health data is already happening; the fee is owed now, not at launch. Add the number to `LEGAL.icoNumber`. |
-| D4 | Processor contracts (Art. 28) and transfer terms: Supabase, Webflow, Bunny.net, Google Workspace, GitHub, Cloudflare Turnstile (register item 4). | **Accept or confirm each DPA now, and record the transfer mechanism for each US provider in the register.** Real health data is already stored with Supabase. |
-| D5 | `ai-read-label` (Anthropic) is deployed, but label reading is switched off in the app and not in the privacy policy. A signed-in person who writes their own label-photo consent record could still call it. | **Disable the function (or add a server-side off switch) until register item 24 is done**, and route the change through `security-data`. Low risk (it sends a pack photo, not health data), but it is an undisclosed processor that can be reached. |
-| D6 | Dormant accounts: after a purge, or when someone stops using Tilo, the account (email, consent records) is kept with no end date (register item 30(c)). | **Set an inactivity period with notice before public launch.** A starting point to discuss with the solicitor: delete accounts with no sign-in for 24 months, after one email 30 days before. The length is a judgement for Benn, not a legal fixed figure. |
-| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx:64`), so health consent is a condition of using Tilo. Art. 7(4) asks whether consent is freely given when a service depends on it. | **Keep the design** (the log is the service, and no other Art. 9(2) condition fits a consumer wellness app), **but ask the solicitor to confirm** this is defensible, and keep the unbundling from terms and marketing as it is. |
-| D8 | Age assurance: the live app relies on a self-declared "I'm 18 or over" box (`ConsentScreen.tsx:48`); the stronger age question and stop are behind the wizard flag. | **Accept self-declaration for now**, and record a short "likely to be accessed by children" assessment for the ICO Children's Code before public launch (marketing, app store listing, content). Revisit if the marketing could appeal to teenagers. |
-| D9 | ICO prior consultation (Art. 36). | **Not needed, on the conditions in section 7.3**: the measures marked "recommended" for R1, R3 and R7 are done before the relevant feature or launch, and D1 is done before the wizard goes on. If Benn decides to switch the wizard on for the public without D1, the residual risk for R3 is high and prior consultation should be considered. |
-| D10 | Legal basis for the consent records: the register says 6(1)(c) (and 9(2)(f) if a record counts as special category); the privacy policy says "legal obligation" (`privacy.ts:82`). | **Keep it, but ask the solicitor.** Art. 7(1) requires the controller to be able to show consent, which supports 6(1)(c); some advisers prefer 6(1)(f). A record that someone said yes to health processing may itself reveal health information, hence 9(2)(f) (legal claims). |
-| D11 | Breach response (register item 11): no named person or process for the 72-hour ICO notice (Art. 33) and telling users (Art. 34). | **Name Benn as the responsible person and write a one-page procedure** (who checks Supabase and GitHub alerts, how to assess, how to report) before public launch. |
-| D12 | EU users (Art. 27 representative) and a DPO (Art. 37). | **No DPO for now** (processing is not yet large scale; revisit at public launch). **Decide whether EU users are targeted**; if yes, appoint an EU representative and name it in the policy (register item 8). |
+| # | Decision | Status on 22 Nov 2026 | Recommendation |
+|---|---|---|---|
+| D1 | Clinical review of the onboarding wellbeing question and the safety routing (`routeSafety`) before `ONBOARDING_ENABLED` goes on beyond closed testers (`docs/plans/first-run-onboarding.md` §9: the wellbeing question "gets clinical review before wider launch"). | Not done. The wizard is still off on `main`. Benn's order (22 Nov, `apple-health-gate1.md`): Cycle, then onboarding on, then Apple Health. | **Before the wizard reaches anyone beyond closed testers.** A qualified clinician (for example a registered dietitian with eating-disorder experience) reviews the wording, the routing and the signposting. Without it, R3 stays high and 7.3 applies. |
+| D2 | Notice emails before the 28 October purge. | **Closed.** Benn decided not to send them (28 Sept, revisited 1 Oct; register item 30(a)); the register records no emails sent. The purge job ran on 28 and 29 October with status "succeeded" and runs daily since (last run 22 Nov). On 22 Nov no account had a cloud log without a current health yes. | None. Which of the two accounts were purged and which agreed first was not checked (no row content read). |
+| D3 | Pay the ICO data protection fee for Gravita Creative Ltd. | **Still owed, as far as the repo shows:** `LEGAL.icoNumber` is null and `check:legal` warns. Unknown whether it has been paid without the number being recorded. | **Pay it now** and add the number. Register Tilo as a trading name (register item 48(f)). |
+| D4 | Processor contracts (Art. 28) and transfer terms: Supabase, Webflow, Bunny.net, Google Workspace, GitHub, Cloudflare Turnstile (register item 4). Anthropic is done (section 9.4). Apple's terms for APNs and Sign in with Apple are open (section 2.5). | **Open.** The register still lists item 4 as to do. | **Accept or confirm each DPA now and record the mechanism for each US provider.** Real health data is stored with Supabase. |
+| D5 | `ai-read-label` deployed while label reading was off. | **Superseded** by section 9 (signed 11 Oct 2026): label reading is on (`LABEL_SCAN_ENABLED` true) and disclosed. | None. |
+| D6 | Dormant accounts: accounts kept with no end date. | **Decided by Benn (1 Oct 2026, register item 30(c)): 12 months of inactivity, then deletion with notice. Not built.** On 22 Nov, 2 accounts had not signed in for 60 days and 4 accounts had never answered the consent screen. | Build it before public launch: it needs a way to send notices (an email service is a new processor), a scheduled job, privacy text and a register row. |
+| D7 | New users who choose "Not now" can only sign out (`ConsentScreen.tsx`), so health consent is a condition of using Tilo (Art. 7(4)). | Design kept. No solicitor view (Benn, 16 Nov). | **Keep the design** (the log is the service and no other Art. 9(2) condition fits), and accept the residual medium risk knowingly. Consider letting a new user who says no keep a phone-only log, as a withdrawn user can. |
+| D8 | Age assurance: self-declared "I'm 18 or over" on the consent screen; the wizard's age question and stop are behind its flag. | Open. The "likely to be accessed by children" assessment is still not written (register item 21). | **Accept self-declaration for now**, and write the short assessment before public launch or an App Store listing (the store age rating must be 18+). |
+| D9 | ICO prior consultation (Art. 36). | Reasoned view in 7.3, updated for sections 8, 10 and 11. | **Not needed, on the conditions in 7.3.** |
+| D10 | Legal basis for consent records: 6(1)(c), and 9(2)(f) if special category. | Kept. No solicitor view (Benn, 16 Nov). | Keep. Art. 7(1) requires the controller to show consent; a record of a yes to health or Cycle processing may itself reveal health information, so treat it as special category. |
+| D11 | Breach response (Art. 33, 34): no named person or written process. | Open (register item 11). | **Name Benn as responsible and write a one-page procedure before public launch.** It should cover the Apple Developer account and the APNs and Sign in with Apple keys too. |
+| D12 | EU users (Art. 27 representative) and a DPO (Art. 37). | Open (register item 8). | **No DPO for now**; decide whether EU users are targeted before public launch or an App Store listing in EU storefronts. |
+| D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth; 1 account was created after 30 Sept (16 Nov 2026). | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
+| D14 | iPhone backups: the iPhone app keeps its data (the whole log, the Unload notes and, once used, the Cycle log) in the app's container, included in the phone's backups (`apps/native/lib/platform/storage.ts`), so a copy goes wherever the person's backups go (iCloud or a computer). | **New, open** (also open as item 9 of `native-app-plan.md` §3.5 and `apple-health-gate1.md` §3). | **Exclude the whole store from iPhone backups** before the iPhone app reaches anyone beyond the core team, or record why not and say so in the policy. Apple guideline 5.1.3(ii) bars HealthKit data in iCloud, which settles it for section 11 in any case. |
 
 ---
 
@@ -49,21 +116,23 @@ DPIA is needed where an item on its list combines with another WP248 criterion. 
 
 | Screening criterion (ICO list / WP248rev01) | Applies? | Evidence |
 |---|---|---|
-| Tracking: software offering fitness, lifestyle or health monitoring | Yes | The whole product: food, weight, workouts, mood and hunger check-ins, supplements (`src/core/types.ts:224` `DayLog`). |
-| Sensitive data (special category, Art. 9) | Yes | Health data throughout; the diet pattern may reveal beliefs (`privacy.ts:65`). Food and workout logs are treated as health data (register, "Not now" row; CJEU C-184/20 and C-21/23 as cited there). |
-| Data about vulnerable people | Possibly | People with or recovering from eating disorders, pregnant or breastfeeding people and people with conditions such as diabetes may use a diet and weight app. The wizard asks about all three (section 2.2). |
-| Evaluation or scoring, including from health aspects | Yes, in a limited form | The safety routing evaluates onboarding answers and changes what Tilo suggests (`routeSafety`, `src/core/domain/onboarding.ts:286`). Behind `ONBOARDING_ENABLED` (off: `src/screens/onboarding/Consent.tsx:22`). |
+| Tracking: software offering fitness, lifestyle or health monitoring | Yes | The whole product: food, weight, workouts, mood and hunger check-ins, supplements (`src/core/types.ts` `DayLog`). |
+| Sensitive data (special category, Art. 9) | Yes | Health data throughout; the diet pattern may reveal beliefs (`privacy.ts`). Food and workout logs are treated as health data (register, "Not now" row; CJEU C-184/20 and C-21/23 as cited there). |
+| Data about vulnerable people | Possibly | People with or recovering from eating disorders, pregnant or breastfeeding people and people with conditions such as diabetes may use a diet and weight app. The wizard asks about all three (section 2.2). Cycle (section 10) adds people at risk from a coercive partner. |
+| Evaluation or scoring, including from health aspects | Yes, in a limited form | The safety routing evaluates onboarding answers and changes what Tilo suggests (`routeSafety`, `src/core/domain/onboarding.ts`). Behind `ONBOARDING_ENABLED` (off on 22 Nov 2026: `src/data/onboardingFlag.ts`). Since 8 Oct the maintenance loop and the lighter-session offer also profile check-ins on the phone (register, "Lighter-session offer"). |
 | Automated decision with legal or similarly significant effect | No (reasoned in 4.7) | The routing only makes suggestions more cautious; it denies nothing and the person can change the inputs. |
-| Innovative technology (including AI) | Partly | A client-side training and nutrition engine; an AI label reader is built but off (`LABEL_SCAN_ENABLED`, `src/data/labelReader.ts:16`); further AI features are planned (`docs/plans/ai-platform-plan.md`). |
-| Large scale | Not yet | 10 accounts on 30 Sept 2026 (section 2.2). Expected to grow at public launch. |
+| Innovative technology (including AI) | Partly | A client-side training and nutrition engine; AI label reading with Anthropic, on since October (`LABEL_SCAN_ENABLED` true, `src/data/labelReader.ts`; section 9); further AI features are planned (`docs/plans/ai-platform-plan.md`). The iPhone app's internal lab screen tries Apple's on-device model on a typed meal (`apps/native/lib/Lab.tsx`; nothing leaves the phone). |
+| Large scale | Not yet | 11 accounts on 22 Nov 2026 (10 on 30 Sept; section 2.2). Expected to grow at public launch or an App Store release. |
 | Denial of service based on special category data | No | Under-18s are refused, but by age, not health. Declining health consent limits the service (D7). |
-| Children | Not intended | 18+ (`MIN_AGE`, `src/core/legal/index.ts:34`). Risk of use by under-18s is R4. |
+| Children | Not intended | 18+ (`MIN_AGE`, `src/core/legal/index.ts`). Risk of use by under-18s is R4. |
 
 The register reached the same view (`docs/compliance/README.md`, "DPIA" section) and listed what
 the DPIA must cover. This document covers each item: the onboarding wizard (pregnancy, the medical
 flag, the wellbeing question, safety routing, outcomes-only storage, the under-age stop), plan
 reasons syncing, on-phone processing (register item 27), the purge and the accepted 30-day gap
-(item 30(d)), and the Anthropic processing to come (item 24).
+(item 30(d)), and the Anthropic processing (item 24, section 9). Since then: Mind (section 8), the
+rename (item 48), the iPhone app (section 2.5), Cycle (item 49, section 10) and the planned Apple
+Health import (section 11).
 
 ---
 
@@ -73,107 +142,136 @@ reasons syncing, on-phone processing (register item 27), the purge and the accep
 
 **Surfaces.** The app at app.tilo.fit (a PWA built from this repo, hosted on GitHub Pages:
 `public/CNAME`, `.github/workflows/deploy.yml`) and the website at www.tilo.fit (Webflow, delivered
-through Cloudflare, with an early-access email form protected by Cloudflare Turnstile). This DPIA
-is mainly about the app. The website's processing (early-access emails, `_cfuvid`, Turnstile) is
-low risk and recorded in the register; it is included in R7 for transfers.
+through Cloudflare, with an early-access email form protected by Cloudflare Turnstile). Since the
+rename, app.tali.fit answers with a redirect to app.tilo.fit (checked 22 Nov 2026: HTTP 302);
+www.tali.fit did not answer the check that day (not verified whether its 301s to the legal pages,
+register item 48(e), are in place). A third surface, the iPhone app, is in closed testing
+(section 2.5). This DPIA is mainly about the app. The website's processing (early-access emails,
+`_cfuvid`, Turnstile) is low risk and recorded in the register; it is included in R7 for
+transfers.
 
 **Collection.** Everything in the app is entered by the person: sign-up, the consent screen, the
 log, Profile, and (when switched on) the onboarding wizard. Nothing is collected from third
 parties except the Google identity for people who choose Google sign-in
-(`src/screens/AuthScreen.tsx:70`) and product data from Open Food Facts when someone scans a
-barcode (an independent controller; the phone asks it directly, so it sees the barcode and IP
-address: `privacy.ts:110`).
+(`src/screens/AuthScreen.tsx`), the Apple identity for people who choose Sign in with Apple in the
+iPhone app (section 2.5), and product data from Open Food Facts when someone scans a barcode (an
+independent controller; the phone asks it directly, so it sees the barcode and IP address:
+`privacy.ts`).
 
 **Storage on the phone.** The app is offline-first. The whole log, profile, settings and consent
-records live in the browser's local storage under `leanplan.v1` (`src/data/persistence.ts`), with
-a few other device-only keys listed in the cookie policy (`src/core/legal/cookies.ts`): the kitchen
-list (`tali.kitchen`, never uploaded), the onboarding draft (`tali.onboarding`, outcomes only,
-never uploaded), a pending under-age deletion (`tali.pendingDelete`) and the Supabase session
+records live in the browser's local storage under `leanplan.v1` (`src/data/persistence.ts`),
+including the device-only Mind data (`deviceOnly`, section 8.1), with a few other device-only keys
+listed in the cookie policy (`src/core/legal/cookies.ts`): the kitchen list (`tali.kitchen`, never
+uploaded), the onboarding draft (`tali.onboarding`, outcomes only, never uploaded), a pending
+under-age deletion (`tali.pendingDelete`), the shared-product cache and outbox (`tali.products`,
+`tali.productOutbox`, section 9), the reminder log (`tali-notify`) and the Supabase session
 (`sb-…`). Local storage is not encrypted by the app; it relies on the phone's own protection.
 
 **Consent gate.** After sign-in the consent screen (`src/screens/legal/ConsentScreen.tsx`) shows
-three unticked boxes (health data, terms, 18 or over: lines 25 to 27, 48). Continue records a
-`health` consent at `CONSENT_VERSIONS.health` (`src/data/consent.ts:32`). Nothing but consent
-records syncs until there is a current yes: `consentLetsSync` (`src/data/consent.ts:254`), checked
-in the store's sync loop (`src/store/store.ts:1131`, `1150`). Someone who already had data on the
-phone may choose "Not now, keep it on this phone" (line 56); a new user's "Not now" signs out
-(line 64).
+three unticked boxes (health data, terms, 18 or over). Continue records a `health` consent at
+`CONSENT_VERSIONS.health` (`2026-09-v1`, `src/data/consent.ts`; not bumped since, including for
+the rename: register item 48). Nothing but consent records syncs until there is a current yes:
+`consentLetsSync` (`src/data/consent.ts`), checked in the store's sync loop (`src/store/store.ts`).
+Someone who already had data on the phone may choose "Not now, keep it on this phone"; a new
+user's "Not now" signs out.
 
 **Sync.** With a current yes, the phone syncs per record with last-write-wins
 (`src/data/sync.ts`) to Supabase tables `settings` (profile JSON), `day_logs`, `custom_foods`,
 `recipes`, `routines`, `training_plans`, `push_subscriptions`; consent records go to the
-append-only `consents` table; `ai_usage` holds daily AI allowance counts (0 rows on 30 Sept).
-Plan reasons sync in `training_plans.why` (`PLAN_WHY_SYNC`, `src/data/sync.ts:106`).
+append-only `consents` table; `ai_usage` holds daily label-read counts (3 rows on 22 Nov, deleted
+after 60 days); `notify_sent` is written only by the reminder service (section 8.1). Plan reasons
+sync in `training_plans.why` (`PLAN_WHY_SYNC`, `src/data/sync.ts`). The shared product list
+(`products` and two helper tables) holds no personal data (section 9.3; 0 rows on 22 Nov).
 
-**Server enforcement.** A trigger on each of the seven log tables refuses a signed-in person's
-insert or update unless their latest health answer is a yes
-(`docs/migrations/2026-09-28-health-consent-server.sql:45` to `82`). Checked live on 30 Sept: 7
-`require_health_consent` triggers exist.
+**Server enforcement.** A trigger on each log table refuses a signed-in person's insert or update
+unless their latest health answer is a yes
+(`docs/migrations/2026-09-28-health-consent-server.sql`, and `notify_sent` from
+`2026-10-09-notify-sent.sql`). Checked live on 22 Nov 2026: 8 `require_health_consent` triggers
+(7 on 30 Sept, plus `notify_sent`).
 
 **Access control.** Row Level Security gives each person access only to rows where `user_id`
-equals `auth.uid()` (`docs/security-rls.sql:30` to `44`); `consents` and `ai_usage` have narrower
-policies (lines 69 to 71). Checked live on 30 Sept: RLS is on for all nine public tables. The
-publishable (anon) key in `src/data/supabase.ts:10` is public by design and reaches no rows
-without a session. The service role key is used only inside Edge Functions and a database job.
+equals `auth.uid()` (`docs/security-rls.sql`); `consents`, `ai_usage` and `notify_sent` have
+narrower policies, and the three shared-list tables have RLS on with no policies and no table
+grants (section 9). Since 23 Oct every table's grants are written out
+(`docs/migrations/2026-10-23-core-grants.sql`). Checked live on 22 Nov 2026: RLS is on for all 13
+public tables. The publishable (anon) key in `src/data/supabase.ts` is public by design and reaches
+no rows without a session. The service role key is used only inside Edge Functions and database
+jobs.
 
-**Server-side processing.**
+**Server-side processing** (Edge Functions listed live on 22 Nov 2026; all six last deployed on
+5 Nov 2026, the rename).
 - `delete-account` (`supabase/functions/delete-account/index.ts`): verifies the caller's token with
-  Auth, requires a sign-in in the last 5 minutes (line 116; waived only for an account under 24
-  hours old with `reason: 'under-age'`), signs out every session (line 122), deletes the rows in
-  every table in `USER_TABLES` (`supabase/functions/_shared/account.ts:10`), then the login.
-- `send-supplement-reminders` (`supabase/functions/send-supplement-reminders/index.ts`): run by a
-  cron job with a secret (constant-time check), reads push subscriptions and supplement names with
-  the service role, skips anyone without a current health yes, and sends an encrypted Web Push
-  with the fixed text "Time for your supplements" (no supplement name, from 2026-10-09).
-- `ai-read-label`: sends a food-label photo to Anthropic and returns the values. Deployed, but
-  switched off in the app (`LABEL_SCAN_ENABLED` false) and not described in the privacy policy
-  (D5).
-- `purge_unconsented_logs()`: a daily pg_cron job at 03:17 UTC
-  (`docs/migrations/2026-09-28-unconsented-purge.sql:175` to `221`; checked live: the job exists).
+  Auth, requires a sign-in in the last 5 minutes (waived only for an account under 24 hours old
+  with `reason: 'under-age'`), signs out every session, deletes the rows in every table in
+  `USER_TABLES` (`supabase/functions/_shared/account.ts`: ten tables, `notify_sent` included), then
+  the login. It accepts requests from app.tilo.fit and, during the hand-over, app.tali.fit. The
+  Sign in with Apple revocation step is on `main` (`_shared/apple.ts`, built 15 Nov) but **not
+  deployed**: the live function dates from 5 Nov (section 2.5).
+- `send-supplement-reminders` (`index.ts` with `_shared/reminders.ts`): run by a cron job with a
+  secret (constant-time check), reads push subscriptions and the profile with the service role,
+  skips anyone without a current health yes, and sends encrypted Web Push with fixed text
+  (supplement, weekly review and the Mind reminders; section 8). The APNs path for the iPhone app
+  (`_shared/apns.ts`) is on `main` but not live: its migration is not applied (checked 22 Nov:
+  `push_subscriptions` has no `platform` column) and the APNs key secrets are not set as far as the
+  repo shows.
+- `ai-read-label`, `submit-product`, `lookup-product`, `report-product`: label reading and the
+  shared product list, live since October (section 9).
+- `purge_unconsented_logs()` (daily pg_cron job `tali-purge-unconsented`, 03:17 UTC) and the
+  `ai_usage` 60-day clean-up (`tali-ai-usage-cleanup`).
 
 **Withdrawal.** Profile → Privacy → Withdraw. The phone records a no, clears every item in
-`HEALTH_FIELDS` (`src/data/consent.ts:304`, `clearHealthData` at line 348), deletes the onboarding
-draft, and calls `clear_log_after_withdrawal()` (`src/data/sync.ts:389`), which deletes the
-account's copy of all seven log tables in one transaction, only while the latest answer is a no
-(`2026-09-28-health-consent-server.sql:85` to `114`). Every other phone of the account applies the
-clear the next time it connects (`applyHealthWithdrawal`, `consent.ts:410`; `pendingCloudClear`,
-line 435). Consent records and the account stay.
+`HEALTH_FIELDS` (`clearHealthData`, `src/data/consent.ts`), deletes the onboarding draft, and calls
+`clear_log_after_withdrawal()` (`src/data/sync.ts`), which deletes the account's copy of the log
+tables (and `notify_sent`) in one transaction, only while the latest answer is a no
+(`2026-09-28-health-consent-server.sql`, `2026-10-10-notify-sent-remaining.sql`). Every other
+phone of the account applies the clear the next time it connects (`applyHealthWithdrawal`,
+`pendingCloudClear`, `consent.ts`). Consent records and the account stay.
 
 **Deletion.** Delete account (above) and then the phone is wiped; or "Sign out and remove this
 device's log" for the phone only.
 
-**The purge.** Some accounts synced data before the consent screen existed (register item 20).
-For an account with no health answer, the account's log is deleted 30 days after the later of
+**The purge (done).** Some accounts synced data before the consent screen existed (register item
+20). For an account with no health answer, the account's log is deleted 30 days after the later of
 PURGE_FROM (28 Sept 2026) and the account's creation, so on 28 October 2026 for existing accounts
-(`UNCONSENTED_DELETION`, `src/core/legal/index.ts:32`; `npm test` checks the two dates agree:
-`scripts/test-consent.ts:767`). A no more than a day old is also purged, as a backstop to the
+(`UNCONSENTED_DELETION`, `src/core/legal/index.ts`; `npm test` checks the two dates agree:
+`scripts/test-consent.ts`). A no more than a day old is also purged, as a backstop to the
 withdrawal clear. Consent records are never purged. The phone keeps its own copy, and a later yes
-re-uploads it (`needsReupload`, `consent.ts:444`).
+re-uploads it (`needsReupload`, `consent.ts`). **What happened:** no notice emails (D2); the job
+ran on 28 and 29 October with status "succeeded" and has run daily since (last run 22 Nov); on 22
+Nov no account had a cloud log without a current health yes (checked with counts only). The job
+keeps running for new accounts that never answer. The 30-day gap that Benn accepted on 28 Sept is
+now closed for the pre-consent accounts.
 
 **Processors and recipients** (register, "Processors and transfers"; locations as recorded there
 and checked where noted):
 
 | Recipient | Role | Location | What it sees |
 |---|---|---|---|
-| Supabase Inc. | Processor: database, Auth, account emails, Edge Functions, pg_cron | Project region eu-west-1, Ireland (checked with the Supabase API, 30 Sept). Supabase Inc. is a US company. | Everything synced, account email and password hash, request logs |
+| Supabase Inc. | Processor: database, Auth, account emails, Edge Functions, pg_cron | Project region eu-west-1, Ireland (checked with the Supabase API, 22 Nov 2026). Supabase Inc. is a US company. | Everything synced, account email and password hash, request logs |
 | GitHub Inc. (Pages) | Processor: app hosting | US | IP address, user agent, request times |
 | Webflow Inc., with Cloudflare and Amazon CloudFront | Processor: website, early-access form; delivery and Turnstile | US / global | Early-access emails, website request data, Turnstile signals |
-| Bunny.net (BunnyWay d.o.o.) | Processor: some exercise demo videos (`src/core/data/media.ts:57`; others are served from the app itself, `VIDEO_BASE` line 8) | Slovenia per Bunny's published details (register: confirm) | IP address and request data when the app shows a demo's preview image or plays the video |
-| Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts:46`) |
+| Bunny.net (BunnyWay d.o.o.) | Processor: exercise demo videos and their preview images (Bunny Stream; `src/core/data/media.ts`; `public/videos/` is empty) | Slovenia per Bunny's published details (register: confirm) | IP address and request data when the app shows a demo's preview image or plays the video |
+| Anthropic (Anthropic Ireland, Limited under the Commercial Terms) | Processor: reads label photos (section 9) | US processing likely | The photos only, no identifiers |
+| Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts`) |
 | Google (sign-in) | Independent controller | Global | Only for people who choose Google |
-| Apple, Google, Mozilla push services | Deliver reminders | Global | An encrypted payload with no supplement name (fixed text) |
+| Apple (Sign in with Apple, iPhone app) | Independent controller for the sign-in (register) | Apple Inc., US | Only for people who choose it; 2 Apple identities existed on 22 Nov 2026 (core team) |
+| Apple, Google, Mozilla push services (web) | Deliver reminders | Global | An encrypted payload with fixed text |
+| Apple Push Notification service (iPhone app) | Delivers iPhone reminders: **not live** | Apple Inc., US | Would see the device token, timing and the fixed text (section 8.8, R30) |
+| Apple (TestFlight, App Store Connect, the phone's own backups) | Platform; role and terms not recorded | Apple Inc., US | Section 2.5 |
 | Open Food Facts | Independent controller | France | Barcode and IP address |
-| Anthropic | Would be a processor for label reading | US | Nothing today in the app (off); see D5 |
 
 **Data flow in one line each.**
 1. Phone → local storage: everything the person enters.
 2. Phone → Supabase (eu-west-1), over HTTPS, only with a current health yes: the log tables above.
 3. Phone → Supabase: consent records, always (needed to show the answer on other phones).
 4. Supabase → phone: pulls of the same data for the account's other phones.
-5. Supabase job → push service → phone: supplement reminders.
+5. Supabase job → push service → phone: reminders the person turned on.
 6. Phone → Open Food Facts: a scanned barcode.
-7. Phone → GitHub Pages / Bunny: requests for app files and videos (technical data only).
-8. Person's mail app → Google Workspace: feedback and requests.
+7. Phone → `ai-read-label` → Anthropic: label photos the person takes (section 9).
+8. Phone → GitHub Pages / Bunny: requests for app files and videos (technical data only).
+9. Person's mail app → Google Workspace: feedback and requests.
+10. iPhone app: the same flows 1 to 7, plus Apple for sign-in, and the phone's backups (section
+    2.5).
 
 ### 2.2 Scope of the processing
 
@@ -181,36 +279,36 @@ and checked where noted):
 
 - **Account:** email, password hash (Supabase Auth); for Google sign-in, email, name and avatar
   URL.
-- **Profile** (`Profile`, `src/core/types.ts:387`): name, `sex` (legacy M/F) and `sexAnswer`
+- **Profile** (`Profile`, `src/core/types.ts`): name, `sex` (legacy M/F) and `sexAnswer`
   (female, male, prefer not to say), age, height, weight, body fat, activity level, goal, pace,
   diet pattern, supplements, targets and ranges, display preferences including Gentle mode,
   accuracy preferences, hand-portion sizes, if-then plans, and training preferences
   (`profile.training`: confidence, how much they move now, days and weekdays, session length,
   place, equipment, what they enjoy, cardio, focus areas, likes and dislikes, **body areas to go
   easy on (`limitations`) and a free-text note (`limitationsNote`)**).
-- **Log** (`DayLog`, `src/core/types.ts:224`): foods and portions, supplements taken, body weight,
+- **Log** (`DayLog`, `src/core/types.ts`): foods and portions, supplements taken, body weight,
   workouts and sessions (exercises, sets, time, effort, how it felt), and check-ins (mood, hunger,
   sleep, stress, energy, soreness, note). Custom foods, recipes, the person's own workouts
   (`routines`) and weekly plans (`training_plans`).
-- **Every `HEALTH_FIELDS` item** (`src/data/consent.ts:304`), which withdrawal clears:
+- **Every `HEALTH_FIELDS` item** (`src/data/consent.ts`), which withdrawal clears:
   `day.weight`, `day.checkin`, `profile.weight`, `profile.bodyFat`, `profile.height`,
   `profile.sexAnswer`, `profile.movement`, `profile.activityMult`, `profile.activityLevel` (reset to
   the default), `profile.outcomes`, `profile.pregnancy`, `profile.motivations`,
   `profile.deficitChosen`, `profile.training`. Also stripped: health-derived plan reasons
-  (`healthWhy`, `consent.ts:403`).
+  (`healthWhy`, `consent.ts`).
 - **Onboarding outcomes** (wizard, behind `ONBOARDING_ENABLED`; `OnboardingOutcomes`,
-  `src/core/types.ts:274`): readiness `clear`/`flagged` (from the health check: heart, dizziness,
+  `src/core/types.ts`): readiness `clear`/`flagged` (from the health check: heart, dizziness,
   pregnancy, recent surgery), medical `clear`/`flagged` (diabetes treated with insulin or tablets
   that can cause lows, kidney disease, a weight-loss injection), baseline `ok`/`low` (sleep, stress,
   room for change). Medical is `clear`/`flagged`/`no-deficit` since 24 Oct 2026; `flagged` can
   suggest kidney disease (4.2). **Only the outcome is stored, never which item applied**; the raw items stay in
   component state, and the end-to-end test checks no raw screener answer is ever uploaded
-  (`scripts/e2e-onboarding.cjs:268`).
-- **Pregnancy** (`PregnancyFlag`, `src/core/types.ts:286`): `flagged` (pregnant and breastfeeding
+  (`scripts/e2e-onboarding.cjs`).
+- **Pregnancy** (`PregnancyFlag`, `src/core/types.ts`): `flagged` (pregnant and breastfeeding
   not told apart), `askedAt`, and `snoozedAt` after "Ask me later" on the 12-week re-ask.
 - **The wellbeing answer** ("how food and weight feel"): `flagged` (yes), `sometimes` (from
   Onboarding 9, 2026-10-01), `clear` or `undisclosed`, and whether it turned Gentle mode on (a yes
-  only). After it, `profile.foodOptIn` (`src/core/types.ts:292`): for a sometimes, the answer to
+  only). After it, `profile.foodOptIn` (`src/core/types.ts`): for a sometimes, the answer to
   the day-14 "Would you like your food range on Today?" (`today`, no date); for a yes, the answer
   to the week-4 "Would a calorie range help?" (`range`) with `rangeAt`, the date, for the 12-week
   rest after "Not now". Closing either ask saves the second answer, so no separate "asked" flag is
@@ -221,9 +319,9 @@ and checked where noted):
   movement and the multiplier from it, `deficitChosen`, per-field `answeredAt` stamps.
 - **Plan reasons:** `why` entries on `training_plans` and on workout slots in `routines`, some of
   which come from health answers (codes `body-area`, `baseline`, `feel`, `recovery` and fields such
-  as `readiness`, `wellbeing`, `gentle`, `deficit`: `consent.ts:400` to `403`).
+  as `readiness`, `wellbeing`, `gentle`, `deficit`: `consent.ts`).
 - **Derived but not stored:** a BMI under 18.5 is used as a gate only (no deficit), never shown or
-  stored (`lowBmi`, `src/core/domain/onboarding.ts:267`; `LOW_BMI` line 74).
+  stored (`lowBmi`, `src/core/domain/onboarding.ts`; `LOW_BMI` line 74).
 - **Reminders:** push subscription endpoint and keys, supplement names and times.
 - **Consent records:** type, version, yes or no, time on the phone and arrival time.
 - **Technical:** IP address, user agent, request times in provider logs.
@@ -241,7 +339,7 @@ testers), how much data is on phones only (by design the server cannot see it), 
 early-access emails Webflow holds (Unknown: count them in the Webflow form submissions), and the
 expected number of users at public launch (Unknown: Benn's launch plan).
 
-**Retention** (`privacy.ts:122` to `130`; register, "Record of processing"):
+**Retention** (`privacy.ts`; register, "Record of processing"):
 - Account data: while the account exists; deleted from the live database at once on Delete
   account.
 - Log, profile, settings, reminders in the account: until withdrawal (cleared at once, or when a
@@ -260,17 +358,17 @@ expected number of users at public launch (Unknown: Benn's launch plan).
 - **Who the users are:** adults (18+) who want to track food, training and body measures. Today, a
   closed group of testers (register, "Status").
 - **Relationship and control:** a direct consumer relationship with a free service
-  (`terms.ts:85`). People enter everything themselves, can see and edit most of it, export it, and
+  (`terms.ts`). People enter everything themselves, can see and edit most of it, export it, and
   delete it from the app.
 - **Expectations:** people using a health app expect their data to be private, not sold, and not
-  used for ads. The policy says there are no ads, analytics or tracking (`privacy.ts:34`), and the
+  used for ads. The policy says there are no ads, analytics or tracking (`privacy.ts`), and the
   code has none (no analytics SDK found; the register's "Storage and PECR" row agrees). They will
   probably expect sync across phones; they may not expect that data they logged before being asked
   had already synced, which is why the purge exists.
 - **Vulnerable people:** likely to include some. A diet and weight app attracts people with a
   difficult relationship with food. Pregnant and breastfeeding people may use it. People with
   diabetes on insulin or sulfonylureas are at risk of hypoglycaemia if they eat less. The terms tell
-  these groups to see a GP and not to use Tilo to guide their eating (`terms.ts:26` to `37`). The
+  these groups to see a GP and not to use Tilo to guide their eating (`terms.ts`). The
   wizard, when on, detects some of them and makes Tilo more cautious (section 4.7).
 - **Children:** not intended (18+), but a diet app can appeal to teenagers (R4, D8).
 - **State of the art and concerns:** health and fitness apps are a known area of public concern
@@ -281,7 +379,7 @@ expected number of users at public launch (Unknown: Benn's launch plan).
 - **Relevant codes and guidance:** ICO guidance on special category data and on DPIAs; ICO
   Children's Code (not applicable while under-18s are excluded and the service is not likely to be
   accessed by them: D8); MHRA guidance on software as a medical device (Tilo positions itself as
-  general wellness: `terms.ts:28`); ASA/CAP Code sections 12 and 15 for marketing claims.
+  general wellness: `terms.ts`); ASA/CAP Code sections 12 and 15 for marketing claims.
 - **Controller change ahead:** a separate company is planned before public launch (register item
   15). That means a new controller, new texts, re-consent, and a review of this DPIA.
 
@@ -308,8 +406,8 @@ advertising, research or profiling for anyone else.
 **Done (recorded in the repo):**
 - `security-data` reviews of the consent sync, the "Not now" pause, the server enforcement, the
   purge, the under-age deletion and `delete-account` (commits `fafea2f`, `fe08c04`, `c0024c5`,
-  `d719e65`; the review notes in `supabase/functions/_shared/account.ts:46` and
-  `delete-account/index.ts:19`; register items 36 and 37). The client side of the under-age stop
+  `d719e65`; the review notes in `supabase/functions/_shared/account.ts` and
+  `delete-account/index.ts`; register items 36 and 37). The client side of the under-age stop
   (sign-out and wipe) has no recorded `security-data` review (register item 37).
 - `mental-performance` review of the onboarding copy and routing (commit `d719e65`: pregnancy
   follow-up wording, recent surgery routed to readiness, NHS 111 wording) and of engine copy
@@ -346,12 +444,12 @@ they are not independent professional reviews.
 |---|---|---|---|
 | Account (email, password hash, Google identity) | 6(1)(b) contract | None needed | |
 | Profile, log, custom foods, recipes, workouts, plans, plan reasons | 6(1)(b) contract | 9(2)(a) explicit consent | Food and workouts treated as health data (conservative, register "Not now" row). |
-| Onboarding outcomes, pregnancy, wellbeing, motivations, movement | 6(1)(b) | 9(2)(a); each question optional, with a notice on its screen | Only asked after a local health yes (`canSaveHealthAnswers`, `consent.ts:201`). |
+| Onboarding outcomes, pregnancy, wellbeing, motivations, movement | 6(1)(b) | 9(2)(a); each question optional, with a notice on its screen | Only asked after a local health yes (`canSaveHealthAnswers`, `consent.ts`). |
 | Reminders (push subscription, supplement names) | 6(1)(b) | 9(2)(a) | The server also checks consent before sending. |
 | Consent records | 6(1)(c) legal obligation (Art. 7(1)) | 9(2)(f) if a record counts as special category | D10. |
 | Pre-consent log held for the 30-day transition | Unclear | **None identified** (register "Record of processing") | A time-limited risk Benn accepted on 28 Sept; data held unread and unchanged; solicitor's view pending (register item 26). |
 | Security and request logs | 6(1)(f) | None | |
-| Feedback emails | 6(1)(f) | 9(2)(a) at most if someone volunteers health details; the app asks them not to (`privacy.ts:51`) | |
+| Feedback emails | 6(1)(f) | 9(2)(a) at most if someone volunteers health details; the app asks them not to (`privacy.ts`) | |
 | Early access email | 6(1)(a) consent | None | Website. |
 
 **Is explicit consent valid?** The screen is explicit (a separate, unticked box for health data),
@@ -366,7 +464,7 @@ release that turns it on (register item 38). The open question is conditionality
 
 - **Outcomes-only storage** for the readiness, medical and lately questions: Tilo stores "flagged"
   or "clear" (and, for medical, "no-deficit"), never the condition, medicine or symptom. This is the
-  single most important minimisation measure and it is tested (`scripts/e2e-onboarding.cjs:268`).
+  single most important minimisation measure and it is tested (`scripts/e2e-onboarding.cjs`).
   Residual inference (24 Oct 2026, register item 47): the medical "flagged" setting comes from a
   kidney disease tick, or from an answer given before the split, so it can suggest kidney disease.
   It is needed to work out the protein figure (storing the figure would reveal the same), it is
@@ -375,10 +473,10 @@ release that turns it on (register item 38). The open question is conditionality
 - BMI is computed for a gate and never stored.
 - The kitchen list and the onboarding draft never leave the phone.
 - Everything in onboarding is optional except age and goal (`canSkip`,
-  `src/core/domain/wizard.ts:217`); a skipped answer leads to cautious defaults, not a prompt to
+  `src/core/domain/wizard.ts`); a skipped answer leads to cautious defaults, not a prompt to
   answer.
 - Kept after withdrawal on the phone only: name, age, legacy `sex`, units, goal, Gentle mode,
-  `onboardedAt` (`consent.ts:321`). Note that Gentle mode being on can hint at the wellbeing answer;
+  `onboardedAt` (`consent.ts`). Note that Gentle mode being on can hint at the wellbeing answer;
   it stays only on the person's own phones.
 - Things Tilo could keep but doesn't: no location, no contacts, no device identifiers, no
   analytics.
@@ -390,7 +488,7 @@ release that turns it on (register item 38). The open question is conditionality
 
 People enter and correct their own data; most fields are editable in the app, and the health
 answers in Profile › Health data (register "Rectification"). Nutrition values cite a source and
-show a margin (CLAUDE.md "Food data"; `terms.ts:49` to `55`). The multi-phone merge uses per-field
+show a margin (CLAUDE.md "Food data"; `terms.ts`). The multi-phone merge uses per-field
 timestamps so an older answer does not overwrite a newer one (`answeredAt`). The 12-week pregnancy
 re-ask keeps that flag from going stale (register item 33). Not editable in the app: going back to
 "prefer not to say" for sex (by email).
@@ -405,27 +503,27 @@ unknown.
 
 Privacy policy, terms and cookie policy (`src/core/legal/`), published on the website and linked
 from sign-up, the consent screen and Profile. The consent screen, each health question and the
-withdrawal prompt (`HEALTH_WITHDRAW_PROMPT`, `consent.ts:770`) say what happens in context.
+withdrawal prompt (`HEALTH_WITHDRAW_PROMPT`, `consent.ts`) say what happens in context.
 `npm run check:legal` blocks deploys on placeholders. The policy describes the safety routing
-(`privacy.ts:87` to `93`).
+(`privacy.ts`).
 
 ### 4.6 Rights
 
 Access and portability: Export (JSON, `src/data/backup.ts`). Rectification: in app, else email.
 Erasure: Delete account, or remove the phone's log. Withdrawal: Profile → Privacy. Restriction and
-objection: by email. Requests by email to benn@gravita.co within one month (`privacy.ts:161`).
+objection: by email. Requests by email to benn@gravita.co within one month (`privacy.ts`).
 Gap: no written internal process for email requests or identity checks.
 
 ### 4.7 Automated decisions (Art. 22)
 
-The safety routing (`routeSafety`, `src/core/domain/onboarding.ts:286` to `350`) is automated
+The safety routing (`routeSafety`, `src/core/domain/onboarding.ts`) is automated
 processing of health data that changes what the person is offered: a gentler start, no calorie
 deficit, no calorie number, Gentle mode, and signposting. It is not a decision "based solely on
 automated processing which produces legal effects or similarly significantly affects" the person,
 because: it only ever makes Tilo more cautious; it refuses no service, product or price; the
 person can see, change or clear the answers that drive it (Profile › Health data); and the policy
 says it has no legal or similarly significant effect and nobody makes decisions about them from it
-(`privacy.ts:91`). Even so, it relies on 9(2)(a) explicit consent, which is also the Art. 22(4)
+(`privacy.ts`). Even so, it relies on 9(2)(a) explicit consent, which is also the Art. 22(4)
 condition if a regulator took a different view. This reasoning should be confirmed by the
 solicitor.
 
@@ -433,7 +531,7 @@ solicitor.
 
 The routing does not diagnose, predict disease or adjust medication; it withholds a deficit and
 signposts. That keeps Tilo on the general-wellness side (terms "Not medical advice",
-`terms.ts:26`). Unknown: whether MHRA would agree for this exact design; a short qualification
+`terms.ts`). Unknown: whether MHRA would agree for this exact design; a short qualification
 note against MHRA's software and AI as a medical device guidance before public launch would
 settle it. Any future feature that interprets symptoms, flags a condition or suggests medication
 changes needs a fresh assessment.
@@ -448,7 +546,7 @@ protein range is presented as Tilo's ordinary range, never as something for the 
 
 Supabase stores the data in Ireland, but Supabase Inc. is US-based and may access it from the US;
 GitHub, Webflow, Cloudflare and Google are US or global. The policy relies on the UK IDTA or UK
-Addendum, EU SCCs or the UK-US and EU-US Data Privacy Framework (`privacy.ts:114` to `118`).
+Addendum, EU SCCs or the UK-US and EU-US Data Privacy Framework (`privacy.ts`).
 **Unknown:** which mechanism each provider actually offers for this account, and whether each DPA
 has been accepted (register item 4 says not yet for Supabase, Webflow and Bunny). Resolve by
 accepting each DPA, checking each company on the DPF list, and recording the result in the
@@ -488,17 +586,17 @@ the measures in section 6.
 items are not done.
 
 ### R1 Breach or unauthorised access
-- **In place:** owner-only RLS on every table (`docs/security-rls.sql:30` to `44`; live check: RLS
+- **In place:** owner-only RLS on every table (`docs/security-rls.sql`; live check: RLS
   on for all 9 tables); `consents` insert and select only, `ai_usage` select only; the anon key
-  reaches no rows without a session (`src/data/supabase.ts:10`); the service role key only in
-  Edge Function environments and the pg_cron job (`delete-account/index.ts:32`); `delete-account`
+  reaches no rows without a session (`src/data/supabase.ts`); the service role key only in
+  Edge Function environments and the pg_cron job (`delete-account/index.ts`); `delete-account`
   verifies the token with Auth, requires a recent sign-in, and revokes all sessions first
-  (`delete-account/index.ts:105` to `123`); the reminder function checks a secret in constant time;
+  (`delete-account/index.ts`); the reminder function checks a secret in constant time;
   functions log counts only, no ids or content; outcomes-only storage limits what a breach could
   reveal; leaked password protection on (register item 39); HTTPS throughout. Supabase security
   advisor on 30 Sept: two warnings, `pg_net` in the public schema (register item 39, low) and
   `ai_usage_take` being a security definer callable by signed-in users (intended: it is how the
-  allowance is taken, `docs/security-rls.sql:70`).
+  allowance is taken, `docs/security-rls.sql`).
 - **Recommended:** a written breach procedure and named owner (D11); MFA on every Supabase, GitHub,
   Webflow and Google admin account (Unknown: whether it is on; Benn to confirm); an independent
   security test of RLS and the Edge Functions before public launch; offer MFA or passkeys to users
@@ -509,17 +607,17 @@ items are not done.
 ### R1b Phone and exports
 - **In place:** data on the phone is sandboxed to the app's origin; "Sign out and remove this
   device's log"; the owner check stops a different account on the same phone seeing the data
-  (`ownerCheck`, `src/data/persistence.ts:272`).
+  (`ownerCheck`, `src/data/persistence.ts`).
 - **Recommended:** a line on the Export screen that the file contains health data and should be
   kept private (a copy change, so it needs Benn's approval).
 - **Residual:** possible, minimal to significant: **low**.
 
 ### R2 Cloud without consent
 - **In place:** unticked boxes on the consent screen; the phone syncs nothing but consent records
-  without a current yes (`consentLetsSync`, `consent.ts:254`; `store.ts:1150`); the server refuses
+  without a current yes (`consentLetsSync`, `consent.ts`; `store.ts`); the server refuses
   log writes without a current yes (trigger on 7 tables, live check 30 Sept); reminders skip anyone
   without a yes; health questions only shown and saved after a local yes (`canSaveHealthAnswers`,
-  `consent.ts:201`; `HEALTH_STEPS`, `wizard.ts:149`); the pre-consent cloud copy is purged
+  `consent.ts`; `HEALTH_STEPS`, `wizard.ts`); the pre-consent cloud copy is purged
   automatically (`purge_unconsented_logs`, live job checked).
 - **Recommended:** solicitor's view on the 30-day hold (register item 26); keep the purge job
   monitored after 28 October (check that the two accounts' rows are gone).
@@ -527,9 +625,9 @@ items are not done.
 
 ### R3 Wrong routing or advice
 - **In place:** terms say Tilo is not medical advice and list who should see a GP and not use Tilo
-  to guide their eating (`terms.ts:26` to `47`); the routing only ever makes Tilo more cautious
+  to guide their eating (`terms.ts`); the routing only ever makes Tilo more cautious
   (`routeSafety`); skipped answers give cautious defaults (a gentler start, maintenance pre-selected,
-  quiet signposting: `onboarding.ts:322` to `346`); pregnancy holds food at maintenance with no
+  quiet signposting: `onboarding.ts`); pregnancy holds food at maintenance with no
   calorie number; the medical flag removes the deficit and adds a GP note, with protein at the
   everyday amount after a kidney tick or a capped 1.2 to 1.6 g/kg range otherwise (register item 47); a wellbeing yes turns on Gentle mode (no calorie target, totals in words, a maintenance range
   on Food only if the person asks for one at week 4) and a sometimes gives a maintenance range
@@ -550,7 +648,7 @@ items are not done.
 - **In place:** 18+ in the terms and policy (`MIN_AGE`); a required "I'm 18 or over" box on the
   consent screen; behind the wizard, an age question that stops under-18s kindly, wipes the phone
   and deletes the new account (`delete-account` under-age path, register "Under-age stop" row); the
-  policy says how to report a child's use (`privacy.ts:166`).
+  policy says how to report a child's use (`privacy.ts`).
 - **Recommended:** a written "likely to be accessed by children" assessment (D8); fix register item
   37(a): an under-age account that never signs in again stays on the server with nothing marking
   it; a `security-data` review of the client stop path.
@@ -559,7 +657,7 @@ items are not done.
 
 ### R5 Data loss
 - **In place:** Export at any time; the terms and cookie policy warn that phone-only data is lost
-  with the phone or browser data (`terms.ts:61`; `cookies.ts:61`); the "Not now" and withdrawal
+  with the phone or browser data (`terms.ts`; `cookies.ts`); the "Not now" and withdrawal
   screens say where the data is and offer a backup first (`HEALTH_WITHDRAW_PROMPT`); the purge keeps
   the phone's copy and a later yes re-uploads it (`needsReupload`); "Start fresh" needs a second
   tap with "Export a copy" beside it (register item 31).
@@ -569,12 +667,12 @@ items are not done.
 
 ### R6 Withdrawal not fully honoured
 - **In place:** the phone clears all `HEALTH_FIELDS` and health-derived plan reasons at once
-  (`clearHealthData`, `consent.ts:348`), and the `resumeCopy` is stripped too (`stripResumeCopy`);
+  (`clearHealthData`, `consent.ts`), and the `resumeCopy` is stripped too (`stripResumeCopy`);
   the account's copy is deleted in one transaction (`clear_log_after_withdrawal`); every other phone
   clears on next connection, once per withdrawal (`applyHealthWithdrawal`, `pendingCloudClear`); the
   server refuses uploads after a no, so a stale phone cannot put data back; the purge deletes any
   log left more than a day after a no; the onboarding draft is deleted; the policy tells people
-  exactly what stays (`privacy.ts:69` to `70`).
+  exactly what stays (`privacy.ts`).
 - **Recommended:** record the Supabase backup window (register item 30(b)) and say it in the policy
   if it is long; note in the policy that exported files are the person's own copy.
 - **Residual:** remote, significant: **low**. What stays by design (name, age, goal, legacy sex,
@@ -591,8 +689,8 @@ items are not done.
 
 ### R8 Function creep and AI
 - **In place:** label reading is off in the app (`LABEL_SCAN_ENABLED`) and the AI features row is
-  hidden (`AI_FEATURES_LIVE`, `src/screens/ProfileScreen.tsx:44`); the policy comment forbids
-  switching label reading on before it is described (`privacy.ts:9` to `12`); `ai-read-label` checks
+  hidden (`AI_FEATURES_LIVE`, `src/screens/ProfileScreen.tsx`); the policy comment forbids
+  switching label reading on before it is described (`privacy.ts`); `ai-read-label` checks
   a separate label-photo consent on the server and logs no content; purposes are listed and no
   secondary use exists; the register lists AI, analytics, error tracking, email marketing and paid
   tiers as changes that need the compliance agent first.
@@ -604,7 +702,7 @@ items are not done.
 
 ### R9 On-phone processing
 - **In place:** the policy and cookie policy describe device-only data and how long it stays
-  (`privacy.ts:47` to `48`; `cookies.ts:35` to `37`); the same consent gate applies to the health
+  (`privacy.ts`; `cookies.ts`); the same consent gate applies to the health
   questions on the phone (`canSaveHealthAnswers`); withdrawal clears health fields on the phone too;
   rights (export, delete on this device) cover the phone.
 - **Recommended:** none beyond keeping this in the register (item 27) and treating any new
@@ -612,7 +710,7 @@ items are not done.
 - **Residual:** **low**.
 
 ### R10 ICO fee
-- **In place:** `check:legal` warns while `LEGAL.icoNumber` is empty (`src/core/legal/index.ts:21`).
+- **In place:** `check:legal` warns while `LEGAL.icoNumber` is empty (`src/core/legal/index.ts`).
 - **Recommended:** pay now (D3). The new company will need its own registration.
 - **Residual after payment:** **low**.
 
@@ -623,7 +721,7 @@ items are not done.
 
 ### R12 Conditional consent
 - **In place:** separate unticked boxes; no marketing bundled; withdrawal is easy and keeps the
-  app usable on the phone for food and workouts (`healthDeclined`, `consent.ts:229`); existing users
+  app usable on the phone for food and workouts (`healthDeclined`, `consent.ts`); existing users
   can say "Not now" without losing anything.
 - **Recommended:** solicitor's view (D7); consider whether a new user who says no could also keep
   a phone-only log, as a withdrawn user can (a product and design decision for Benn).
@@ -723,7 +821,7 @@ behind `MIND_REVIEWED`). Benn signs this section before the flag goes on. The re
 
 Art. 6(1)(b) with Art. 9(2)(a) explicit consent, as for the rest of the log (section 4.1). No
 re-consent is needed: the consent wording already names sleep, stress and mood
-(`ConsentScreen.tsx:40`), and no `CONSENT_VERSION` bump is required. Reminders and the server
+(`ConsentScreen.tsx`), and no `CONSENT_VERSION` bump is required. Reminders and the server
 record only run with a current health yes. The time zone is not health data and stays on the
 phones after a withdrawal; the account copy goes with `settings`.
 
