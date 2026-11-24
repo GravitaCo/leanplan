@@ -868,45 +868,63 @@ done unless a status note says so.
 
 | Item | Name and date | Notes |
 |---|---|---|
+| Sections 1 to 7 approved by | | Benn, for Gravita Creative Ltd. Approves what the summary lists under "What your signature on sections 1 to 7 approves", and nothing under "What stays conditional". |
 | Measures approved by | | Which "recommended" measures in section 6 are approved, with owners and dates. Integrate them back into the project plan. |
-| Residual risks approved by | | Any residual high risk (R3 without D1) needs Art. 36 prior consultation before going ahead. |
+| Residual risks approved by | | Any residual high risk (R3 without D1 beyond closed testers; R15 if public before the Mind review; R23 and R26 beyond Benn and Sara) needs Art. 36 prior consultation before going ahead. |
+| Onboarding wizard on for closed testers | | Confirms the DPIA part of the onboarding launch gate for closed testers only (summary item 4); D1 stays a condition for anyone beyond them. |
+| D14 iPhone backups | | Exclude the whole store, or keep it in backups and say so in the policy. |
 | DPO advice | Not applicable: no DPO appointed (D12) | |
-| Solicitor advice | | Summary of advice on D7, D10, the 30-day hold (register item 26), Art. 22 reasoning (4.7), and the texts. If advice is overruled, say why. |
-| Clinician advice | | Summary of the clinical review (D1). |
+| Solicitor advice | Not sought yet (D15) | Benn, 16 Nov 2026: "We do not need lawyer at this time". Risk accepted: the legal judgements here (D7, D10, 4.7, 7.3, section 10) are unreviewed. Reconsider before public launch, an App Store listing, the new company or paid tiers. |
+| Clinician advice | | Summary of the clinical review (D1). Not done on 24 Nov. |
 | ICO prior consultation needed? | | See 7.3 for the reasoned view. |
 | Consultation responses (users) | | Whether users were consulted, and if not, why (section 3). |
 | This DPIA kept under review by | | Normally Benn, with the `compliance` agent. |
 
 ### 7.2 Outcomes summary
 
-- Processing can continue in the closed test with the measures in place, provided D3 (ICO fee) and
-  D4 (processor contracts) are done promptly: both are owed now.
-- Before `ONBOARDING_ENABLED` goes on beyond closed testers: D1, the Beat number check, publishing
-  the onboarding texts, and an update of this DPIA confirming the routing as reviewed.
-- Before public launch: D2 is time-limited (before 28 Oct); D6, D8, D11, D12, the security test,
-  the solicitor review, and the controller change if the new company exists by then.
-- Before any AI feature: D5 and the R8 recommendations.
+- Processing can continue in the closed test, and the iPhone app in TestFlight for Benn and Sara,
+  with the measures in place, provided D3 (ICO fee) and D4 (processor contracts) are done
+  promptly: both are owed now and were still open on 24 Nov.
+- D2 and the 28 October purge are done; the 30-day gap is closed.
+- Before `ONBOARDING_ENABLED` goes on for closed testers: this DPIA signed, the weight copy fixed
+  (item 34), the onboarding texts published with the release, and its own `ship-critic`. D13
+  should be settled first, so that "closed" is enforced.
+- Before it goes beyond closed testers: D1, and an update of this DPIA confirming the routing as
+  reviewed.
+- Before the iPhone app reaches anyone beyond Benn and Sara: the list at the end of section 2.5,
+  including D14 and the 8.8 APNs addendum.
+- Before Cycle reaches anyone beyond Benn and Sara: section 10 signed, with its conditions.
+- Before any Apple Health data is stored, TestFlight included: section 11 replaced by a signed
+  addendum.
+- Before public launch: D6, D8, D11, D12, the security test, the Mind clinician review,
+  reconsidering legal advice (D15), and the controller change if the new company exists by then.
+- Before any further AI feature: the R8 recommendations.
 
 ### 7.3 ICO prior consultation: reasoned view
 
 Art. 36(1) requires prior consultation only where the DPIA shows the processing "would result in a
 high risk in the absence of measures taken by the controller to mitigate the risk", that is, where
-a high residual risk remains after mitigation. On this draft:
+a high residual risk remains after mitigation. On this draft, as of 24 November 2026:
 
 - R1 has severe severity, but with RLS, server enforcement, outcomes-only storage and the
   recommended breach procedure and admin MFA, its likelihood is remote: residual medium.
-- R3 is the only risk that stays high, and only if the wizard's safety routing is released to the
-  public without a clinician's review. With D1 done it is medium.
+- R3 stays high only if the wizard's safety routing goes beyond closed testers without a
+  clinician's review. With D1 done it is medium.
+- R15 (section 8.9) is medium only while access stays non-public; R23 and R26 (Cycle, section 10.6)
+  are high for anyone beyond Benn and Sara, who are the controller's own people.
+- R31 (iPhone backups) is medium and limited to the core team's phones today.
 - No other risk is high after the measures.
 
-So my view is that **prior consultation is not needed**, on condition that D1 is done before the
-wizard goes to the public and the R1 and R7 recommendations are in place before public launch. If
-Benn chooses not to do D1, or a future AI feature adds a residual high risk, consult the ICO first.
-This is a judgement, not a certainty; the solicitor should confirm it.
+So my view is that **prior consultation is not needed for what runs today**, on condition that D1
+is done before the wizard goes beyond closed testers, closed testing is real (D13), Cycle stays with
+Benn and Sara until section 10's conditions are met, and the R1 and R7 recommendations are in place
+before public launch. If Benn chooses not to do D1, or a future feature adds a residual high risk,
+consult the ICO first. This is a judgement, not a certainty, and no lawyer has checked it (D15).
 
 ### 7.4 Review date and triggers
 
-Review by: **Unknown: Benn to set a date** (suggestion: before public launch, and at least yearly).
+Review by: **Unknown: Benn to set a date** (suggestion: before public launch or an App Store
+listing, and at least yearly).
 Review earlier when any of these happens:
 - `ONBOARDING_ENABLED` is turned on for anyone beyond closed testers;
 - label reading, the `ai` consent or any other AI feature is turned on (`LABEL_SCAN_ENABLED`,
@@ -915,7 +933,9 @@ Review earlier when any of these happens:
 - the new company becomes controller;
 - a new processor, SDK, font CDN, analytics or error tracker; a new data field or table; a change to
   what syncs;
-- paid tiers or a native app store release;
+- the iPhone app reaching anyone beyond Benn and Sara (external TestFlight or the App Store),
+  APNs reminders going live, or Cycle or Apple Health going beyond their current state;
+- paid tiers;
 - a breach or a complaint;
 - a change in the law or ICO guidance on health apps or AI.
 
