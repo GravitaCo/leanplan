@@ -1463,6 +1463,64 @@ risk remains after the controller's measures. My view, not checked by a lawyer (
 
 ---
 
+## 11. Planned addendum: Apple Health import (phase 2, W1; not processing)
+
+**Placeholder, 24 November 2026, compliance. Nothing here is approved by signing sections 1 to 7.**
+This records what is planned so that the DPIA and the plans agree; the real addendum is written and
+signed before any imported data is stored, TestFlight included (`native-app-plan.md` §3.5 item 10;
+`apple-health-gate1.md` §8, which calls it "DPIA §10 addendum": it is this section 11, since
+section 10 is Cycle). Sources: `docs/plans/native-app-plan.md` §3.5 (Benn's decisions, 16 Nov) and
+`docs/plans/apple-health-gate1.md` (gate 1 design, revised 22 Nov; `compliance` and `security-data`
+approved it as a draft), both on `claude/native-build` at `d179ad0`.
+
+**What exists today.** No import is built. The iPhone app carries the HealthKit entitlement (read
+only) and a purpose string, used only by the internal lab screen, which reads last night's sleep
+and today's walking on request, shows them and keeps nothing (section 2.5). The server has no
+`wearable` column on `day_logs` and no `wearables` consent type (checked 24 Nov 2026). The lab's
+purpose string ("next to your check-in", "Nothing is shared unless you choose to") must be
+rewritten before any import, as it would become untrue.
+
+**What is planned (gate 1 design, not built).**
+- **Reads, read only:** sleep (summed on the phone into asleep minutes per night; stage values,
+  spans, bed and wake times never leave Swift), steps (a daily sum, plus steps inside counted walks),
+  walking workouts (start, duration, and distance only to judge "brisk", then discarded). Never read:
+  heart rate, energy, routes, source or device. Background delivery on.
+- **What syncs:** one nullable `day_logs.wearable` column (`asleepMin`, rounded steps, walks with a
+  hashed key, start, minutes, brisk), written only through a server function `merge_wearable`, so
+  it inherits consent, withdrawal, the purge, export and deletion. A walk the person confirms
+  becomes their own Train session.
+- **Consent:** a separate `wearables` consent (version `2026-11-v1`), off by default, offered only
+  with a current health yes, checked on the server; Disconnect, as easy as connecting, deletes
+  imported records on the phone and the account (confirmed walks stay as the person's own entries).
+  A health withdrawal also records a `wearables` withdrawal.
+- **Backups:** the phone's copy lives in its own store namespace (`tali.health`), excluded from
+  iPhone backups and pruned to 14 nights and 56 days, so HealthKit-derived data stays out of iCloud
+  (App Store guideline 5.1.3(ii)). Confirmed walks sit in `leanplan.v1`, which is in backups today:
+  that turns on D14.
+- **No new processor:** the data goes to Supabase like the rest; Apple Health is the person's own
+  store on the phone, not a processor.
+- **Use:** the person's own "How did you sleep?" answer alone drives hard day, low signals and the
+  hard week; a watch-only short night never makes a hard day; Apple's active energy feeds no
+  number; no step targets, rings or streaks.
+
+**What the addendum must cover** (from `apple-health-gate1.md` §8): the synced summaries, the
+background reads, the gentle-mode display, an intended-purpose statement (general wellness, not
+diagnosing or monitoring sleep disorders), and the risks: worry from watch sleep figures and
+orthosomnia, compulsive stepping, a shared phone, and imports outliving a withdrawal. Also: Apple's
+HealthKit licence terms read and recorded (D4), the `wearables` migration applied by Benn after
+`security-data`, the privacy and cookie policy text (gated on a `watch` flag), the register rows,
+and the App Store privacy label.
+
+**Open for Benn before the addendum:** D14 (exclude the whole store from backups,
+`native-app-plan.md` §3.5 item 9) and the `STEPS_MULT` review (item 7); bed and wake times are
+deferred to a later board (gate 1 §1).
+
+| Item | Name and date | Notes |
+|---|---|---|
+| Section 11 addendum written and approved by | | Before any imported data is stored, TestFlight included. |
+
+---
+
 ## Sources checked
 
 - Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.
