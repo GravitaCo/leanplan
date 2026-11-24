@@ -73,7 +73,8 @@ advertised or used for analytics.
 **What stays conditional (not approved by this signature).**
 - **D1, a clinician's review** of the wellbeing question, the readiness and medical questions and
   the routing, before the wizard reaches anyone beyond closed testers. "Closed" has to be real:
-  sign-up at app.tilo.fit is open to anyone with the link today (D13).
+  the app's sign-up screen is open to anyone with the link, and whether Supabase blocks new
+  sign-ups is not verified (D13).
 - Before the wizard goes on at all: the open build fix in register item 34 (copy that says weight
   is hidden, when the weight sheet and Profile still show it), and publishing the onboarding
   version of the texts with that release.
@@ -83,7 +84,8 @@ advertised or used for analytics.
   addendum signed before any imported data is stored, TestFlight included.
 - The iPhone app beyond the core team (an external TestFlight group or the App Store): the items in
   section 2.5 (Apple's terms, the `native` policy text, Sign in with Apple revocation deployed, D14).
-- Public launch: D3, D4, D6, D8, D11, D12, the security test, the Mind clinician review, and
+- Owed now, whatever is signed: D3 (ICO fee) and D4 (processor contracts).
+- Public launch: D6, D8, D11, D12, the security test, the Mind clinician review, and
   reconsidering legal advice (D15).
 
 ---
