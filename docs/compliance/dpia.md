@@ -107,9 +107,9 @@ has the sign-off table.
 | D10 | Legal basis for consent records: 6(1)(c), and 9(2)(f) if special category. | Kept. No legal view sought (D15). | Keep. Art. 7(1) requires the controller to show consent; a record of a yes to health or Cycle processing may itself reveal health information, so treat it as special category. |
 | D11 | Breach response (Art. 33, 34): no named person or written process. | Open (register item 11). | **Name Benn as responsible and write a one-page procedure before public launch.** It should cover the Apple Developer account and the APNs and Sign in with Apple keys too. |
 | D12 | EU users (Art. 27 representative) and a DPO (Art. 37). | Open (register item 8). | **No DPO for now**; decide whether EU users are targeted before public launch or an App Store listing in EU storefronts. |
-| D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth (the setting can't be read with the checks used here); 1 account was created after 30 Sept, on 16 Nov 2026 (2 Apple sign-in identities exist, the core team's, per the register). | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
+| D13 | Is closed testing enforced? Sign-up at app.tilo.fit is open to anyone with the link (`AuthScreen.tsx`, plain sign-up; section 8.9). Several conditions here (R3, R15, Cycle) rely on "closed". | **New.** Not verified whether "Allow new users to sign up" is off in Supabase Auth (the setting can't be read with the checks used here); 1 account was created after 30 Sept, on 16 Nov 2026. | **Turn off open sign-up and add testers by invite** before the wizard goes on, or treat every "closed testers" condition as not met. |
 | D14 | iPhone backups: the iPhone app keeps its data (the whole log, the Unload notes and, once used, the Cycle log) in the app's container, included in the phone's backups (`apps/native/lib/platform/storage.ts`), so a copy goes wherever the person's backups go (iCloud or a computer). | **New, open** (also open as item 9 of `native-app-plan.md` §3.5 and `apple-health-gate1.md` §3). | **Exclude the whole store from iPhone backups** before the iPhone app reaches anyone beyond the core team, or record why not and say so in the policy. Apple guideline 5.1.3(ii) bars HealthKit data in iCloud, which settles it for section 11 in any case. |
-| D15 | Legal advice. Several calls here are legal judgements made by an AI agent (D7, D10, 4.7, 7.3, the Cycle basis in section 10, the Equality Act point in `cycle.md` §10 item 4). | **Decided by Benn, 16 Nov 2026: no lawyer at this time.** His words: "We do not need lawyer at this time" (recorded in `docs/plans/cycle.md` §10 item 4, and confirmed for this DPIA in his brief of 24 Nov). Every "solicitor" row here reads "not sought yet". | Accept for the closed test, knowingly: the risk is that a judgement here is wrong and nobody qualified catches it before a regulator or a user does (most exposed: D7 conditional consent, R12; the Art. 22 reasoning, 4.7; the prior-consultation view, 7.3; Cycle's women-only offer under the Equality Act). **Reconsider before public launch, an App Store listing, the new company or any paid tier**, and before Cycle goes beyond Benn and Sara if the Cycle residuals in 10.6 stay high. |
+| D15 | Legal advice. Several calls here are legal judgements made by an AI agent (D7, D10, 4.7, 7.3, the Cycle basis in section 10, the Equality Act point in `cycle.md` §10 item 4). | **Decided by Benn, 16 Nov 2026: no lawyer at this time.** His words: "We do not need lawyer at this time" (recorded in `docs/plans/cycle.md` §10 item 4, where it was given about Cycle; this DPIA applies it to all legal review, as Benn asked for this refresh). Every "solicitor" row here reads "not sought yet". | Accept for the closed test, knowingly: the risk is that a judgement here is wrong and nobody qualified catches it before a regulator or a user does (most exposed: D7 conditional consent, R12; the Art. 22 reasoning, 4.7; the prior-consultation view, 7.3; Cycle's women-only offer under the Equality Act). **Reconsider before public launch, an App Store listing, the new company or any paid tier**, and before Cycle goes beyond Benn and Sara if the Cycle residuals in 10.6 stay high. |
 
 ---
 
@@ -185,27 +185,27 @@ user's "Not now" signs out.
 **Sync.** With a current yes, the phone syncs per record with last-write-wins
 (`src/data/sync.ts`) to Supabase tables `settings` (profile JSON), `day_logs`, `custom_foods`,
 `recipes`, `routines`, `training_plans`, `push_subscriptions`; consent records go to the
-append-only `consents` table; `ai_usage` holds daily label-read counts (3 rows on 22 Nov, deleted
+append-only `consents` table; `ai_usage` holds daily label-read counts (3 rows on 24 Nov, deleted
 after 60 days); `notify_sent` is written only by the reminder service (section 8.1). Plan reasons
 sync in `training_plans.why` (`PLAN_WHY_SYNC`, `src/data/sync.ts`). The shared product list
-(`products` and two helper tables) holds no personal data (section 9.3; 0 rows on 22 Nov).
+(`products` and two helper tables) holds no personal data (section 9.3; 0 rows on 24 Nov).
 
 **Server enforcement.** A trigger on each log table refuses a signed-in person's insert or update
 unless their latest health answer is a yes
 (`docs/migrations/2026-09-28-health-consent-server.sql`, and `notify_sent` from
-`2026-10-09-notify-sent.sql`). Checked live on 22 Nov 2026: 8 `require_health_consent` triggers
+`2026-10-09-notify-sent.sql`). Checked live on 22 and 24 Nov 2026: 8 `require_health_consent` triggers
 (7 on 30 Sept, plus `notify_sent`).
 
 **Access control.** Row Level Security gives each person access only to rows where `user_id`
 equals `auth.uid()` (`docs/security-rls.sql`); `consents`, `ai_usage` and `notify_sent` have
 narrower policies, and the three shared-list tables have RLS on with no policies and no table
 grants (section 9). Since 23 Oct every table's grants are written out
-(`docs/migrations/2026-10-23-core-grants.sql`). Checked live on 22 Nov 2026: RLS is on for all 13
+(`docs/migrations/2026-10-23-core-grants.sql`). Checked live on 22 and 24 Nov 2026: RLS is on for all 13
 public tables. The publishable (anon) key in `src/data/supabase.ts` is public by design and reaches
 no rows without a session. The service role key is used only inside Edge Functions and database
 jobs.
 
-**Server-side processing** (Edge Functions listed live on 22 Nov 2026; all six last deployed on
+**Server-side processing** (Edge Functions listed live on 24 Nov 2026; all six last deployed on
 5 Nov 2026, the rename).
 - `delete-account` (`supabase/functions/delete-account/index.ts`): verifies the caller's token with
   Auth, requires a sign-in in the last 5 minutes (waived only for an account under 24 hours old
@@ -218,7 +218,7 @@ jobs.
   secret (constant-time check), reads push subscriptions and the profile with the service role,
   skips anyone without a current health yes, and sends encrypted Web Push with fixed text
   (supplement, weekly review and the Mind reminders; section 8). The APNs path for the iPhone app
-  (`_shared/apns.ts`) is on `main` but not live: its migration is not applied (checked 22 Nov:
+  (`_shared/apns.ts`) is on `main` but not live: its migration (`docs/migrations/2026-11-13-native-push.sql`) is not applied (checked 24 Nov:
   `push_subscriptions` has no `platform` column) and the APNs key secrets are not set as far as the
   repo shows.
 - `ai-read-label`, `submit-product`, `lookup-product`, `report-product`: label reading and the
@@ -244,8 +244,8 @@ PURGE_FROM (28 Sept 2026) and the account's creation, so on 28 October 2026 for 
 `scripts/test-consent.ts`). A no more than a day old is also purged, as a backstop to the
 withdrawal clear. Consent records are never purged. The phone keeps its own copy, and a later yes
 re-uploads it (`needsReupload`, `consent.ts`). **What happened:** no notice emails (D2); the job
-ran on 28 and 29 October with status "succeeded" and has run daily since (last run 22 Nov); on 22
-Nov no account had a cloud log without a current health yes (checked with counts only). The job
+ran on 28 and 29 October with status "succeeded" and has run daily since (last run checked 24 Nov);
+on 24 Nov no account had a cloud log without a current health yes (checked with counts only). The job
 keeps running for new accounts that never answer. The 30-day gap that Benn accepted on 28 Sept is
 now closed for the pre-consent accounts.
 
@@ -261,7 +261,7 @@ and checked where noted):
 | Anthropic (Anthropic Ireland, Limited under the Commercial Terms) | Processor: reads label photos (section 9) | US processing likely | The photos only, no identifiers |
 | Google (Workspace) | Processor: email for feedback and rights requests | US / global | Emails sent to benn@gravita.co, including feedback (the app opens the person's own mail app: `src/core/domain/feedback.ts`) |
 | Google (sign-in) | Independent controller | Global | Only for people who choose Google |
-| Apple (Sign in with Apple, iPhone app) | Independent controller for the sign-in (register) | Apple Inc., US | Only for people who choose it; 2 Apple identities existed on 22 Nov 2026 (core team) |
+| Apple (Sign in with Apple, iPhone app) | Independent controller for the sign-in (register) | Apple Inc., US | Only for people who choose it; 2 Apple identities existed on 24 Nov 2026 (who they belong to was not checked; Benn reported a Hide My Email account of his own, `native-build-plan.md` §10) |
 | Apple, Google, Mozilla push services (web) | Deliver reminders | Global | An encrypted payload with fixed text |
 | Apple Push Notification service (iPhone app) | Delivers iPhone reminders: **not live** | Apple Inc., US | Would see the device token, timing and the fixed text (section 8.8, R30) |
 | Apple (TestFlight, App Store Connect, the phone's own backups) | Platform; role and terms not recorded | Apple Inc., US | Section 2.5 |
@@ -285,7 +285,8 @@ and checked where noted):
 **Data categories.**
 
 - **Account:** email, password hash (Supabase Auth); for Google sign-in, email, name and avatar
-  URL.
+  URL; for Sign in with Apple (iPhone app), the email or a Hide My Email relay address and Apple's
+  user identifier, no name (register, Record of processing).
 - **Profile** (`Profile`, `src/core/types.ts`): name, `sex` (legacy M/F) and `sexAnswer`
   (female, male, prefer not to say), age, height, weight, body fat, activity level, goal, pace,
   diet pattern, supplements, targets and ranges, display preferences including Gentle mode,
@@ -333,13 +334,21 @@ and checked where noted):
 - **Consent records:** type, version, yes or no, time on the phone and arrival time.
 - **Technical:** IP address, user agent, request times in provider logs.
 - **Website:** early-access email; Turnstile signals; `_cfuvid`.
+- **iPhone app only:** the APNs device token (not live), the reminder delivery list the
+  Notification Service Extension writes to the App Group, and short-lived label photo files
+  (section 2.5). The Cycle log (built, off: section 10). Nothing from Apple Health is stored
+  (section 11).
 
-**Volume** (checked with read-only count queries on the live Supabase project, 30 Sept 2026; no
-row content was read):
-- 10 accounts in Auth, the first created on 24 June 2026;
-- 6 accounts with any cloud log row; 5 accounts whose latest health answer is a yes; **2 accounts
-  with a cloud log and no current yes** (these are what the 28 October purge will delete);
-- 1 push subscription; 0 `ai_usage` rows; 0 accounts not signed in for 60 days.
+**Volume** (read-only count queries on the live Supabase project, 24 November 2026; no row content
+was read; the 30 September figures in brackets):
+- 11 accounts in Auth (10), the first created on 24 June 2026 and the newest on 16 November 2026;
+  9 Google and 2 Apple sign-in identities;
+- 4 accounts with any `day_logs` row (6); 7 accounts whose latest health answer is a yes (5);
+  4 accounts that have never answered the consent screen; **0 accounts with a cloud log and no
+  current yes** (2 on 30 Sept, before the 28 October purge);
+- 4 accounts not signed in for 60 days (0); 1 push subscription (1); 3 `ai_usage` rows (0);
+  0 rows on the shared product list; 0 `cycle` consent records (the type doesn't exist on the
+  server yet: section 10).
 
 What I could not verify: who the accounts belong to (the register says Benn and a few closed
 testers), how much data is on phones only (by design the server cannot see it), how many
@@ -353,11 +362,13 @@ expected number of users at public launch (Unknown: Benn's launch plan).
   phone next connects), the purge (for no answer), or account deletion.
 - Consent records: until account deletion.
 - Accounts themselves: no end date (R11, D6).
-- Supabase backups: expire on Supabase's cycle. **Unknown:** the backup window for this project's
-  plan (Pro since 28 Sept, register item 39). Check the Supabase dashboard (Database, Backups) and
-  record it (register item 30(b)).
+- Supabase backups: expire on Supabase's cycle. **Unknown, still on 24 Nov:** the backup window for
+  this project's plan (Pro since 28 Sept, register item 39). Check the Supabase dashboard (Database,
+  Backups) and record it (register item 30(b)).
 - Provider logs: each provider's own retention. Unknown for each; recorded as such in the policy.
-- On the phone: until the person deletes it, clears browser data or removes the app.
+- On the phone: until the person deletes it, clears browser data or removes the app. In the iPhone
+  app the store is also copied into the phone's backups (section 2.5, D14), so a copy can outlive
+  the app's own deletion until the backup is replaced.
 - Early access emails: until invited and early access ends, or on request.
 
 ### 2.3 Context of the processing
@@ -387,6 +398,10 @@ expected number of users at public launch (Unknown: Benn's launch plan).
   Children's Code (not applicable while under-18s are excluded and the service is not likely to be
   accessed by them: D8); MHRA guidance on software as a medical device (Tilo positions itself as
   general wellness: `terms.ts`); ASA/CAP Code sections 12 and 15 for marketing claims.
+- **The iPhone app and Apple:** the iPhone app reaches people through Apple (TestFlight now, the App
+  Store later), runs on Apple's platform and backups, and will use Apple's push service. Apple's
+  rules (App Store Review Guidelines 5.1.1 and 5.1.3, the privacy label and manifest) add duties
+  of their own (section 2.5).
 - **Controller change ahead:** a separate company is planned before public launch (register item
   15). That means a new controller, new texts, re-consent, and a review of this DPIA.
 
