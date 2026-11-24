@@ -444,7 +444,7 @@ Store label and the `native` text are open (`native-build-plan.md` §10).
 | Sign in with Apple | Email scope only, no name (`modules/tilo-auth`; register Processors). Apple is an independent controller for the sign-in. A Hide My Email address makes a separate account. Revoking Apple's token when an account is deleted (App Store guideline 5.1.1(v)) is written in `delete-account` with `_shared/apple.ts` on `main` (15 Nov) but **not deployed**: the live function dates from 5 Nov (checked 24 Nov), and whether the four `APPLE_*` secrets are set is unknown. Until it is, deleting an account doesn't revoke Tilo's Apple link; the person can remove it in their Apple Account settings. | Live in TestFlight (2 Apple identities on 24 Nov). Revocation owed before anyone beyond the core team. |
 | Reminders through APNs | The push function's APNs path (`_shared/apns.ts`) and the migration `2026-11-13-native-push.sql` (the device token in `push_subscriptions.endpoint`, a `platform` column) are written. **Not deployed:** the migration is not applied (no `platform` column, checked 24 Nov) and the APNs key steps (`native-build-plan.md` §9.1) are not recorded as done. APNs is TLS only, so Apple could read the alert text and sees the device token and timing (8.8 APNs addendum, R30). The phone keeps the token and pending row deletions in `tali-push` (device only). | Not processing. Needs the 8.8 APNs addendum signed. |
 | Notification Service Extension and App Group | An extension (`plugins/withNotifyExtension.js`, `targets/notify-extension/NotificationService.swift`) runs as each Mind reminder arrives and records `{id, kind, at}` (no text, at most 60) in the App Group `group.fit.tilo.app`, shared only by the app and its extension; the app reads and empties it into the device-only delivery log (`lib/platform/notifyStore.ts`, `tali-notify`), as the web's service worker does. Never synced. It hands the alert back unchanged, so it does not decrypt anything (an encrypted payload decrypted here is the noted alternative that would remove R30). | Built; inert until APNs reminders are live. |
-| Label photos | The same `ai-read-label` path as the web (section 9). The photos live only in the app's `Caches/TiloCamera` folder with complete file protection, are re-encoded without metadata before sending, and are deleted once the read answers, when the screen closes or at the next launch (`modules/tilo-camera/ios/TemporaryPhotos.swift`; register, label photo row on `claude/native-build`). Whether the caches folder is excluded from backups was not checked in code; caches are not normally backed up by iOS. | Live in TestFlight. No new risk beyond section 9. |
+| Label photos | The same `ai-read-label` path as the web (section 9). The photos live only in the app's `Caches/TiloCamera` folder with complete file protection, are re-encoded without metadata before sending, and are deleted once the read answers, when the screen closes or at the next launch (`modules/tilo-camera/ios/TemporaryPhotos.swift`; register, label photo row on `claude/native-build`). The register says the folder is excluded from backups; not checked in code for this refresh. | Live in TestFlight. No new risk beyond section 9. |
 | Export | The same JSON file as the web, written to the app's cache and handed to the share sheet (`lib/account/backupFile.ts`). Unencrypted (R1b). | Live in TestFlight. |
 | Internal lab screen | `/lab` (`apps/native/lib/Lab.tsx`), for Benn, Sara and the lead engineer: reads last night's sleep and today's walking from Apple Health on request and shows it, keeping nothing (`lib/health.ts`); runs Apple's on-device model on a typed meal (nothing leaves the phone); shows sync and label-read error lines from memory in builds with `EXPO_PUBLIC_DIAG=1`, which the `testflight` profile sets (`lib/platform/diag.ts`). The app carries the HealthKit entitlement and a read purpose string for this. How a tester reaches `/lab` in the TestFlight build was not checked. | Processing on the phone only (register item 27); nothing stored or sent. Must not reach anyone beyond the core team. |
 | Cycle | Built behind `CYCLE_ENABLED` (native screens only, section 10). | Off unless a build sets `VITE_CYCLE=1`; not verified which builds do. |
@@ -485,7 +485,13 @@ recorded (D4); the `/lab` screen and diagnostics kept out of that build; the sto
   energy work.
 - `ship-critic` on the onboarding build (commit `a9f0fcc`).
 - Benn's decisions as controller, recorded with dates in the register (items 21, 26, 30(a), 31)
-  and the onboarding plan §9.
+  and the onboarding plan §9; since 30 Sept, the rename (item 48), the Cycle decisions of Benn and
+  Sara (`cycle.md` §0, register item 49), Benn's Apple Health decisions (`native-app-plan.md` §3.5)
+  and his decision not to seek legal advice for now (D15).
+- Since 30 Sept: `compliance`, `security-data`, `mental-performance` and `design` reviews of the
+  Cycle build (register item 49, 16 and 22 Nov), `compliance` and `security-data` drafts approval
+  of the Apple Health gate 1 design (`apple-health-gate1.md`, 22 Nov), `security-data` and
+  `ship-critic` on the iPhone app's streams (`native-build-plan.md` §10).
 
 Note: these reviews were by AI agents working on the codebase. They are useful and recorded, but
 they are not independent professional reviews.
@@ -494,7 +500,15 @@ they are not independent professional reviews.
 - **A clinician** on the wellbeing question, the readiness and medical questions and the routing
   (D1). The onboarding plan requires this before wider launch.
 - **A solicitor or privacy professional** on the texts, the register and this DPIA (register item
-  6), with the specific questions in D7, D10 and register item 26 (the 30-day hold).
+  6), with the specific questions in D7, D10, 4.7, 7.3 and the Cycle offer under the Equality Act.
+  **Not sought yet: Benn decided on 16 November 2026 "We do not need lawyer at this time" (D15).**
+  The reason recorded is his call for the closed test; the risk is that the legal judgements in
+  this document, all made by an AI agent, go unchecked until a regulator, a user or the App Store
+  review tests them. The 30-day hold question (item 26) is now historical: the hold ended with the
+  28 October purge. Reconsider at public launch, an App Store listing, the new company or paid
+  tiers.
+- **Apple's terms** for APNs, TestFlight and Sign in with Apple, read for their data protection
+  terms (D4, section 2.5).
 - **Users.** No one outside the build has been asked. Before public launch, a short test with a
   handful of people (including, if possible, someone with lived experience of an eating disorder,
   through a charity such as Beat rather than by recruiting patients) on whether the consent screen
@@ -516,7 +530,10 @@ they are not independent professional reviews.
 | Onboarding outcomes, pregnancy, wellbeing, motivations, movement | 6(1)(b) | 9(2)(a); each question optional, with a notice on its screen | Only asked after a local health yes (`canSaveHealthAnswers`, `consent.ts`). |
 | Reminders (push subscription, supplement names) | 6(1)(b) | 9(2)(a) | The server also checks consent before sending. |
 | Consent records | 6(1)(c) legal obligation (Art. 7(1)) | 9(2)(f) if a record counts as special category | D10. |
-| Pre-consent log held for the 30-day transition | Unclear | **None identified** (register "Record of processing") | A time-limited risk Benn accepted on 28 Sept; data held unread and unchanged; solicitor's view pending (register item 26). |
+| Pre-consent log held for the 30-day transition (ended) | Unclear | **None identified** (register "Record of processing") | A time-limited risk Benn accepted on 28 Sept; data held unread and unchanged. **Ended:** the purge ran on 28 Oct and no such log remained on 22 or 24 Nov. No legal view was sought (D15); the question is now historical. |
+| Apple sign-in identity (iPhone app) | 6(1)(b) | None needed | Apple is an independent controller for the sign-in. |
+| Cycle log and the `cycle` consent record (built, off) | 6(1)(b); records 6(1)(c) | 9(2)(a), a separate `cycle` consent; records 9(2)(f) | Section 10. |
+| Apple Health summaries (planned) | 6(1)(b) | 9(2)(a), a separate `wearables` consent | Section 11. Not processing. |
 | Security and request logs | 6(1)(f) | None | |
 | Feedback emails | 6(1)(f) | 9(2)(a) at most if someone volunteers health details; the app asks them not to (`privacy.ts`) | |
 | Early access email | 6(1)(a) consent | None | Website. |
@@ -524,8 +541,9 @@ they are not independent professional reviews.
 **Is explicit consent valid?** The screen is explicit (a separate, unticked box for health data),
 specific, and unbundled from marketing (there is no marketing). It is bundled in one screen with
 the terms and the age box, but as separate boxes. It is as easy to withdraw as to give (Profile →
-Privacy). Informed: the live privacy policy at www.tilo.fit/legals/privacy (checked 30 Sept) is
-the consent-release text and matches what the live app does; the onboarding sections on this
+Privacy). Informed: the live privacy policy at www.tilo.fit/legals/privacy (checked 30 Sept, and
+republished under the Tilo name with the rename, register item 48(e); not re-read for this refresh)
+is the consent-release text and matches what the live app does; the onboarding sections on this
 branch are not yet published, which is right while the wizard is off, and must go live with the
 release that turns it on (register item 38). The open question is conditionality (D7).
 
@@ -593,8 +611,8 @@ because: it only ever makes Tilo more cautious; it refuses no service, product o
 person can see, change or clear the answers that drive it (Profile › Health data); and the policy
 says it has no legal or similarly significant effect and nobody makes decisions about them from it
 (`privacy.ts`). Even so, it relies on 9(2)(a) explicit consent, which is also the Art. 22(4)
-condition if a regulator took a different view. This reasoning should be confirmed by the
-solicitor.
+condition if a regulator took a different view. This reasoning has not been checked by a lawyer
+(D15).
 
 ### 4.8 Medical device boundary
 
@@ -611,13 +629,20 @@ condition or guideline is named next to the figure. For diabetes or a weight-los
 protein range is presented as Tilo's ordinary range, never as something for the medicine
 (24 Oct 2026, register item 47).
 
+Cycle (section 10) and the planned Apple Health import (section 11) each carry their own
+intended-purpose statement (general wellness: no forecast, fertility, contraception or diagnosis of
+a sleep or menstrual disorder). An optional MHRA borderline enquiry before public launch would settle
+both, with the onboarding routing.
+
 ### 4.9 Processors and transfers
 
 Supabase stores the data in Ireland, but Supabase Inc. is US-based and may access it from the US;
-GitHub, Webflow, Cloudflare and Google are US or global. The policy relies on the UK IDTA or UK
+GitHub, Webflow, Cloudflare and Google are US or global; Apple Inc. (APNs, once live; TestFlight) is
+in the US. The policy relies on the UK IDTA or UK
 Addendum, EU SCCs or the UK-US and EU-US Data Privacy Framework (`privacy.ts`).
 **Unknown:** which mechanism each provider actually offers for this account, and whether each DPA
-has been accepted (register item 4 says not yet for Supabase, Webflow and Bunny). Resolve by
+has been accepted (register item 4 still says not yet for Supabase, Webflow and Bunny on 24 Nov;
+Anthropic is recorded, section 9.4; Apple is not recorded). Resolve by
 accepting each DPA, checking each company on the DPF list, and recording the result in the
 register (D4). A transfer risk assessment is only needed where the IDTA or Addendum is relied on;
 Unknown until the mechanisms are known.
