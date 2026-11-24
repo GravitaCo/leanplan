@@ -1523,12 +1523,27 @@ deferred to a later board (gate 1 §1).
 
 ## Sources checked
 
-- Code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`: files cited inline.
-- Register: `docs/compliance/README.md` (last reviewed 2026-09-28).
-- Live Supabase project `exvblofwiwbvycomxvmj`, 30 Sept 2026: region, RLS status, trigger count,
-  cron job, security advisors, and row counts only (no row content read).
-- Live privacy page, www.tilo.fit/legals/privacy, 30 Sept 2026: the consent-release text, without
-  the onboarding sections.
+- **Refresh of 22 to 24 Nov 2026:** code and docs on `main` at `fc3f7c5` and on
+  `origin/claude/native-build` at `d179ad0` (`apps/native`, `docs/plans/native-build-plan.md` §9
+  and §10, `native-app-plan.md` §3.5 and §6, `apple-health-gate1.md`, `cycle.md`,
+  `cycle-questions.md`, `cycle-checks.md`, the register's Cycle rows and item 49 there, and that
+  branch's DPIA §10 draft); `first-run-onboarding.md` §9 and §10; the register on `main`. Files are
+  cited inline.
+- Live Supabase project `exvblofwiwbvycomxvmj`, read only, 22 and 24 Nov 2026: account, consent,
+  log, push, `ai_usage`, product and identity counts; the `require_health_consent` triggers; RLS on
+  every public table; the `consents` type check; the absence of `push_subscriptions.platform` and
+  `day_logs.wearable`; the pg_cron jobs and the purge job's run history (28 and 29 Oct, 22 to 24
+  Nov); the Edge Functions and their deploy dates; the security advisor. No row content was read.
+  Not checkable this way: the Auth sign-up setting (D13), the backup window, the Edge Function
+  secrets.
+- Live website, 22 Nov 2026: app.tali.fit answered with a redirect to app.tilo.fit; www.tali.fit did
+  not answer. The live privacy page was not re-read for this refresh.
+- Not checked: the TestFlight build's exact flags and how `/lab` is reached in it; whether
+  TestFlight has sent crash reports or feedback; Apple's developer terms; who owns the 2 Apple
+  identities; the date TestFlight testing began (18 Nov, as reported).
+- **September draft:** code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`; the register (last
+  reviewed 2026-09-28); the live Supabase project and the live privacy page, 30 Sept 2026 (then at
+  the tali.fit addresses).
 - ICO, "Examples of processing likely to result in high risk" (ico.org.uk), 30 Sept 2026.
 - Section 9 (10 Oct 2026): code on `shared-products-legal` (from `e8ac601`); Anthropic Commercial
   Terms (anthropic.com/legal/commercial-terms: DPA incorporated by reference, no training on
@@ -1536,5 +1551,7 @@ deferred to a later board (gate 1 §1).
   centre article on API retention (privacy.claude.com), both 10 Oct 2026. Anthropic DPA
   (anthropic.com/legal/data-processing-addendum, effective 24 Feb 2025) and the Commercial Terms
   preamble (effective 17 June 2025) read 11 Oct 2026; anthropic.com/subprocessors not readable. UK GDPR Recital 26 and Arts. 7(3), 11 not re-read for this draft.
-- UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); not re-read for this
-  draft beyond the articles cited.
+- UK GDPR Arts. 5, 6, 7, 9, 22, 27, 28, 30, 33 to 37 (legislation.gov.uk); App Store Review
+  Guidelines 5.1.1 and 5.1.3 as cited in the native plans. None re-read for this refresh: no primary
+  source was re-fetched on 22 to 24 Nov, so if the law or Apple's guidelines changed since October,
+  this document doesn't reflect it.
