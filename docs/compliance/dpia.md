@@ -653,24 +653,28 @@ Unknown until the mechanisms are known.
 
 Scoring follows the ICO template: likelihood (remote, possible, probable) and severity (minimal,
 significant, severe), giving overall risk (low, medium, high). These are inherent risks, before
-the measures in section 6.
+the measures in section 6. R1 to R13 are from the September draft (wording updated where the facts
+changed); R14 to R22 are in sections 8 and 9, R23 to R29 in section 10 (Cycle), R30 in 8.8 (APNs),
+and R31 and R32 are new on 24 November (the iPhone app).
 
 | # | Risk to individuals | Likelihood | Severity | Overall |
 |---|---|---|---|---|
 | R1 | **Breach or unauthorised access to health data in the cloud**: an RLS mistake, a leaked service role key, a flaw in an Edge Function, a compromised admin account, or a stolen user session exposes logs, pregnancy status or the wellbeing answer. The anon key is public by design, so RLS is the only barrier for API access. | Possible | Severe | High |
 | R1b | **Exposure on the phone or in exports**: a shared or lost phone, or a backup JSON file (unencrypted, in Downloads or shared by mistake) reveals the log. | Possible | Significant | Medium |
 | R2 | **Health data reaching the cloud without consent**: a bug, an old app version, or a second phone that hasn't heard of a withdrawal uploads data; and data that synced before the consent screen existed is held without an Art. 9 condition. | Possible (historically it happened) | Significant | Medium |
-| R3 | **Wrong safety routing or advice harms someone**: a person with an eating disorder is given a deficit or weight focus; a pregnant person or someone on insulin or sulfonylureas is steered to eat less; someone treats Tilo as medical advice. Routing depends on self-report and on the wizard being on (it is off today, so the live app has no screener at all and relies on the terms' warning). | Possible | Severe | High |
+| R3 | **Wrong safety routing or advice harms someone**: a person with an eating disorder is given a deficit or weight focus; a pregnant person or someone on insulin or sulfonylureas is steered to eat less; someone treats Tilo as medical advice. Routing depends on self-report and on the wizard being on (it is still off on 24 Nov, on the web and in the iPhone app, so neither has a screener and both rely on the terms' warning). | Possible | Severe | High |
 | R4 | **An under-18 uses Tilo**: diet and weight features used by a child, whose data then needs the Children's Code protections. | Possible | Significant | Medium |
-| R5 | **Data loss for users**: data kept only on a phone (after "Not now", withdrawal, or before sync) is lost with the phone; the 28 October purge deletes the account copy of the 2 accounts with no answer, with no email to warn them; no user-level restore from backups. | Possible | Significant | Medium |
+| R5 | **Data loss for users**: data kept only on a phone (after "Not now", withdrawal, or before sync) is lost with the phone; the 28 October purge deleted the account copy of the accounts with no answer, with no email to warn them (done; their phones kept their own copy); no user-level restore from backups. | Possible | Significant | Medium |
 | R6 | **Withdrawal not fully honoured**: other phones keep health fields until they next connect; Supabase backups keep deleted rows until they expire (window unknown); exported files and a `resumeCopy` on the phone keep a copy; some fields are kept by design. | Possible | Significant | Medium |
 | R7 | **Transfers to US processors** without a recorded mechanism or DPA, leaving data open to access under laws with weaker protection and no enforceable contract terms. | Possible | Significant | Medium |
-| R8 | **Function creep, including AI**: planned AI features send health data to an AI provider, or data is reused for purposes people didn't agree to. `ai-read-label` is already deployed. | Possible | Significant | Medium |
+| R8 | **Function creep, including AI**: planned AI features send health data to an AI provider, or data is reused for purposes people didn't agree to. Label reading (pack photos only) is live since October (section 9); the iPhone lab tries an on-device model. | Possible | Significant | Medium |
 | R9 | **On-phone processing treated as outside the GDPR**: Tilo's code processes data on the phone even when nothing syncs (register item 27: CJEU C-25/17, C-210/16; Recital 18), so the phone-only paths still need a basis, notice and rights. If treated as out of scope, those protections could be missed. | Possible | Minimal | Low |
 | R10 | **No ICO fee paid**: a legal requirement for the controller, not a direct harm to individuals, but a sign of weak governance and a regulatory exposure. | Probable (it is unpaid today) | Minimal | Medium (compliance) |
 | R11 | **Dormant accounts kept with no end date**: email and consent records (which reveal use of a health app) kept indefinitely after someone stops using Tilo or after a purge. | Probable | Minimal | Low |
 | R12 | **Consent not freely given**: new users can only use Tilo if they agree (D7), which a regulator could see as conditional consent. | Possible | Significant | Medium |
 | R13 | **Controller change**: when the new company takes over, consents given to Gravita Creative Ltd do not carry over automatically and data could be moved without a basis. | Probable (planned) | Significant | Medium |
+| R31 | **iPhone backups carry the whole log**: the iPhone app's store (log, Unload notes, and the Cycle log once used) is copied into the phone's iCloud or computer backups, where it outlives withdrawal, account deletion and deleting the app until the backup is replaced, and is exposed if the backup account or computer is. Apple guideline 5.1.3(ii) bars HealthKit-derived data in iCloud. | Possible | Significant | Medium |
+| R32 | **Sign in with Apple not revoked on deletion**: until the revocation step is deployed, a deleted account leaves Tilo listed in the person's Apple Account and the Apple relay address active (no Tilo data stays). | Probable (as deployed) | Minimal | Low |
 
 ---
 
