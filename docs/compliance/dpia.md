@@ -41,7 +41,7 @@ explicit consent (Art. 9(2)(a)) given on the consent screen. Data lives on the p
 first and syncs to Supabase in Ireland only after a yes; the server refuses log uploads without
 one. Label photos go to Anthropic to be read, with no identifiers (signed off in section 9). The
 web app at app.tilo.fit is used by a small closed group (11 accounts on 24 November 2026). An
-iPhone app is in TestFlight internal testing with Benn and Sara (reported by the lead engineer;
+iPhone app is in TestFlight internal testing with Benn and Sara (reported by the lead engineer, the Claude session building the app; Benn can confirm it; see
 section 2.5). Nothing is sold,
 advertised or used for analytics.
 
@@ -58,8 +58,9 @@ advertised or used for analytics.
   nation-neutral signposting is settled everywhere.
 - **Low:** everything else in sections 5 and 8 and 9, including the 28 October purge (done) and
   withdrawal.
-- **Not approved here:** features that are off in every build (Cycle, section 10; Apple Health,
-  section 11; APNs reminders, R30) are scored in their own sections and need their own sign-off.
+- **Not approved here:** Cycle (section 10; off by default, and not verified whether any TestFlight
+  build turns it on), Apple Health (section 11; not built) and APNs reminders (R30; not live) are
+  scored in their own sections and need their own sign-off.
 - **No legal advice behind any of this.** Benn decided on 16 November 2026 not to instruct a
   lawyer for now (section 3, D15). Every legal judgement here is the `compliance` agent's,
   unreviewed.
@@ -436,7 +437,7 @@ built on `claude/native-build` (not on `main`) and reuses the web app's shared c
 `src/data`, `src/store`) unchanged, so it talks to the same Supabase project with the same consent
 gate, sync, server enforcement, withdrawal and deletion as the web. Benn reported on 16 Nov that
 build 16 ran on his iPhone (`native-build-plan.md` §10). **It is in TestFlight internal testing
-with Benn and Sara.** Not verified in the repo: this is reported by the lead engineer, who set it up
+with Benn and Sara.** Not verified in the repo: this is reported by the lead engineer (the Claude session building the app), who set it up; Benn and Sara installed it themselves and Benn can confirm it when signing
 (App Store Connect accepted the build and both installed it through TestFlight by 24 November 2026;
 the start date is not recorded). `native-build-plan.md` §10 on `claude/native-build` is out of date
 here: it still lists TestFlight as open. An App Store Connect app record exists (`ascAppId` in `apps/native/eas.json`).
@@ -1551,7 +1552,7 @@ deferred to a later board (gate 1 §1).
   not answer. The live privacy page was not re-read for this refresh.
 - Not checked: the TestFlight build's exact flags and how `/lab` is reached in it; whether
   TestFlight has sent crash reports or feedback; Apple's developer terms; who owns the 2 Apple
-  identities; the date TestFlight testing began (18 Nov, as reported).
+  identities; the date TestFlight testing began (not recorded).
 - **September draft:** code on `claude/pensive-ramanujan-j4k1ie` at `86eddbc`; the register (last
   reviewed 2026-09-28); the live Supabase project and the live privacy page, 30 Sept 2026 (then at
   the tali.fit addresses).
