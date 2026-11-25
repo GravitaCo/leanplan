@@ -14,7 +14,7 @@ UK GDPR Article 35 and Data Protection Act 2018
 | Privacy contact | benn@gravita.co |
 | ICO registration number | Not yet recorded (see D3) |
 | Document owner | Benn, Director, Gravita Creative Ltd |
-| Prepared by | The controller's compliance function, with the assistance of an AI drafting tool |
+| Prepared by | Drafted by an AI assistant for the controller; to be reviewed and approved by the Director before signature. |
 | Version | 1.0 |
 | Date | 25 November 2026 |
 | Status | Draft for approval |
@@ -58,14 +58,17 @@ explicit consent; the server itself refuses health data from an account without 
 Photographs of food labels are sent to an AI service to be read, with no identifier attached. No
 data is sold, used for advertising or used for analytics.
 
-**Who is affected.** The web app is used by a small closed group (11 accounts). The iPhone app is
-in Apple's TestFlight internal testing with two members of Gravita's core team.
+**Who is affected.** The web app is used by a small closed group (11 accounts). As reported by the
+development team, and to be confirmed by the controller, the iPhone app is in Apple's TestFlight
+internal testing with two members of Gravita's core team.
 
 **Residual risk after the measures in section 6.**
 - Medium: R1 (breach of cloud health data), R3 (incorrect safety routing, once the clinical review
   in D1 is done), R4 (use by under-18s), R7 (international transfers, until processor contracts are
-  recorded under D4), R10 (ICO fee, until paid), R12 (consent as a condition of the service) and R31
-  (iPhone backups, pending D14).
+  recorded under D4), R10 (ICO fee, until the fee is confirmed paid; whether it has been is not
+  recorded), R12 (consent as a condition of the service), R17 (signposting by nation, until
+  nation-neutral signposting is settled everywhere; the Profile Support sheet still opens on England)
+  and R31 (iPhone backups, pending D14).
 - High, unless conditions are met: R3 if the onboarding wizard reaches anyone beyond closed testers
   without clinical review; R15 (Annex B) if the app becomes public before the Mind clinical review;
   R23 and R26 (Annex C, Cycle) for anyone beyond the two core team members.
@@ -76,8 +79,9 @@ at the date of this assessment, the measures in place in section 6, the recommen
 controller approves in section 6, the residual risks in section 7, and the view in section 7.3 that
 prior consultation with the ICO is not required on the stated conditions.
 
-**What it does not cover.** Cycle (Annex C), the Apple Health import (Annex D) and reminders through
-Apple's push service (Annex B, Part 3), each of which requires its own approval; the iPhone app
+**What it does not cover.** Cycle (Annex C), the Apple Health import (Annex D), supplement names in
+reminders (Annex B, Part 2) and reminders through Apple's push service (Annex B, Part 3), each of
+which requires its own approval; the iPhone app
 beyond the core team; and public launch.
 
 ---
@@ -323,7 +327,7 @@ data, advertising, research or profiling for any third party.
 **Status.** A native iPhone app has been built that reuses the web app's shared logic without change,
 and so uses the same database, consent gate, synchronisation, server enforcement, withdrawal and
 deletion. As reported by the development team, it is distributed through Apple's TestFlight internal
-testing to two members of Gravita's core team, Benn and Sara, who are fully informed about how it
+testing to two members of Gravita's core team, Benn and Sara, who are informed about how it
 works. The date on which TestFlight distribution began is not recorded. Because the only testers are
 the controller's own core team, the privacy policy text specific to the iPhone app (written, not yet
 published) may wait until anyone else is given a build.
@@ -398,7 +402,8 @@ but they are not independent professional reviews.
   analysis (section 4.7), the prior consultation view (section 7.3) and the Cycle offer under the
   Equality Act 2010. Not sought, by the controller's decision (D15); scope of that decision:
   [Decision D15 pending]. To be reconsidered before public launch, an App Store listing, the change
-  of controller or any paid tier.
+  of controller or any paid tier, and before Cycle goes beyond Benn and Sara if the Cycle residuals
+  stay high.
 - **Apple's terms** for the push service, TestFlight and Sign in with Apple, read for their data
   protection provisions (D4).
 - **Users.** No users outside the product team have been consulted. Before public launch, a short
@@ -423,7 +428,7 @@ but they are not independent professional reviews.
 | Onboarding outcomes, pregnancy, wellbeing, motivations, movement | 6(1)(b) | 9(2)(a); each question optional, with a notice on its screen | Asked only after health consent has been given on the device. |
 | Reminders (push subscription, supplement names) | 6(1)(b) | 9(2)(a) | The server checks consent before sending. |
 | Consent records | 6(1)(c) legal obligation (Article 7(1)) | 9(2)(f), to the extent a record is special category | D10. |
-| Pre-consent log held for the 30-day transition | Not identified | None identified | A time-limited risk accepted by the controller on 28 September 2026. Ended with the deletion on 28 October 2026. |
+| Pre-consent log held for the 30-day transition | Unclear | None identified | A time-limited risk accepted by the controller on 28 September 2026. Ended with the deletion on 28 October 2026. No legal view was sought (D15). |
 | Security and request logs | 6(1)(f) legitimate interests | Not required | |
 | Feedback emails | 6(1)(f) | 9(2)(a) at most, if a user volunteers health details; users are asked not to | |
 | Early-access email (website) | 6(1)(a) consent | Not required | |
@@ -434,7 +439,8 @@ but they are not independent professional reviews.
 data), specific, and not bundled with marketing (there is none). It appears on the same screen as the
 terms and the age confirmation, but in separate boxes. It is as easy to withdraw as to give
 (Profile, then Privacy). It is informed: the published privacy policy describes what the live app
-does. The onboarding sections of the policy are written but not published, which is correct while
+does (as checked on 30 September 2026 and republished under the Tilo name; not re-checked for this
+version). The onboarding sections of the policy are written but not published, which is correct while
 the wizard is switched off; they must be published with the release that switches it on. The open
 question is whether consent is freely given when it is a condition of using the service (D7, R12).
 
@@ -567,35 +573,36 @@ in Annex B, R19 to R22 in Annex A, and R23 to R29 in Annex C.
 ## 6. Measures to reduce risk
 
 "In place" means implemented at the date of this assessment. "Recommended" means not yet
-implemented; the controller records approval of each recommended measure in the final column.
+implemented. The Status column records which applies; the controller records approval of each
+recommended measure in the Approved column.
 
-| Risk | Measures | Effect on risk | Residual risk | Approved |
-|---|---|---|---|---|
-| R1 | **In place:** owner-only access control on every table, with narrower rules for consent records and usage counts; the public key reaches no data without a session; the service key is confined to server functions and scheduled jobs; account deletion verifies the session, requires a recent sign-in and ends all sessions first; the reminder job checks a secret in constant time; server functions log counts only, never identifiers or content; outcomes-only storage limits what a breach could reveal; leaked-password protection is on; HTTPS throughout. The provider's security adviser reports two low-level warnings, one of which is intended. | Reduces likelihood to remote. Severity cannot fall below severe for this data. | Medium | In place: yes |
-| R1 | **Recommended:** a written breach procedure with a named owner (D11); multi-factor authentication on every administrator account (database, code hosting, website, email); an independent security test of access controls and server functions before public launch; offer multi-factor sign-in or passkeys to users later; move a database extension out of the public schema. | Reduces likelihood further and improves response. | Medium | [Section 6 decision pending] |
-| R1b | **In place:** device data is confined to the app; "Sign out and remove this device's log"; a different account signing in on the same device cannot see the previous user's data. | Reduces severity and likelihood. | Low | In place: yes |
-| R1b | **Recommended:** a line on the export screen stating that the file contains health data and should be kept private (a wording change requiring design approval). | Reduces likelihood of accidental sharing. | Low | [Section 6 decision pending] |
-| R2 | **In place:** unticked consent boxes; nothing but consent records is uploaded without current consent; the server refuses health data without current consent; reminders skip anyone without consent; health questions are shown and saved only after consent on the device; pre-consent cloud data is deleted automatically and the deletion has run. | Reduces likelihood to remote. | Low | In place: yes |
-| R2 | **Recommended:** keep the deletion job running for new accounts that never answer, and check its run history at each review. | Maintains the position. | Low | [Section 6 decision pending] |
-| R3 | **In place:** the terms state that Tilo is not medical advice and list who should consult a GP and not use Tilo to guide their eating; the routing only ever makes Tilo more cautious; skipped answers give cautious defaults; pregnancy holds food at maintenance with no calorie number; the medical outcome removes the deficit and adds a GP note, with protein limited as described in section 4.8; a "yes" to the wellbeing question turns on Gentle mode (no calorie target, totals in words, a maintenance range only if requested), a "sometimes" gives a maintenance range only; both remove the weight figure from the home screen, stop automatic training increases and signpost Beat, NHS 111, Samaritans and emergency services; a body mass index below 18.5 prevents a deficit; targets are ranges with neutral wording; internal wellbeing and nutrition reviews; the pregnancy flag is re-checked every twelve weeks. | Reduces likelihood and severity. | Medium with D1 done; high without D1 beyond closed testers | In place: yes |
-| R3 | **Required or recommended:** clinical review before the wizard reaches anyone beyond closed testers (D1); correct the wording that says weight is hidden while two screens still show it, before the wizard is switched on at all; publish the onboarding policy text with that release; decide what the live app, which has no screener while the wizard is off, shows new users about these groups; a short MHRA qualification note (section 4.8); keep marketing free of health claims (CAP Code sections 12 and 15). Switching the wizard on for closed testers before D1: [Decision pending: onboarding for closed testers]. Enforcement of closed testing: [Decision D13 pending]. | Reduces likelihood; D1 reduces the residual from high to medium. | As above | [Section 6 decision pending] |
-| R4 | **In place:** 18+ in the terms and privacy policy; a required age confirmation on the consent screen; in the wizard, an age question that stops under-18s, clears the device and deletes the new account; the privacy policy explains how to report use by a child. | Reduces likelihood. | Medium; low once the wizard's age stop is live | In place: yes |
-| R4 | **Recommended:** a written assessment of whether the service is likely to be accessed by children (D8); mark or remove an under-age account that never signs in again; a security review of the device-side under-age stop. | Reduces likelihood and closes a gap. | Low once done | [Section 6 decision pending] |
-| R5 | **In place:** export at any time; the terms and cookie policy warn that device-only data is lost with the device or browser data; the "Not now" and withdrawal screens say where the data is and offer an export first; the pre-consent deletion kept the device's copy, which is uploaded again on later consent; "Start fresh" needs a second confirmation with an export option beside it. | Reduces likelihood. | Low | In place: yes |
-| R5 | **Recommended:** record the database backup window. | Improves transparency. | Low | [Section 6 decision pending] |
-| R6 | **In place:** the device clears all health fields, health-derived plan reasons and its temporary copy at once; the cloud copy is deleted in one transaction; each other device clears on next connection; the server refuses uploads after a "no", so an out-of-date device cannot restore data; the daily deletion removes any log left more than a day after a "no"; the privacy policy states exactly what remains. | Reduces likelihood to remote. | Low | In place: yes |
-| R6 | **Recommended:** record the backup window and state it in the privacy policy if it is long; state in the policy that export files are the user's own copy. | Improves transparency. | Low | [Section 6 decision pending] |
-| R7 | **In place:** the database is hosted in Ireland; web push messages are encrypted end to end; the privacy policy names each provider and the safeguards relied on. | Limits exposure. | Medium until D4 is complete | In place: yes |
-| R7 | **Required:** accept each processing agreement and record the transfer mechanism for each provider, Apple included (D4). **Optional:** route Open Food Facts lookups through a server function so the user's IP address no longer reaches it. | Provides enforceable terms; reduces likelihood. | Low once D4 is complete | [Section 6 decision pending] |
-| R8 | **In place:** label reading is assessed in Annex A (photos only, no identifiers); other AI features remain switched off; the label-reading function checks the user's acknowledgement on the server and logs no content; the on-device model keeps everything on the phone; purposes are listed and there is no secondary use; AI, analytics, error tracking, email marketing and paid tiers are recorded as changes requiring compliance review first. | Reduces likelihood. | Low | In place: yes |
-| R8 | **Recommended:** update this assessment before any further AI feature is enabled, covering the provider's processing agreement, data retention, the transfer and its risk assessment, disclosure to users that they are dealing with AI (EU AI Act Article 50) and the absence of solely automated decisions. | Prevents unassessed creep. | Low | [Section 6 decision pending] |
-| R9 | **In place:** the privacy and cookie policies describe device-only data and how long it is kept; the same consent gate applies to health questions on the device; withdrawal clears health fields on the device; export and deletion cover the device. **Recommended:** treat any new device-only store as a policy change. | Ensures device processing is covered. | Low | In place: yes. Recommended: [Section 6 decision pending] |
-| R10 | **In place:** the pre-release legal check warns while the ICO registration number is not recorded. **Required:** pay the fee and record the number (D3); the new company will need its own registration. | Removes the exposure once paid. | Medium until paid; low after | [Section 6 decision pending] |
-| R11 | **In place:** none for accounts (the pre-consent deletion removes the log, not the account). **Decided, not built:** deletion after 12 months of inactivity, with notice (D6). This requires a means of sending notices (a new processor), a scheduled job, privacy text and a register entry. | Sets an end date. | Low | [Section 6 decision pending] |
-| R12 | **In place:** separate unticked boxes; no marketing bundled; withdrawal is easy and leaves food and workout logging usable on the device; existing users can choose "Not now" without losing data. **Recommended:** obtain a legal view on D7 when legal advice is reconsidered (D15); consider allowing a new user who declines to keep a device-only log, as a user who withdraws can. | Reduces the risk that consent is found not freely given. | Medium, accepted without a legal view | [Section 6 decision pending] |
-| R13 | **In place:** the change of controller is planned: update the controller details and texts, ask everyone to consent afresh to the new company, and inform the early-access list. **Recommended:** review this assessment at that point; an agreement between the two companies; a new ICO registration; new processing agreements in the new company's name. | Ensures a lawful handover. | Low if the plan is followed | [Section 6 decision pending] |
-| R31 | **In place:** the store is protected until the first unlock after a restart; the session token is held on the device only, so a restored backup does not sign anyone in; label photos are kept outside the store. **Recommended:** exclude the whole store from iPhone backups (all data is held in the account, so a restore synchronises again; unsynchronised edits would be lost on restore), or keep it in backups and say so in the iPhone privacy text. Either before anyone beyond the core team. Apple Health data is kept out of backups in any case (Annex D). Controller's choice: [Decision D14 pending]. | Removes or discloses the exposure. | Low if excluded; medium until decided, limited to the core team's devices | [Decision D14 pending] |
-| R32 | **In place:** the revocation step is written and reviewed; deletion of Tilo's data never depends on Apple's response. **Recommended:** configure and deploy revocation before anyone beyond the core team (App Store Review Guideline 5.1.1(v)). | Completes deletion at Apple. | Low | [Section 6 decision pending] |
+| Risk | Measures | Effect on risk | Residual risk | Status | Approved |
+|---|---|---|---|---|---|
+| R1 | **In place:** owner-only access control on every table, with narrower rules for consent records and usage counts; the public key reaches no data without a session; the service key is confined to server functions and scheduled jobs; account deletion verifies the session, requires a recent sign-in and ends all sessions first; the reminder job checks a secret in constant time; server functions log counts only, never identifiers or content; outcomes-only storage limits what a breach could reveal; leaked-password protection is on; HTTPS throughout. The provider's security adviser reports two low-level warnings, one of which is intended. | Reduces likelihood to remote. Severity cannot fall below severe for this data. | Medium | In place |  |
+| R1 | **Recommended:** a written breach procedure with a named owner (D11); multi-factor authentication on every administrator account (database, code hosting, website, email); an independent security test of access controls and server functions before public launch; offer multi-factor sign-in or passkeys to users later; move a database extension out of the public schema. | Reduces likelihood further and improves response. | Medium | Recommended | [Section 6 decision pending] |
+| R1b | **In place:** device data is confined to the app; "Sign out and remove this device's log"; a different account signing in on the same device cannot see the previous user's data. | Reduces severity and likelihood. | Low | In place |  |
+| R1b | **Recommended:** a line on the export screen stating that the file contains health data and should be kept private (a wording change requiring design approval). | Reduces likelihood of accidental sharing. | Low | Recommended | [Section 6 decision pending] |
+| R2 | **In place:** unticked consent boxes; nothing but consent records is uploaded without current consent; the server refuses health data without current consent; reminders skip anyone without consent; health questions are shown and saved only after consent on the device; pre-consent cloud data is deleted automatically and the deletion has run. | Reduces likelihood to remote. | Low | In place |  |
+| R2 | **Recommended:** keep the deletion job running for new accounts that never answer, and check its run history at each review. | Maintains the position. | Low | Recommended | [Section 6 decision pending] |
+| R3 | **In place:** the terms state that Tilo is not medical advice and list who should consult a GP and not use Tilo to guide their eating; the routing only ever makes Tilo more cautious; skipped answers give cautious defaults; pregnancy holds food at maintenance with no calorie number; the medical outcome removes the deficit and adds a GP note, with protein limited as described in section 4.8; a "yes" to the wellbeing question turns on Gentle mode (no calorie target, totals in words, a maintenance range only if requested), a "sometimes" gives a maintenance range only; both remove the weight figure from the home screen, stop automatic training increases and signpost Beat, NHS 111, Samaritans and emergency services; a body mass index below 18.5 prevents a deficit; targets are ranges with neutral wording; internal wellbeing and nutrition reviews; the pregnancy flag is re-checked every twelve weeks. | Reduces likelihood and severity. | Medium with D1 done; high without D1 beyond closed testers | In place |  |
+| R3 | **Required or recommended:** clinical review before the wizard reaches anyone beyond closed testers (D1); correct the wording that says weight is hidden while two screens still show it, before the wizard is switched on at all; publish the onboarding policy text with that release; decide what the live app, which has no screener while the wizard is off, shows new users about these groups; a short MHRA qualification note (section 4.8); keep marketing free of health claims (CAP Code sections 12 and 15). Switching the wizard on for closed testers before D1: [Decision pending: onboarding for closed testers]. Enforcement of closed testing: sign-up is technically open to anyone with the link, whether new sign-ups are disabled in the database provider's authentication settings has not been verified, and one account was created on 16 November 2026; [Decision D13 pending]. | Reduces likelihood; D1 reduces the residual from high to medium. | As above | Recommended | [Section 6 decision pending] |
+| R4 | **In place:** 18+ in the terms and privacy policy; a required age confirmation on the consent screen; in the wizard, an age question that stops under-18s, clears the device and deletes the new account; the privacy policy explains how to report use by a child. | Reduces likelihood. | Medium; low once the wizard's age stop is live | In place |  |
+| R4 | **Recommended:** a written assessment of whether the service is likely to be accessed by children (D8); mark or remove an under-age account that never signs in again; a security review of the device-side under-age stop. | Reduces likelihood and closes a gap. | Low once done | Recommended | [Section 6 decision pending] |
+| R5 | **In place:** export at any time; the terms and cookie policy warn that device-only data is lost with the device or browser data; the "Not now" and withdrawal screens say where the data is and offer an export first; the pre-consent deletion kept the device's copy, which is uploaded again on later consent; "Start fresh" needs a second confirmation with an export option beside it. | Reduces likelihood. | Low | In place |  |
+| R5 | **Recommended:** record the database backup window. | Improves transparency. | Low | Recommended | [Section 6 decision pending] |
+| R6 | **In place:** the device clears all health fields, health-derived plan reasons and its temporary copy at once; the cloud copy is deleted in one transaction; each other device clears on next connection; the server refuses uploads after a "no", so an out-of-date device cannot restore data; the daily deletion removes any log left more than a day after a "no"; the privacy policy states exactly what remains. | Reduces likelihood to remote. | Low | In place |  |
+| R6 | **Recommended:** record the backup window and state it in the privacy policy if it is long; state in the policy that export files are the user's own copy. | Improves transparency. | Low | Recommended | [Section 6 decision pending] |
+| R7 | **In place:** the database is hosted in Ireland; web push messages are encrypted end to end; the privacy policy names each provider and the safeguards relied on. | Limits exposure. | Medium until D4 is complete | In place |  |
+| R7 | **Required:** accept each processing agreement and record the transfer mechanism for each provider, Apple included (D4). **Optional:** route Open Food Facts lookups through a server function so the user's IP address no longer reaches it. | Provides enforceable terms; reduces likelihood. | Low once D4 is complete | Recommended | [Section 6 decision pending] |
+| R8 | **In place:** label reading is assessed in Annex A (photos only, no identifiers); other AI features remain switched off; the label-reading function checks the user's acknowledgement on the server and logs no content; the on-device model keeps everything on the phone; purposes are listed and there is no secondary use; AI, analytics, error tracking, email marketing and paid tiers are recorded as changes requiring compliance review first. | Reduces likelihood. | Low | In place |  |
+| R8 | **Recommended:** update this assessment before any further AI feature is enabled, covering the provider's processing agreement, data retention, the transfer and its risk assessment, disclosure to users that they are dealing with AI (EU AI Act Article 50) and the absence of solely automated decisions. | Prevents unassessed creep. | Low | Recommended | [Section 6 decision pending] |
+| R9 | **In place:** the privacy and cookie policies describe device-only data and how long it is kept; the same consent gate applies to health questions on the device; withdrawal clears health fields on the device; export and deletion cover the device. **Recommended:** treat any new device-only store as a policy change. | Ensures device processing is covered. | Low | In place and recommended | [Section 6 decision pending] |
+| R10 | **In place:** the pre-release legal check warns while the ICO registration number is not recorded. **Required:** pay the fee and record the number (D3); the new company will need its own registration. | Removes the exposure once paid. | Medium until paid; low after | In place and recommended | [Section 6 decision pending] |
+| R11 | **In place:** none for accounts (the pre-consent deletion removes the log, not the account). **Decided, not built:** deletion after 12 months of inactivity, with notice (D6). This requires a means of sending notices (a new processor), a scheduled job, privacy text and a register entry. | Sets an end date. | Low | Decided, not built | [Section 6 decision pending] |
+| R12 | **In place:** separate unticked boxes; no marketing bundled; withdrawal is easy and leaves food and workout logging usable on the device; existing users can choose "Not now" without losing data. **Recommended:** obtain a legal view on D7 when legal advice is reconsidered (D15); consider allowing a new user who declines to keep a device-only log, as a user who withdraws can. | Reduces the risk that consent is found not freely given. | Medium, accepted without a legal view | In place and recommended | [Section 6 decision pending] |
+| R13 | **In place:** the change of controller is planned: update the controller details and texts, ask everyone to consent afresh to the new company, and inform the early-access list. **Recommended:** review this assessment at that point; an agreement between the two companies; a new ICO registration; new processing agreements in the new company's name. | Ensures a lawful handover. | Low if the plan is followed | In place and recommended | [Section 6 decision pending] |
+| R31 | **In place:** the store is protected until the first unlock after a restart; the session token is held on the device only, so a restored backup does not sign anyone in; label photos are kept outside the store. **Recommended:** exclude the whole store from iPhone backups (all data is held in the account, so a restore synchronises again; unsynchronised edits would be lost on restore), or keep it in backups and say so in the iPhone privacy text. Either before anyone beyond the core team. Apple Health data is kept out of backups in any case (Annex D). Controller's choice: [Decision D14 pending]. | Removes or discloses the exposure. | Low if excluded; medium until decided, limited to the core team's devices | In place and recommended | [Decision D14 pending] |
+| R32 | **In place:** the revocation step is written and reviewed; deletion of Tilo's data never depends on Apple's response. **Recommended:** configure and deploy revocation before anyone beyond the core team (App Store Review Guideline 5.1.1(v)). | Completes deletion at Apple. | Low | In place and recommended | [Section 6 decision pending] |
 
 ---
 
@@ -605,13 +612,14 @@ implemented; the controller records approval of each recommended measure in the 
 
 | Item | Name, signature and date | Notes |
 |---|---|---|
+| Assessment (sections 1 to 7) approved by | | Approves what the summary lists under "What approval of this document covers", and nothing under "What it does not cover". |
 | Measures approved by | | Integrate approved measures into the project plan, with owners and completion dates. Approval of each recommended measure is recorded in section 6. |
 | Residual risks approved by | | If accepting any residual high risk, consult the ICO before going ahead (section 7.3). |
 | Onboarding wizard for closed testers | | [Decision pending: onboarding for closed testers]. D1 remains a condition for anyone beyond closed testers. |
 | Closed testing enforced (D13) | | [Decision D13 pending] |
 | iPhone backups (D14) | | [Decision D14 pending] |
 | DPO advice | Not applicable: no Data Protection Officer is appointed (D12) | |
-| Legal advice | | Not sought, by the controller's decision of 16 November 2026 (D15). Scope: [Decision D15 pending]. By signing, the controller accepts that the legal judgements in this assessment (D7, D10, section 4.7, section 7.3 and Annex C) are unreviewed by a qualified adviser. To be reconsidered before public launch, an App Store listing, the change of controller or any paid tier. |
+| Legal advice | | Not sought, by the controller's decision of 16 November 2026 (D15). Scope: [Decision D15 pending]. By signing, the controller accepts that the legal judgements in this assessment (D7, D10, section 4.7, section 7.3 and Annex C) are unreviewed by a qualified adviser. To be reconsidered before public launch, an App Store listing, the change of controller or any paid tier, and before Cycle goes beyond Benn and Sara if the Cycle residuals stay high. |
 | Clinical advice | | Summary of the clinical review (D1), when carried out. Not yet carried out. |
 | ICO prior consultation view | | Reasoned view in section 7.3. Record whether the controller agrees that prior consultation is not required. |
 | Consultation responses (users) | | Whether users were consulted and, if not, why (section 3). |
@@ -660,7 +668,7 @@ implemented; the controller records approval of each recommended measure in the 
 | R14 | Unload notes exposed | Low | Annex B, Part 1 (approved) |
 | R15 | Tilo treated as a crisis service | Medium only while access stays non-public; high otherwise | Annex B, Parts 1 and 4 |
 | R16 | Reminders reveal Mind use | Low | Annex B, Part 1 (approved) |
-| R17 | Signposting by nation | Low for the Mind context | Annex B, Parts 1 and 4 |
+| R17 | Signposting by nation | Low for the Mind context; medium until settled everywhere | Annex B, Parts 1 and 4 |
 | R18 | Supplement name on the lock screen | Proposed low | Annex B, Part 2 (not approved) |
 | R19 | Label photos kept or reused | Low | Annex A (approved) |
 | R20 | Contribution traced to a person | Low | Annex A (approved) |
@@ -727,7 +735,7 @@ occurs:
 | D10 | Legal basis for consent records: Article 6(1)(c) and, where special category, Article 9(2)(f) | Retained, without a legal view. |
 | D11 | Breach response: named owner and written procedure | Open. Required before public launch. |
 | D12 | EU representative (Article 27) and Data Protection Officer (Article 37) | Open. Required before public launch (and before an App Store listing in EU storefronts). No DPO at present. |
-| D13 | Enforcement of closed testing (sign-up is technically open to anyone with the link) | [Decision D13 pending] |
+| D13 | Enforcement of closed testing (sign-up is technically open to anyone with the link) | Whether new sign-ups are disabled in the database provider's authentication settings has not been verified; one account was created on 16 November 2026. [Decision D13 pending] |
 | D14 | iPhone backups | [Decision D14 pending] |
 | D15 | Legal advice | Not sought, by the controller's decision of 16 November 2026. Scope: [Decision D15 pending]. |
 
@@ -1190,6 +1198,6 @@ been assumed.
 | [Decision D13 pending] | Whether closed testing is enforced (open sign-up switched off and testers invited) | Sections 6 (R3), 7.1, 7.2, 7.3, 7.5; Annex B, Part 4 (introductory note) |
 | [Decision D14 pending] | iPhone backups: exclude the whole store, or keep it in backups and disclose it | Section 6 (R31, twice), 7.1, 7.5; Annex D |
 | [Decision D15 pending] | Scope of the decision not to seek legal advice (all legal review, or narrower) | Sections 3, 7.1, 7.5 |
-| [Section 6 decision pending] | Approval of each recommended measure in section 6 | Section 6, final column (one per recommended measure) |
+| [Section 6 decision pending] | Approval of each recommended measure in section 6 | Section 6, Approved column (one per recommended row) |
 | [Decision pending: onboarding for closed testers] | Whether the onboarding wizard may be switched on for closed testers before the clinical review (D1) | Sections 6 (R3), 7.1 |
 | [Review date pending] | Date of the next review of this assessment | Document control; sections 7.1, 7.4 |
