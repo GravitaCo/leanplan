@@ -1145,7 +1145,7 @@ sex life as well as health. Not reviewed by a lawyer (D15).
 | R29 | Treated as a medical device or a contraception aid | Medium | Low |
 
 **Prior consultation.** For the core team only, not required: they are the controller's own people,
-fully informed, and can stop at any time. For wider testers or the public, to be determined in the
+informed, and can stop at any time. For wider testers or the public, to be determined in the
 addendum: if R23 and R26 remain high, the ICO should be consulted first, or Cycle not released.
 
 | Item | Name and date | Notes |
